@@ -20,7 +20,7 @@ const Index = () => {
         <MealPlanSection />
         <RecipeShowcase />
         <FounderSection />
-        <BlogSection />
+        
         <CTASection />
       </main>
       <Footer />
