@@ -48,7 +48,7 @@ export function MealPlanSection() {
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{plan.title}</h3>
               <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
-              <div className="text-2xl font-bold text-gradient-honey mb-4">{plan.price}</div>
+              <div className="text-sm font-medium text-primary mb-4">{plan.budget}</div>
               <Button variant="heroOutline" size="sm" asChild>
                 <Link to="/signup">View Plan</Link>
               </Button>
