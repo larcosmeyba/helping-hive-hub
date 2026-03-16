@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
     const cookTimePref = profile.cooking_time_preference || "medium";
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
 
+    const zipCode = profile.zip_code || "";
+    const regionInfo = getRegionInfo(zipCode);
+
     const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic weekly meal plan that stays within the user's grocery budget.
 
 CRITICAL RULES:
@@ -84,7 +87,25 @@ CRITICAL RULES:
 - Prioritize using pantry items the user already has to reduce costs
 - Adjust portion sizes for the household size
 - Respect all allergies and dietary preferences strictly
-- Estimate realistic US grocery prices for 2026
+
+REGIONAL PRICING RULES (VERY IMPORTANT):
+- The user is in ZIP code region: ${zipCode || "unknown"} (${regionInfo.region})
+- Regional cost-of-living multiplier: ${regionInfo.costMultiplier}x national average
+- State sales tax on groceries: ${regionInfo.groceryTaxRate}%
+- Use these REAL 2026 US grocery price benchmarks (national average), then multiply by the regional cost multiplier:
+  * Eggs (dozen): $4.50  * Milk (gallon): $4.20  * Bread (loaf): $3.80
+  * Chicken breast (lb): $4.50  * Ground beef (lb): $5.80  * Rice (2lb bag): $3.50
+  * Pasta (1lb box): $1.80  * Canned beans (15oz): $1.20  * Bananas (lb): $0.65
+  * Potatoes (5lb bag): $4.50  * Onions (3lb bag): $3.50  * Frozen veggies (16oz): $2.50
+  * Cheese block (8oz): $3.80  * Butter (1lb): $5.00  * Cooking oil (48oz): $5.50
+  * Flour (5lb): $4.00  * Sugar (4lb): $3.50  * Canned tomatoes (28oz): $2.00
+- For preferred stores, apply these approximate price adjustments:
+  * Aldi/Lidl: 0.80x (20% below average)
+  * Walmart: 0.90x (10% below average)
+  * Kroger/Safeway/Albertsons: 1.0x (average)
+  * Publix/HEB: 1.05x (5% above average)
+  * Whole Foods/Trader Joe's: 1.25x (25% above average)
+  * Target: 0.95x (5% below average)
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
@@ -122,7 +143,9 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "totalEstimatedCost": 68.00,
   "pantrySavings": 12.00,
   "costPerMeal": 2.50,
-  "taxEstimate": 2.04
+  "taxEstimate": 2.04,
+  "regionLabel": "${regionInfo.region}",
+  "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
     const userPrompt = `Generate a weekly meal plan (Monday–Sunday, 3 meals per day: breakfast, lunch, dinner) for this household:
@@ -133,18 +156,17 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Dietary preferences: ${dietPrefs}
 - Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
 - Preferred stores: ${stores}
-- ZIP code region: ${profile.zip_code || "national average"}
+- ZIP code: ${zipCode || "unknown"} (${regionInfo.region}, cost multiplier: ${regionInfo.costMultiplier}x)
 - Items already in pantry: ${pantryList || "none specified"}
 
 Requirements:
+- Apply the ${regionInfo.costMultiplier}x regional cost multiplier to all ingredient prices
 - Use pantry items first to maximize savings
 - Keep total grocery cost at or below $${budget}
-- Include realistic 2026 US grocery prices
 - Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and instructions
 - Generate the grocery list from ingredients NOT already in the pantry
-- Provide store price comparisons for the user's preferred stores
-- Apply estimated state tax (use 3% if unknown)`;
-
+- Provide store price comparisons for the user's preferred stores (apply store-specific multipliers)
+- Apply ${regionInfo.groceryTaxRate}% grocery tax rate for this region`;
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
