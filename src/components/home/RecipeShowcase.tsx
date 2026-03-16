@@ -1,11 +1,15 @@
 import { motion } from "framer-motion";
 import { Clock, Users as UsersIcon, DollarSign } from "lucide-react";
+import recipeChickenRice from "@/assets/recipe-chicken-rice.jpg";
+import recipeStirFry from "@/assets/recipe-stir-fry.jpg";
+import recipePantryPasta from "@/assets/recipe-pantry-pasta.jpg";
+import recipeBudgetBowl from "@/assets/recipe-budget-bowl.jpg";
 
 const recipes = [
-  { title: "$10 Family Dinner", time: "30 min", servings: "4", cost: "$10", desc: "Hearty one-pot chicken and rice dinner." },
-  { title: "$15 Stir Fry Night", time: "25 min", servings: "4", cost: "$15", desc: "Colorful veggie stir fry with protein." },
-  { title: "Pantry Pasta Dinner", time: "20 min", servings: "4", cost: "$8", desc: "Made from common pantry staples." },
-  { title: "Healthy Budget Bowl", time: "35 min", servings: "4", cost: "$12", desc: "Nutrient-packed grain bowl on a budget." },
+  { title: "$10 Family Dinner", time: "30 min", servings: "4", cost: "$10", desc: "Hearty one-pot chicken and rice dinner.", image: recipeChickenRice },
+  { title: "$15 Stir Fry Night", time: "25 min", servings: "4", cost: "$15", desc: "Colorful veggie stir fry with protein.", image: recipeStirFry },
+  { title: "Pantry Pasta Dinner", time: "20 min", servings: "4", cost: "$8", desc: "Made from common pantry staples.", image: recipePantryPasta },
+  { title: "Healthy Budget Bowl", time: "35 min", servings: "4", cost: "$12", desc: "Nutrient-packed grain bowl on a budget.", image: recipeBudgetBowl },
 ];
 
 export function RecipeShowcase() {
@@ -36,8 +40,13 @@ export function RecipeShowcase() {
               transition={{ delay: i * 0.1 }}
               className="rounded-2xl bg-card shadow-card border border-border overflow-hidden hover:shadow-elevated transition-all duration-300 group"
             >
-              <div className="h-36 bg-gradient-honey opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-5xl">🍽️</span>
+              <div className="h-44 overflow-hidden">
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
               </div>
               <div className="p-5">
                 <h3 className="font-display text-base font-semibold text-foreground mb-2">{recipe.title}</h3>
