@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const plans = [
-  { title: "$50 Weekly Meal Plan", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 Budget / week", tag: "Most Popular" },
-  { title: "$75 Weekly Meal Plan", desc: "More variety with nutritious options and flexible recipes.", budget: "$75 Budget / week", tag: null },
-  { title: "College Student Plan", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 Budget / week", tag: "Student Fav" },
-  { title: "SNAP-Friendly Plan", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 Budget / week", tag: "SNAP Eligible" },
+  { title: "Feed a Family on $50", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 / week grocery budget", tag: "Most Popular" },
+  { title: "More Variety at $75", desc: "Nutritious options with flexible recipes and extra variety.", budget: "$75 / week grocery budget", tag: null },
+  { title: "College Eats on $35", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 / week grocery budget", tag: "Student Fav" },
+  { title: "SNAP-Friendly Meals", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 / week grocery budget", tag: "SNAP Eligible" },
 ];
 
 export function MealPlanSection() {
