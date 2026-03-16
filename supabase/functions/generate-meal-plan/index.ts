@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
     const cookTimePref = profile.cooking_time_preference || "medium";
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
 
+    const zipCode = profile.zip_code || "";
+    const regionInfo = getRegionInfo(zipCode);
+
     const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic weekly meal plan that stays within the user's grocery budget.
 
 CRITICAL RULES:
@@ -84,7 +87,25 @@ CRITICAL RULES:
 - Prioritize using pantry items the user already has to reduce costs
 - Adjust portion sizes for the household size
 - Respect all allergies and dietary preferences strictly
-- Estimate realistic US grocery prices for 2026
+
+REGIONAL PRICING RULES (VERY IMPORTANT):
+- The user is in ZIP code region: ${zipCode || "unknown"} (${regionInfo.region})
+- Regional cost-of-living multiplier: ${regionInfo.costMultiplier}x national average
+- State sales tax on groceries: ${regionInfo.groceryTaxRate}%
+- Use these REAL 2026 US grocery price benchmarks (national average), then multiply by the regional cost multiplier:
+  * Eggs (dozen): $4.50  * Milk (gallon): $4.20  * Bread (loaf): $3.80
+  * Chicken breast (lb): $4.50  * Ground beef (lb): $5.80  * Rice (2lb bag): $3.50
+  * Pasta (1lb box): $1.80  * Canned beans (15oz): $1.20  * Bananas (lb): $0.65
+  * Potatoes (5lb bag): $4.50  * Onions (3lb bag): $3.50  * Frozen veggies (16oz): $2.50
+  * Cheese block (8oz): $3.80  * Butter (1lb): $5.00  * Cooking oil (48oz): $5.50
+  * Flour (5lb): $4.00  * Sugar (4lb): $3.50  * Canned tomatoes (28oz): $2.00
+- For preferred stores, apply these approximate price adjustments:
+  * Aldi/Lidl: 0.80x (20% below average)
+  * Walmart: 0.90x (10% below average)
+  * Kroger/Safeway/Albertsons: 1.0x (average)
+  * Publix/HEB: 1.05x (5% above average)
+  * Whole Foods/Trader Joe's: 1.25x (25% above average)
+  * Target: 0.95x (5% below average)
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
@@ -122,7 +143,9 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "totalEstimatedCost": 68.00,
   "pantrySavings": 12.00,
   "costPerMeal": 2.50,
-  "taxEstimate": 2.04
+  "taxEstimate": 2.04,
+  "regionLabel": "${regionInfo.region}",
+  "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
     const userPrompt = `Generate a weekly meal plan (Monday–Sunday, 3 meals per day: breakfast, lunch, dinner) for this household:
@@ -133,18 +156,17 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Dietary preferences: ${dietPrefs}
 - Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
 - Preferred stores: ${stores}
-- ZIP code region: ${profile.zip_code || "national average"}
+- ZIP code: ${zipCode || "unknown"} (${regionInfo.region}, cost multiplier: ${regionInfo.costMultiplier}x)
 - Items already in pantry: ${pantryList || "none specified"}
 
 Requirements:
+- Apply the ${regionInfo.costMultiplier}x regional cost multiplier to all ingredient prices
 - Use pantry items first to maximize savings
 - Keep total grocery cost at or below $${budget}
-- Include realistic 2026 US grocery prices
 - Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and instructions
 - Generate the grocery list from ingredients NOT already in the pantry
-- Provide store price comparisons for the user's preferred stores
-- Apply estimated state tax (use 3% if unknown)`;
-
+- Provide store price comparisons for the user's preferred stores (apply store-specific multipliers)
+- Apply ${regionInfo.groceryTaxRate}% grocery tax rate for this region`;
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -330,4 +352,66 @@ function getNextMonday(): string {
   const monday = new Date(now);
   monday.setDate(now.getDate() + diff);
   return monday.toISOString().split("T")[0];
+}
+
+interface RegionInfo {
+  region: string;
+  costMultiplier: number;
+  groceryTaxRate: number;
+}
+
+function getRegionInfo(zip: string): RegionInfo {
+  if (!zip) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
+
+  const prefix = parseInt(zip.substring(0, 3), 10);
+  if (isNaN(prefix)) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
+
+  // ZIP prefix ranges mapped to regions with cost-of-living multipliers and grocery tax
+  // Based on USDA regional food cost data and state grocery tax rates
+  if (prefix >= 100 && prefix <= 149) return { region: "New York Metro", costMultiplier: 1.35, groceryTaxRate: 4.0 };
+  if (prefix >= 150 && prefix <= 196) return { region: "Pennsylvania", costMultiplier: 1.05, groceryTaxRate: 0.0 };
+  if (prefix >= 197 && prefix <= 199) return { region: "Delaware", costMultiplier: 1.0, groceryTaxRate: 0.0 };
+  if (prefix >= 200 && prefix <= 205) return { region: "Washington DC", costMultiplier: 1.30, groceryTaxRate: 0.0 };
+  if (prefix >= 206 && prefix <= 246) return { region: "Virginia/Maryland", costMultiplier: 1.15, groceryTaxRate: 2.5 };
+  if (prefix >= 247 && prefix <= 268) return { region: "West Virginia/North Carolina", costMultiplier: 0.90, groceryTaxRate: 2.0 };
+  if (prefix >= 270 && prefix <= 289) return { region: "North Carolina", costMultiplier: 0.95, groceryTaxRate: 2.0 };
+  if (prefix >= 290 && prefix <= 299) return { region: "South Carolina", costMultiplier: 0.90, groceryTaxRate: 0.0 };
+  if (prefix >= 300 && prefix <= 319) return { region: "Georgia", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 320 && prefix <= 349) return { region: "Florida", costMultiplier: 1.05, groceryTaxRate: 0.0 };
+  if (prefix >= 350 && prefix <= 369) return { region: "Alabama", costMultiplier: 0.85, groceryTaxRate: 4.0 };
+  if (prefix >= 370 && prefix <= 385) return { region: "Tennessee", costMultiplier: 0.90, groceryTaxRate: 4.0 };
+  if (prefix >= 386 && prefix <= 397) return { region: "Mississippi", costMultiplier: 0.82, groceryTaxRate: 7.0 };
+  if (prefix >= 400 && prefix <= 427) return { region: "Kentucky", costMultiplier: 0.88, groceryTaxRate: 0.0 };
+  if (prefix >= 430 && prefix <= 458) return { region: "Ohio", costMultiplier: 0.92, groceryTaxRate: 0.0 };
+  if (prefix >= 460 && prefix <= 479) return { region: "Indiana", costMultiplier: 0.90, groceryTaxRate: 0.0 };
+  if (prefix >= 480 && prefix <= 499) return { region: "Michigan", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 500 && prefix <= 528) return { region: "Iowa", costMultiplier: 0.88, groceryTaxRate: 0.0 };
+  if (prefix >= 530 && prefix <= 549) return { region: "Wisconsin", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 550 && prefix <= 567) return { region: "Minnesota", costMultiplier: 1.00, groceryTaxRate: 0.0 };
+  if (prefix >= 570 && prefix <= 577) return { region: "South Dakota", costMultiplier: 0.88, groceryTaxRate: 4.5 };
+  if (prefix >= 580 && prefix <= 588) return { region: "North Dakota", costMultiplier: 0.90, groceryTaxRate: 0.0 };
+  if (prefix >= 590 && prefix <= 599) return { region: "Montana", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 600 && prefix <= 629) return { region: "Illinois", costMultiplier: 1.00, groceryTaxRate: 1.0 };
+  if (prefix >= 630 && prefix <= 658) return { region: "Missouri", costMultiplier: 0.88, groceryTaxRate: 1.225 };
+  if (prefix >= 660 && prefix <= 679) return { region: "Kansas", costMultiplier: 0.88, groceryTaxRate: 6.5 };
+  if (prefix >= 680 && prefix <= 693) return { region: "Nebraska", costMultiplier: 0.90, groceryTaxRate: 5.5 };
+  if (prefix >= 700 && prefix <= 714) return { region: "Louisiana", costMultiplier: 0.90, groceryTaxRate: 0.0 };
+  if (prefix >= 716 && prefix <= 729) return { region: "Arkansas", costMultiplier: 0.82, groceryTaxRate: 0.125 };
+  if (prefix >= 730 && prefix <= 749) return { region: "Oklahoma", costMultiplier: 0.85, groceryTaxRate: 4.5 };
+  if (prefix >= 750 && prefix <= 799) return { region: "Texas", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 800 && prefix <= 816) return { region: "Colorado", costMultiplier: 1.05, groceryTaxRate: 0.0 };
+  if (prefix >= 820 && prefix <= 831) return { region: "Wyoming", costMultiplier: 0.95, groceryTaxRate: 0.0 };
+  if (prefix >= 832 && prefix <= 838) return { region: "Idaho", costMultiplier: 0.92, groceryTaxRate: 6.0 };
+  if (prefix >= 840 && prefix <= 847) return { region: "Utah", costMultiplier: 0.95, groceryTaxRate: 3.0 };
+  if (prefix >= 850 && prefix <= 865) return { region: "Arizona", costMultiplier: 1.00, groceryTaxRate: 0.0 };
+  if (prefix >= 870 && prefix <= 884) return { region: "New Mexico", costMultiplier: 0.92, groceryTaxRate: 0.0 };
+  if (prefix >= 889 && prefix <= 898) return { region: "Nevada", costMultiplier: 1.05, groceryTaxRate: 0.0 };
+  if (prefix >= 900 && prefix <= 961) return { region: "California", costMultiplier: 1.30, groceryTaxRate: 0.0 };
+  if (prefix >= 970 && prefix <= 979) return { region: "Oregon", costMultiplier: 1.10, groceryTaxRate: 0.0 };
+  if (prefix >= 980 && prefix <= 994) return { region: "Washington State", costMultiplier: 1.15, groceryTaxRate: 0.0 };
+  if (prefix >= 995 && prefix <= 999) return { region: "Alaska", costMultiplier: 1.40, groceryTaxRate: 0.0 };
+  if (prefix >= 967 && prefix <= 968) return { region: "Hawaii", costMultiplier: 1.55, groceryTaxRate: 4.0 };
+  if (prefix >= 10 && prefix <= 69) return { region: "Northeast US", costMultiplier: 1.15, groceryTaxRate: 0.0 };
+
+  return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
 }

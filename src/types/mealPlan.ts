@@ -36,4 +36,6 @@ export interface GeneratedMealPlan {
   pantrySavings: number;
   costPerMeal: number;
   taxEstimate: number;
+  regionLabel?: string;
+  costOfLivingMultiplier?: number;
 }
