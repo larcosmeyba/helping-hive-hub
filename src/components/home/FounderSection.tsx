@@ -26,9 +26,12 @@ export function FounderSection() {
             <h3 className="font-display text-2xl font-semibold text-foreground mb-2">Marcos Leyba</h3>
             <p className="text-sm text-primary font-medium mb-4">Founder & CEO</p>
             <p className="text-muted-foreground leading-relaxed max-w-xl">
-              Marcos created Help The Hive to solve a real problem — helping families eat
-              well without overspending. With a passion for technology and community impact,
-              he's building a platform that makes smart meal planning accessible to everyone.
+              Marcos is the Founder and CEO of Help the Hive, a technology platform built to
+              help families reduce grocery costs, simplify meal planning, and make smarter
+              decisions around food. After struggling himself to budget for groceries and
+              consistently feed himself while managing expenses, Marcos created Help the Hive
+              to build a smarter system for food planning and savings — so every American
+              family can more easily put food on the table.
             </p>
           </div>
         </motion.div>
