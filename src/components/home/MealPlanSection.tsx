@@ -50,7 +50,7 @@ export function MealPlanSection() {
               <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
               <div className="text-sm font-medium text-primary mb-4">{plan.budget}</div>
               <Button variant="heroOutline" size="sm" asChild>
-                <Link to="/signup">Start Meal Planning</Link>
+                <Link to="/signup">View Plan</Link>
               </Button>
             </motion.div>
           ))}

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import marcosPhoto from "@/assets/marcos-leyba.jpg";
 
 export function FounderSection() {
   return (
@@ -15,8 +16,12 @@ export function FounderSection() {
           </h2>
 
           <div className="inline-flex flex-col items-center">
-            <div className="w-28 h-28 rounded-full bg-gradient-honey flex items-center justify-center mb-6 shadow-soft">
-              <span className="text-4xl font-display font-bold text-primary-foreground">ML</span>
+            <div className="w-32 h-32 rounded-full overflow-hidden mb-6 shadow-soft border-4 border-primary/20">
+              <img
+                src={marcosPhoto}
+                alt="Marcos Leyba, Founder & CEO of Help The Hive"
+                className="w-full h-full object-cover object-top"
+              />
             </div>
             <h3 className="font-display text-2xl font-semibold text-foreground mb-2">Marcos Leyba</h3>
             <p className="text-sm text-primary font-medium mb-4">Founder & CEO</p>
