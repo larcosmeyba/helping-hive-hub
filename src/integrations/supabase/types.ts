@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_permissions: {
+        Row: {
+          created_at: string
+          edit_members: boolean
+          edit_settings: boolean
+          export_data: boolean
+          id: string
+          invite_remove_admins: boolean
+          manage_marketing: boolean
+          manage_meal_plans: boolean
+          manage_recipes: boolean
+          manage_special_meals: boolean
+          updated_at: string
+          user_id: string
+          view_analytics: boolean
+          view_members: boolean
+          view_snap_data: boolean
+        }
+        Insert: {
+          created_at?: string
+          edit_members?: boolean
+          edit_settings?: boolean
+          export_data?: boolean
+          id?: string
+          invite_remove_admins?: boolean
+          manage_marketing?: boolean
+          manage_meal_plans?: boolean
+          manage_recipes?: boolean
+          manage_special_meals?: boolean
+          updated_at?: string
+          user_id: string
+          view_analytics?: boolean
+          view_members?: boolean
+          view_snap_data?: boolean
+        }
+        Update: {
+          created_at?: string
+          edit_members?: boolean
+          edit_settings?: boolean
+          export_data?: boolean
+          id?: string
+          invite_remove_admins?: boolean
+          manage_marketing?: boolean
+          manage_meal_plans?: boolean
+          manage_recipes?: boolean
+          manage_special_meals?: boolean
+          updated_at?: string
+          user_id?: string
+          view_analytics?: boolean
+          view_members?: boolean
+          view_snap_data?: boolean
+        }
+        Relationships: []
+      }
       food_waste_logs: {
         Row: {
           created_at: string
@@ -128,6 +212,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketing_campaigns: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          platform: string | null
+          publish_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platform?: string | null
+          publish_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platform?: string | null
+          publish_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       meal_plan_items: {
         Row: {
@@ -256,7 +382,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
           allergies: string[] | null
+          city: string | null
           cooking_time_preference: string | null
           created_at: string
           dietary_preferences: string[] | null
@@ -264,15 +392,22 @@ export type Database = {
           email: string | null
           household_size: number | null
           id: string
+          last_active: string | null
+          phone_number: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
+          snap_status: boolean | null
+          state: string | null
           updated_at: string
           user_id: string
+          user_type: string | null
           weekly_budget: number | null
           zip_code: string | null
         }
         Insert: {
+          account_status?: string | null
           allergies?: string[] | null
+          city?: string | null
           cooking_time_preference?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
@@ -280,15 +415,22 @@ export type Database = {
           email?: string | null
           household_size?: number | null
           id?: string
+          last_active?: string | null
+          phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          snap_status?: boolean | null
+          state?: string | null
           updated_at?: string
           user_id: string
+          user_type?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
         Update: {
+          account_status?: string | null
           allergies?: string[] | null
+          city?: string | null
           cooking_time_preference?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
@@ -296,10 +438,15 @@ export type Database = {
           email?: string | null
           household_size?: number | null
           id?: string
+          last_active?: string | null
+          phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          snap_status?: boolean | null
+          state?: string | null
           updated_at?: string
           user_id?: string
+          user_type?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
@@ -362,6 +509,90 @@ export type Database = {
         }
         Relationships: []
       }
+      special_meal_collection_recipes: {
+        Row: {
+          collection_id: string
+          id: string
+          recipe_id: string
+          sort_order: number
+        }
+        Insert: {
+          collection_id: string
+          id?: string
+          recipe_id: string
+          sort_order?: number
+        }
+        Update: {
+          collection_id?: string
+          id?: string
+          recipe_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_meal_collection_recipes_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "special_meal_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_meal_collection_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_meal_collections: {
+        Row: {
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_budget: number | null
+          id: string
+          is_featured: boolean
+          publish_end_date: string | null
+          publish_start_date: string | null
+          publish_status: string
+          seasonal_tag: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_budget?: number | null
+          id?: string
+          is_featured?: boolean
+          publish_end_date?: string | null
+          publish_start_date?: string | null
+          publish_status?: string
+          seasonal_tag?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_budget?: number | null
+          id?: string
+          is_featured?: boolean
+          publish_end_date?: string | null
+          publish_start_date?: string | null
+          publish_status?: string
+          seasonal_tag?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           created_at: string
@@ -398,15 +629,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "content_manager" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -533,6 +792,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "content_manager", "moderator"],
+    },
   },
 } as const
