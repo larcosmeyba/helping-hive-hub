@@ -9,7 +9,6 @@ const navLinks = [
   { label: "Recipes", to: "/recipes" },
   { label: "Mission", to: "/mission" },
   { label: "About", to: "/about" },
-  { label: "Blog", to: "/blog" },
 ];
 
 export function Navbar() {
