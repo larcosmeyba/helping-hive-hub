@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const plans = [
-  { title: "$50 Weekly Meal Plan", desc: "7 days of balanced meals for a family of 4 on a tight budget.", price: "$50/week", tag: "Most Popular" },
-  { title: "$75 Weekly Meal Plan", desc: "More variety with nutritious options and flexible recipes.", price: "$75/week", tag: null },
-  { title: "College Student Plan", desc: "Quick, easy meals for dorm life and small kitchens.", price: "$35/week", tag: "Student Fav" },
-  { title: "SNAP-Friendly Plan", desc: "Optimized for SNAP benefits with maximum nutritional value.", price: "$45/week", tag: "SNAP Eligible" },
+  { title: "$50 Weekly Meal Plan", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 Budget / week", tag: "Most Popular" },
+  { title: "$75 Weekly Meal Plan", desc: "More variety with nutritious options and flexible recipes.", budget: "$75 Budget / week", tag: null },
+  { title: "College Student Plan", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 Budget / week", tag: "Student Fav" },
+  { title: "SNAP-Friendly Plan", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 Budget / week", tag: "SNAP Eligible" },
 ];
 
 export function MealPlanSection() {
@@ -48,7 +48,7 @@ export function MealPlanSection() {
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{plan.title}</h3>
               <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
-              <div className="text-2xl font-bold text-gradient-honey mb-4">{plan.price}</div>
+              <div className="text-sm font-medium text-primary mb-4">{plan.budget}</div>
               <Button variant="heroOutline" size="sm" asChild>
                 <Link to="/signup">View Plan</Link>
               </Button>
