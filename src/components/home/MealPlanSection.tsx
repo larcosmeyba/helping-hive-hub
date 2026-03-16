@@ -1,0 +1,61 @@
+import { motion } from "framer-motion";
+import { DollarSign } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+
+const plans = [
+  { title: "$50 Weekly Meal Plan", desc: "7 days of balanced meals for a family of 4 on a tight budget.", price: "$50/week", tag: "Most Popular" },
+  { title: "$75 Weekly Meal Plan", desc: "More variety with nutritious options and flexible recipes.", price: "$75/week", tag: null },
+  { title: "College Student Plan", desc: "Quick, easy meals for dorm life and small kitchens.", price: "$35/week", tag: "Student Fav" },
+  { title: "SNAP-Friendly Plan", desc: "Optimized for SNAP benefits with maximum nutritional value.", price: "$45/week", tag: "SNAP Eligible" },
+];
+
+export function MealPlanSection() {
+  return (
+    <section className="py-20 bg-card">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Meal Plan Examples
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            Explore sample plans designed for different budgets and lifestyles.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {plans.map((plan, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="relative p-6 rounded-2xl bg-background shadow-card border border-border hover:shadow-elevated hover:border-primary/20 transition-all duration-300 flex flex-col"
+            >
+              {plan.tag && (
+                <span className="absolute -top-3 left-4 px-3 py-1 text-xs font-semibold rounded-full bg-gradient-honey text-primary-foreground">
+                  {plan.tag}
+                </span>
+              )}
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">{plan.title}</h3>
+              <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
+              <div className="text-2xl font-bold text-gradient-honey mb-4">{plan.price}</div>
+              <Button variant="heroOutline" size="sm" asChild>
+                <Link to="/signup">View Plan</Link>
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
