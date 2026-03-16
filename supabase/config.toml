@@ -1,1 +1,4 @@
 project_id = "ndbqbhghjsjkpgcvkvtq"
+
+[functions.generate-meal-plan]
+verify_jwt = false
