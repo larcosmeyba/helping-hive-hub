@@ -1,24 +1,16 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, DollarSign, ShoppingCart, Package, TrendingDown, Utensils } from "lucide-react";
+import { useMealPlan } from "@/contexts/MealPlanContext";
+import { CalendarDays, DollarSign, ShoppingCart, Package, TrendingDown, Utensils, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Sample meal data for display — in production this comes from the Hive Budget Meal Engine
-const SAMPLE_MEALS = [
-  { day: "Monday", meals: [{ name: "Oatmeal & Banana", cal: 350 }, { name: "Chicken Rice Bowl", cal: 520 }, { name: "Veggie Stir Fry", cal: 480 }] },
-  { day: "Tuesday", meals: [{ name: "Eggs & Toast", cal: 380 }, { name: "Bean Burrito Bowl", cal: 490 }, { name: "Pasta Primavera", cal: 510 }] },
-  { day: "Wednesday", meals: [{ name: "Smoothie Bowl", cal: 320 }, { name: "Turkey Wrap", cal: 440 }, { name: "Baked Chicken Thighs", cal: 550 }] },
-  { day: "Thursday", meals: [{ name: "Pancakes", cal: 400 }, { name: "Tuna Salad", cal: 380 }, { name: "Beef Tacos", cal: 530 }] },
-  { day: "Friday", meals: [{ name: "Yogurt Parfait", cal: 290 }, { name: "Grilled Cheese & Soup", cal: 460 }, { name: "Fried Rice", cal: 500 }] },
-  { day: "Saturday", meals: [{ name: "Breakfast Burritos", cal: 450 }, { name: "Chicken Salad", cal: 410 }, { name: "Spaghetti & Meatballs", cal: 580 }] },
-  { day: "Sunday", meals: [{ name: "French Toast", cal: 420 }, { name: "Leftover Stir Fry", cal: 470 }, { name: "Slow Cooker Chili", cal: 520 }] },
-];
-
 export default function DashboardHome() {
   const { user } = useAuth();
+  const { mealPlan, generating, generate } = useMealPlan();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -35,27 +27,40 @@ export default function DashboardHome() {
   });
 
   const budget = profile?.weekly_budget ?? 75;
-  const estimatedCost = 68;
-  const pantrySavings = 12;
-  const costPerMeal = 2.85;
+  const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
+  const pantrySavings = mealPlan?.pantrySavings ?? 0;
+  const costPerMeal = mealPlan?.costPerMeal ?? 0;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Welcome */}
-      <div>
-        <h1 className="font-display text-3xl font-bold text-foreground">
-          Welcome back, {profile?.display_name ?? "there"} 👋
-        </h1>
-        <p className="text-muted-foreground mt-1">Here's your weekly meal plan overview</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Welcome back, {profile?.display_name ?? "there"} 👋
+          </h1>
+          <p className="text-muted-foreground mt-1">Here's your weekly meal plan overview</p>
+        </div>
+        <Button
+          onClick={generate}
+          disabled={generating}
+          className="bg-gradient-honey text-primary-foreground hover:opacity-90"
+        >
+          {generating ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+          ) : (
+            <><Sparkles className="w-4 h-4 mr-2" /> {mealPlan ? "Regenerate Plan" : "Generate Meal Plan"}</>
+          )}
+        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, icon: DollarSign, color: "text-primary" },
-          { label: "Estimated Cost", value: `$${estimatedCost}`, icon: ShoppingCart, color: "text-accent" },
-          { label: "Pantry Savings", value: `$${pantrySavings}`, icon: TrendingDown, color: "text-green-600" },
-          { label: "Cost per Meal", value: `$${costPerMeal}`, icon: Utensils, color: "text-primary" },
+          { label: "Estimated Cost", value: `$${estimatedCost.toFixed(2)}`, icon: ShoppingCart, color: "text-accent" },
+          { label: "Pantry Savings", value: `$${pantrySavings.toFixed(2)}`, icon: TrendingDown, color: "text-accent" },
+          { label: "Cost per Meal", value: `$${costPerMeal.toFixed(2)}`, icon: Utensils, color: "text-primary" },
         ].map((stat) => (
           <div key={stat.label} className="bg-card rounded-xl border border-border p-4 shadow-card">
             <div className="flex items-center gap-2 mb-2">
@@ -68,29 +73,42 @@ export default function DashboardHome() {
       </div>
 
       {/* Weekly Meal Plan */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold text-foreground flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-primary" /> This Week's Meals
-          </h2>
-          <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">View Full Plan →</Link>
+      {!mealPlan ? (
+        <div className="bg-card rounded-2xl border border-border p-12 text-center shadow-card">
+          <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="font-display text-xl font-semibold text-foreground mb-2">No Meal Plan Yet</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Click "Generate Meal Plan" to create your personalized weekly plan based on your budget, household size, and preferences.
+          </p>
+          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
+            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Meal Plan</>}
+          </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-          {SAMPLE_MEALS.map((day) => (
-            <div key={day.day} className="bg-card rounded-xl border border-border p-3 shadow-card">
-              <h3 className="text-sm font-semibold text-foreground mb-2">{day.day}</h3>
-              <div className="space-y-1.5">
-                {day.meals.map((meal, i) => (
-                  <div key={i} className="text-xs">
-                    <p className="text-foreground font-medium truncate">{meal.name}</p>
-                    <p className="text-muted-foreground">{meal.cal} cal</p>
-                  </div>
-                ))}
+      ) : (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl font-semibold text-foreground flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-primary" /> This Week's Meals
+            </h2>
+            <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">View Full Plan →</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+            {mealPlan.weeklyPlan.map((day) => (
+              <div key={day.day} className="bg-card rounded-xl border border-border p-3 shadow-card">
+                <h3 className="text-sm font-semibold text-foreground mb-2">{day.day}</h3>
+                <div className="space-y-1.5">
+                  {day.meals.map((meal, i) => (
+                    <div key={i} className="text-xs">
+                      <p className="text-foreground font-medium truncate">{meal.name}</p>
+                      <p className="text-muted-foreground">{meal.calories} cal</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
