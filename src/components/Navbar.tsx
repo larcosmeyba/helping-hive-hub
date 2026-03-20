@@ -3,13 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
-const navLinks = [
-  { label: "Home", to: "/" },
-  { label: "Meal Plans", to: "/meal-plans" },
-  { label: "Recipes", to: "/recipes" },
-  { label: "Mission", to: "/mission" },
-  { label: "About", to: "/about" },
-];
+const navLinks: { label: string; to: string }[] = [];
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
