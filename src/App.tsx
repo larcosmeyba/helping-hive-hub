@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Questionnaire from "./pages/Questionnaire.tsx";
+import SampleMealPlan from "./pages/SampleMealPlan.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
