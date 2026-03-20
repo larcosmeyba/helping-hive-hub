@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Users, Landmark, GraduationCap, Shield, BookOpen, Wallet, Siren } from "lucide-react";
+import { Users, Landmark, GraduationCap, Shield, BookOpen, Siren } from "lucide-react";
 
 const audiences = [
   { icon: Users, title: "Families", desc: "Feed your household nutritious meals without breaking the bank." },
@@ -8,7 +8,7 @@ const audiences = [
   { icon: Siren, title: "First Responders", desc: "Quick, affordable meals for those who serve our communities." },
   { icon: Shield, title: "Military & Veterans", desc: "Meal planning support for service members and their families." },
   { icon: GraduationCap, title: "College Students", desc: "Eat well on a tight student budget." },
-  { icon: Wallet, title: "Budget-Conscious", desc: "Smart strategies for anyone watching grocery costs." },
+  
 ];
 
 export function WhoWeHelpSection() {
