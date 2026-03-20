@@ -31,12 +31,9 @@ export function HeroSection() {
               stay within their real grocery budget.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <Button variant="hero" size="lg" asChild>
                 <Link to="/signup">Get Started</Link>
-              </Button>
-              <Button variant="heroOutline" size="lg" asChild>
-                <Link to="/meal-plans">Explore Meal Plans</Link>
               </Button>
             </div>
           </motion.div>
