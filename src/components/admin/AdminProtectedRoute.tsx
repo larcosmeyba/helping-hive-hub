@@ -10,7 +10,7 @@ export function AdminProtectedRoute({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(0,0%,7%)]">
         <div className="flex flex-col items-center gap-3">
-          <span className="text-4xl animate-pulse">🐝</span>
+          <img src="/favicon.png" alt="Loading" className="h-10 w-10 animate-pulse" />
           <p className="text-[hsl(0,0%,65%)] text-sm">Verifying admin access...</p>
         </div>
       </div>

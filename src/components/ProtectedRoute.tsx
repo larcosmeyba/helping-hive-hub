@@ -8,7 +8,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <span className="text-4xl animate-float">🐝</span>
+          <img src="/favicon.png" alt="Loading" className="h-10 w-10 animate-float" />
           <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>

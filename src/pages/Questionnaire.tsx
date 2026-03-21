@@ -68,7 +68,7 @@ export default function Questionnaire() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <span className="text-4xl mb-4 block">🐝</span>
+          <img src="/favicon.png" alt="Help The Hive" className="h-10 w-10 mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">Household Questionnaire</h1>
           <p className="text-muted-foreground">Tell us about your household so we can plan your meals</p>
         </div>
