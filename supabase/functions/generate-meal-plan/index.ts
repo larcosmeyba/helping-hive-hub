@@ -80,14 +80,20 @@ Deno.serve(async (req) => {
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
 
-    const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic weekly meal plan that stays within the user's grocery budget.
+    const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic 6-day meal plan (Monday–Saturday) that stays within the user's grocery budget.
 
 CRITICAL RULES:
+- Generate exactly 6 days: Monday through Saturday. Do NOT include Sunday.
 - Every meal must be a real, cookable recipe with common grocery store ingredients
 - The total grocery cost for ALL meals must stay at or below the weekly budget
 - Prioritize using pantry items the user already has to reduce costs
 - Adjust portion sizes for the household size
 - Respect all allergies and dietary preferences strictly
+- BATCH COOKING: Design recipes that make enough servings to stretch across multiple meals. For example:
+  * A big pot of soup/chili on Monday that also covers Wednesday lunch
+  * Batch-cook rice or beans that get repurposed across 2-3 meals
+  * Roast a whole chicken Monday dinner → use leftovers for Tuesday lunch wraps
+  * This is how real budget-conscious families cook — maximize every dollar
 
 LOCATION:
 - ZIP code: ${zipCode || "unknown"}
@@ -181,7 +187,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
-    const userPrompt = `Generate a weekly meal plan (Monday–Sunday, 3 meals per day: breakfast, lunch, dinner) for this household:
+    const userPrompt = `Generate a 6-day meal plan (Monday–Saturday, 3 meals per day: breakfast, lunch, dinner) for this household. Sunday is a rest/leftover day — do NOT include Sunday. Design recipes that yield enough servings to last across multiple meals where possible (e.g., a big pot of chili for 2 dinners, batch-cook rice for several lunches). This maximizes value on a tight budget:
 
 - Weekly grocery budget: $${budget}
 - Household size: ${householdSize} people
