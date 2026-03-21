@@ -228,6 +228,7 @@ Requirements:
   1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
   2. Full product description as it appears on the shelf (include size, count, variety)
   3. Per-store prices for at least 3-4 stores that exist in ${cityInfo.city}, ${cityInfo.state}
+  4. A "storeProducts" object keyed by store name, containing the exact "brand" and exact shelf "productDescription" for each store
 - Store recommendations must reflect the real total if shopping entirely at that one store
 - Apply ${regionInfo.groceryTaxRate}% grocery tax rate for ${cityInfo.state}`;
     const aiResponse = await fetch(
