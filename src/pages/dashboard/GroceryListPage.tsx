@@ -255,49 +255,38 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Store Comparison */}
+      {/* Store Comparison — 3 inline small boxes */}
       {stores.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-          <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
-            <Store className="w-5 h-5 text-primary" /> Store Price Comparison
-          </h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Prices reflect your location. Select a store to see exact per-item pricing and recommended brands.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {stores.map((store) => {
+        <div>
+          <div className="flex items-center gap-1 mb-1.5 md:mb-3">
+            <Store className="w-3 h-3 md:w-5 md:h-5 text-primary" />
+            <h2 className="font-display text-[10px] md:text-lg font-semibold text-foreground">Compare Stores</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-1 md:gap-3">
+            {stores.slice(0, 3).map((store) => {
               const isActive = activeStore === store.store;
               const isCheapest = stores.every((s) => store.estimatedTotal <= s.estimatedTotal);
               return (
                 <button
                   key={store.store}
                   onClick={() => setSelectedStore(store.store)}
-                  className={`relative p-5 rounded-xl border text-left transition-all ${
+                  className={`relative p-1.5 md:p-4 rounded-lg border text-left transition-all ${
                     isActive
                       ? "border-primary bg-primary/5 shadow-card"
-                      : "border-border hover:border-primary/30 hover:shadow-soft"
+                      : "border-border hover:border-primary/30"
                   }`}
                 >
-                  {isActive && (
-                    <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Selected
+                  {isCheapest && (
+                    <span className="absolute -top-1 right-0.5 md:top-1 md:right-1 bg-accent text-accent-foreground text-[5px] md:text-[9px] font-bold px-1 py-px rounded-full">
+                      Best
                     </span>
                   )}
-                  {isCheapest && !isActive && (
-                    <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Best Price
-                    </span>
-                  )}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Store className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{store.store}</p>
-                    </div>
+                  <div className="flex items-center gap-0.5 md:gap-2 mb-0.5">
+                    <Store className="w-2 h-2 md:w-4 md:h-4 text-primary shrink-0" />
+                    <p className="font-semibold text-[7px] md:text-sm text-foreground truncate">{store.store}</p>
                   </div>
-                  <p className="text-2xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">Estimated total + tax</p>
+                  <p className="text-[10px] md:text-xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
+                  <p className="text-[5px] md:text-[10px] text-muted-foreground">Est. + tax</p>
                 </button>
               );
             })}
