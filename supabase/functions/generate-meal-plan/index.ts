@@ -181,7 +181,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
-    const userPrompt = `Generate a weekly meal plan (Monday–Sunday, 3 meals per day: breakfast, lunch, dinner) for this household:
+    const userPrompt = `Generate a 6-day meal plan (Monday–Saturday, 3 meals per day: breakfast, lunch, dinner) for this household. Sunday is a rest/leftover day — do NOT include Sunday. Design recipes that yield enough servings to last across multiple meals where possible (e.g., a big pot of chili for 2 dinners, batch-cook rice for several lunches). This maximizes value on a tight budget:
 
 - Weekly grocery budget: $${budget}
 - Household size: ${householdSize} people
