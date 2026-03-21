@@ -9,6 +9,7 @@ const COMMON_ITEMS = ["Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "
 export function CookFromFridge() {
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [customItem, setCustomItem] = useState("");
 
   const toggle = (item: string) => {
     setSelectedItems((prev) =>
