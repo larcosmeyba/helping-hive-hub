@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo-transparent.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
