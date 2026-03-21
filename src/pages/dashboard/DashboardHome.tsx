@@ -125,24 +125,6 @@ export default function DashboardHome() {
       {/* Extra Recipes */}
       <ExtraRecipes />
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link to="/dashboard/grocery-list" className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-elevated transition-shadow group">
-          <ShoppingCart className="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-          <h3 className="font-semibold text-foreground">Grocery List</h3>
-          <p className="text-sm text-muted-foreground">View & print your shopping list</p>
-        </Link>
-        <Link to="/dashboard/pantry" className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-elevated transition-shadow group">
-          <Utensils className="w-6 h-6 text-accent mb-2 group-hover:scale-110 transition-transform" />
-          <h3 className="font-semibold text-foreground">Pantry</h3>
-          <p className="text-sm text-muted-foreground">Track what you already have</p>
-        </Link>
-        <Link to="/dashboard/recipes" className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-elevated transition-shadow group">
-          <Utensils className="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-          <h3 className="font-semibold text-foreground">Full Recipe Library</h3>
-          <p className="text-sm text-muted-foreground">Browse hundreds of budget meals</p>
-        </Link>
-      </div>
     </div>
   );
 }
