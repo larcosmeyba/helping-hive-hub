@@ -285,6 +285,29 @@ Requirements:
       throw new Error("Failed to parse meal plan from AI");
     }
 
+    // Ensure every item has store-specific brand/product naming for each priced store
+    mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
+      const storeNames = Object.keys(item.storePrices || {});
+      const storeProducts: Record<string, { brand: string; productDescription: string }> = {
+        ...(item.storeProducts || {}),
+      };
+
+      for (const storeName of storeNames) {
+        const existing = storeProducts[storeName] || {};
+        const brand = existing.brand || inferStoreBrand(storeName, item.brand);
+        const productDescription =
+          existing.productDescription ||
+          buildStoreProductDescription(brand, item.name, item.quantity);
+
+        storeProducts[storeName] = { brand, productDescription };
+      }
+
+      return {
+        ...item,
+        storeProducts,
+      };
+    });
+
     // Save meal plan to database
     const weekStart = getNextMonday();
 
