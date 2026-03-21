@@ -43,15 +43,22 @@ export default function MealPlanPage() {
     setSubstituteOpen(null);
   };
 
+  if (loading) {
+    return <MealPlanSkeleton />;
+  }
+
   if (!mealPlan) {
     return (
-      <div className="max-w-6xl mx-auto text-center py-20">
-        <CalendarDays className="w-12 h-12 text-primary mx-auto mb-4" />
-        <h1 className="font-display text-2xl font-bold text-foreground mb-2">No Meal Plan Yet</h1>
-        <p className="text-muted-foreground mb-6">Generate your first AI-powered meal plan</p>
-        <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
-          {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : "Generate Meal Plan"}
-        </Button>
+      <div className="max-w-6xl mx-auto space-y-10">
+        <div className="text-center py-20">
+          <CalendarDays className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">No Meal Plan Yet</h1>
+          <p className="text-muted-foreground mb-6">Generate your first AI-powered meal plan</p>
+          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
+            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : "Generate Meal Plan"}
+          </Button>
+        </div>
+        <MealPlanHistory />
       </div>
     );
   }
