@@ -48,28 +48,27 @@ export function ExtraRecipes() {
       </div>
 
       {isMobile ? (
-        /* Mobile: horizontal scroll carousel */
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
+          className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {FEATURED_RECIPES.map((recipe) => (
             <div
               key={recipe.title}
-              className="snap-start shrink-0 w-[200px] bg-card rounded-xl border border-border shadow-card overflow-hidden"
+              className="snap-start shrink-0 w-[150px] bg-card rounded-xl border border-border shadow-card overflow-hidden"
             >
-              <div className="relative h-28 overflow-hidden">
+              <div className="relative h-24 overflow-hidden">
                 <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" loading="lazy" />
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                  <p className="text-white font-semibold text-xs leading-tight">{recipe.title}</p>
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
+                  <p className="text-white font-semibold text-[10px] leading-tight">{recipe.title}</p>
                 </div>
               </div>
-              <div className="p-2">
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3 text-accent" />${recipe.cost.toFixed(2)}</span>
-                  <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{recipe.time < 60 ? `${recipe.time}m` : `${Math.floor(recipe.time / 60)}h`}</span>
-                  <span className="flex items-center gap-0.5"><Users className="w-3 h-3" />{recipe.servings}</span>
+              <div className="p-1.5">
+                <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                  <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 text-accent" />${recipe.cost.toFixed(2)}</span>
+                  <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{recipe.time < 60 ? `${recipe.time}m` : `${Math.floor(recipe.time / 60)}h`}</span>
+                  <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{recipe.servings}</span>
                 </div>
               </div>
             </div>
