@@ -37,20 +37,21 @@ export default function DashboardHome() {
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-5 md:space-y-8">
       {/* Welcome + Editable Fields */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl font-bold text-foreground">
+            <h1 className="font-display text-xl md:text-3xl font-bold text-foreground">
               Welcome back, {profile?.display_name ?? "there"} 👋
             </h1>
-            <p className="text-muted-foreground mt-1">Here's your weekly meal plan overview</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Your weekly meal plan overview</p>
           </div>
           <Button
             onClick={generate}
             disabled={generating}
-            className="bg-gradient-honey text-primary-foreground hover:opacity-90"
+            className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-full sm:w-auto"
+            size="sm"
           >
             {generating ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -67,49 +68,49 @@ export default function DashboardHome() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, icon: DollarSign, color: "text-primary" },
           { label: "Estimated Cost", value: `$${estimatedCost.toFixed(2)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Pantry Savings", value: `$${pantrySavings.toFixed(2)}`, icon: TrendingDown, color: "text-accent" },
           { label: "Cost per Meal", value: `$${costPerMeal.toFixed(2)}`, icon: Utensils, color: "text-primary" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-xl border border-border p-4 shadow-card">
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon className={`w-4 h-4 ${stat.color}`} />
-              <span className="text-xs text-muted-foreground">{stat.label}</span>
+          <div key={stat.label} className="bg-card rounded-xl border border-border p-3 md:p-4 shadow-card">
+            <div className="flex items-center gap-1.5 mb-1">
+              <stat.icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${stat.color}`} />
+              <span className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      {/* This Week's Meals — Visual Cards */}
+      {/* This Week's Meals */}
       {!mealPlan ? (
-        <div className="bg-card rounded-2xl border border-border p-12 text-center shadow-card">
-          <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h2 className="font-display text-xl font-semibold text-foreground mb-2">No Meal Plan Yet</h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Click "Generate Meal Plan" to create your personalized weekly plan based on your budget, household size, and preferences.
+        <div className="bg-card rounded-2xl border border-border p-8 md:p-12 text-center shadow-card">
+          <Sparkles className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3" />
+          <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-2">No Meal Plan Yet</h2>
+          <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+            Tap "Generate Meal Plan" to create your personalized weekly plan based on your budget and preferences.
           </p>
-          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
+          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-full sm:w-auto">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Meal Plan</>}
           </Button>
         </div>
       ) : (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl font-semibold text-foreground flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-primary" /> This Week's Meals
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-base md:text-xl font-semibold text-foreground flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 md:w-5 md:h-5 text-primary" /> This Week's Meals
             </h2>
-            <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">View Full Plan →</Link>
+            <Link to="/dashboard/meal-plan" className="text-xs md:text-sm text-primary hover:underline font-medium">View Full Plan →</Link>
           </div>
           {mealPlan.weeklyPlan.map((day) => (
-            <div key={day.day} className="mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
+            <div key={day.day} className="mb-4 md:mb-6">
+              <h3 className="text-xs md:text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold">{day.day}</span>
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
                 {day.meals.map((meal, i) => (
                   <MealCard key={`${day.day}-${i}`} meal={meal} />
                 ))}
