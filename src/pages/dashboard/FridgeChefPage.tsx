@@ -184,22 +184,34 @@ export default function FridgeChefPage() {
               <button
                 key={i}
                 onClick={() => setSelectedRecipe(recipe)}
-                className="bg-card rounded-xl border border-border shadow-card p-5 text-left hover:shadow-elevated transition-shadow group"
+                className="bg-card rounded-xl border border-border shadow-card overflow-hidden text-left hover:shadow-elevated transition-shadow group"
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                    <ChefHat className="w-5 h-5 text-primary" />
+                {recipe.image && (
+                  <div className="relative h-36 overflow-hidden">
+                    <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                      <p className="text-white font-semibold text-sm">{recipe.name}</p>
+                    </div>
                   </div>
-                  <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{recipe.name}</h3>
+                )}
+                <div className="p-4">
+                  {!recipe.image && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="bg-primary/10 rounded-lg p-2">
+                        <ChefHat className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{recipe.name}</h3>
+                    </div>
+                  )}
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {recipe.calories} cal</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {recipe.cookTime}m</span>
+                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${recipe.cost.toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                    Uses: {recipe.ingredients.join(", ")}
+                  </p>
                 </div>
-                <div className="flex gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {recipe.calories} cal</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {recipe.cookTime}m</span>
-                  <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${recipe.cost.toFixed(2)}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                  Uses: {recipe.ingredients.join(", ")}
-                </p>
               </button>
             ))}
           </div>
