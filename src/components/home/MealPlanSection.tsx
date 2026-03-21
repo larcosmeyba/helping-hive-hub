@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const plans = [
-  { title: "Feed a Family on $50", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 / week grocery budget", tag: "Most Popular", slug: "feed-a-family-50" },
-  { title: "More Variety at $75", desc: "Nutritious options with flexible recipes and extra variety.", budget: "$75 / week grocery budget", tag: null, slug: "more-variety-75" },
-  { title: "College Eats on $35", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 / week grocery budget", tag: "Student Fav", slug: "college-eats-35" },
-  { title: "SNAP-Friendly Meals", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 / week grocery budget", tag: "SNAP Eligible", slug: "snap-friendly-meals" },
+  { title: "Feed a Family on $50", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 / week grocery budget", store: "Aldi / Walmart", tag: "Most Popular", slug: "feed-a-family-50" },
+  { title: "More Variety at $75", desc: "Nutritious options with flexible recipes and extra variety.", budget: "$75 / week grocery budget", store: "Kroger / Safeway", tag: null, slug: "more-variety-75" },
+  { title: "College Eats on $35", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 / week grocery budget", store: "Aldi / Walmart", tag: "Student Fav", slug: "college-eats-35" },
+  { title: "SNAP-Friendly Meals", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 / week grocery budget", store: "Walmart / WinCo", tag: "SNAP Eligible", slug: "snap-friendly-meals" },
 ];
 
 export function MealPlanSection() {
