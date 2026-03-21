@@ -62,7 +62,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
             <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-1">
               <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
