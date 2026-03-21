@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Users, CalendarDays, BookOpen, Sparkles,
   Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft
 } from "lucide-react";
+import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +45,7 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-[hsl(0,0%,20%)]">
       <SidebarContent>
         <div className="p-4 flex items-center gap-2 border-b border-[hsl(0,0%,20%)]">
-          <span className="text-2xl">🐝</span>
+          <img src={logo} alt="Help The Hive" className="h-8 w-8 brightness-0 invert" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-display text-base font-bold text-sidebar-foreground">

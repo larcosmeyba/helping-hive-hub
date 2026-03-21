@@ -12,7 +12,7 @@ export function CTASection() {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto text-center"
         >
-          <span className="text-5xl mb-6 block">🐝</span>
+          <img src="/favicon.png" alt="Help The Hive" className="h-14 w-14 mx-auto mb-6 brightness-0 invert" />
           <h2 className="font-display text-3xl md:text-4xl font-bold text-honey-cream mb-6">
             Ready to Start Saving?
           </h2>
