@@ -641,3 +641,24 @@ function getCityFromZip(zip: string): CityInfo {
   const regionInfo = getRegionInfo(zip);
   return { city: regionInfo.region, state: "" };
 }
+
+function inferStoreBrand(storeName: string, fallbackBrand?: string): string {
+  const lower = storeName.toLowerCase();
+
+  if (lower.includes("walmart")) return "Great Value";
+  if (lower.includes("aldi")) return "Simply Nature";
+  if (lower.includes("target")) return "Good & Gather";
+  if (lower.includes("kroger") || lower.includes("ralph")) return "Kroger";
+  if (lower.includes("safeway") || lower.includes("vons") || lower.includes("albertsons")) return "Signature Select";
+  if (lower.includes("whole foods")) return "365 by Whole Foods Market";
+  if (lower.includes("trader joe")) return "Trader Joe's";
+  if (lower.includes("heb") || lower.includes("h-e-b")) return "HEB";
+  if (lower.includes("publix")) return "Publix";
+
+  return fallbackBrand || storeName;
+}
+
+function buildStoreProductDescription(brand: string, itemName: string, quantity?: string): string {
+  const quantitySuffix = quantity ? `, ${quantity}` : "";
+  return `${brand} ${itemName}${quantitySuffix}`.trim();
+}
