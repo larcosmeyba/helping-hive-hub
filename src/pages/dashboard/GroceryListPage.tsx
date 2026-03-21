@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useMealPlan } from "@/contexts/MealPlanContext";
+import type { GroceryItem } from "@/types/mealPlan";
 
 // Store logo map — real logos via logo.clearbit.com
 const STORE_LOGOS: Record<string, string> = {
@@ -35,15 +39,36 @@ const STORE_LOGOS: Record<string, string> = {
   "Save-A-Lot": "https://logo.clearbit.com/save-a-lot.com",
 };
 
+const STORE_BRAND_BY_RETAILER: Record<string, string> = {
+  walmart: "Great Value",
+  target: "Good & Gather",
+  aldi: "Simply Nature",
+  kroger: "Kroger",
+  ralph: "Kroger",
+  safeway: "Signature Select",
+  vons: "Signature Select",
+  albertsons: "Signature Select",
+  "whole foods": "365 by Whole Foods Market",
+  "trader joe": "Trader Joe's",
+  publix: "Publix",
+  "h-e-b": "HEB",
+  heb: "HEB",
+};
+
 function getStoreLogo(storeName: string): string | null {
   for (const [key, url] of Object.entries(STORE_LOGOS)) {
     if (storeName.toLowerCase().includes(key.toLowerCase())) return url;
   }
   return null;
 }
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useMealPlan } from "@/contexts/MealPlanContext";
+
+function getDefaultStoreBrand(storeName: string): string | undefined {
+  const lower = storeName.toLowerCase();
+  for (const [key, brand] of Object.entries(STORE_BRAND_BY_RETAILER)) {
+    if (lower.includes(key)) return brand;
+  }
+  return undefined;
+}
 
 // Comprehensive product image map — covers all common grocery categories
 const PRODUCT_IMAGES: Record<string, string> = {
