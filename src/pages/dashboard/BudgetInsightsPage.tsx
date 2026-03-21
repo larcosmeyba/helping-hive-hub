@@ -11,7 +11,11 @@ const COLORS = ["hsl(40, 92%, 49%)", "hsl(80, 61%, 35%)", "hsl(0, 0%, 45%)", "hs
 
 export default function BudgetInsightsPage() {
   const { user } = useAuth();
-  const { mealPlan } = useMealPlan();
+  const { mealPlan, history, loadHistory } = useMealPlan();
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
