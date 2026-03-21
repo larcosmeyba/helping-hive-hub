@@ -21,6 +21,9 @@ export interface GroceryItem {
   quantity: string;
   estimatedPrice: number;
   section: string;
+  brand?: string;
+  productDescription?: string;
+  storePrices?: Record<string, number>;
 }
 
 export interface StoreRecommendation {
