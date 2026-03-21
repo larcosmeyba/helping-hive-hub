@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Users, CalendarDays, BookOpen, Sparkles,
   Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft
 } from "lucide-react";
+import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
