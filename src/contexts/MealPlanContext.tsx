@@ -4,11 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GeneratedMealPlan } from "@/types/mealPlan";
 
+export interface MealPlanHistoryEntry {
+  id: string;
+  weekStart: string;
+  createdAt: string;
+  totalEstimatedCost: number | null;
+  plan: GeneratedMealPlan;
+}
+
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
   loading: boolean;
   generating: boolean;
   generate: () => Promise<void>;
+  history: MealPlanHistoryEntry[];
+  historyLoading: boolean;
+  loadHistory: () => Promise<void>;
 }
 
 const MealPlanContext = createContext<MealPlanContextType | undefined>(undefined);
@@ -26,6 +37,8 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [history, setHistory] = useState<MealPlanHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Persist to localStorage for quick reloads
   useEffect(() => {
@@ -54,7 +67,6 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
 
         if (!error && data?.plan_data) {
           const savedPlan = data.plan_data as unknown as GeneratedMealPlan;
-          // Only use DB data if we don't already have a local plan or if DB is newer
           if (savedPlan?.weeklyPlan) {
             setMealPlan(savedPlan);
           }
@@ -69,6 +81,37 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     loadSavedPlan();
   }, [user]);
 
+  const loadHistory = useCallback(async () => {
+    if (!user) return;
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("meal_plans")
+        .select("id, week_start, created_at, total_estimated_cost, plan_data")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      if (!error && data) {
+        setHistory(
+          data
+            .filter((row) => row.plan_data)
+            .map((row) => ({
+              id: row.id,
+              weekStart: row.week_start,
+              createdAt: row.created_at,
+              totalEstimatedCost: row.total_estimated_cost,
+              plan: row.plan_data as unknown as GeneratedMealPlan,
+            }))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load meal plan history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user]);
+
   const generate = useCallback(async () => {
     if (!user) return;
     setGenerating(true);
@@ -81,15 +124,17 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       if (data?.error) throw new Error(data.error);
       setMealPlan(data as GeneratedMealPlan);
       toast({ title: "Meal plan generated!", description: "Your personalized weekly plan is ready." });
+      // Refresh history after generating
+      loadHistory();
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
     } finally {
       setGenerating(false);
     }
-  }, [user, toast]);
+  }, [user, toast, loadHistory]);
 
   return (
-    <MealPlanContext.Provider value={{ mealPlan, loading, generating, generate }}>
+    <MealPlanContext.Provider value={{ mealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
       {children}
     </MealPlanContext.Provider>
   );
