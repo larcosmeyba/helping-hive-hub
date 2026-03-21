@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🐝</span>
+              <img src={logo} alt="Help The Hive" className="h-9 w-9 brightness-0 invert" />
               <span className="font-display text-xl font-bold">
                 Help <span className="text-honey-gold">The Hive</span>
               </span>

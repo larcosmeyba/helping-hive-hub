@@ -13,7 +13,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl">🐝</span>
+          <img src={logo} alt="Help The Hive" className="h-9 w-9" />
           <span className="font-display text-xl font-bold text-foreground">
             Help <span className="text-gradient-honey">The Hive</span>
           </span>
