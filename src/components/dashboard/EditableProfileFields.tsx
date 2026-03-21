@@ -40,7 +40,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2">
       {/* ZIP Code */}
       <div className="flex items-center gap-2 bg-card rounded-xl border border-border px-4 py-2.5 shadow-card">
         <MapPin className="w-4 h-4 text-primary shrink-0" />
