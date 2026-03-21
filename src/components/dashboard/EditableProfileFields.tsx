@@ -71,8 +71,8 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
       </div>
 
       {/* Weekly Budget */}
-      <div className="flex items-center gap-1 bg-card rounded-md border border-border px-1.5 py-1 md:px-4 md:py-2.5 shadow-card">
-        <DollarSign className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-accent shrink-0" />
+      <div className="flex items-center gap-1 bg-card rounded-md border border-border px-2 py-1.5 md:px-4 md:py-2.5 shadow-card">
+        <DollarSign className="w-3 h-3 md:w-3.5 md:h-3.5 text-accent shrink-0" />
         {editingField === "budget" ? (
           <>
             <span className="text-[10px] md:text-sm text-foreground">$</span>
