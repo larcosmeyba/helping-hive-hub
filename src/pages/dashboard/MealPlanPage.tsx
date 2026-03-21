@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealCard } from "@/components/dashboard/MealCard";
+import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
+import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
