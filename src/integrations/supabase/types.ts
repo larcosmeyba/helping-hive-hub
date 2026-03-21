@@ -318,6 +318,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          plan_data: Json | null
           status: string | null
           total_estimated_cost: number | null
           updated_at: string
@@ -327,6 +328,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          plan_data?: Json | null
           status?: string | null
           total_estimated_cost?: number | null
           updated_at?: string
@@ -336,6 +338,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          plan_data?: Json | null
           status?: string | null
           total_estimated_cost?: number | null
           updated_at?: string
