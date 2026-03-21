@@ -27,7 +27,7 @@ const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
 };
 
 export default function MealPlanPage() {
-  const { mealPlan, generating, generate } = useMealPlan();
+  const { mealPlan, loading, generating, generate } = useMealPlan();
   const [selectedMeal, setSelectedMeal] = useState<MealPlanMeal | null>(null);
   const [substituteOpen, setSubstituteOpen] = useState<{ dayIndex: number; mealIndex: number } | null>(null);
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
