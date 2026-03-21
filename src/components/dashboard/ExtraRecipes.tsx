@@ -26,23 +26,23 @@ export function ExtraRecipes() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-xl font-semibold text-foreground flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" /> Extra Recipes
+      <div className="flex items-center justify-between mb-2 md:mb-4">
+        <h2 className="font-display text-xs md:text-xl font-semibold text-foreground flex items-center gap-1 md:gap-2">
+          <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 text-primary" /> Extra Recipes
         </h2>
         <div className="flex items-center gap-2">
           {isMobile && (
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => scroll("left")}>
-                <ChevronLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scroll("left")}>
+                <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => scroll("right")}>
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scroll("right")}>
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           )}
-          <Link to="/dashboard/recipes" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-            View All <ArrowRight className="w-4 h-4" />
+          <Link to="/dashboard/recipes" className="flex items-center gap-1 text-[9px] md:text-sm text-primary hover:underline font-medium">
+            View All <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
           </Link>
         </div>
       </div>
