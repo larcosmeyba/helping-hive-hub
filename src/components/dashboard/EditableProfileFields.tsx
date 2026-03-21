@@ -40,63 +40,63 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1 md:gap-2">
       {/* ZIP Code */}
-      <div className="flex items-center gap-1.5 bg-card rounded-lg border border-border px-2.5 py-1.5 md:px-4 md:py-2.5 shadow-card">
-        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+      <div className="flex items-center gap-1 bg-card rounded-md border border-border px-1.5 py-1 md:px-4 md:py-2.5 shadow-card">
+        <MapPin className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-primary shrink-0" />
         {editingField === "zip" ? (
           <>
             <Input
               value={zipValue}
               onChange={(e) => setZipValue(e.target.value)}
               maxLength={5}
-              className="w-20 h-7 text-sm"
+              className="w-16 h-5 text-[10px] md:w-20 md:h-7 md:text-sm"
               autoFocus
             />
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => save("zip")} disabled={saving}>
-              <Check className="w-3.5 h-3.5 text-accent" />
+            <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6" onClick={() => save("zip")} disabled={saving}>
+              <Check className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-accent" />
             </Button>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingField(null)}>
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6" onClick={() => setEditingField(null)}>
+              <X className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-muted-foreground" />
             </Button>
           </>
         ) : (
           <>
-            <span className="text-xs md:text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
-            <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-1">
-              <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
+            <span className="text-[9px] md:text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
+            <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-0.5">
+              <Pencil className="w-2 h-2 md:w-3 md:h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
           </>
         )}
       </div>
 
       {/* Weekly Budget */}
-      <div className="flex items-center gap-1.5 bg-card rounded-lg border border-border px-2.5 py-1.5 md:px-4 md:py-2.5 shadow-card">
-        <DollarSign className="w-3.5 h-3.5 text-accent shrink-0" />
+      <div className="flex items-center gap-1 bg-card rounded-md border border-border px-1.5 py-1 md:px-4 md:py-2.5 shadow-card">
+        <DollarSign className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-accent shrink-0" />
         {editingField === "budget" ? (
           <>
-            <span className="text-sm text-foreground">$</span>
+            <span className="text-[10px] md:text-sm text-foreground">$</span>
             <Input
               type="number"
               value={budgetValue}
               onChange={(e) => setBudgetValue(Number(e.target.value))}
               min={10}
               max={500}
-              className="w-20 h-7 text-sm"
+              className="w-14 h-5 text-[10px] md:w-20 md:h-7 md:text-sm"
               autoFocus
             />
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => save("budget")} disabled={saving}>
-              <Check className="w-3.5 h-3.5 text-accent" />
+            <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6" onClick={() => save("budget")} disabled={saving}>
+              <Check className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-accent" />
             </Button>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingField(null)}>
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6" onClick={() => setEditingField(null)}>
+              <X className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-muted-foreground" />
             </Button>
           </>
         ) : (
           <>
-            <span className="text-xs md:text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
-            <button onClick={() => { setBudgetValue(weeklyBudget ?? 75); setEditingField("budget"); }} className="ml-1">
-              <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
+            <span className="text-[9px] md:text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
+            <button onClick={() => { setBudgetValue(weeklyBudget ?? 75); setEditingField("budget"); }} className="ml-0.5">
+              <Pencil className="w-2 h-2 md:w-3 md:h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
           </>
         )}
