@@ -87,6 +87,7 @@ export function CookFromFridge() {
         </Link>
         <Button
           disabled={selectedItems.length === 0}
+          onClick={() => navigate("/dashboard/fridge-chef", { state: { ingredients: selectedItems } })}
           className="bg-gradient-honey text-primary-foreground hover:opacity-90 ml-auto"
           size="sm"
         >
