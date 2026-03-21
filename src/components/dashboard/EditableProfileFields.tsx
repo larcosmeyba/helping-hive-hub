@@ -40,10 +40,10 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2">
       {/* ZIP Code */}
-      <div className="flex items-center gap-2 bg-card rounded-xl border border-border px-4 py-2.5 shadow-card">
-        <MapPin className="w-4 h-4 text-primary shrink-0" />
+      <div className="flex items-center gap-1.5 bg-card rounded-lg border border-border px-2.5 py-1.5 md:px-4 md:py-2.5 shadow-card">
+        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
         {editingField === "zip" ? (
           <>
             <Input
@@ -62,7 +62,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
             <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-1">
               <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
@@ -71,8 +71,8 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
       </div>
 
       {/* Weekly Budget */}
-      <div className="flex items-center gap-2 bg-card rounded-xl border border-border px-4 py-2.5 shadow-card">
-        <DollarSign className="w-4 h-4 text-accent shrink-0" />
+      <div className="flex items-center gap-1.5 bg-card rounded-lg border border-border px-2.5 py-1.5 md:px-4 md:py-2.5 shadow-card">
+        <DollarSign className="w-3.5 h-3.5 text-accent shrink-0" />
         {editingField === "budget" ? (
           <>
             <span className="text-sm text-foreground">$</span>
@@ -94,7 +94,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
             <button onClick={() => { setBudgetValue(weeklyBudget ?? 75); setEditingField("budget"); }} className="ml-1">
               <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
