@@ -173,6 +173,24 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
         "Aldi": 3.49,
         "Target": 4.29,
         "Kroger": 4.49
+      },
+      "storeProducts": {
+        "Walmart": {
+          "brand": "Great Value",
+          "productDescription": "Great Value Large White Eggs, 12 ct"
+        },
+        "Aldi": {
+          "brand": "Friendly Farms",
+          "productDescription": "Friendly Farms Grade A Large Eggs, 12 ct"
+        },
+        "Target": {
+          "brand": "Good & Gather",
+          "productDescription": "Good & Gather Cage Free Grade A Large Eggs, 12 ct"
+        },
+        "Kroger": {
+          "brand": "Kroger",
+          "productDescription": "Kroger Grade A Large White Eggs, 12 ct"
+        }
       }
     }
   ],
