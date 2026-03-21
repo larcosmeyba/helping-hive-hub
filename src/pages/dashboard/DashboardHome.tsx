@@ -126,7 +126,7 @@ export default function DashboardHome() {
             </h2>
             <Link to="/dashboard/meal-plan" className="text-xs md:text-sm text-primary hover:underline font-medium">View Full Plan →</Link>
           </div>
-          {mealPlan.weeklyPlan.map((day) => (
+          {mealPlan.weeklyPlan.slice(0, 2).map((day) => (
             <div key={day.day} className="mb-4 md:mb-6">
               <h3 className="text-xs md:text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold">{day.day}</span>
@@ -138,6 +138,12 @@ export default function DashboardHome() {
               </div>
             </div>
           ))}
+          <Link
+            to="/dashboard/meal-plan"
+            className="block text-center bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-xl py-3 text-sm font-semibold text-primary transition-colors"
+          >
+            View Full Plan — {mealPlan.weeklyPlan.length - 2} more days →
+          </Link>
         </div>
       )}
 
