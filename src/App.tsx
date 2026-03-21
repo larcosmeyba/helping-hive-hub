@@ -10,6 +10,8 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import Questionnaire from "./pages/Questionnaire.tsx";
 import SampleMealPlan from "./pages/SampleMealPlan.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";

@@ -55,6 +55,11 @@ export default function Login() {
             <Button type="submit" className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </form>
         </div>
 
