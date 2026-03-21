@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Refrigerator, Sparkles, Loader2, Plus, X } from "lucide-react";
+import { ChefHat, Sparkles, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const COMMON_ITEMS = ["Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "Onions", "Tomatoes", "Cheese", "Bread", "Butter", "Milk"];
 
