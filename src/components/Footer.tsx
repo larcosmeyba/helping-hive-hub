@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="bg-hive-black text-honey-cream">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Help The Hive" className="h-9 w-9 brightness-0 invert" />
@@ -19,29 +19,17 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold mb-4 text-honey-gold">Platform</h4>
-            <ul className="space-y-2 text-sm text-honey-cream/60">
-              <li><Link to="/meal-plans" className="hover:text-honey-cream transition-colors">Meal Plans</Link></li>
-              <li><Link to="/recipes" className="hover:text-honey-cream transition-colors">Recipes</Link></li>
-              <li><Link to="/mission" className="hover:text-honey-cream transition-colors">Mission</Link></li>
-              <li><Link to="/about" className="hover:text-honey-cream transition-colors">About</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-display font-semibold mb-4 text-honey-gold">Resources</h4>
-            <ul className="space-y-2 text-sm text-honey-cream/60">
-              <li><Link to="/blog" className="hover:text-honey-cream transition-colors">Blog</Link></li>
-              <li><Link to="/blog" className="hover:text-honey-cream transition-colors">Budget Tips</Link></li>
-              <li><Link to="/blog" className="hover:text-honey-cream transition-colors">Nutrition Guide</Link></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-display font-semibold mb-4 text-honey-gold">Get Started</h4>
             <ul className="space-y-2 text-sm text-honey-cream/60">
               <li><Link to="/signup" className="hover:text-honey-cream transition-colors">Sign Up Free</Link></li>
               <li><Link to="/login" className="hover:text-honey-cream transition-colors">Login</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-display font-semibold mb-4 text-honey-gold">Sample Plans</h4>
+            <ul className="space-y-2 text-sm text-honey-cream/60">
+              <li><a href="/#meal-plan-examples" className="hover:text-honey-cream transition-colors">Free Meal Plan Examples</a></li>
             </ul>
           </div>
         </div>
