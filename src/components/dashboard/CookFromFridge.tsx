@@ -37,12 +37,12 @@ export function CookFromFridge() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-4">
+      <div className="flex flex-wrap gap-0.5 md:gap-2 mb-1 md:mb-4">
         {COMMON_ITEMS.map((item) => (
           <button
             key={item}
             onClick={() => toggle(item)}
-            className={`px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-full text-[8px] md:text-xs font-medium border transition-all ${
+            className={`px-1 py-px md:px-3 md:py-1.5 rounded-full text-[6px] md:text-xs font-medium border transition-all ${
               selectedItems.includes(item)
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
                 : "bg-card text-muted-foreground border-border hover:border-primary/40"
