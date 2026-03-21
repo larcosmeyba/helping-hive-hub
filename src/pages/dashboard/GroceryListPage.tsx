@@ -367,6 +367,7 @@ export default function GroceryListPage() {
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item) => {
               const price = getItemPrice(item);
               const isChecked = checked.has(item.name);
+              const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
                 <label
                   key={item.name}
@@ -376,19 +377,19 @@ export default function GroceryListPage() {
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
                     <img
                       src={getProductImage(item.name)}
-                      alt={item.name}
+                      alt={displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {item.productDescription || item.name}
+                      {displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {item.brand && (
+                      {displayProduct.brand && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> {item.brand}
+                          <Package className="w-2.5 h-2.5" /> Maker: {displayProduct.brand}
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
