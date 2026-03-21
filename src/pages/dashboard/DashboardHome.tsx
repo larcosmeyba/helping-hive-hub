@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Utensils, Loader2, Sparkles } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Utensils, Loader2, Sparkles, Refrigerator } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EditableProfileFields } from "@/components/dashboard/EditableProfileFields";
@@ -66,6 +66,21 @@ export default function DashboardHome() {
           onUpdate={refreshProfile}
         />
       </div>
+
+      {/* Quick Fridge Access Tab */}
+      <Link
+        to="/dashboard/pantry"
+        className="flex items-center gap-3 bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 rounded-xl p-3 md:p-4 hover:border-accent/40 transition-all group"
+      >
+        <div className="bg-accent/15 rounded-lg p-2 group-hover:bg-accent/25 transition-colors">
+          <Refrigerator className="w-5 h-5 text-accent" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Add groceries you have in your fridge</p>
+          <p className="text-xs text-muted-foreground">Track what's in stock, low, or out — your AI plans use this</p>
+        </div>
+        <span className="text-xs text-accent font-medium shrink-0">Open →</span>
+      </Link>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">

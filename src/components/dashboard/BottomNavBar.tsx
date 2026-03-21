@@ -7,7 +7,7 @@ const tabs = [
   { label: "Meal Plan", to: "/dashboard/meal-plan", icon: CalendarDays },
   { label: "Pantry", to: "/dashboard/pantry", icon: Package },
   { label: "Grocery", to: "/dashboard/grocery-list", icon: ShoppingCart },
-  { label: "Smart Meals", to: "/dashboard/fridge-chef", icon: ChefHat },
+  { label: "Fridge Chef", to: "/dashboard/fridge-chef", icon: ChefHat },
   { label: "Budget", to: "/dashboard/budget", icon: TrendingUp },
 ];
 

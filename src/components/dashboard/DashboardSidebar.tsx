@@ -20,7 +20,7 @@ const navItems = [
   { title: "Meal Plan", url: "/dashboard/meal-plan", icon: CalendarDays },
   { title: "Grocery List", url: "/dashboard/grocery-list", icon: ShoppingCart },
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
-  { title: "Smart Meals", url: "/dashboard/fridge-chef", icon: ChefHat },
+  { title: "Fridge Chef", url: "/dashboard/fridge-chef", icon: ChefHat },
   { title: "Recipes", url: "/dashboard/recipes", icon: BookOpen },
   { title: "Budget Insights", url: "/dashboard/budget", icon: TrendingUp },
 ];

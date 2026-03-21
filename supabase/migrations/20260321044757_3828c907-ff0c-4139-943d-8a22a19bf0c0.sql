@@ -1,0 +1,1 @@
+ALTER TABLE public.pantry_items ADD COLUMN IF NOT EXISTS is_out_of_stock boolean DEFAULT false;
