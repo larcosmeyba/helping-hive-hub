@@ -230,74 +230,63 @@ export default function GroceryListPage() {
   const checkedCount = checked.size;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-primary" /> Grocery List
+          <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
+            <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+          <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
             {groceryItems.length} items • {checkedCount} checked
             {mealPlan.regionLabel && (
-              <span className="flex items-center gap-1 text-primary font-medium">
-                <MapPin className="w-3 h-3" /> {mealPlan.regionLabel}
+              <span className="flex items-center gap-0.5 text-primary font-medium">
+                <MapPin className="w-2 h-2 md:w-3 md:h-3" /> {mealPlan.regionLabel}
               </span>
             )}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" /> Print
+        <div className="flex gap-1 md:gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="h-6 text-[8px] px-1.5 md:h-9 md:text-sm md:px-3">
+            <Printer className="w-2.5 h-2.5 mr-0.5 md:w-4 md:h-4 md:mr-2" /> Print
           </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" /> Download
+          <Button variant="outline" size="sm" className="h-6 text-[8px] px-1.5 md:h-9 md:text-sm md:px-3">
+            <Download className="w-2.5 h-2.5 mr-0.5 md:w-4 md:h-4 md:mr-2" /> Save
           </Button>
         </div>
       </div>
 
-      {/* Store Comparison */}
+      {/* Store Comparison — 3 inline small boxes */}
       {stores.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-          <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
-            <Store className="w-5 h-5 text-primary" /> Store Price Comparison
-          </h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Prices reflect your location. Select a store to see exact per-item pricing and recommended brands.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {stores.map((store) => {
+        <div>
+          <div className="flex items-center gap-1 mb-1.5 md:mb-3">
+            <Store className="w-3 h-3 md:w-5 md:h-5 text-primary" />
+            <h2 className="font-display text-[10px] md:text-lg font-semibold text-foreground">Compare Stores</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-1 md:gap-3">
+            {stores.slice(0, 3).map((store) => {
               const isActive = activeStore === store.store;
               const isCheapest = stores.every((s) => store.estimatedTotal <= s.estimatedTotal);
               return (
                 <button
                   key={store.store}
                   onClick={() => setSelectedStore(store.store)}
-                  className={`relative p-5 rounded-xl border text-left transition-all ${
+                  className={`relative p-1.5 md:p-4 rounded-lg border text-left transition-all ${
                     isActive
                       ? "border-primary bg-primary/5 shadow-card"
-                      : "border-border hover:border-primary/30 hover:shadow-soft"
+                      : "border-border hover:border-primary/30"
                   }`}
                 >
-                  {isActive && (
-                    <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Selected
+                  {isCheapest && (
+                    <span className="absolute -top-1 right-0.5 md:top-1 md:right-1 bg-accent text-accent-foreground text-[5px] md:text-[9px] font-bold px-1 py-px rounded-full">
+                      Best
                     </span>
                   )}
-                  {isCheapest && !isActive && (
-                    <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Best Price
-                    </span>
-                  )}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Store className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{store.store}</p>
-                    </div>
+                  <div className="flex items-center gap-0.5 md:gap-2 mb-0.5">
+                    <Store className="w-2 h-2 md:w-4 md:h-4 text-primary shrink-0" />
+                    <p className="font-semibold text-[7px] md:text-sm text-foreground truncate">{store.store}</p>
                   </div>
-                  <p className="text-2xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">Estimated total + tax</p>
+                  <p className="text-[10px] md:text-xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
+                  <p className="text-[5px] md:text-[10px] text-muted-foreground">Est. + tax</p>
                 </button>
               );
             })}

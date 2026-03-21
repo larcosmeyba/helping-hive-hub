@@ -64,49 +64,52 @@ export default function MealPlanPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-primary" /> Weekly Meal Plan
+          <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
+            <CalendarDays className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Weekly Meal Plan
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5">
             Total: ${mealPlan.totalEstimatedCost?.toFixed(2)} • {mealPlan.weeklyPlan.reduce((n, d) => n + d.meals.length, 0)} meals
           </p>
         </div>
-        <Button onClick={generate} disabled={generating} variant="outline" size="sm">
-          {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Regenerate Plan
+        <Button onClick={generate} disabled={generating} variant="outline" size="sm" className="h-6 text-[8px] px-2 md:h-9 md:text-sm md:px-3">
+          {generating ? <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin md:w-4 md:h-4" /> : <RefreshCw className="w-2.5 h-2.5 mr-1 md:w-4 md:h-4" />}
+          Regen
         </Button>
       </div>
 
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
-        <div key={day.day} className="space-y-3">
-          <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">{day.day}</span>
+        <div key={day.day} className="space-y-1 md:space-y-3">
+          <h2 className="font-display text-[9px] md:text-lg font-semibold text-foreground flex items-center gap-1">
+            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[7px] md:text-sm font-bold">{day.day}</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            className="flex gap-1.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-0.5 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             {day.meals.map((originalMeal, mealIndex) => {
               const meal = getMeal(dayIndex, mealIndex, originalMeal);
               return (
-                <div key={`${day.day}-${mealIndex}`} className="relative">
-                  <MealCard meal={meal} />
-                  <div className="flex gap-2 mt-2">
+                <div key={`${day.day}-${mealIndex}`} className="snap-start shrink-0 w-[110px] md:w-auto md:shrink">
+                  <MealCard meal={meal} compact />
+                  <div className="flex gap-0.5 mt-0.5 md:gap-2 md:mt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className="flex-1 text-[7px] h-5 px-1 md:text-xs md:h-8 md:px-2"
                       onClick={() => setSelectedMeal(meal)}
                     >
-                      View Full Recipe
+                      Recipe
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs"
+                      className="text-[7px] h-5 px-1 md:text-xs md:h-8 md:px-2"
                       onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
                     >
-                      <Shuffle className="w-3 h-3 mr-1" /> Swap
+                      <Shuffle className="w-2 h-2 mr-0.5 md:w-3 md:h-3" /> Swap
                     </Button>
                   </div>
                 </div>
