@@ -41,7 +41,7 @@ export function MealCard({ meal, compact }: Props) {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow">
-      <div className="relative h-32 overflow-hidden">
+      <div className="relative h-24 md:h-32 overflow-hidden">
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
