@@ -67,19 +67,25 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* Quick Fridge Access Tab */}
+      {/* Quick Fridge Access Box */}
       <Link
         to="/dashboard/pantry"
-        className="flex items-center gap-3 bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 rounded-xl p-3 md:p-4 hover:border-accent/40 transition-all group"
+        className="group relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-primary/5 p-4 md:p-5 shadow-card hover:shadow-lg hover:border-accent/40 hover-scale transition-all duration-300"
       >
-        <div className="bg-accent/15 rounded-lg p-2 group-hover:bg-accent/25 transition-colors">
-          <Refrigerator className="w-5 h-5 text-accent" />
+        <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500" />
+        <div className="absolute bottom-0 left-0 w-16 h-16 bg-primary/5 rounded-full translate-y-6 -translate-x-6 group-hover:scale-150 transition-transform duration-500" />
+        <div className="relative flex items-center gap-3">
+          <div className="bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl p-2.5 group-hover:from-accent/30 group-hover:to-primary/30 transition-colors duration-300">
+            <Refrigerator className="w-6 h-6 text-accent group-hover:scale-110 transition-transform duration-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">🧊 What's in Your Fridge?</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Tap to add, track & check off items</p>
+          </div>
+          <div className="bg-accent/10 rounded-full px-3 py-1 text-xs font-semibold text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
+            Open
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Add groceries you have in your fridge</p>
-          <p className="text-xs text-muted-foreground">Track what's in stock, low, or out — your AI plans use this</p>
-        </div>
-        <span className="text-xs text-accent font-medium shrink-0">Open →</span>
       </Link>
 
       {/* Stats */}
