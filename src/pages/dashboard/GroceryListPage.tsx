@@ -5,40 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import type { GroceryItem } from "@/types/mealPlan";
 
-// Store logo map — real logos via logo.clearbit.com
-const STORE_LOGOS: Record<string, string> = {
-  "Walmart": "https://logo.clearbit.com/walmart.com",
-  "Target": "https://logo.clearbit.com/target.com",
-  "Aldi": "https://logo.clearbit.com/aldi.us",
-  "Kroger": "https://logo.clearbit.com/kroger.com",
-  "Costco": "https://logo.clearbit.com/costco.com",
-  "Sam's Club": "https://logo.clearbit.com/samsclub.com",
-  "Safeway": "https://logo.clearbit.com/safeway.com",
-  "Albertsons": "https://logo.clearbit.com/albertsons.com",
-  "Publix": "https://logo.clearbit.com/publix.com",
-  "H-E-B": "https://logo.clearbit.com/heb.com",
-  "Trader Joe's": "https://logo.clearbit.com/traderjoes.com",
-  "Whole Foods": "https://logo.clearbit.com/wholefoodsmarket.com",
-  "Food Lion": "https://logo.clearbit.com/foodlion.com",
-  "Meijer": "https://logo.clearbit.com/meijer.com",
-  "WinCo": "https://logo.clearbit.com/wincofoods.com",
-  "Sprouts": "https://logo.clearbit.com/sprouts.com",
-  "Vons": "https://logo.clearbit.com/vons.com",
-  "Ralph's": "https://logo.clearbit.com/ralphs.com",
-  "Ralphs": "https://logo.clearbit.com/ralphs.com",
-  "Food 4 Less": "https://logo.clearbit.com/food4less.com",
-  "Smart & Final": "https://logo.clearbit.com/smartandfinal.com",
-  "Dollar Tree": "https://logo.clearbit.com/dollartree.com",
-  "Dollar General": "https://logo.clearbit.com/dollargeneral.com",
-  "Piggly Wiggly": "https://logo.clearbit.com/pigglywiggly.com",
-  "ShopRite": "https://logo.clearbit.com/shoprite.com",
-  "Stop & Shop": "https://logo.clearbit.com/stopandshop.com",
-  "Giant": "https://logo.clearbit.com/giantfood.com",
-  "Wegmans": "https://logo.clearbit.com/wegmans.com",
-  "Lidl": "https://logo.clearbit.com/lidl.com",
-  "Save-A-Lot": "https://logo.clearbit.com/save-a-lot.com",
-};
-
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
   target: "Good & Gather",
@@ -54,13 +20,6 @@ const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   "h-e-b": "HEB",
   heb: "HEB",
 };
-
-function getStoreLogo(storeName: string): string | null {
-  for (const [key, url] of Object.entries(STORE_LOGOS)) {
-    if (storeName.toLowerCase().includes(key.toLowerCase())) return url;
-  }
-  return null;
-}
 
 function getDefaultStoreBrand(storeName: string): string | undefined {
   const lower = storeName.toLowerCase();
@@ -330,15 +289,8 @@ export default function GroceryListPage() {
                     </span>
                   )}
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-border">
-                      {(() => {
-                        const logo = getStoreLogo(store.store);
-                        return logo ? (
-                          <img src={logo} alt={store.store} className="w-7 h-7 object-contain" loading="lazy" />
-                        ) : (
-                          <Store className="w-5 h-5 text-muted-foreground" />
-                        );
-                      })()}
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Store className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">{store.store}</p>
