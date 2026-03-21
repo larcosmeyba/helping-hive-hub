@@ -26,23 +26,23 @@ export function CookFromFridge() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-card to-secondary/30 rounded-2xl border border-border p-4 md:p-6 shadow-card">
-      <div className="flex items-start gap-2.5 md:gap-3 mb-3 md:mb-4">
-        <div className="bg-primary/10 rounded-xl p-2">
-          <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+    <div className="bg-gradient-to-br from-card to-secondary/30 rounded-xl border border-border p-3 md:p-6 shadow-card">
+      <div className="flex items-start gap-2 mb-2 md:mb-4">
+        <div className="bg-primary/10 rounded-lg p-1.5 md:p-2">
+          <ChefHat className="w-4 h-4 md:w-6 md:h-6 text-primary" />
         </div>
         <div>
-          <h2 className="font-display text-base md:text-lg font-semibold text-foreground">Fridge Chef</h2>
-          <p className="text-xs md:text-sm text-muted-foreground">Select ingredients you have — we'll find recipes.</p>
+          <h2 className="font-display text-sm md:text-lg font-semibold text-foreground">Fridge Chef</h2>
+          <p className="text-[10px] md:text-sm text-muted-foreground">Select ingredients — we'll find recipes.</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-1.5 md:gap-2 mb-3 md:mb-4">
         {COMMON_ITEMS.map((item) => (
           <button
             key={item}
             onClick={() => toggle(item)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+            className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all ${
               selectedItems.includes(item)
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
                 : "bg-card text-muted-foreground border-border hover:border-primary/40"
@@ -54,16 +54,16 @@ export function CookFromFridge() {
       </div>
 
       {/* Custom items */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-4">
         <Input
           value={customItem}
           onChange={(e) => setCustomItem(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCustom()}
-          placeholder="Add other ingredient..."
-          className="text-sm h-9"
+          placeholder="Add ingredient..."
+          className="text-[11px] md:text-sm h-8 md:h-9"
         />
-        <Button size="sm" variant="outline" onClick={addCustom} className="shrink-0 h-9">
-          <Plus className="w-3.5 h-3.5" />
+        <Button size="sm" variant="outline" onClick={addCustom} className="shrink-0 h-8 md:h-9 w-8 md:w-auto p-0 md:px-3">
+          <Plus className="w-3 h-3" />
         </Button>
       </div>
 
