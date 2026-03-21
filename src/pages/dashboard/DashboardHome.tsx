@@ -120,9 +120,11 @@ export default function DashboardHome() {
               <h3 className="text-[10px] md:text-sm font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
                 <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[9px] md:text-xs font-bold">{day.day}</span>
               </h3>
-              <div className="grid grid-cols-3 lg:grid-cols-3 gap-1.5 md:gap-3">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0 md:mx-0 md:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
                 {day.meals.map((meal, i) => (
-                  <MealCard key={`${day.day}-${i}`} meal={meal} compact />
+                  <div key={`${day.day}-${i}`} className="snap-start shrink-0 w-[120px] md:w-auto md:shrink">
+                    <MealCard meal={meal} compact />
+                  </div>
                 ))}
               </div>
             </div>
