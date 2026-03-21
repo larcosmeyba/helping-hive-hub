@@ -40,29 +40,29 @@ export function MealCard({ meal, compact }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow">
-      <div className="relative h-24 md:h-32 overflow-hidden">
+    <div className="bg-card rounded-lg md:rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow">
+      <div className="relative h-20 md:h-32 overflow-hidden">
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2">
-          <span className="bg-primary/90 text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide">
+        <div className="absolute top-1 left-1 md:top-2 md:left-2">
+          <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
             {meal.type}
           </span>
         </div>
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-          <p className="text-white text-sm font-semibold truncate">{meal.name}</p>
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 md:p-2">
+          <p className="text-white text-[11px] md:text-sm font-semibold truncate">{meal.name}</p>
         </div>
       </div>
 
-      <div className="p-3">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-primary" />{meal.calories} cal</span>
-          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{meal.cookTimeMinutes}m</span>
-          <span className="flex items-center gap-1"><DollarSign className="w-3 h-3 text-accent" />${meal.estimatedCost.toFixed(2)}</span>
+      <div className="p-1.5 md:p-3">
+        <div className="flex items-center gap-2 md:gap-3 text-[9px] md:text-xs text-muted-foreground">
+          <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary" />{meal.calories}</span>
+          <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5 md:w-3 md:h-3" />{meal.cookTimeMinutes}m</span>
+          <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3 text-accent" />${meal.estimatedCost.toFixed(2)}</span>
         </div>
 
         {!compact && (
