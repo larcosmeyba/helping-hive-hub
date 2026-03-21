@@ -137,6 +137,7 @@ PRODUCT DESCRIPTION RULES:
 - Include size, count, and variety (e.g., "Great Value Large White Eggs, 12 ct" not just "eggs")
 - The "brand" field must be the real brand name sold at the user's preferred stores
 - "storePrices" must include per-item prices for at least 3-4 stores available in ${cityInfo.city}, ${cityInfo.state}
+- "storeProducts" must include those same stores with exact per-store brand + exact per-store productDescription
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
