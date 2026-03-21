@@ -94,30 +94,43 @@ LOCATION:
 - City: ${cityInfo.city}, ${cityInfo.state}
 - Region: ${regionInfo.region}
 
-REGIONAL PRICING RULES (VERY IMPORTANT):
-- Regional cost-of-living multiplier: ${regionInfo.costMultiplier}x national average
-- State sales tax on groceries: ${regionInfo.groceryTaxRate}%
-- Use these REAL 2026 US grocery price benchmarks (national average), then multiply by the regional cost multiplier:
+REAL-WORLD PRICING RULES (ABSOLUTELY CRITICAL — THIS IS THE CORE REQUIREMENT):
+You must use REAL, publicly available 2025-2026 US grocery prices. These prices must reflect what a shopper would ACTUALLY pay at each specific store in ${cityInfo.city}, ${cityInfo.state}.
+
+Reference these REAL average prices (national baseline), then adjust for ${cityInfo.city} using the ${regionInfo.costMultiplier}x regional multiplier:
   * Eggs (dozen): $4.50  * Milk (gallon): $4.20  * Bread (loaf): $3.80
-  * Chicken breast (lb): $4.50  * Ground beef (lb): $5.80  * Rice (2lb bag): $3.50
+  * Chicken breast (lb): $4.50  * Ground beef 80/20 (lb): $5.80  * Rice (2lb bag): $3.50
   * Pasta (1lb box): $1.80  * Canned beans (15oz): $1.20  * Bananas (lb): $0.65
   * Potatoes (5lb bag): $4.50  * Onions (3lb bag): $3.50  * Frozen veggies (16oz): $2.50
   * Cheese block (8oz): $3.80  * Butter (1lb): $5.00  * Cooking oil (48oz): $5.50
   * Flour (5lb): $4.00  * Sugar (4lb): $3.50  * Canned tomatoes (28oz): $2.00
-- For preferred stores, apply these approximate price adjustments:
-  * Aldi/Lidl: 0.80x (20% below average)
-  * Walmart/Walmart Supercenter: 0.90x (10% below average)
-  * Kroger/Safeway/Albertsons/Ralph's/Vons: 1.0x (average)
-  * Publix/HEB: 1.05x (5% above average)
-  * Whole Foods/Trader Joe's/Sprouts: 1.25x (25% above average)
-  * Target: 0.95x (5% below average)
 
-BRAND-SPECIFIC GROCERY LIST RULES (CRITICAL):
-- Every grocery list item MUST include a specific brand name that is commonly sold at the user's preferred stores
-- Use REAL brand names (e.g., "Great Value" for Walmart, "Kirkland" for Costco, "Good & Gather" for Target, "Simply Nature" for Aldi, "Kroger" for Kroger, "O Organics" for Safeway, "365" for Whole Foods)
-- The "brand" field must be the exact brand name
-- The "productDescription" field should be the exact product as it appears on the shelf (e.g., "Great Value Large White Eggs, 12 ct")
-- Include a "storePrices" object with per-store pricing for each item
+Store-specific price tiers (multiply baseline):
+  * Aldi/Lidl: 0.80x  * Walmart Supercenter: 0.90x  * Target (Good & Gather): 0.95x
+  * Kroger/Ralph's/Fred Meyer: 1.0x  * Safeway/Albertsons/Vons: 1.02x
+  * Publix/HEB: 1.05x  * Whole Foods (365 brand): 1.25x  * Trader Joe's: 1.15x
+  * Sprouts: 1.20x  * Food4Less/WinCo: 0.82x
+
+State sales tax on groceries: ${regionInfo.groceryTaxRate}%
+
+STORE-SPECIFIC BRAND MAPPING (USE EXACT REAL BRANDS):
+For each grocery item, use the REAL store-brand name that is actually sold at each store:
+- Walmart: "Great Value" (store brand), plus national brands like Tyson, Barilla, Birds Eye
+- Aldi: "Simply Nature", "Friendly Farms", "Clancy's", "Specially Selected", "Happy Farms"
+- Target: "Good & Gather", "Market Pantry", "Favorite Day"
+- Kroger/Ralph's: "Kroger", "Private Selection", "Simple Truth"
+- Safeway/Vons/Albertsons: "O Organics", "Signature Select", "Lucerne"
+- Whole Foods: "365 by Whole Foods Market"
+- Trader Joe's: "Trader Joe's" (all store brand)
+- HEB: "Hill Country Fare", "HEB"
+- Publix: "Publix" (store brand)
+- Food4Less/WinCo: national brands at discount
+
+PRODUCT DESCRIPTION RULES:
+- The "productDescription" must be the EXACT product name as it appears on the store shelf
+- Include size, count, and variety (e.g., "Great Value Large White Eggs, 12 ct" not just "eggs")
+- The "brand" field must be the real brand name sold at the user's preferred stores
+- "storePrices" must include per-item prices for at least 3-4 stores available in ${cityInfo.city}, ${cityInfo.state}
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
