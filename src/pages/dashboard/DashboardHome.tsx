@@ -55,42 +55,42 @@ export default function DashboardHome() {
         <Button
           onClick={generate}
           disabled={generating}
-          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-auto h-6 text-[9px] px-2.5 md:text-sm md:h-9 md:px-4"
+          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-auto h-5 text-[8px] px-2 md:text-sm md:h-9 md:px-4"
         >
           {generating ? (
-            <><Loader2 className="w-2.5 h-2.5 mr-1 animate-spin md:w-3 md:h-3" /> Generating...</>
+            <><Loader2 className="w-2 h-2 mr-0.5 animate-spin md:w-3 md:h-3" /> Generating...</>
           ) : (
-            <><Sparkles className="w-2.5 h-2.5 mr-1 md:w-3 md:h-3" /> {mealPlan ? "Regenerate" : "Generate Plan"}</>
+            <><Sparkles className="w-2 h-2 mr-0.5 md:w-3 md:h-3" /> {mealPlan ? "Regen" : "Generate"}</>
           )}
         </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-1 md:gap-4">
+      <div className="grid grid-cols-4 gap-0.5 md:gap-4 max-w-[280px] md:max-w-none">
         {[
           { label: "Budget", value: `$${budget}`, icon: DollarSign, color: "text-primary" },
           { label: "Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Savings", value: `$${pantrySavings.toFixed(0)}`, icon: TrendingDown, color: "text-accent" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-md border border-border p-1 md:p-4 shadow-card">
-            <div className="flex items-center gap-0.5 mb-0.5">
-              <stat.icon className={`w-2 h-2 md:w-4 md:h-4 ${stat.color}`} />
-              <span className="text-[7px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
+          <div key={stat.label} className="bg-card rounded border border-border p-0.5 md:p-4 shadow-card">
+            <div className="flex items-center gap-0.5">
+              <stat.icon className={`w-1.5 h-1.5 md:w-4 md:h-4 ${stat.color}`} />
+              <span className="text-[6px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
             </div>
-            <p className="text-[10px] md:text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-[8px] md:text-2xl font-bold text-foreground">{stat.value}</p>
           </div>
         ))}
 
         <Link
           to="/dashboard/pantry"
-          className="group relative overflow-hidden bg-gradient-to-br from-accent/10 to-primary/10 rounded-md border border-accent/20 p-1 md:p-4 shadow-card hover:shadow-lg hover:border-accent/40 transition-all duration-300"
+          className="group overflow-hidden bg-gradient-to-br from-accent/10 to-primary/10 rounded border border-accent/20 p-0.5 md:p-4 shadow-card hover:shadow-lg hover:border-accent/40 transition-all duration-300"
         >
-          <div className="flex items-center gap-0.5 mb-0.5">
-            <Refrigerator className="w-2 h-2 md:w-4 md:h-4 text-accent" />
-            <span className="text-[7px] md:text-xs text-muted-foreground truncate">Fridge</span>
+          <div className="flex items-center gap-0.5">
+            <Refrigerator className="w-1.5 h-1.5 md:w-4 md:h-4 text-accent" />
+            <span className="text-[6px] md:text-xs text-muted-foreground truncate">Fridge</span>
           </div>
-          <p className="text-[9px] md:text-base font-bold text-foreground leading-tight">Add</p>
-          <span className="text-[6px] md:text-[10px] text-accent font-medium">Tap →</span>
+          <p className="text-[7px] md:text-base font-bold text-foreground leading-tight">Add</p>
+          <span className="text-[5px] md:text-[10px] text-accent font-medium">Tap →</span>
         </Link>
       </div>
 
@@ -133,9 +133,9 @@ export default function DashboardHome() {
           ))}
           <Link
             to="/dashboard/meal-plan"
-            className="block text-center bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md py-1.5 text-[9px] md:text-sm font-semibold text-primary transition-colors"
+            className="inline-block bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded py-0.5 px-2 text-[7px] md:text-sm font-semibold text-primary transition-colors"
           >
-            View Full Plan — {mealPlan.weeklyPlan.length - 2} more days →
+            View Full Plan →
           </Link>
         </div>
       )}
