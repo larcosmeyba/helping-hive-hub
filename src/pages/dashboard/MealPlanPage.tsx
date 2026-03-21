@@ -221,6 +221,9 @@ export default function MealPlanPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Meal Plan History */}
+      <MealPlanHistory />
     </div>
   );
 }
