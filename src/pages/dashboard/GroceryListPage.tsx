@@ -289,15 +289,8 @@ export default function GroceryListPage() {
                     </span>
                   )}
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-border">
-                      {(() => {
-                        const logo = getStoreLogo(store.store);
-                        return logo ? (
-                          <img src={logo} alt={store.store} className="w-7 h-7 object-contain" loading="lazy" />
-                        ) : (
-                          <Store className="w-5 h-5 text-muted-foreground" />
-                        );
-                      })()}
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Store className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">{store.store}</p>
