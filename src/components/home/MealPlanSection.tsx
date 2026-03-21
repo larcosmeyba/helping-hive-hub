@@ -26,6 +26,9 @@ export function MealPlanSection() {
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Explore sample plans designed for different budgets and lifestyles.
           </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            * Prices shown are based on California grocery averages. Your actual costs may vary by region.
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
