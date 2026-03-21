@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Refrigerator, Sparkles, Loader2, Plus, X } from "lucide-react";
+import { ChefHat, Sparkles, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const COMMON_ITEMS = ["Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "Onions", "Tomatoes", "Cheese", "Bread", "Butter", "Milk"];
 
 export function CookFromFridge() {
+  const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [customItem, setCustomItem] = useState("");
 
@@ -28,10 +29,10 @@ export function CookFromFridge() {
     <div className="bg-gradient-to-br from-card to-secondary/30 rounded-2xl border border-border p-4 md:p-6 shadow-card">
       <div className="flex items-start gap-2.5 md:gap-3 mb-3 md:mb-4">
         <div className="bg-primary/10 rounded-xl p-2">
-          <Refrigerator className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+          <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-primary" />
         </div>
         <div>
-          <h2 className="font-display text-base md:text-lg font-semibold text-foreground">Cook From Your Fridge</h2>
+          <h2 className="font-display text-base md:text-lg font-semibold text-foreground">Fridge Chef</h2>
           <p className="text-xs md:text-sm text-muted-foreground">Select ingredients you have — we'll find recipes.</p>
         </div>
       </div>
@@ -86,6 +87,7 @@ export function CookFromFridge() {
         </Link>
         <Button
           disabled={selectedItems.length === 0}
+          onClick={() => navigate("/dashboard/fridge-chef", { state: { ingredients: selectedItems } })}
           className="bg-gradient-honey text-primary-foreground hover:opacity-90 ml-auto"
           size="sm"
         >
