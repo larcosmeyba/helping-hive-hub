@@ -202,6 +202,30 @@ function getProductImage(name: string): string {
   return DEFAULT_PRODUCT_IMG;
 }
 
+function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
+  const storeSpecific = activeStore ? item.storeProducts?.[activeStore] : undefined;
+  if (storeSpecific?.productDescription || storeSpecific?.brand) {
+    return {
+      productDescription: storeSpecific.productDescription || item.productDescription || item.name,
+      brand: storeSpecific.brand || item.brand,
+    };
+  }
+
+  const fallbackBrand = activeStore ? getDefaultStoreBrand(activeStore) : undefined;
+  if (fallbackBrand) {
+    const quantitySuffix = item.quantity ? `, ${item.quantity}` : "";
+    return {
+      productDescription: `${fallbackBrand} ${item.name}${quantitySuffix}`.trim(),
+      brand: fallbackBrand,
+    };
+  }
+
+  return {
+    productDescription: item.productDescription || item.name,
+    brand: item.brand,
+  };
+}
+
 export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
   const [checked, setChecked] = useState<Set<string>>(new Set());
