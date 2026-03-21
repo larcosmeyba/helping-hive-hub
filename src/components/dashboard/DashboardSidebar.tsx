@@ -1,7 +1,7 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, LifeBuoy, Settings, LogOut, ChefHat } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, Settings, LogOut, ChefHat, LifeBuoy } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -20,10 +20,9 @@ const navItems = [
   { title: "Meal Plan", url: "/dashboard/meal-plan", icon: CalendarDays },
   { title: "Grocery List", url: "/dashboard/grocery-list", icon: ShoppingCart },
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
-  { title: "FridgeChef", url: "/dashboard/fridge-chef", icon: ChefHat },
+  { title: "Smart Meals", url: "/dashboard/fridge-chef", icon: ChefHat },
   { title: "Recipes", url: "/dashboard/recipes", icon: BookOpen },
   { title: "Budget Insights", url: "/dashboard/budget", icon: TrendingUp },
-  { title: "Support", url: "/dashboard/support", icon: LifeBuoy },
 ];
 
 export function DashboardSidebar() {
@@ -74,6 +73,14 @@ export function DashboardSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink to="/dashboard/support" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                {!collapsed && <span>Support</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <NavLink to="/dashboard/settings" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
