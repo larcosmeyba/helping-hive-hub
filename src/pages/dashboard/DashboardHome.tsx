@@ -55,12 +55,12 @@ export default function DashboardHome() {
         <Button
           onClick={generate}
           disabled={generating}
-          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-auto h-6 text-[9px] px-2.5 md:text-sm md:h-9 md:px-4"
+          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-auto h-5 text-[8px] px-2 md:text-sm md:h-9 md:px-4"
         >
           {generating ? (
-            <><Loader2 className="w-2.5 h-2.5 mr-1 animate-spin md:w-3 md:h-3" /> Generating...</>
+            <><Loader2 className="w-2 h-2 mr-0.5 animate-spin md:w-3 md:h-3" /> Generating...</>
           ) : (
-            <><Sparkles className="w-2.5 h-2.5 mr-1 md:w-3 md:h-3" /> {mealPlan ? "Regenerate" : "Generate Plan"}</>
+            <><Sparkles className="w-2 h-2 mr-0.5 md:w-3 md:h-3" /> {mealPlan ? "Regen" : "Generate"}</>
           )}
         </Button>
       </div>
