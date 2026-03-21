@@ -1,0 +1,1 @@
+ALTER TABLE public.meal_plans ADD COLUMN IF NOT EXISTS plan_data jsonb;

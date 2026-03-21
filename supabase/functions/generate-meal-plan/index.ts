@@ -246,6 +246,7 @@ Requirements:
         .update({
           total_estimated_cost: mealPlan.totalEstimatedCost,
           status: "active",
+          plan_data: mealPlan,
         })
         .eq("id", existingPlan.id);
       mealPlanId = existingPlan.id;
@@ -257,6 +258,7 @@ Requirements:
           week_start: weekStart,
           total_estimated_cost: mealPlan.totalEstimatedCost,
           status: "active",
+          plan_data: mealPlan,
         })
         .select("id")
         .single();
