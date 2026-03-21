@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, LifeBuoy, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, LifeBuoy, Settings, LogOut, ChefHat } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ const navItems = [
   { title: "Meal Plan", url: "/dashboard/meal-plan", icon: CalendarDays },
   { title: "Grocery List", url: "/dashboard/grocery-list", icon: ShoppingCart },
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
+  { title: "FridgeChef", url: "/dashboard/fridge-chef", icon: ChefHat },
   { title: "Recipes", url: "/dashboard/recipes", icon: BookOpen },
   { title: "Budget Insights", url: "/dashboard/budget", icon: TrendingUp },
   { title: "Support", url: "/dashboard/support", icon: LifeBuoy },
