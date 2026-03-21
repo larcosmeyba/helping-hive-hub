@@ -26,7 +26,7 @@ export function CookFromFridge() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-card to-secondary/30 rounded-md border border-border p-1.5 md:p-6 shadow-card max-w-[220px] md:max-w-none">
+    <div className="bg-gradient-to-br from-card to-secondary/30 rounded-lg border border-border p-2.5 md:p-6 shadow-card md:max-w-none">
       <div className="flex items-center gap-1 mb-1 md:mb-4">
         <div className="bg-primary/10 rounded p-0.5 md:p-2">
           <ChefHat className="w-2.5 h-2.5 md:w-6 md:h-6 text-primary" />
