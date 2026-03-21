@@ -120,7 +120,7 @@ export default function DashboardHome() {
               <h3 className="text-[10px] md:text-sm font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
                 <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[9px] md:text-xs font-bold">{day.day}</span>
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-3">
+              <div className="grid grid-cols-3 lg:grid-cols-3 gap-1.5 md:gap-3">
                 {day.meals.map((meal, i) => (
                   <MealCard key={`${day.day}-${i}`} meal={meal} compact />
                 ))}
