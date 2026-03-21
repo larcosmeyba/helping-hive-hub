@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { TrendingUp, DollarSign, Utensils, TrendingDown, ShoppingCart, PiggyBank, Target, BarChart3 } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { format, parseISO } from "date-fns";
 
 const COLORS = ["hsl(40, 92%, 49%)", "hsl(80, 61%, 35%)", "hsl(0, 0%, 45%)", "hsl(43, 100%, 72%)", "hsl(0, 84%, 60%)", "hsl(200, 60%, 50%)", "hsl(280, 60%, 50%)"];
 
