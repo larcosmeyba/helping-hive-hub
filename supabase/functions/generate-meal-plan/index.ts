@@ -439,3 +439,140 @@ function getRegionInfo(zip: string): RegionInfo {
 
   return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
 }
+
+interface CityInfo {
+  city: string;
+  state: string;
+}
+
+function getCityFromZip(zip: string): CityInfo {
+  if (!zip) return { city: "Unknown", state: "US" };
+
+  // Common ZIP code to city mapping for accurate location display
+  const zipCityMap: Record<string, CityInfo> = {
+    // California
+    "900": { city: "Los Angeles", state: "CA" }, "901": { city: "Los Angeles", state: "CA" },
+    "902": { city: "Inglewood", state: "CA" }, "903": { city: "Inglewood", state: "CA" },
+    "904": { city: "Santa Monica", state: "CA" }, "905": { city: "Torrance", state: "CA" },
+    "906": { city: "Whittier", state: "CA" }, "907": { city: "Long Beach", state: "CA" },
+    "908": { city: "Long Beach", state: "CA" }, "910": { city: "Pasadena", state: "CA" },
+    "911": { city: "Pasadena", state: "CA" }, "912": { city: "Glendale", state: "CA" },
+    "913": { city: "Van Nuys", state: "CA" }, "914": { city: "Sherman Oaks", state: "CA" },
+    "915": { city: "Burbank", state: "CA" }, "916": { city: "North Hollywood", state: "CA" },
+    "917": { city: "Alhambra", state: "CA" }, "918": { city: "Alhambra", state: "CA" },
+    "919": { city: "San Diego", state: "CA" }, "920": { city: "San Diego", state: "CA" },
+    "921": { city: "San Diego", state: "CA" }, "922": { city: "Palm Springs", state: "CA" },
+    "923": { city: "San Bernardino", state: "CA" }, "924": { city: "San Bernardino", state: "CA" },
+    "925": { city: "Riverside", state: "CA" }, "926": { city: "Santa Ana", state: "CA" },
+    "927": { city: "Santa Ana", state: "CA" }, "928": { city: "Anaheim", state: "CA" },
+    "930": { city: "Oxnard", state: "CA" }, "931": { city: "Santa Barbara", state: "CA" },
+    "932": { city: "Bakersfield", state: "CA" }, "933": { city: "Bakersfield", state: "CA" },
+    "934": { city: "Santa Barbara", state: "CA" }, "935": { city: "Mojave", state: "CA" },
+    "936": { city: "Fresno", state: "CA" }, "937": { city: "Fresno", state: "CA" },
+    "939": { city: "Salinas", state: "CA" }, "940": { city: "San Francisco", state: "CA" },
+    "941": { city: "San Francisco", state: "CA" }, "942": { city: "Sacramento", state: "CA" },
+    "943": { city: "Palo Alto", state: "CA" }, "944": { city: "San Mateo", state: "CA" },
+    "945": { city: "Oakland", state: "CA" }, "946": { city: "Oakland", state: "CA" },
+    "947": { city: "Berkeley", state: "CA" }, "948": { city: "Richmond", state: "CA" },
+    "949": { city: "San Rafael", state: "CA" }, "950": { city: "San Jose", state: "CA" },
+    "951": { city: "San Jose", state: "CA" }, "952": { city: "Stockton", state: "CA" },
+    "953": { city: "Stockton", state: "CA" }, "954": { city: "Santa Rosa", state: "CA" },
+    "955": { city: "Eureka", state: "CA" }, "956": { city: "Sacramento", state: "CA" },
+    "957": { city: "Sacramento", state: "CA" }, "958": { city: "Sacramento", state: "CA" },
+    "959": { city: "Marysville", state: "CA" }, "960": { city: "Redding", state: "CA" },
+    "961": { city: "Reno", state: "NV" },
+    // New York
+    "100": { city: "New York", state: "NY" }, "101": { city: "New York", state: "NY" },
+    "102": { city: "New York", state: "NY" }, "103": { city: "Staten Island", state: "NY" },
+    "104": { city: "Bronx", state: "NY" }, "110": { city: "Queens", state: "NY" },
+    "111": { city: "Brooklyn", state: "NY" }, "112": { city: "Brooklyn", state: "NY" },
+    "113": { city: "Flushing", state: "NY" }, "114": { city: "Jamaica", state: "NY" },
+    "115": { city: "Western Nassau", state: "NY" }, "116": { city: "Far Rockaway", state: "NY" },
+    "117": { city: "Hicksville", state: "NY" }, "118": { city: "Hicksville", state: "NY" },
+    "119": { city: "Riverhead", state: "NY" },
+    // Texas
+    "750": { city: "Dallas", state: "TX" }, "751": { city: "Dallas", state: "TX" },
+    "752": { city: "Dallas", state: "TX" }, "753": { city: "Dallas", state: "TX" },
+    "760": { city: "Fort Worth", state: "TX" }, "761": { city: "Fort Worth", state: "TX" },
+    "770": { city: "Houston", state: "TX" }, "771": { city: "Houston", state: "TX" },
+    "772": { city: "Houston", state: "TX" }, "773": { city: "Huntsville", state: "TX" },
+    "780": { city: "San Antonio", state: "TX" }, "781": { city: "San Antonio", state: "TX" },
+    "782": { city: "San Antonio", state: "TX" }, "786": { city: "Austin", state: "TX" },
+    "787": { city: "Austin", state: "TX" }, "799": { city: "El Paso", state: "TX" },
+    // Florida
+    "320": { city: "Jacksonville", state: "FL" }, "321": { city: "Daytona Beach", state: "FL" },
+    "322": { city: "Jacksonville", state: "FL" }, "323": { city: "Tallahassee", state: "FL" },
+    "324": { city: "Panama City", state: "FL" }, "325": { city: "Pensacola", state: "FL" },
+    "326": { city: "Gainesville", state: "FL" }, "327": { city: "Orlando", state: "FL" },
+    "328": { city: "Orlando", state: "FL" }, "329": { city: "Melbourne", state: "FL" },
+    "330": { city: "Miami", state: "FL" }, "331": { city: "Miami", state: "FL" },
+    "332": { city: "Miami", state: "FL" }, "333": { city: "Fort Lauderdale", state: "FL" },
+    "334": { city: "West Palm Beach", state: "FL" }, "335": { city: "Tampa", state: "FL" },
+    "336": { city: "Tampa", state: "FL" }, "337": { city: "St. Petersburg", state: "FL" },
+    "338": { city: "Lakeland", state: "FL" }, "339": { city: "Fort Myers", state: "FL" },
+    "340": { city: "St. Thomas", state: "VI" }, "341": { city: "Naples", state: "FL" },
+    "342": { city: "Sarasota", state: "FL" },
+    // Illinois
+    "600": { city: "Chicago", state: "IL" }, "601": { city: "Chicago", state: "IL" },
+    "602": { city: "Evanston", state: "IL" }, "603": { city: "Oak Park", state: "IL" },
+    "604": { city: "Aurora", state: "IL" }, "605": { city: "Joliet", state: "IL" },
+    "606": { city: "Chicago", state: "IL" },
+    // Georgia
+    "300": { city: "Atlanta", state: "GA" }, "301": { city: "Atlanta", state: "GA" },
+    "302": { city: "Atlanta", state: "GA" }, "303": { city: "Atlanta", state: "GA" },
+    "310": { city: "Augusta", state: "GA" }, "312": { city: "Macon", state: "GA" },
+    "314": { city: "Savannah", state: "GA" },
+    // Other major cities
+    "200": { city: "Washington", state: "DC" }, "201": { city: "Washington", state: "DC" },
+    "206": { city: "Waldorf", state: "MD" }, "208": { city: "Laurel", state: "MD" },
+    "210": { city: "Baltimore", state: "MD" }, "211": { city: "Baltimore", state: "MD" },
+    "150": { city: "Pittsburgh", state: "PA" }, "151": { city: "Pittsburgh", state: "PA" },
+    "190": { city: "Philadelphia", state: "PA" }, "191": { city: "Philadelphia", state: "PA" },
+    "480": { city: "Detroit", state: "MI" }, "481": { city: "Detroit", state: "MI" },
+    "550": { city: "Minneapolis", state: "MN" }, "551": { city: "St. Paul", state: "MN" },
+    "430": { city: "Columbus", state: "OH" }, "441": { city: "Cleveland", state: "OH" },
+    "460": { city: "Indianapolis", state: "IN" }, "461": { city: "Indianapolis", state: "IN" },
+    "530": { city: "Milwaukee", state: "WI" }, "531": { city: "Milwaukee", state: "WI" },
+    "630": { city: "St. Louis", state: "MO" }, "631": { city: "St. Louis", state: "MO" },
+    "640": { city: "Kansas City", state: "MO" },
+    "660": { city: "Kansas City", state: "KS" },
+    "680": { city: "Omaha", state: "NE" },
+    "800": { city: "Denver", state: "CO" }, "801": { city: "Denver", state: "CO" }, "802": { city: "Denver", state: "CO" },
+    "840": { city: "Salt Lake City", state: "UT" }, "841": { city: "Salt Lake City", state: "UT" },
+    "850": { city: "Phoenix", state: "AZ" }, "851": { city: "Phoenix", state: "AZ" }, "852": { city: "Phoenix", state: "AZ" },
+    "853": { city: "Phoenix", state: "AZ" }, "855": { city: "Globe", state: "AZ" },
+    "856": { city: "Tucson", state: "AZ" }, "857": { city: "Tucson", state: "AZ" },
+    "889": { city: "Las Vegas", state: "NV" }, "890": { city: "Las Vegas", state: "NV" }, "891": { city: "Las Vegas", state: "NV" },
+    "970": { city: "Portland", state: "OR" }, "971": { city: "Portland", state: "OR" }, "972": { city: "Portland", state: "OR" },
+    "980": { city: "Seattle", state: "WA" }, "981": { city: "Seattle", state: "WA" },
+    "982": { city: "Everett", state: "WA" }, "983": { city: "Tacoma", state: "WA" },
+    "984": { city: "Tacoma", state: "WA" },
+    "995": { city: "Anchorage", state: "AK" }, "996": { city: "Anchorage", state: "AK" },
+    "967": { city: "Honolulu", state: "HI" }, "968": { city: "Honolulu", state: "HI" },
+    // North Carolina
+    "270": { city: "Greensboro", state: "NC" }, "271": { city: "Winston-Salem", state: "NC" },
+    "272": { city: "Greensboro", state: "NC" }, "273": { city: "Greensboro", state: "NC" },
+    "274": { city: "Greensboro", state: "NC" }, "275": { city: "Raleigh", state: "NC" },
+    "276": { city: "Raleigh", state: "NC" }, "277": { city: "Charlotte", state: "NC" },
+    "278": { city: "Rocky Mount", state: "NC" }, "279": { city: "Rocky Mount", state: "NC" },
+    "280": { city: "Charlotte", state: "NC" }, "281": { city: "Charlotte", state: "NC" },
+    "282": { city: "Charlotte", state: "NC" }, "283": { city: "Fayetteville", state: "NC" },
+    "284": { city: "Wilmington", state: "NC" }, "285": { city: "Kinston", state: "NC" },
+    "286": { city: "Hickory", state: "NC" }, "287": { city: "Asheville", state: "NC" },
+    "288": { city: "Asheville", state: "NC" }, "289": { city: "Asheville", state: "NC" },
+    // Tennessee
+    "370": { city: "Nashville", state: "TN" }, "371": { city: "Nashville", state: "TN" },
+    "372": { city: "Nashville", state: "TN" }, "373": { city: "Chattanooga", state: "TN" },
+    "374": { city: "Chattanooga", state: "TN" }, "376": { city: "Johnson City", state: "TN" },
+    "377": { city: "Knoxville", state: "TN" }, "378": { city: "Knoxville", state: "TN" },
+    "379": { city: "Knoxville", state: "TN" }, "380": { city: "Memphis", state: "TN" },
+    "381": { city: "Memphis", state: "TN" },
+  };
+
+  const prefix3 = zip.substring(0, 3);
+  if (zipCityMap[prefix3]) return zipCityMap[prefix3];
+
+  // Fallback: use region name
+  const regionInfo = getRegionInfo(zip);
+  return { city: regionInfo.region, state: "" };
+}
