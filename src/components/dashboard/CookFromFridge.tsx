@@ -54,16 +54,16 @@ export function CookFromFridge() {
       </div>
 
       {/* Custom items */}
-      <div className="flex gap-0.5 md:gap-2 mb-1 md:mb-4">
+      <div className="flex gap-1 md:gap-2 mb-1.5 md:mb-4">
         <Input
           value={customItem}
           onChange={(e) => setCustomItem(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCustom()}
-          placeholder="Add..."
-          className="text-[7px] md:text-sm h-5 md:h-9"
+          placeholder="Add ingredient..."
+          className="text-[9px] md:text-sm h-6 md:h-9"
         />
-        <Button size="sm" variant="outline" onClick={addCustom} className="shrink-0 h-5 w-5 md:h-9 md:w-auto p-0 md:px-3">
-          <Plus className="w-2 h-2" />
+        <Button size="sm" variant="outline" onClick={addCustom} className="shrink-0 h-6 w-6 md:h-9 md:w-auto p-0 md:px-3">
+          <Plus className="w-2.5 h-2.5" />
         </Button>
       </div>
 
