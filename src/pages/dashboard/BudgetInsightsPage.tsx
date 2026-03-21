@@ -49,13 +49,23 @@ export default function BudgetInsightsPage() {
       .sort((a, b) => b.value - a.value);
   })();
 
-  // Weekly trend data (mock for now, would be from historical data)
-  const weeklyTrend = [
-    { week: "Week 1", budget, spent: spent * 0.95, saved: budget - spent * 0.95 },
-    { week: "Week 2", budget, spent: spent * 1.02, saved: budget - spent * 1.02 },
-    { week: "Week 3", budget, spent: spent * 0.88, saved: budget - spent * 0.88 },
-    { week: "This Week", budget, spent, saved },
-  ];
+  // Real weekly trend from history
+  const weeklyTrend = (() => {
+    const entries = [...history].reverse().slice(-8);
+    if (entries.length === 0 && mealPlan) {
+      return [{ week: "This Week", budget, spent, saved: budget - spent }];
+    }
+    return entries.map((entry) => {
+      const cost = entry.totalEstimatedCost ?? entry.plan?.totalEstimatedCost ?? 0;
+      let label: string;
+      try {
+        label = format(parseISO(entry.weekStart), "MMM d");
+      } catch {
+        label = entry.weekStart;
+      }
+      return { week: label, budget, spent: cost, saved: budget - cost };
+    });
+  })();
 
   // Daily cost breakdown
   const dailyCosts = mealPlan?.weeklyPlan?.map((day) => ({
