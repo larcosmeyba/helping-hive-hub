@@ -33,7 +33,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <span className="text-3xl">🐝</span>
+            <img src={logo} alt="Help The Hive" className="h-10 w-10" />
             <span className="font-display text-2xl font-bold text-foreground">
               Help <span className="text-gradient-honey">The Hive</span>
             </span>

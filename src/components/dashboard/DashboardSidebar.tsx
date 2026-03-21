@@ -40,7 +40,7 @@ export function DashboardSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="p-4 flex items-center gap-2">
-          <span className="text-2xl">🐝</span>
+          <img src={logo} alt="Help The Hive" className="h-8 w-8" />
           {!collapsed && (
             <span className="font-display text-lg font-bold text-sidebar-foreground">
               Help The Hive
