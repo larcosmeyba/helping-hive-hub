@@ -7,8 +7,8 @@ import { Link, useNavigate } from "react-router-dom";
 const COMMON_ITEMS = ["Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "Onions", "Tomatoes", "Cheese", "Bread", "Butter", "Milk"];
 
 export function CookFromFridge() {
+  const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [customItem, setCustomItem] = useState("");
 
   const toggle = (item: string) => {
     setSelectedItems((prev) =>
