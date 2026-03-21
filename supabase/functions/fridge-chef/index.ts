@@ -54,6 +54,7 @@ You must respond with ONLY valid JSON:
   "recipes": [
     {
       "name": "Recipe Name",
+      "image": "https://images.unsplash.com/photo-XXXXXXX?w=600&h=400&fit=crop",
       "calories": 400,
       "cookTime": 20,
       "cost": 0,
@@ -65,6 +66,8 @@ You must respond with ONLY valid JSON:
     }
   ]
 }
+
+CRITICAL IMAGE RULE: Every recipe MUST include an "image" field with a real Unsplash URL that visually matches the dish. Use relevant Unsplash food photography URLs with ?w=600&h=400&fit=crop parameters. Pick photos that closely match the actual recipe (e.g. fried rice photo for fried rice, not a generic food photo). Never leave image empty or null.
 
 Set cost to 0 since user already has these ingredients. Keep recipes simple and practical.`;
 
