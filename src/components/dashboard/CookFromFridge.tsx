@@ -28,10 +28,10 @@ export function CookFromFridge() {
     <div className="bg-gradient-to-br from-card to-secondary/30 rounded-2xl border border-border p-4 md:p-6 shadow-card">
       <div className="flex items-start gap-2.5 md:gap-3 mb-3 md:mb-4">
         <div className="bg-primary/10 rounded-xl p-2">
-          <Refrigerator className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+          <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-primary" />
         </div>
         <div>
-          <h2 className="font-display text-base md:text-lg font-semibold text-foreground">Cook From Your Fridge</h2>
+          <h2 className="font-display text-base md:text-lg font-semibold text-foreground">Fridge Chef</h2>
           <p className="text-xs md:text-sm text-muted-foreground">Select ingredients you have — we'll find recipes.</p>
         </div>
       </div>
