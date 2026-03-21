@@ -40,8 +40,8 @@ export function MealCard({ meal, compact }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className={`bg-card rounded-lg md:rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'aspect-square' : ''}`}>
-      <div className={`relative ${compact ? 'h-2/3' : 'h-20 md:h-32'} overflow-hidden`}>
+    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow">
+      <div className="relative h-20 md:h-32 overflow-hidden">
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
@@ -53,15 +53,15 @@ export function MealCard({ meal, compact }: Props) {
             {meal.type}
           </span>
         </div>
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1 md:p-2">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 md:p-2">
           <p className="text-white text-[9px] md:text-sm font-semibold line-clamp-2 leading-tight">{meal.name}</p>
         </div>
       </div>
 
-      <div className={`${compact ? 'p-1' : 'p-1.5 md:p-3'}`}>
-        <div className={`flex items-center ${compact ? 'gap-1 text-[7px]' : 'gap-2 md:gap-3 text-[9px] md:text-xs'} text-muted-foreground`}>
-          <span className="flex items-center gap-0.5"><Flame className={`${compact ? 'w-2 h-2' : 'w-2.5 h-2.5 md:w-3 md:h-3'} text-primary`} />{meal.calories}</span>
-          <span className="flex items-center gap-0.5"><DollarSign className={`${compact ? 'w-2 h-2' : 'w-2.5 h-2.5 md:w-3 md:h-3'} text-accent`} />${meal.estimatedCost.toFixed(0)}</span>
+      <div className="p-1.5 md:p-3">
+        <div className="flex items-center gap-1.5 md:gap-3 text-[8px] md:text-xs text-muted-foreground">
+          <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary" />{meal.calories}</span>
+          <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3 text-accent" />${meal.estimatedCost.toFixed(0)}</span>
         </div>
 
         {!compact && (
