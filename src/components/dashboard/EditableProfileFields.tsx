@@ -94,7 +94,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
             <button onClick={() => { setBudgetValue(weeklyBudget ?? 75); setEditingField("budget"); }} className="ml-1">
               <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
