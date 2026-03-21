@@ -193,14 +193,17 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Items already in pantry: ${pantryList || "none specified"}
 
 Requirements:
-- Apply the ${regionInfo.costMultiplier}x regional cost multiplier to all ingredient prices
+- Use REAL publicly known prices for ${cityInfo.city}, ${cityInfo.state} — prices a shopper would see TODAY at each store
+- Apply the ${regionInfo.costMultiplier}x regional cost multiplier to national baseline prices
 - Use pantry items first to maximize savings
 - Keep total grocery cost at or below $${budget}
-- Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and instructions
+- Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and full step-by-step instructions
 - Generate the grocery list from ingredients NOT already in the pantry
-- EVERY grocery item must have a brand name, full product description, and per-store prices for at least 3 stores available in ${cityInfo.city}, ${cityInfo.state}
-- Use brands actually sold at the user's preferred stores (e.g., Great Value at Walmart, Simply Nature at Aldi)
-- Provide store price comparisons for the user's preferred stores
+- EVERY grocery item MUST have:
+  1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
+  2. Full product description as it appears on the shelf (include size, count, variety)
+  3. Per-store prices for at least 3-4 stores that exist in ${cityInfo.city}, ${cityInfo.state}
+- Store recommendations must reflect the real total if shopping entirely at that one store
 - Apply ${regionInfo.groceryTaxRate}% grocery tax rate for ${cityInfo.state}`;
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
