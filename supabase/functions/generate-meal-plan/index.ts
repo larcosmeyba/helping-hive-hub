@@ -137,6 +137,7 @@ PRODUCT DESCRIPTION RULES:
 - Include size, count, and variety (e.g., "Great Value Large White Eggs, 12 ct" not just "eggs")
 - The "brand" field must be the real brand name sold at the user's preferred stores
 - "storePrices" must include per-item prices for at least 3-4 stores available in ${cityInfo.city}, ${cityInfo.state}
+- "storeProducts" must include those same stores with exact per-store brand + exact per-store productDescription
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
@@ -172,6 +173,24 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
         "Aldi": 3.49,
         "Target": 4.29,
         "Kroger": 4.49
+      },
+      "storeProducts": {
+        "Walmart": {
+          "brand": "Great Value",
+          "productDescription": "Great Value Large White Eggs, 12 ct"
+        },
+        "Aldi": {
+          "brand": "Friendly Farms",
+          "productDescription": "Friendly Farms Grade A Large Eggs, 12 ct"
+        },
+        "Target": {
+          "brand": "Good & Gather",
+          "productDescription": "Good & Gather Cage Free Grade A Large Eggs, 12 ct"
+        },
+        "Kroger": {
+          "brand": "Kroger",
+          "productDescription": "Kroger Grade A Large White Eggs, 12 ct"
+        }
       }
     }
   ],
@@ -209,6 +228,7 @@ Requirements:
   1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
   2. Full product description as it appears on the shelf (include size, count, variety)
   3. Per-store prices for at least 3-4 stores that exist in ${cityInfo.city}, ${cityInfo.state}
+  4. A "storeProducts" object keyed by store name, containing the exact "brand" and exact shelf "productDescription" for each store
 - Store recommendations must reflect the real total if shopping entirely at that one store
 - Apply ${regionInfo.groceryTaxRate}% grocery tax rate for ${cityInfo.state}`;
     const aiResponse = await fetch(
@@ -264,6 +284,29 @@ Requirements:
       console.error("Failed to parse AI response:", content);
       throw new Error("Failed to parse meal plan from AI");
     }
+
+    // Ensure every item has store-specific brand/product naming for each priced store
+    mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
+      const storeNames = Object.keys(item.storePrices || {});
+      const storeProducts: Record<string, { brand: string; productDescription: string }> = {
+        ...(item.storeProducts || {}),
+      };
+
+      for (const storeName of storeNames) {
+        const existing = storeProducts[storeName] || {};
+        const brand = existing.brand || inferStoreBrand(storeName, item.brand);
+        const productDescription =
+          existing.productDescription ||
+          buildStoreProductDescription(brand, item.name, item.quantity);
+
+        storeProducts[storeName] = { brand, productDescription };
+      }
+
+      return {
+        ...item,
+        storeProducts,
+      };
+    });
 
     // Save meal plan to database
     const weekStart = getNextMonday();
@@ -597,4 +640,25 @@ function getCityFromZip(zip: string): CityInfo {
   // Fallback: use region name
   const regionInfo = getRegionInfo(zip);
   return { city: regionInfo.region, state: "" };
+}
+
+function inferStoreBrand(storeName: string, fallbackBrand?: string): string {
+  const lower = storeName.toLowerCase();
+
+  if (lower.includes("walmart")) return "Great Value";
+  if (lower.includes("aldi")) return "Simply Nature";
+  if (lower.includes("target")) return "Good & Gather";
+  if (lower.includes("kroger") || lower.includes("ralph")) return "Kroger";
+  if (lower.includes("safeway") || lower.includes("vons") || lower.includes("albertsons")) return "Signature Select";
+  if (lower.includes("whole foods")) return "365 by Whole Foods Market";
+  if (lower.includes("trader joe")) return "Trader Joe's";
+  if (lower.includes("heb") || lower.includes("h-e-b")) return "HEB";
+  if (lower.includes("publix")) return "Publix";
+
+  return fallbackBrand || storeName;
+}
+
+function buildStoreProductDescription(brand: string, itemName: string, quantity?: string): string {
+  const quantitySuffix = quantity ? `, ${quantity}` : "";
+  return `${brand} ${itemName}${quantitySuffix}`.trim();
 }

@@ -16,6 +16,11 @@ export interface MealPlanDay {
   meals: MealPlanMeal[];
 }
 
+export interface StoreSpecificProduct {
+  brand?: string;
+  productDescription?: string;
+}
+
 export interface GroceryItem {
   name: string;
   quantity: string;
@@ -24,6 +29,7 @@ export interface GroceryItem {
   brand?: string;
   productDescription?: string;
   storePrices?: Record<string, number>;
+  storeProducts?: Record<string, StoreSpecificProduct>;
 }
 
 export interface StoreRecommendation {

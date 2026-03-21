@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useMealPlan } from "@/contexts/MealPlanContext";
+import type { GroceryItem } from "@/types/mealPlan";
 
 // Store logo map — real logos via logo.clearbit.com
 const STORE_LOGOS: Record<string, string> = {
@@ -35,15 +39,36 @@ const STORE_LOGOS: Record<string, string> = {
   "Save-A-Lot": "https://logo.clearbit.com/save-a-lot.com",
 };
 
+const STORE_BRAND_BY_RETAILER: Record<string, string> = {
+  walmart: "Great Value",
+  target: "Good & Gather",
+  aldi: "Simply Nature",
+  kroger: "Kroger",
+  ralph: "Kroger",
+  safeway: "Signature Select",
+  vons: "Signature Select",
+  albertsons: "Signature Select",
+  "whole foods": "365 by Whole Foods Market",
+  "trader joe": "Trader Joe's",
+  publix: "Publix",
+  "h-e-b": "HEB",
+  heb: "HEB",
+};
+
 function getStoreLogo(storeName: string): string | null {
   for (const [key, url] of Object.entries(STORE_LOGOS)) {
     if (storeName.toLowerCase().includes(key.toLowerCase())) return url;
   }
   return null;
 }
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useMealPlan } from "@/contexts/MealPlanContext";
+
+function getDefaultStoreBrand(storeName: string): string | undefined {
+  const lower = storeName.toLowerCase();
+  for (const [key, brand] of Object.entries(STORE_BRAND_BY_RETAILER)) {
+    if (lower.includes(key)) return brand;
+  }
+  return undefined;
+}
 
 // Comprehensive product image map — covers all common grocery categories
 const PRODUCT_IMAGES: Record<string, string> = {
@@ -175,6 +200,30 @@ function getProductImage(name: string): string {
     if (lower.includes(keyword)) return url;
   }
   return DEFAULT_PRODUCT_IMG;
+}
+
+function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
+  const storeSpecific = activeStore ? item.storeProducts?.[activeStore] : undefined;
+  if (storeSpecific?.productDescription || storeSpecific?.brand) {
+    return {
+      productDescription: storeSpecific.productDescription || item.productDescription || item.name,
+      brand: storeSpecific.brand || item.brand,
+    };
+  }
+
+  const fallbackBrand = activeStore ? getDefaultStoreBrand(activeStore) : undefined;
+  if (fallbackBrand) {
+    const quantitySuffix = item.quantity ? `, ${item.quantity}` : "";
+    return {
+      productDescription: `${fallbackBrand} ${item.name}${quantitySuffix}`.trim(),
+      brand: fallbackBrand,
+    };
+  }
+
+  return {
+    productDescription: item.productDescription || item.name,
+    brand: item.brand,
+  };
 }
 
 export default function GroceryListPage() {
@@ -318,6 +367,7 @@ export default function GroceryListPage() {
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item) => {
               const price = getItemPrice(item);
               const isChecked = checked.has(item.name);
+              const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
                 <label
                   key={item.name}
@@ -327,19 +377,19 @@ export default function GroceryListPage() {
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
                     <img
                       src={getProductImage(item.name)}
-                      alt={item.name}
+                      alt={displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {item.productDescription || item.name}
+                      {displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {item.brand && (
+                      {displayProduct.brand && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> {item.brand}
+                          <Package className="w-2.5 h-2.5" /> Maker: {displayProduct.brand}
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
