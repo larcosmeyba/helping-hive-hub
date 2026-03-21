@@ -230,27 +230,27 @@ export default function GroceryListPage() {
   const checkedCount = checked.size;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-primary" /> Grocery List
+          <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
+            <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+          <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
             {groceryItems.length} items • {checkedCount} checked
             {mealPlan.regionLabel && (
-              <span className="flex items-center gap-1 text-primary font-medium">
-                <MapPin className="w-3 h-3" /> {mealPlan.regionLabel}
+              <span className="flex items-center gap-0.5 text-primary font-medium">
+                <MapPin className="w-2 h-2 md:w-3 md:h-3" /> {mealPlan.regionLabel}
               </span>
             )}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" /> Print
+        <div className="flex gap-1 md:gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="h-6 text-[8px] px-1.5 md:h-9 md:text-sm md:px-3">
+            <Printer className="w-2.5 h-2.5 mr-0.5 md:w-4 md:h-4 md:mr-2" /> Print
           </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" /> Download
+          <Button variant="outline" size="sm" className="h-6 text-[8px] px-1.5 md:h-9 md:text-sm md:px-3">
+            <Download className="w-2.5 h-2.5 mr-0.5 md:w-4 md:h-4 md:mr-2" /> Save
           </Button>
         </div>
       </div>
