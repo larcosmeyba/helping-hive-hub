@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { DollarSign } from "lucide-react";
+import { DollarSign, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const plans = [
-  { title: "Feed a Family on $50", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 / week grocery budget", tag: "Most Popular", slug: "feed-a-family-50" },
-  { title: "More Variety at $75", desc: "Nutritious options with flexible recipes and extra variety.", budget: "$75 / week grocery budget", tag: null, slug: "more-variety-75" },
-  { title: "College Eats on $35", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 / week grocery budget", tag: "Student Fav", slug: "college-eats-35" },
-  { title: "SNAP-Friendly Meals", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 / week grocery budget", tag: "SNAP Eligible", slug: "snap-friendly-meals" },
+  { title: "Feed a Family on $50", desc: "7 days of balanced meals for a family of 4 on a tight budget.", budget: "$50 / week grocery budget", store: "Aldi / Walmart", tag: "Most Popular", slug: "feed-a-family-50" },
+  { title: "More Variety at $75", desc: "Nutritious options with flexible recipes and extra variety.", budget: "$75 / week grocery budget", store: "Kroger / Safeway", tag: null, slug: "more-variety-75" },
+  { title: "College Eats on $35", desc: "Quick, easy meals for dorm life and small kitchens.", budget: "$35 / week grocery budget", store: "Aldi / Walmart", tag: "Student Fav", slug: "college-eats-35" },
+  { title: "SNAP-Friendly Meals", desc: "Optimized for SNAP benefits with maximum nutritional value.", budget: "$45 / week grocery budget", store: "Walmart / WinCo", tag: "SNAP Eligible", slug: "snap-friendly-meals" },
 ];
 
 export function MealPlanSection() {
@@ -25,6 +25,9 @@ export function MealPlanSection() {
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Explore sample plans designed for different budgets and lifestyles.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            * Prices shown are based on California grocery averages. Your actual costs may vary by region.
           </p>
         </motion.div>
 
@@ -48,7 +51,11 @@ export function MealPlanSection() {
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{plan.title}</h3>
               <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
-              <div className="text-sm font-medium text-primary mb-4">{plan.budget}</div>
+              <div className="text-sm font-medium text-primary mb-1">{plan.budget}</div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
+                <ShoppingCart className="w-3.5 h-3.5" />
+                <span>Best at: {plan.store}</span>
+              </div>
               <Button variant="heroOutline" size="sm" asChild>
                 <Link to={`/sample-plan/${plan.slug}`}>View Plan</Link>
               </Button>
