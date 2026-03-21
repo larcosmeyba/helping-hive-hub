@@ -36,14 +36,14 @@ export default function DashboardHome() {
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-2 md:space-y-6 overflow-x-hidden px-1 md:px-0">
+    <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 overflow-x-hidden px-2 md:px-0">
       {/* Welcome */}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <div>
-          <h1 className="font-display text-sm md:text-3xl font-bold text-foreground leading-tight">
+          <h1 className="font-display text-base md:text-3xl font-bold text-foreground leading-tight">
             Welcome back, {profile?.display_name ?? "there"} 👋
           </h1>
-          <p className="text-[9px] md:text-sm text-muted-foreground">Your weekly meal plan overview</p>
+          <p className="text-[10px] md:text-sm text-muted-foreground">Your weekly meal plan overview</p>
         </div>
 
         <EditableProfileFields
@@ -55,12 +55,12 @@ export default function DashboardHome() {
         <Button
           onClick={generate}
           disabled={generating}
-          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-auto h-5 text-[8px] px-2 md:text-sm md:h-9 md:px-4"
+          className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-7 text-[10px] px-3 md:text-sm md:h-9 md:px-4 w-full max-w-[260px] md:w-auto md:max-w-none"
         >
           {generating ? (
-            <><Loader2 className="w-2 h-2 mr-0.5 animate-spin md:w-3 md:h-3" /> Generating...</>
+            <><Loader2 className="w-3 h-3 mr-1 animate-spin md:w-3.5 md:h-3.5" /> Generating...</>
           ) : (
-            <><Sparkles className="w-2 h-2 mr-0.5 md:w-3 md:h-3" /> {mealPlan ? "Regen" : "Generate"}</>
+            <><Sparkles className="w-3 h-3 mr-1 md:w-3.5 md:h-3.5" /> {mealPlan ? "Regenerate Plan" : "Generate Plan"}</>
           )}
         </Button>
       </div>
