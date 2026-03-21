@@ -67,34 +67,12 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* Quick Fridge Access Box */}
-      <Link
-        to="/dashboard/pantry"
-        className="group relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-primary/5 p-4 md:p-5 shadow-card hover:shadow-lg hover:border-accent/40 hover-scale transition-all duration-300"
-      >
-        <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500" />
-        <div className="absolute bottom-0 left-0 w-16 h-16 bg-primary/5 rounded-full translate-y-6 -translate-x-6 group-hover:scale-150 transition-transform duration-500" />
-        <div className="relative flex items-center gap-3">
-          <div className="bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl p-2.5 group-hover:from-accent/30 group-hover:to-primary/30 transition-colors duration-300">
-            <Refrigerator className="w-6 h-6 text-accent group-hover:scale-110 transition-transform duration-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">🧊 What's in Your Fridge?</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Tap to add, track & check off items</p>
-          </div>
-          <div className="bg-accent/10 rounded-full px-3 py-1 text-xs font-semibold text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
-            Open
-          </div>
-        </div>
-      </Link>
-
-      {/* Stats */}
+      {/* Stats + Fridge Box */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, icon: DollarSign, color: "text-primary" },
           { label: "Estimated Cost", value: `$${estimatedCost.toFixed(2)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Pantry Savings", value: `$${pantrySavings.toFixed(2)}`, icon: TrendingDown, color: "text-accent" },
-          { label: "Cost per Meal", value: `$${costPerMeal.toFixed(2)}`, icon: Utensils, color: "text-primary" },
         ].map((stat) => (
           <div key={stat.label} className="bg-card rounded-xl border border-border p-3 md:p-4 shadow-card">
             <div className="flex items-center gap-1.5 mb-1">
@@ -104,6 +82,20 @@ export default function DashboardHome() {
             <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
           </div>
         ))}
+
+        {/* Fridge box as 4th card */}
+        <Link
+          to="/dashboard/pantry"
+          className="group relative overflow-hidden bg-gradient-to-br from-accent/10 to-primary/10 rounded-xl border border-accent/20 p-3 md:p-4 shadow-card hover:shadow-lg hover:border-accent/40 hover-scale transition-all duration-300"
+        >
+          <div className="absolute top-0 right-0 w-12 h-12 bg-accent/10 rounded-full -translate-y-4 translate-x-4 group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center gap-1.5 mb-1">
+            <Refrigerator className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent" />
+            <span className="text-[10px] md:text-xs text-muted-foreground">My Fridge</span>
+          </div>
+          <p className="text-sm md:text-base font-bold text-foreground">Add Items</p>
+          <span className="text-[10px] text-accent font-medium">Tap to manage →</span>
+        </Link>
       </div>
 
       {/* This Week's Meals */}
