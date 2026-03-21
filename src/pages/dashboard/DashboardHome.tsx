@@ -133,9 +133,9 @@ export default function DashboardHome() {
           ))}
           <Link
             to="/dashboard/meal-plan"
-            className="block text-center bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md py-1.5 text-[9px] md:text-sm font-semibold text-primary transition-colors"
+            className="inline-block bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded py-0.5 px-2 text-[7px] md:text-sm font-semibold text-primary transition-colors"
           >
-            View Full Plan — {mealPlan.weeklyPlan.length - 2} more days →
+            View Full Plan →
           </Link>
         </div>
       )}
