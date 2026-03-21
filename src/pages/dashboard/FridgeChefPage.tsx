@@ -16,6 +16,7 @@ const COMMON_ITEMS = [
 
 interface FridgeMeal {
   name: string;
+  image?: string;
   calories: number;
   cookTime: number;
   cost: number;
