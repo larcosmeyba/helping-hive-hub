@@ -88,11 +88,11 @@ export function CookFromFridge() {
         <Button
           disabled={selectedItems.length === 0}
           onClick={() => navigate("/dashboard/fridge-chef", { state: { ingredients: selectedItems } })}
-          className="bg-gradient-honey text-primary-foreground hover:opacity-90 ml-auto h-5 text-[7px] px-1.5 md:h-9 md:text-sm md:px-4"
+          className="bg-gradient-honey text-primary-foreground hover:opacity-90 ml-auto h-6 text-[9px] px-2 md:h-9 md:text-sm md:px-4"
           size="sm"
         >
-          <Sparkles className="w-2 h-2 mr-0.5 md:w-3.5 md:h-3.5 md:mr-1.5" />
-          Find ({selectedItems.length})
+          <Sparkles className="w-2.5 h-2.5 mr-0.5 md:w-3.5 md:h-3.5 md:mr-1.5" />
+          Find Recipes ({selectedItems.length})
         </Button>
       </div>
     </div>

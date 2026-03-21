@@ -108,23 +108,23 @@ export default function DashboardHome() {
         </div>
       ) : (
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-display text-[10px] md:text-xl font-semibold text-foreground flex items-center gap-0.5">
-              <CalendarDays className="w-3 h-3 text-primary" /> This Week's Meals
+          <div className="flex items-center justify-between mb-1.5">
+            <h2 className="font-display text-xs md:text-xl font-semibold text-foreground flex items-center gap-1">
+              <CalendarDays className="w-3.5 h-3.5 text-primary" /> This Week's Meals
             </h2>
-            <Link to="/dashboard/meal-plan" className="text-[8px] md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
+            <Link to="/dashboard/meal-plan" className="text-[9px] md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
           </div>
           {mealPlan.weeklyPlan.slice(0, 2).map((day) => (
-            <div key={day.day} className="mb-1.5 md:mb-6">
-              <h3 className="text-[8px] md:text-sm font-semibold text-foreground mb-0.5 flex items-center gap-0.5">
-                <span className="bg-primary/10 text-primary px-1 py-px rounded-full text-[7px] md:text-xs font-bold">{day.day}</span>
+            <div key={day.day} className="mb-2 md:mb-6">
+              <h3 className="text-[9px] md:text-sm font-semibold text-foreground mb-1 flex items-center gap-0.5">
+                <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[8px] md:text-xs font-bold">{day.day}</span>
               </h3>
               <div
-                className="flex gap-1.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-0.5 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
+                className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
                 {day.meals.map((meal, i) => (
-                  <div key={`${day.day}-${i}`} className="snap-start shrink-0 w-[110px] md:w-auto md:shrink">
+                  <div key={`${day.day}-${i}`} className="snap-start shrink-0 w-[150px] md:w-auto md:shrink">
                     <MealCard meal={meal} compact />
                   </div>
                 ))}
@@ -133,7 +133,7 @@ export default function DashboardHome() {
           ))}
           <Link
             to="/dashboard/meal-plan"
-            className="inline-block bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded py-0.5 px-2 text-[7px] md:text-sm font-semibold text-primary transition-colors"
+            className="inline-block bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded py-1 px-3 text-[9px] md:text-sm font-semibold text-primary transition-colors"
           >
             View Full Plan →
           </Link>
