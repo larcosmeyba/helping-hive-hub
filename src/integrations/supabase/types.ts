@@ -354,6 +354,7 @@ export type Database = {
           expiration_date: string | null
           id: string
           is_low_stock: boolean | null
+          is_out_of_stock: boolean | null
           item_name: string
           quantity: string | null
           updated_at: string
@@ -365,6 +366,7 @@ export type Database = {
           expiration_date?: string | null
           id?: string
           is_low_stock?: boolean | null
+          is_out_of_stock?: boolean | null
           item_name: string
           quantity?: string | null
           updated_at?: string
@@ -376,6 +378,7 @@ export type Database = {
           expiration_date?: string | null
           id?: string
           is_low_stock?: boolean | null
+          is_out_of_stock?: boolean | null
           item_name?: string
           quantity?: string | null
           updated_at?: string
