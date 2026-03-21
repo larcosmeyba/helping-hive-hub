@@ -24,7 +24,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       return stored ? JSON.parse(stored) : null;
     } catch { return null; }
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   // Persist to localStorage for quick reloads
@@ -33,6 +33,41 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(mealPlan));
     }
   }, [mealPlan]);
+
+  // Load saved meal plan from database on mount
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const loadSavedPlan = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("meal_plans")
+          .select("plan_data")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data?.plan_data) {
+          const savedPlan = data.plan_data as unknown as GeneratedMealPlan;
+          // Only use DB data if we don't already have a local plan or if DB is newer
+          if (savedPlan?.weeklyPlan) {
+            setMealPlan(savedPlan);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load saved meal plan:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSavedPlan();
+  }, [user]);
 
   const generate = useCallback(async () => {
     if (!user) return;
