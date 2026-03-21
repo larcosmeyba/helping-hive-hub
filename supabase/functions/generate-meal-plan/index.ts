@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
 
     const zipCode = profile.zip_code || "";
     const regionInfo = getRegionInfo(zipCode);
+    const cityInfo = getCityFromZip(zipCode);
 
     const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic weekly meal plan that stays within the user's grocery budget.
 
@@ -88,8 +89,12 @@ CRITICAL RULES:
 - Adjust portion sizes for the household size
 - Respect all allergies and dietary preferences strictly
 
+LOCATION:
+- ZIP code: ${zipCode || "unknown"}
+- City: ${cityInfo.city}, ${cityInfo.state}
+- Region: ${regionInfo.region}
+
 REGIONAL PRICING RULES (VERY IMPORTANT):
-- The user is in ZIP code region: ${zipCode || "unknown"} (${regionInfo.region})
 - Regional cost-of-living multiplier: ${regionInfo.costMultiplier}x national average
 - State sales tax on groceries: ${regionInfo.groceryTaxRate}%
 - Use these REAL 2026 US grocery price benchmarks (national average), then multiply by the regional cost multiplier:
@@ -101,11 +106,18 @@ REGIONAL PRICING RULES (VERY IMPORTANT):
   * Flour (5lb): $4.00  * Sugar (4lb): $3.50  * Canned tomatoes (28oz): $2.00
 - For preferred stores, apply these approximate price adjustments:
   * Aldi/Lidl: 0.80x (20% below average)
-  * Walmart: 0.90x (10% below average)
-  * Kroger/Safeway/Albertsons: 1.0x (average)
+  * Walmart/Walmart Supercenter: 0.90x (10% below average)
+  * Kroger/Safeway/Albertsons/Ralph's/Vons: 1.0x (average)
   * Publix/HEB: 1.05x (5% above average)
-  * Whole Foods/Trader Joe's: 1.25x (25% above average)
+  * Whole Foods/Trader Joe's/Sprouts: 1.25x (25% above average)
   * Target: 0.95x (5% below average)
+
+BRAND-SPECIFIC GROCERY LIST RULES (CRITICAL):
+- Every grocery list item MUST include a specific brand name that is commonly sold at the user's preferred stores
+- Use REAL brand names (e.g., "Great Value" for Walmart, "Kirkland" for Costco, "Good & Gather" for Target, "Simply Nature" for Aldi, "Kroger" for Kroger, "O Organics" for Safeway, "365" for Whole Foods)
+- The "brand" field must be the exact brand name
+- The "productDescription" field should be the exact product as it appears on the shelf (e.g., "Great Value Large White Eggs, 12 ct")
+- Include a "storePrices" object with per-store pricing for each item
 
 You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
 {
@@ -130,10 +142,18 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   ],
   "groceryList": [
     {
-      "name": "Chicken Breast",
-      "quantity": "2 lbs",
-      "estimatedPrice": 6.50,
-      "section": "Meat"
+      "name": "Eggs",
+      "quantity": "1 dozen",
+      "estimatedPrice": 4.50,
+      "section": "Dairy & Eggs",
+      "brand": "Great Value",
+      "productDescription": "Great Value Large White Eggs, 12 ct",
+      "storePrices": {
+        "Walmart": 3.98,
+        "Aldi": 3.49,
+        "Target": 4.29,
+        "Kroger": 4.49
+      }
     }
   ],
   "storeRecommendations": [
@@ -144,7 +164,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "pantrySavings": 12.00,
   "costPerMeal": 2.50,
   "taxEstimate": 2.04,
-  "regionLabel": "${regionInfo.region}",
+  "regionLabel": "${cityInfo.city}, ${cityInfo.state}",
   "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
@@ -156,7 +176,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Dietary preferences: ${dietPrefs}
 - Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
 - Preferred stores: ${stores}
-- ZIP code: ${zipCode || "unknown"} (${regionInfo.region}, cost multiplier: ${regionInfo.costMultiplier}x)
+- Location: ${cityInfo.city}, ${cityInfo.state} (ZIP: ${zipCode || "unknown"}, cost multiplier: ${regionInfo.costMultiplier}x)
 - Items already in pantry: ${pantryList || "none specified"}
 
 Requirements:
@@ -165,8 +185,10 @@ Requirements:
 - Keep total grocery cost at or below $${budget}
 - Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and instructions
 - Generate the grocery list from ingredients NOT already in the pantry
-- Provide store price comparisons for the user's preferred stores (apply store-specific multipliers)
-- Apply ${regionInfo.groceryTaxRate}% grocery tax rate for this region`;
+- EVERY grocery item must have a brand name, full product description, and per-store prices for at least 3 stores available in ${cityInfo.city}, ${cityInfo.state}
+- Use brands actually sold at the user's preferred stores (e.g., Great Value at Walmart, Simply Nature at Aldi)
+- Provide store price comparisons for the user's preferred stores
+- Apply ${regionInfo.groceryTaxRate}% grocery tax rate for ${cityInfo.state}`;
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
