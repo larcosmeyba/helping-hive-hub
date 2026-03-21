@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { DollarSign } from "lucide-react";
+import { DollarSign, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
