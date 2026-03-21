@@ -31,10 +31,13 @@ export function HeroSection() {
               stay within their real grocery budget.
             </p>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3">
               <Button variant="hero" size="lg" asChild>
                 <Link to="/signup">Get Started</Link>
               </Button>
+              <a href="#meal-plan-examples" className="text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors">
+                👀 Check out our free meal plan examples
+              </a>
             </div>
           </motion.div>
 
