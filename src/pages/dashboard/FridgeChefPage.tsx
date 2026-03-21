@@ -228,6 +228,11 @@ export default function FridgeChefPage() {
                   <ChefHat className="w-5 h-5 text-primary" /> {selectedRecipe.name}
                 </DialogTitle>
               </DialogHeader>
+              {selectedRecipe.image && (
+                <div className="rounded-xl overflow-hidden -mx-2">
+                  <img src={selectedRecipe.image} alt={selectedRecipe.name} className="w-full h-48 object-cover" />
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 text-sm">
                   <span className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
