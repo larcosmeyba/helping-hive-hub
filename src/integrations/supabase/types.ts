@@ -391,22 +391,33 @@ export type Database = {
           account_status: string | null
           allergies: string[] | null
           city: string | null
+          cooking_style: string | null
           cooking_time_preference: string | null
           created_at: string
           dietary_preferences: string[] | null
           display_name: string | null
+          eligibility_category: string | null
           email: string | null
+          food_preferences: string[] | null
           household_size: number | null
           id: string
+          kitchen_equipment: string[] | null
           last_active: string | null
+          meal_repetition: string | null
+          membership_discount: number | null
+          membership_tier: string | null
           phone_number: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
           snap_status: boolean | null
           state: string | null
           updated_at: string
+          user_goals: string[] | null
           user_id: string
           user_type: string | null
+          verification_badge: string | null
+          verification_status: string | null
+          verification_verified_at: string | null
           weekly_budget: number | null
           zip_code: string | null
         }
@@ -414,22 +425,33 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           city?: string | null
+          cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
           display_name?: string | null
+          eligibility_category?: string | null
           email?: string | null
+          food_preferences?: string[] | null
           household_size?: number | null
           id?: string
+          kitchen_equipment?: string[] | null
           last_active?: string | null
+          meal_repetition?: string | null
+          membership_discount?: number | null
+          membership_tier?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           snap_status?: boolean | null
           state?: string | null
           updated_at?: string
+          user_goals?: string[] | null
           user_id: string
           user_type?: string | null
+          verification_badge?: string | null
+          verification_status?: string | null
+          verification_verified_at?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
@@ -437,22 +459,33 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           city?: string | null
+          cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
           display_name?: string | null
+          eligibility_category?: string | null
           email?: string | null
+          food_preferences?: string[] | null
           household_size?: number | null
           id?: string
+          kitchen_equipment?: string[] | null
           last_active?: string | null
+          meal_repetition?: string | null
+          membership_discount?: number | null
+          membership_tier?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           snap_status?: boolean | null
           state?: string | null
           updated_at?: string
+          user_goals?: string[] | null
           user_id?: string
           user_type?: string | null
+          verification_badge?: string | null
+          verification_status?: string | null
+          verification_verified_at?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
@@ -652,6 +685,51 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      verification_documents: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          document_type: string
+          document_url: string
+          eligibility_category: string
+          file_name: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          document_type: string
+          document_url: string
+          eligibility_category: string
+          file_name: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          eligibility_category?: string
+          file_name?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
