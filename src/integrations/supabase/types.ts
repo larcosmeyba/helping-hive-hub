@@ -98,6 +98,95 @@ export type Database = {
         }
         Relationships: []
       }
+      canonical_product_aliases: {
+        Row: {
+          alias_id: string
+          alias_text: string
+          alias_type: string | null
+          canonical_product_id: string
+          created_at: string
+        }
+        Insert: {
+          alias_id?: string
+          alias_text: string
+          alias_type?: string | null
+          canonical_product_id: string
+          created_at?: string
+        }
+        Update: {
+          alias_id?: string
+          alias_text?: string
+          alias_type?: string | null
+          canonical_product_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_product_aliases_canonical_product_id_fkey"
+            columns: ["canonical_product_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_products"
+            referencedColumns: ["canonical_product_id"]
+          },
+        ]
+      }
+      canonical_products: {
+        Row: {
+          canonical_brand: string | null
+          canonical_name: string
+          canonical_product_id: string
+          category: string | null
+          created_at: string
+          default_image_url: string | null
+          gtin_upc: string | null
+          ingredient_type: string | null
+          is_generic: boolean
+          normalized_size_text: string | null
+          nutrition_reference_id: string | null
+          nutrition_source: string | null
+          size_unit: string | null
+          size_value: number | null
+          subcategory: string | null
+          updated_at: string
+        }
+        Insert: {
+          canonical_brand?: string | null
+          canonical_name: string
+          canonical_product_id?: string
+          category?: string | null
+          created_at?: string
+          default_image_url?: string | null
+          gtin_upc?: string | null
+          ingredient_type?: string | null
+          is_generic?: boolean
+          normalized_size_text?: string | null
+          nutrition_reference_id?: string | null
+          nutrition_source?: string | null
+          size_unit?: string | null
+          size_value?: number | null
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canonical_brand?: string | null
+          canonical_name?: string
+          canonical_product_id?: string
+          category?: string | null
+          created_at?: string
+          default_image_url?: string | null
+          gtin_upc?: string | null
+          ingredient_type?: string | null
+          is_generic?: boolean
+          normalized_size_text?: string | null
+          nutrition_reference_id?: string | null
+          nutrition_source?: string | null
+          size_unit?: string | null
+          size_value?: number | null
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       food_waste_logs: {
         Row: {
           created_at: string
@@ -210,6 +299,120 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_plans"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_store_preferences: {
+        Row: {
+          address_line_1: string | null
+          city: string | null
+          created_at: string
+          household_id: string
+          household_store_preference_id: string
+          latitude: number | null
+          longitude: number | null
+          preferred_retailer_id: string | null
+          preferred_store_id: string | null
+          primary_store_flag: boolean
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address_line_1?: string | null
+          city?: string | null
+          created_at?: string
+          household_id: string
+          household_store_preference_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          preferred_retailer_id?: string | null
+          preferred_store_id?: string | null
+          primary_store_flag?: boolean
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address_line_1?: string | null
+          city?: string | null
+          created_at?: string
+          household_id?: string
+          household_store_preference_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          preferred_retailer_id?: string | null
+          preferred_store_id?: string | null
+          primary_store_flag?: boolean
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_store_preferences_preferred_retailer_id_fkey"
+            columns: ["preferred_retailer_id"]
+            isOneToOne: false
+            referencedRelation: "retailers"
+            referencedColumns: ["retailer_id"]
+          },
+          {
+            foreignKeyName: "household_store_preferences_preferred_store_id_fkey"
+            columns: ["preferred_store_id"]
+            isOneToOne: false
+            referencedRelation: "store_locations"
+            referencedColumns: ["store_id"]
+          },
+        ]
+      }
+      ingredient_product_mapping: {
+        Row: {
+          canonical_product_id: string | null
+          created_at: string
+          ingredient_mapping_id: string
+          manual_override: boolean
+          mapping_confidence: string | null
+          mapping_method: string | null
+          preferred_retailer_product_id: string | null
+          recipe_ingredient_text: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_product_id?: string | null
+          created_at?: string
+          ingredient_mapping_id?: string
+          manual_override?: boolean
+          mapping_confidence?: string | null
+          mapping_method?: string | null
+          preferred_retailer_product_id?: string | null
+          recipe_ingredient_text: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_product_id?: string | null
+          created_at?: string
+          ingredient_mapping_id?: string
+          manual_override?: boolean
+          mapping_confidence?: string | null
+          mapping_method?: string | null
+          preferred_retailer_product_id?: string | null
+          recipe_ingredient_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_product_mapping_canonical_product_id_fkey"
+            columns: ["canonical_product_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_products"
+            referencedColumns: ["canonical_product_id"]
+          },
+          {
+            foreignKeyName: "ingredient_product_mapping_preferred_retailer_product_id_fkey"
+            columns: ["preferred_retailer_product_id"]
+            isOneToOne: false
+            referencedRelation: "retailer_products"
+            referencedColumns: ["retailer_product_id"]
           },
         ]
       }
@@ -386,6 +589,57 @@ export type Database = {
         }
         Relationships: []
       }
+      product_price_history: {
+        Row: {
+          freshness_status: string | null
+          observed_at: string
+          observed_price: number
+          observed_sale_price: number | null
+          price_history_id: string
+          raw_source_payload: Json | null
+          retailer_product_id: string
+          source_system: string
+          store_id: string | null
+        }
+        Insert: {
+          freshness_status?: string | null
+          observed_at?: string
+          observed_price: number
+          observed_sale_price?: number | null
+          price_history_id?: string
+          raw_source_payload?: Json | null
+          retailer_product_id: string
+          source_system: string
+          store_id?: string | null
+        }
+        Update: {
+          freshness_status?: string | null
+          observed_at?: string
+          observed_price?: number
+          observed_sale_price?: number | null
+          price_history_id?: string
+          raw_source_payload?: Json | null
+          retailer_product_id?: string
+          source_system?: string
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_price_history_retailer_product_id_fkey"
+            columns: ["retailer_product_id"]
+            isOneToOne: false
+            referencedRelation: "retailer_products"
+            referencedColumns: ["retailer_product_id"]
+          },
+          {
+            foreignKeyName: "product_price_history_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_locations"
+            referencedColumns: ["store_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_status: string | null
@@ -491,6 +745,69 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_sync_logs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          provider_name: string
+          records_created: number | null
+          records_failed: number | null
+          records_updated: number | null
+          request_reference: string | null
+          request_status: string
+          retailer_id: string | null
+          started_at: string
+          store_id: string | null
+          sync_log_id: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          provider_name: string
+          records_created?: number | null
+          records_failed?: number | null
+          records_updated?: number | null
+          request_reference?: string | null
+          request_status?: string
+          retailer_id?: string | null
+          started_at?: string
+          store_id?: string | null
+          sync_log_id?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          provider_name?: string
+          records_created?: number | null
+          records_failed?: number | null
+          records_updated?: number | null
+          request_reference?: string | null
+          request_status?: string
+          retailer_id?: string | null
+          started_at?: string
+          store_id?: string | null
+          sync_log_id?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_sync_logs_retailer_id_fkey"
+            columns: ["retailer_id"]
+            isOneToOne: false
+            referencedRelation: "retailers"
+            referencedColumns: ["retailer_id"]
+          },
+          {
+            foreignKeyName: "provider_sync_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_locations"
+            referencedColumns: ["store_id"]
+          },
+        ]
+      }
       recipes: {
         Row: {
           calories: number | null
@@ -545,6 +862,136 @@ export type Database = {
           protein_g?: number | null
           serving_size?: number | null
           title?: string
+        }
+        Relationships: []
+      }
+      retailer_products: {
+        Row: {
+          active_status: string
+          canonical_product_id: string | null
+          created_at: string
+          gtin_upc: string | null
+          image_url: string | null
+          package_size_text: string | null
+          product_url: string | null
+          provider_name: string | null
+          provider_product_reference: string | null
+          retailer_brand: string | null
+          retailer_category: string | null
+          retailer_id: string
+          retailer_product_id: string
+          retailer_product_title: string
+          retailer_sku: string | null
+          size_unit: string | null
+          size_value: number | null
+          store_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active_status?: string
+          canonical_product_id?: string | null
+          created_at?: string
+          gtin_upc?: string | null
+          image_url?: string | null
+          package_size_text?: string | null
+          product_url?: string | null
+          provider_name?: string | null
+          provider_product_reference?: string | null
+          retailer_brand?: string | null
+          retailer_category?: string | null
+          retailer_id: string
+          retailer_product_id?: string
+          retailer_product_title: string
+          retailer_sku?: string | null
+          size_unit?: string | null
+          size_value?: number | null
+          store_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active_status?: string
+          canonical_product_id?: string | null
+          created_at?: string
+          gtin_upc?: string | null
+          image_url?: string | null
+          package_size_text?: string | null
+          product_url?: string | null
+          provider_name?: string | null
+          provider_product_reference?: string | null
+          retailer_brand?: string | null
+          retailer_category?: string | null
+          retailer_id?: string
+          retailer_product_id?: string
+          retailer_product_title?: string
+          retailer_sku?: string | null
+          size_unit?: string | null
+          size_value?: number | null
+          store_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retailer_products_canonical_product_id_fkey"
+            columns: ["canonical_product_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_products"
+            referencedColumns: ["canonical_product_id"]
+          },
+          {
+            foreignKeyName: "retailer_products_retailer_id_fkey"
+            columns: ["retailer_id"]
+            isOneToOne: false
+            referencedRelation: "retailers"
+            referencedColumns: ["retailer_id"]
+          },
+          {
+            foreignKeyName: "retailer_products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_locations"
+            referencedColumns: ["store_id"]
+          },
+        ]
+      }
+      retailers: {
+        Row: {
+          created_at: string
+          provider_name: string | null
+          provider_retailer_reference: string | null
+          retailer_id: string
+          retailer_logo_url: string | null
+          retailer_name: string
+          retailer_slug: string
+          retailer_status: string
+          supports_live_inventory: boolean
+          supports_live_pricing: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          provider_name?: string | null
+          provider_retailer_reference?: string | null
+          retailer_id?: string
+          retailer_logo_url?: string | null
+          retailer_name: string
+          retailer_slug: string
+          retailer_status?: string
+          supports_live_inventory?: boolean
+          supports_live_pricing?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          provider_name?: string | null
+          provider_retailer_reference?: string | null
+          retailer_id?: string
+          retailer_logo_url?: string | null
+          retailer_name?: string
+          retailer_slug?: string
+          retailer_status?: string
+          supports_live_inventory?: boolean
+          supports_live_pricing?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -631,6 +1078,165 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      store_locations: {
+        Row: {
+          address_line_1: string | null
+          address_line_2: string | null
+          city: string | null
+          created_at: string
+          latitude: number | null
+          longitude: number | null
+          phone_number: string | null
+          provider_store_reference: string | null
+          retailer_id: string
+          state: string | null
+          store_id: string
+          store_name: string
+          store_status: string
+          timezone: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          city?: string | null
+          created_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone_number?: string | null
+          provider_store_reference?: string | null
+          retailer_id: string
+          state?: string | null
+          store_id?: string
+          store_name: string
+          store_status?: string
+          timezone?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          city?: string | null
+          created_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone_number?: string | null
+          provider_store_reference?: string | null
+          retailer_id?: string
+          state?: string | null
+          store_id?: string
+          store_name?: string
+          store_status?: string
+          timezone?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_locations_retailer_id_fkey"
+            columns: ["retailer_id"]
+            isOneToOne: false
+            referencedRelation: "retailers"
+            referencedColumns: ["retailer_id"]
+          },
+        ]
+      }
+      store_product_prices: {
+        Row: {
+          base_price: number
+          created_at: string
+          currency_code: string
+          freshness_status: string
+          in_stock: boolean | null
+          inventory_status: string | null
+          last_verified_at: string
+          loyalty_price: number | null
+          promo_text: string | null
+          raw_source_payload: Json | null
+          retailer_id: string
+          retailer_product_id: string
+          sale_price: number | null
+          source_confidence: string | null
+          source_system: string
+          store_id: string | null
+          store_price_id: string
+          unit_price: number | null
+          unit_price_basis: string | null
+          updated_at: string
+          zip_code_context: string | null
+        }
+        Insert: {
+          base_price: number
+          created_at?: string
+          currency_code?: string
+          freshness_status?: string
+          in_stock?: boolean | null
+          inventory_status?: string | null
+          last_verified_at?: string
+          loyalty_price?: number | null
+          promo_text?: string | null
+          raw_source_payload?: Json | null
+          retailer_id: string
+          retailer_product_id: string
+          sale_price?: number | null
+          source_confidence?: string | null
+          source_system: string
+          store_id?: string | null
+          store_price_id?: string
+          unit_price?: number | null
+          unit_price_basis?: string | null
+          updated_at?: string
+          zip_code_context?: string | null
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          currency_code?: string
+          freshness_status?: string
+          in_stock?: boolean | null
+          inventory_status?: string | null
+          last_verified_at?: string
+          loyalty_price?: number | null
+          promo_text?: string | null
+          raw_source_payload?: Json | null
+          retailer_id?: string
+          retailer_product_id?: string
+          sale_price?: number | null
+          source_confidence?: string | null
+          source_system?: string
+          store_id?: string | null
+          store_price_id?: string
+          unit_price?: number | null
+          unit_price_basis?: string | null
+          updated_at?: string
+          zip_code_context?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_product_prices_retailer_id_fkey"
+            columns: ["retailer_id"]
+            isOneToOne: false
+            referencedRelation: "retailers"
+            referencedColumns: ["retailer_id"]
+          },
+          {
+            foreignKeyName: "store_product_prices_retailer_product_id_fkey"
+            columns: ["retailer_product_id"]
+            isOneToOne: false
+            referencedRelation: "retailer_products"
+            referencedColumns: ["retailer_product_id"]
+          },
+          {
+            foreignKeyName: "store_product_prices_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_locations"
+            referencedColumns: ["store_id"]
+          },
+        ]
       }
       support_tickets: {
         Row: {
