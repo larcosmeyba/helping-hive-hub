@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Clock, Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
-// Curated food images mapped by keyword
 const MEAL_IMAGES: Record<string, string> = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
   rice: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=300&fit=crop",
@@ -40,55 +39,55 @@ export function MealCard({ meal, compact }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow min-w-0">
-      <div className="relative h-24 md:h-32 overflow-hidden">
+    <div className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0' : 'w-full'}`}>
+      <div className={`relative overflow-hidden ${compact ? 'h-24 md:h-32' : 'h-40 md:h-44'}`} style={!compact ? { aspectRatio: '4/3' } : undefined}>
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <div className="absolute top-0.5 left-0.5 md:top-2 md:left-2">
-          <span className="bg-primary/90 text-primary-foreground text-[7px] md:text-[10px] font-semibold px-1 py-0.5 rounded-full uppercase tracking-wide">
+        <div className={`absolute top-2 left-2 ${compact ? 'md:top-2 md:left-2' : ''}`}>
+          <span className={`bg-primary/90 text-primary-foreground font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px] md:text-[10px]' : 'text-[10px]'}`}>
             {meal.type}
           </span>
         </div>
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 md:p-2">
-          <p className="text-white text-[10px] md:text-sm font-semibold line-clamp-2 leading-tight">{meal.name}</p>
+        <div className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent ${compact ? 'p-1.5 md:p-2' : 'p-3'}`}>
+          <p className={`text-white font-semibold line-clamp-2 leading-tight ${compact ? 'text-[10px] md:text-sm' : 'text-base'}`}>{meal.name}</p>
         </div>
       </div>
 
-      <div className="p-1.5 md:p-3">
-        <div className="flex items-center gap-1.5 md:gap-3 text-[9px] md:text-xs text-muted-foreground">
-          <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary" />{meal.calories}</span>
-          <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3 text-accent" />${meal.estimatedCost.toFixed(0)}</span>
+      <div className={compact ? 'p-1.5 md:p-3' : 'p-3'}>
+        <div className={`flex items-center gap-3 text-muted-foreground ${compact ? 'text-[9px] md:text-xs gap-1.5 md:gap-3' : 'text-sm'}`}>
+          <span className="flex items-center gap-1"><Flame className={`text-primary ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />{meal.calories} cal</span>
+          <span className="flex items-center gap-1"><DollarSign className={`text-accent ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />${meal.estimatedCost.toFixed(2)}</span>
         </div>
 
         {!compact && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-2 flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+            className="mt-2 flex items-center gap-1 text-sm text-primary font-medium hover:underline"
           >
             {expanded ? "Hide" : "View"} Recipe
-            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         )}
 
         {expanded && (
           <div className="mt-3 space-y-3 border-t border-border pt-3">
             <div>
-              <p className="text-xs font-semibold text-foreground mb-1">Ingredients</p>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
+              <p className="text-sm font-semibold text-foreground mb-1">Ingredients</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
                 {meal.ingredients.map((ing, i) => (
-                  <li key={i} className="flex items-start gap-1">
+                  <li key={i} className="flex items-start gap-1.5">
                     <span className="text-primary mt-0.5">•</span> {ing}
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold text-foreground mb-1">Instructions</p>
-              <ol className="text-xs text-muted-foreground space-y-1">
+              <p className="text-sm font-semibold text-foreground mb-1">Instructions</p>
+              <ol className="text-sm text-muted-foreground space-y-1.5">
                 {meal.instructions.map((step, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="text-primary font-bold shrink-0">{i + 1}.</span>
@@ -97,7 +96,7 @@ export function MealCard({ meal, compact }: Props) {
                 ))}
               </ol>
             </div>
-            <div className="flex gap-3 text-[10px] text-muted-foreground pt-1">
+            <div className="flex gap-3 text-xs text-muted-foreground pt-1">
               <span>{meal.protein}g protein</span>
               <span>{meal.carbs}g carbs</span>
               <span>{meal.fats}g fat</span>
