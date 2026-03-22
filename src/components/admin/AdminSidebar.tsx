@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, CalendarDays, BookOpen, Sparkles,
-  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft
+  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft, FileCheck
 } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
@@ -15,6 +15,7 @@ import {
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, permission: null },
   { title: "Members", url: "/admin/members", icon: Users, permission: "view_members" as const },
+  { title: "Verifications", url: "/admin/verifications", icon: FileCheck, permission: "view_members" as const },
   { title: "Meal Plans", url: "/admin/meal-plans", icon: CalendarDays, permission: "manage_meal_plans" as const },
   { title: "Recipes", url: "/admin/recipes", icon: BookOpen, permission: "manage_recipes" as const },
   { title: "Special Meals", url: "/admin/special-meals", icon: Sparkles, permission: "manage_special_meals" as const },
