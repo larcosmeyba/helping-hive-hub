@@ -67,6 +67,11 @@ export default function Login() {
           Don't have an account?{" "}
           <Link to="/signup" className="text-primary font-medium hover:underline">Sign up</Link>
         </p>
+        <p className="text-center text-sm text-muted-foreground mt-3">
+          <Link to="/admin/login" className="text-muted-foreground hover:text-primary hover:underline transition-colors">
+            Admin Portal →
+          </Link>
+        </p>
       </div>
     </div>
   );
