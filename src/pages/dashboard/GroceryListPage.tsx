@@ -255,38 +255,41 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Store Comparison — 3 inline small boxes */}
+      {/* Store Comparison — horizontal scroll */}
       {stores.length > 0 && (
         <div>
-          <div className="flex items-center gap-1 mb-1.5 md:mb-3">
-            <Store className="w-3 h-3 md:w-5 md:h-5 text-primary" />
-            <h2 className="font-display text-[10px] md:text-lg font-semibold text-foreground">Compare Stores</h2>
+          <div className="flex items-center gap-1.5 mb-2 md:mb-3">
+            <Store className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+            <h2 className="font-display text-sm md:text-lg font-semibold text-foreground">Compare Stores</h2>
           </div>
-          <div className="grid grid-cols-3 gap-1 md:gap-3">
-            {stores.slice(0, 3).map((store) => {
+          <div
+            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {stores.slice(0, 6).map((store) => {
               const isActive = activeStore === store.store;
               const isCheapest = stores.every((s) => store.estimatedTotal <= s.estimatedTotal);
               return (
                 <button
                   key={store.store}
                   onClick={() => setSelectedStore(store.store)}
-                  className={`relative p-1.5 md:p-4 rounded-lg border text-left transition-all ${
+                  className={`snap-start shrink-0 w-[130px] md:w-auto relative p-3 md:p-4 rounded-2xl border text-left transition-all ${
                     isActive
                       ? "border-primary bg-primary/5 shadow-card"
                       : "border-border hover:border-primary/30"
                   }`}
                 >
                   {isCheapest && (
-                    <span className="absolute -top-1 right-0.5 md:top-1 md:right-1 bg-accent text-accent-foreground text-[5px] md:text-[9px] font-bold px-1 py-px rounded-full">
+                    <span className="absolute -top-1.5 right-2 bg-accent text-accent-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                       Best
                     </span>
                   )}
-                  <div className="flex items-center gap-0.5 md:gap-2 mb-0.5">
-                    <Store className="w-2 h-2 md:w-4 md:h-4 text-primary shrink-0" />
-                    <p className="font-semibold text-[7px] md:text-sm text-foreground truncate">{store.store}</p>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Store className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
+                    <p className="font-semibold text-xs md:text-sm text-foreground truncate">{store.store}</p>
                   </div>
-                  <p className="text-[10px] md:text-xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
-                  <p className="text-[5px] md:text-[10px] text-muted-foreground">Est. + tax</p>
+                  <p className="text-lg md:text-xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Est. + tax</p>
                 </button>
               );
             })}
