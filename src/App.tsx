@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Questionnaire from "./pages/Questionnaire.tsx";
 import SampleMealPlan from "./pages/SampleMealPlan.tsx";
+import LegalPage from "./pages/legal/LegalPage.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
@@ -49,6 +50,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/sample-plan/:slug" element={<SampleMealPlan />} />
+            <Route path="/page/:slug" element={<LegalPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

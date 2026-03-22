@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, Settings, LogOut, ChefHat, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -78,6 +78,14 @@ export function DashboardSidebar() {
               <NavLink to="/dashboard/support" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                 <LifeBuoy className="mr-2 h-4 w-4" />
                 {!collapsed && <span>Support</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink to="/page/terms" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                <FileText className="mr-2 h-4 w-4" />
+                {!collapsed && <span>Legal & Policies</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
