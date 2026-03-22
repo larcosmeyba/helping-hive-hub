@@ -83,6 +83,14 @@ export function DashboardSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
+              <NavLink to="/page/terms" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                <FileText className="mr-2 h-4 w-4" />
+                {!collapsed && <span>Legal & Policies</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
               <NavLink to="/dashboard/settings" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                 <Settings className="mr-2 h-4 w-4" />
                 {!collapsed && <span>Settings</span>}
