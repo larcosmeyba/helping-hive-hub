@@ -64,41 +64,79 @@ export default function MealPlanPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
+    <div className="max-w-6xl mx-auto space-y-5 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
-            <CalendarDays className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Weekly Meal Plan
+          <h1 className="font-display text-lg md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 md:w-6 md:h-6 text-primary" /> Weekly Meal Plan
           </h1>
-          <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5">
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">
             Total: ${mealPlan.totalEstimatedCost?.toFixed(2)} • {mealPlan.weeklyPlan.reduce((n, d) => n + d.meals.length, 0)} meals
           </p>
         </div>
-        <Button onClick={generate} disabled={generating} variant="outline" size="sm" className="h-6 text-[8px] px-2 md:h-9 md:text-sm md:px-3">
-          {generating ? <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin md:w-4 md:h-4" /> : <RefreshCw className="w-2.5 h-2.5 mr-1 md:w-4 md:h-4" />}
+        <Button onClick={generate} disabled={generating} variant="outline" size="sm" className="h-10 text-sm px-3 md:h-10 md:text-sm md:px-4 rounded-xl">
+          {generating ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
           Regen
         </Button>
       </div>
 
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
-        <div key={day.day} className="space-y-1 md:space-y-3">
-          <h2 className="font-display text-[9px] md:text-lg font-semibold text-foreground flex items-center gap-1">
-            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[7px] md:text-sm font-bold">{day.day}</span>
+        <div key={day.day} className="space-y-2 md:space-y-3">
+          <h2 className="font-display text-sm md:text-lg font-semibold text-foreground flex items-center gap-1.5">
+            <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs md:text-sm font-bold">{day.day}</span>
           </h2>
           <div
-            className="flex gap-1.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-0.5 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
+            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {day.meals.map((originalMeal, mealIndex) => {
               const meal = getMeal(dayIndex, mealIndex, originalMeal);
               return (
-                <div key={`${day.day}-${mealIndex}`} className="snap-start shrink-0 w-[110px] md:w-auto md:shrink">
-                  <MealCard meal={meal} compact />
-                  <div className="flex gap-0.5 mt-0.5 md:gap-2 md:mt-2">
+                <div key={`${day.day}-${mealIndex}`} className="snap-start shrink-0 w-[140px] md:w-auto md:shrink">
+                  <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden w-[140px] h-[140px] md:w-auto md:h-auto">
+                    <div className="relative h-[90px] md:h-32 overflow-hidden">
+                      <img
+                        src={(() => {
+                          const lower = meal.name.toLowerCase();
+                          const images: Record<string, string> = {
+                            chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
+                            rice: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=300&fit=crop",
+                            pasta: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
+                            salmon: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
+                            salad: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
+                            soup: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
+                            egg: "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&h=300&fit=crop",
+                            oatmeal: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
+                            taco: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=300&fit=crop",
+                            stir: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+                            beef: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop",
+                          };
+                          for (const [kw, url] of Object.entries(images)) {
+                            if (lower.includes(kw)) return url;
+                          }
+                          return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+                        })()}
+                        alt={meal.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-1 left-1">
+                        <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
+                      </div>
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
+                        <p className="text-white text-[10px] md:text-sm font-semibold line-clamp-1 leading-tight">{meal.name}</p>
+                      </div>
+                    </div>
+                    <div className="p-1.5 md:p-3 flex items-center gap-2 text-[9px] md:text-xs text-muted-foreground">
+                      <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 text-primary" />{meal.calories}</span>
+                      <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 text-accent" />${meal.estimatedCost.toFixed(0)}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 mt-1 md:gap-2 md:mt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-[7px] h-5 px-1 md:text-xs md:h-8 md:px-2"
+                      className="flex-1 text-[9px] h-7 px-2 md:text-xs md:h-8 md:px-2 rounded-lg"
                       onClick={() => setSelectedMeal(meal)}
                     >
                       Recipe
@@ -106,10 +144,10 @@ export default function MealPlanPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-[7px] h-5 px-1 md:text-xs md:h-8 md:px-2"
+                      className="text-[9px] h-7 px-2 md:text-xs md:h-8 md:px-2 rounded-lg"
                       onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
                     >
-                      <Shuffle className="w-2 h-2 mr-0.5 md:w-3 md:h-3" /> Swap
+                      <Shuffle className="w-2.5 h-2.5 mr-0.5 md:w-3 md:h-3" /> Swap
                     </Button>
                   </div>
                 </div>
