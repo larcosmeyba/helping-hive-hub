@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Search, Download, Filter, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<any[]>([]);
@@ -21,11 +22,7 @@ export default function AdminMembers() {
 
   useEffect(() => {
     async function fetchMembers() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       if (!error && data) setMembers(data);
       setLoading(false);
     }
@@ -33,9 +30,7 @@ export default function AdminMembers() {
   }, []);
 
   const filtered = members.filter(m => {
-    const matchesSearch = !search ||
-      (m.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (m.email || "").toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !search || (m.display_name || "").toLowerCase().includes(search.toLowerCase()) || (m.email || "").toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "all" || m.user_type === filterType;
     const matchesStatus = filterStatus === "all" || m.account_status === filterStatus;
     return matchesSearch && matchesType && matchesStatus;
@@ -43,20 +38,33 @@ export default function AdminMembers() {
 
   const handleExport = () => {
     const csv = [
-      ["Name", "Email", "Phone", "City", "State", "Household Size", "User Type", "SNAP", "Status", "Joined"],
+      ["Name", "Email", "Phone", "City", "State", "ZIP", "Household Size", "Budget", "User Type", "SNAP", "Status", "Joined", "Food Preferences", "Dietary", "Allergies", "Cooking Style", "Kitchen Equipment", "Goals"],
       ...filtered.map(m => [
-        m.display_name, m.email, m.phone_number, m.city, m.state,
-        m.household_size, m.user_type, m.snap_status ? "Yes" : "No",
-        m.account_status, new Date(m.created_at).toLocaleDateString()
+        m.display_name, m.email, m.phone_number, m.city, m.state, m.zip_code,
+        m.household_size, m.weekly_budget, m.user_type, m.snap_status ? "Yes" : "No",
+        m.account_status, new Date(m.created_at).toLocaleDateString(),
+        (m.food_preferences || []).join("; "), (m.dietary_preferences || []).join("; "),
+        (m.allergies || []).join("; "), m.cooking_style, (m.kitchen_equipment || []).join("; "),
+        (m.user_goals || []).join("; "),
       ])
-    ].map(row => row.join(",")).join("\n");
+    ].map(row => row.map(v => `"${v || ""}"`).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    a.href = url; a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  };
+
+  const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div>
+      <span className="text-xs text-muted-foreground block">{label}</span>
+      <p className="text-sm font-medium text-foreground">{value || "—"}</p>
+    </div>
+  );
+
+  const ArrayBadges = ({ items, emptyText = "None" }: { items: string[] | null; emptyText?: string }) => {
+    if (!items || items.length === 0) return <span className="text-sm text-muted-foreground">{emptyText}</span>;
+    return <div className="flex flex-wrap gap-1">{items.map(i => <Badge key={i} variant="secondary" className="text-[10px]">{i}</Badge>)}</div>;
   };
 
   return (
@@ -73,7 +81,6 @@ export default function AdminMembers() {
         )}
       </div>
 
-      {/* Filters */}
       <Card className="bg-card border-border">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3">
@@ -104,7 +111,6 @@ export default function AdminMembers() {
         </CardContent>
       </Card>
 
-      {/* Members Table */}
       <Card className="bg-card border-border">
         <CardContent className="p-0">
           <Table>
@@ -125,73 +131,117 @@ export default function AdminMembers() {
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No members found</TableCell></TableRow>
-              ) : (
-                filtered.map(member => (
-                  <TableRow key={member.id} className="cursor-pointer" onClick={() => setSelectedMember(member)}>
-                    <TableCell className="font-medium">{member.display_name || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{member.email || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {[member.city, member.state].filter(Boolean).join(", ") || "—"}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">{member.household_size || "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <Badge variant="secondary" className="capitalize text-xs">{member.user_type || "other"}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden xl:table-cell">
-                      {(isOwner || permissions.view_snap_data) ? (
-                        member.snap_status ? <Badge className="bg-accent text-accent-foreground text-xs">Yes</Badge> : <span className="text-muted-foreground text-xs">No</span>
-                      ) : <span className="text-muted-foreground text-xs">Restricted</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={member.account_status === "active" ? "default" : "destructive"} className="text-xs capitalize">
-                        {member.account_status || "active"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
-                  </TableRow>
-                ))
-              )}
+              ) : filtered.map(member => (
+                <TableRow key={member.id} className="cursor-pointer" onClick={() => setSelectedMember(member)}>
+                  <TableCell className="font-medium">{member.display_name || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{member.email || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{[member.city, member.state].filter(Boolean).join(", ") || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{member.household_size || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell"><Badge variant="secondary" className="capitalize text-xs">{member.user_type || "other"}</Badge></TableCell>
+                  <TableCell className="hidden xl:table-cell">
+                    {(isOwner || permissions.view_snap_data) ? (
+                      member.snap_status ? <Badge className="bg-accent text-accent-foreground text-xs">Yes</Badge> : <span className="text-muted-foreground text-xs">No</span>
+                    ) : <span className="text-muted-foreground text-xs">Restricted</span>}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={member.account_status === "active" ? "default" : "destructive"} className="text-xs capitalize">{member.account_status || "active"}</Badge>
+                  </TableCell>
+                  <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* Member Detail Dialog */}
+      {/* Member Detail Dialog — Tabbed */}
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Member Details</DialogTitle>
+            <DialogTitle className="font-display">
+              {selectedMember?.display_name || "Member"} — Details
+            </DialogTitle>
           </DialogHeader>
           {selectedMember && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Name</span><p className="font-medium">{selectedMember.display_name || "—"}</p></div>
-                <div><span className="text-muted-foreground">Email</span><p className="font-medium">{selectedMember.email || "—"}</p></div>
-                <div><span className="text-muted-foreground">Phone</span><p className="font-medium">{selectedMember.phone_number || "—"}</p></div>
-                <div><span className="text-muted-foreground">Location</span><p className="font-medium">{[selectedMember.city, selectedMember.state, selectedMember.zip_code].filter(Boolean).join(", ") || "—"}</p></div>
-                <div><span className="text-muted-foreground">Household Size</span><p className="font-medium">{selectedMember.household_size || "—"}</p></div>
-                <div><span className="text-muted-foreground">User Type</span><p className="font-medium capitalize">{selectedMember.user_type || "other"}</p></div>
-                {(isOwner || permissions.view_snap_data) && (
-                  <div><span className="text-muted-foreground">SNAP Status</span><p className="font-medium">{selectedMember.snap_status ? "Yes" : "No"}</p></div>
-                )}
-                <div><span className="text-muted-foreground">Budget</span><p className="font-medium">${selectedMember.weekly_budget || "—"}/week</p></div>
-                <div><span className="text-muted-foreground">Dietary</span><p className="font-medium">{(selectedMember.dietary_preferences || []).join(", ") || "None"}</p></div>
-                <div><span className="text-muted-foreground">Allergies</span><p className="font-medium">{(selectedMember.allergies || []).join(", ") || "None"}</p></div>
-                <div><span className="text-muted-foreground">Joined</span><p className="font-medium">{new Date(selectedMember.created_at).toLocaleDateString()}</p></div>
-                <div><span className="text-muted-foreground">Status</span><p className="font-medium capitalize">{selectedMember.account_status || "active"}</p></div>
-              </div>
-              {(isOwner || permissions.edit_members) && (
-                <div className="flex gap-2 pt-2 border-t border-border">
-                  <Button size="sm" variant="outline" onClick={async () => {
-                    const newStatus = selectedMember.account_status === "active" ? "disabled" : "active";
-                    await supabase.from("profiles").update({ account_status: newStatus }).eq("id", selectedMember.id);
-                    setSelectedMember({ ...selectedMember, account_status: newStatus });
-                    setMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, account_status: newStatus } : m));
-                  }}>
-                    {selectedMember.account_status === "active" ? "Disable" : "Enable"} Account
-                  </Button>
+            <Tabs defaultValue="profile" className="w-full">
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
+                <TabsTrigger value="membership">Membership</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="profile" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow label="Name" value={selectedMember.display_name} />
+                  <InfoRow label="Email" value={selectedMember.email} />
+                  <InfoRow label="Phone" value={selectedMember.phone_number} />
+                  <InfoRow label="Location" value={[selectedMember.city, selectedMember.state, selectedMember.zip_code].filter(Boolean).join(", ")} />
+                  <InfoRow label="Household Size" value={selectedMember.household_size} />
+                  <InfoRow label="Weekly Budget" value={selectedMember.weekly_budget ? `$${selectedMember.weekly_budget}` : null} />
+                  <InfoRow label="Joined" value={new Date(selectedMember.created_at).toLocaleDateString()} />
+                  <InfoRow label="Last Active" value={selectedMember.last_active ? new Date(selectedMember.last_active).toLocaleDateString() : null} />
+                  <InfoRow label="Account Status" value={<Badge variant={selectedMember.account_status === "active" ? "default" : "destructive"} className="capitalize">{selectedMember.account_status || "active"}</Badge>} />
                 </div>
-              )}
+              </TabsContent>
+
+              <TabsContent value="questionnaire" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">Food Preferences</span>
+                    <ArrayBadges items={selectedMember.food_preferences} />
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">Dietary Restrictions</span>
+                    <ArrayBadges items={selectedMember.dietary_preferences} />
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">Allergies</span>
+                    <ArrayBadges items={selectedMember.allergies} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InfoRow label="Cooking Time Preference" value={selectedMember.cooking_time_preference} />
+                    <InfoRow label="Cooking Style" value={selectedMember.cooking_style} />
+                    <InfoRow label="Meal Repetition" value={selectedMember.meal_repetition} />
+                    <InfoRow label="Preferred Stores" value={(selectedMember.preferred_stores || []).join(", ")} />
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">Kitchen Equipment</span>
+                    <ArrayBadges items={selectedMember.kitchen_equipment} />
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">User Goals</span>
+                    <ArrayBadges items={selectedMember.user_goals} />
+                  </div>
+                  <InfoRow label="Questionnaire Completed" value={selectedMember.questionnaire_completed ? "Yes ✓" : "No"} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="membership" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow label="User Type" value={<span className="capitalize">{selectedMember.user_type || "other"}</span>} />
+                  <InfoRow label="Membership Tier" value={<span className="capitalize">{selectedMember.membership_tier || "standard"}</span>} />
+                  <InfoRow label="Eligibility Category" value={<span className="capitalize">{selectedMember.eligibility_category || "none"}</span>} />
+                  {(isOwner || permissions.view_snap_data) && (
+                    <InfoRow label="SNAP Status" value={selectedMember.snap_status ? <Badge className="bg-accent text-accent-foreground">Active</Badge> : "No"} />
+                  )}
+                  <InfoRow label="Verification Status" value={<Badge variant={selectedMember.verification_status === "verified" ? "default" : "secondary"} className="capitalize">{selectedMember.verification_status || "none"}</Badge>} />
+                  <InfoRow label="Verification Badge" value={selectedMember.verification_badge} />
+                  <InfoRow label="Membership Discount" value={selectedMember.membership_discount ? `${selectedMember.membership_discount}%` : "0%"} />
+                  <InfoRow label="Verified At" value={selectedMember.verification_verified_at ? new Date(selectedMember.verification_verified_at).toLocaleDateString() : null} />
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+          {selectedMember && (isOwner || permissions.edit_members) && (
+            <div className="flex gap-2 pt-2 border-t border-border mt-4">
+              <Button size="sm" variant="outline" onClick={async () => {
+                const newStatus = selectedMember.account_status === "active" ? "disabled" : "active";
+                await supabase.from("profiles").update({ account_status: newStatus }).eq("id", selectedMember.id);
+                setSelectedMember({ ...selectedMember, account_status: newStatus });
+                setMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, account_status: newStatus } : m));
+              }}>
+                {selectedMember.account_status === "active" ? "Disable" : "Enable"} Account
+              </Button>
             </div>
           )}
         </DialogContent>
