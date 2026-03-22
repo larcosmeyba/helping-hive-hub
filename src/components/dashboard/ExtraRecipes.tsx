@@ -20,29 +20,29 @@ export function ExtraRecipes() {
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
-    const amount = 260;
+    const amount = 180;
     scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2 md:mb-4">
-        <h2 className="font-display text-xs md:text-xl font-semibold text-foreground flex items-center gap-1 md:gap-2">
-          <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 text-primary" /> Extra Recipes
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h2 className="font-display text-lg md:text-xl font-semibold text-foreground flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-primary" /> Extra Recipes
         </h2>
         <div className="flex items-center gap-2">
           {isMobile && (
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scroll("left")}>
-                <ChevronLeft className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => scroll("left")}>
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scroll("right")}>
-                <ChevronRight className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => scroll("right")}>
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}
-          <Link to="/dashboard/recipes" className="flex items-center gap-1 text-[9px] md:text-sm text-primary hover:underline font-medium">
-            View All <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
+          <Link to="/dashboard/recipes" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+            View All <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
@@ -50,49 +50,46 @@ export function ExtraRecipes() {
       {isMobile ? (
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1"
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {FEATURED_RECIPES.map((recipe) => (
             <div
               key={recipe.title}
-              className="snap-start shrink-0 w-[150px] bg-card rounded-xl border border-border shadow-card overflow-hidden"
+              className="snap-start shrink-0 w-[150px] bg-card rounded-2xl border border-border shadow-card overflow-hidden"
             >
-              <div className="relative h-24 overflow-hidden">
+              <div className="relative h-[110px] overflow-hidden">
                 <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" loading="lazy" />
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
-                  <p className="text-white font-semibold text-[10px] leading-tight">{recipe.title}</p>
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-white font-semibold text-xs leading-tight line-clamp-2">{recipe.title}</p>
                 </div>
               </div>
-              <div className="p-1.5">
-                <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
-                  <span className="flex items-center gap-0.5"><DollarSign className="w-2.5 h-2.5 text-accent" />${recipe.cost.toFixed(2)}</span>
-                  <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{recipe.time < 60 ? `${recipe.time}m` : `${Math.floor(recipe.time / 60)}h`}</span>
-                  <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{recipe.servings}</span>
+              <div className="p-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3 text-accent" />${recipe.cost.toFixed(0)}</span>
+                  <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{recipe.time < 60 ? `${recipe.time}m` : `${Math.floor(recipe.time / 60)}h`}</span>
+                  <span className="flex items-center gap-0.5"><Users className="w-3 h-3" />{recipe.servings}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* Desktop: grid layout */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURED_RECIPES.map((recipe, idx) => (
-            <div key={recipe.title} className="bg-card rounded-xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-shadow">
+            <div key={recipe.title} className="bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-elevated transition-shadow">
               <div className="relative h-36 overflow-hidden cursor-pointer" onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}>
                 <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                   <p className="text-white font-semibold text-sm">{recipe.title}</p>
                 </div>
               </div>
-
               <div className="p-3">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><DollarSign className="w-3 h-3 text-accent" />${recipe.cost.toFixed(2)}</span>
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{recipe.time < 60 ? `${recipe.time}m` : `${Math.floor(recipe.time / 60)}h`}</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3" />{recipe.servings}</span>
                 </div>
-
                 <button
                   onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                   className="mt-2 flex items-center gap-1 text-xs text-primary font-medium hover:underline"
@@ -100,7 +97,6 @@ export function ExtraRecipes() {
                   {expandedIdx === idx ? "Hide" : "View"} Recipe
                   {expandedIdx === idx ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
-
                 {expandedIdx === idx && (
                   <div className="mt-3 space-y-3 border-t border-border pt-3 animate-in slide-in-from-top-2">
                     <div>
