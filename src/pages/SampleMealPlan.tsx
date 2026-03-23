@@ -254,6 +254,12 @@ const SLUG_MAP: Record<string, string> = {
   "snap-friendly-meals": "snap-friendly-meals",
 };
 
+const MEAL_TYPE_ICONS: Record<string, React.ReactNode> = {
+  Breakfast: <Coffee className="w-7 h-7 text-amber-600" />,
+  Lunch: <Sun className="w-7 h-7 text-emerald-600" />,
+  Dinner: <Moon className="w-7 h-7 text-indigo-600" />,
+};
+
 const MEAL_TYPE_COLORS: Record<string, string> = {
   Breakfast: "bg-amber-100 text-amber-800",
   Lunch: "bg-emerald-100 text-emerald-800",
