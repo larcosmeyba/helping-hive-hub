@@ -36,7 +36,7 @@ export function HeroSection() {
                 <Link to="/signup">Get Started</Link>
               </Button>
               <a href="#meal-plan-examples" className="text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors">
-                👀 Check out our free meal plan examples
+                <Eye className="w-4 h-4 inline mr-1" /> Check out our free meal plan examples
               </a>
             </div>
           </motion.div>
