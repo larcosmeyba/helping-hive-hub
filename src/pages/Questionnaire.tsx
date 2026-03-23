@@ -7,7 +7,7 @@ import { QuestionnaireStep } from "@/components/questionnaire/QuestionnaireStep"
 import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
-import { Upload, ShieldCheck, X, Plus } from "lucide-react";
+import { Upload, ShieldCheck, X, Plus, Utensils } from "lucide-react";
 
 const TOTAL_STEPS = 14;
 
@@ -213,7 +213,7 @@ export default function Questionnaire() {
         });
       }
 
-      toast({ title: "All set! 🎉", description: "Your personalized meal plan is being created." });
+      toast({ title: "All set!", description: "Your personalized meal plan is being created." });
       navigate("/dashboard");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -434,7 +434,7 @@ export default function Questionnaire() {
           }
           onNext={handleSubmit}
           onBack={back}
-          nextLabel={loading ? "Setting up..." : "Generate My Meal Plan 🍽️"}
+          nextLabel={loading ? "Setting up..." : "Generate My Meal Plan"}
           loading={loading}
         >
           {eligibility && eligibility !== "none" && (
@@ -512,7 +512,7 @@ export default function Questionnaire() {
 
           {(!eligibility || eligibility === "none") && (
             <div className="mt-8 text-center">
-              <div className="text-6xl mb-4">🍽️</div>
+              <div className="mb-4 flex justify-center"><Utensils className="w-14 h-14 text-primary" /></div>
               <p className="text-muted-foreground text-sm">Your personalized meal plan, grocery list, and budget insights are ready to be generated.</p>
             </div>
           )}

@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CalendarDays, DollarSign, Users, Clock, ShoppingCart, Utensils } from "lucide-react";
+import { ArrowLeft, CalendarDays, DollarSign, Users, Clock, ShoppingCart, Utensils, Lightbulb, Coffee, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -254,6 +254,12 @@ const SLUG_MAP: Record<string, string> = {
   "snap-friendly-meals": "snap-friendly-meals",
 };
 
+const MEAL_TYPE_ICONS: Record<string, React.ReactNode> = {
+  Breakfast: <Coffee className="w-7 h-7 text-amber-600" />,
+  Lunch: <Sun className="w-7 h-7 text-emerald-600" />,
+  Dinner: <Moon className="w-7 h-7 text-indigo-600" />,
+};
+
 const MEAL_TYPE_COLORS: Record<string, string> = {
   Breakfast: "bg-amber-100 text-amber-800",
   Lunch: "bg-emerald-100 text-emerald-800",
@@ -346,7 +352,7 @@ export default function SampleMealPlan() {
                     {day.meals.map((meal, i) => (
                       <div key={i} className="p-4 hover:bg-muted/10 transition-colors">
                         <div className="flex items-start gap-3 mb-3">
-                          <span className="text-3xl">{meal.emoji}</span>
+                          {MEAL_TYPE_ICONS[meal.type] || <Utensils className="w-7 h-7 text-muted-foreground" />}
                           <div className="flex-1 min-w-0">
                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide mb-1 ${MEAL_TYPE_COLORS[meal.type] || "bg-muted text-muted-foreground"}`}>
                               {meal.type}
@@ -408,7 +414,7 @@ export default function SampleMealPlan() {
               <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="bg-background rounded-2xl border border-border p-6 shadow-card">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <span className="text-xl">💡</span>
+                    <Lightbulb className="w-5 h-5 text-accent" />
                   </div>
                   <h3 className="font-display text-xl font-bold text-foreground">Money-Saving Tips</h3>
                 </div>

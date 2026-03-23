@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Users as UsersIcon, DollarSign, X } from "lucide-react";
+import { Clock, Users as UsersIcon, DollarSign, X, ShoppingCart, ChefHat } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import recipeChickenRice from "@/assets/recipe-chicken-rice.jpg";
 import recipeStirFry from "@/assets/recipe-stir-fry.jpg";
@@ -244,7 +244,7 @@ export function RecipeShowcase() {
                 {/* Ingredients */}
                 <div>
                   <h3 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    🛒 Ingredients
+                    <ShoppingCart className="w-5 h-5 text-primary" /> Ingredients
                   </h3>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {selectedRecipe.ingredients.map((ing, i) => (
@@ -259,7 +259,7 @@ export function RecipeShowcase() {
                 {/* Instructions */}
                 <div>
                   <h3 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    👨‍🍳 Instructions
+                    <ChefHat className="w-5 h-5 text-primary" /> Instructions
                   </h3>
                   <ol className="space-y-3">
                     {selectedRecipe.instructions.map((step, i) => (
