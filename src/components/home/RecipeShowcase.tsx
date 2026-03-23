@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Users as UsersIcon, DollarSign, X } from "lucide-react";
+import { Clock, Users as UsersIcon, DollarSign, X, ShoppingCart, ChefHat } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import recipeChickenRice from "@/assets/recipe-chicken-rice.jpg";
 import recipeStirFry from "@/assets/recipe-stir-fry.jpg";

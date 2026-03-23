@@ -352,7 +352,7 @@ export default function SampleMealPlan() {
                     {day.meals.map((meal, i) => (
                       <div key={i} className="p-4 hover:bg-muted/10 transition-colors">
                         <div className="flex items-start gap-3 mb-3">
-                          <span className="text-3xl">{meal.emoji}</span>
+                          {MEAL_TYPE_ICONS[meal.type] || <Utensils className="w-7 h-7 text-muted-foreground" />}
                           <div className="flex-1 min-w-0">
                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide mb-1 ${MEAL_TYPE_COLORS[meal.type] || "bg-muted text-muted-foreground"}`}>
                               {meal.type}
