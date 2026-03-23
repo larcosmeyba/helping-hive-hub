@@ -34,8 +34,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-honey-cream/10 text-center text-sm text-honey-cream/40">
-          © {new Date().getFullYear()} Help The Hive. All rights reserved.
+        <div className="mt-12 pt-8 border-t border-honey-cream/10 flex flex-col items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary tracking-wide uppercase">
+            Patent Pending
+          </span>
+          <p className="text-sm text-honey-cream/40">
+            © {new Date().getFullYear()} Help The Hive. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

@@ -147,9 +147,14 @@ export function SiteFooter() {
 
       {/* Disclaimer */}
       <div className="container mx-auto px-4 py-8">
-        <p className="text-center text-xs text-white/30 mb-4">
-          © {new Date().getFullYear()} Help the Hive. All rights reserved.
-        </p>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <p className="text-xs text-white/30">
+            © {new Date().getFullYear()} Help the Hive. All rights reserved.
+          </p>
+          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary tracking-wide uppercase">
+            Patent Pending
+          </span>
+        </div>
         <p className="text-center text-[11px] text-white/20 leading-relaxed max-w-3xl mx-auto mb-3">
           Help the Hive provides meal planning, grocery budgeting, pantry management, and food planning tools designed to help households make informed decisions. Grocery prices, availability, store inventory, and promotional pricing may vary by location, retailer, and time.
         </p>
