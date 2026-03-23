@@ -408,7 +408,7 @@ export default function SampleMealPlan() {
               <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="bg-background rounded-2xl border border-border p-6 shadow-card">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <span className="text-xl">💡</span>
+                    <Lightbulb className="w-5 h-5 text-accent" />
                   </div>
                   <h3 className="font-display text-xl font-bold text-foreground">Money-Saving Tips</h3>
                 </div>
