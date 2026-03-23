@@ -213,7 +213,7 @@ export default function Questionnaire() {
         });
       }
 
-      toast({ title: "All set! 🎉", description: "Your personalized meal plan is being created." });
+      toast({ title: "All set!", description: "Your personalized meal plan is being created." });
       navigate("/dashboard");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
