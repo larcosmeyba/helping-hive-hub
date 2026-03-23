@@ -512,7 +512,7 @@ export default function Questionnaire() {
 
           {(!eligibility || eligibility === "none") && (
             <div className="mt-8 text-center">
-              <div className="text-6xl mb-4">🍽️</div>
+              <div className="mb-4 flex justify-center"><Utensils className="w-14 h-14 text-primary" /></div>
               <p className="text-muted-foreground text-sm">Your personalized meal plan, grocery list, and budget insights are ready to be generated.</p>
             </div>
           )}

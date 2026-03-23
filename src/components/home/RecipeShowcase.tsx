@@ -259,7 +259,7 @@ export function RecipeShowcase() {
                 {/* Instructions */}
                 <div>
                   <h3 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    👨‍🍳 Instructions
+                    <ChefHat className="w-5 h-5 text-primary" /> Instructions
                   </h3>
                   <ol className="space-y-3">
                     {selectedRecipe.instructions.map((step, i) => (

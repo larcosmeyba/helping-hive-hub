@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CalendarDays, DollarSign, Users, Clock, ShoppingCart, Utensils } from "lucide-react";
+import { ArrowLeft, CalendarDays, DollarSign, Users, Clock, ShoppingCart, Utensils, Lightbulb, Coffee, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";

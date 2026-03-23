@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Utensils, PiggyBank, Leaf } from "lucide-react";
+import { ShoppingCart, Utensils, PiggyBank, Leaf, Eye } from "lucide-react";
 
 export function HeroSection() {
   return (
