@@ -244,7 +244,7 @@ export function RecipeShowcase() {
                 {/* Ingredients */}
                 <div>
                   <h3 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    🛒 Ingredients
+                    <ShoppingCart className="w-5 h-5 text-primary" /> Ingredients
                   </h3>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {selectedRecipe.ingredients.map((ing, i) => (
