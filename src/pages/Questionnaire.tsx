@@ -434,7 +434,7 @@ export default function Questionnaire() {
           }
           onNext={handleSubmit}
           onBack={back}
-          nextLabel={loading ? "Setting up..." : "Generate My Meal Plan 🍽️"}
+          nextLabel={loading ? "Setting up..." : "Generate My Meal Plan"}
           loading={loading}
         >
           {eligibility && eligibility !== "none" && (
