@@ -315,6 +315,10 @@ export default function SampleMealPlan() {
               <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">{plan.desc}</p>
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
+                  <ShoppingCart className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Shop at: {PLAN_STORES[slug!]?.primary ?? "Walmart"}</span>
+                </div>
+                <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
                   <DollarSign className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium">{plan.budget}</span>
                 </div>
