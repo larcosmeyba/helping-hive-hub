@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, TrendingUp, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,6 @@ const navItems = [
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
   { title: "Fridge Chef", url: "/dashboard/fridge-chef", icon: ChefHat },
   { title: "Recipes", url: "/dashboard/recipes", icon: BookOpen },
-  { title: "Budget Insights", url: "/dashboard/budget", icon: TrendingUp },
 ];
 
 export function DashboardSidebar() {
