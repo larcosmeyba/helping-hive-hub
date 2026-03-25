@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
+  "feed-a-family-50": { primary: "Walmart", secondary: "Aldi" },
+  "more-variety-75": { primary: "Kroger", secondary: "Safeway" },
+  "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
+  "snap-friendly-meals": { primary: "Walmart", secondary: "WinCo" },
+};
+
 const SAMPLE_PLANS: Record<string, {
   title: string;
   budget: string;
