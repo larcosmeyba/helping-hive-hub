@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
