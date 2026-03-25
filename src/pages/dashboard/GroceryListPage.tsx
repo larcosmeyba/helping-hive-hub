@@ -190,6 +190,8 @@ function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
 
 export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState("");
   const [extraItems, setExtraItems] = useState<{ name: string; price: number }[]>([]);
