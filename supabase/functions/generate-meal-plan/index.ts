@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     const dietPrefs = (profile.dietary_preferences || []).join(", ") || "no restrictions";
     const cookTimePref = profile.cooking_time_preference || "medium";
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
+    const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
 
     const zipCode = profile.zip_code || "";
     const regionInfo = getRegionInfo(zipCode);
