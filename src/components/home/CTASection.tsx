@@ -20,14 +20,9 @@ export function CTASection() {
             Join Help The Hive and let our smart engine plan your meals,
             optimize your grocery list, and keep your family fed — on budget.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/signup">Get Started Free</Link>
-            </Button>
-            <Button variant="heroDark" size="lg" asChild>
-              <Link to="/meal-plans">Explore Plans</Link>
-            </Button>
-          </div>
+          <Button variant="hero" size="lg" asChild>
+            <Link to="/signup">Get Started Free</Link>
+          </Button>
         </motion.div>
       </div>
     </section>

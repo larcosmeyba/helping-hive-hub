@@ -88,15 +88,9 @@ export function SiteFooter() {
         <p className="text-sm text-white/50 leading-relaxed max-w-lg ml-11 mb-3">
           Helping households save money on groceries, simplify meal planning, and make smarter food budgeting decisions.
         </p>
-        <div className="ml-11 space-y-1">
+        <div className="ml-11">
           <p className="text-xs text-white/40">
-            Support:{" "}
-            <a href="mailto:marcos@helpthehive.com" className="hover:text-white/70 transition-colors">
-              marcos@helpthehive.com
-            </a>
-          </p>
-          <p className="text-xs text-white/40">
-            Business:{" "}
+            Contact:{" "}
             <a href="mailto:marcos@helpthehive.com" className="hover:text-white/70 transition-colors">
               marcos@helpthehive.com
             </a>

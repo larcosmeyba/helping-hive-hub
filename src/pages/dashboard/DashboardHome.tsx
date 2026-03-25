@@ -43,7 +43,7 @@ export default function DashboardHome() {
       <div className="space-y-3">
         <div>
           <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
-            Welcome back, {profile?.display_name ?? "there"} 👋
+            Welcome back, {profile?.display_name ?? "there"}
           </h1>
           <p className="text-sm md:text-sm text-muted-foreground mt-1">Your weekly meal plan overview</p>
         </div>
