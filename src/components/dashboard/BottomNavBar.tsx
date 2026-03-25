@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, Package, ShoppingCart, ChefHat, TrendingUp } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Package, ShoppingCart, ChefHat, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ const tabs = [
   { label: "Pantry", to: "/dashboard/pantry", icon: Package },
   { label: "Grocery", to: "/dashboard/grocery-list", icon: ShoppingCart },
   { label: "Fridge Chef", to: "/dashboard/fridge-chef", icon: ChefHat },
-  { label: "Budget", to: "/dashboard/budget", icon: TrendingUp },
+  { label: "Settings", to: "/dashboard/settings", icon: Settings },
 ];
 
 export function BottomNavBar() {
