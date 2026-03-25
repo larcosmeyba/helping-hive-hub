@@ -193,6 +193,8 @@ export default function GroceryListPage() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
+  const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
+  const [correctedPrice, setCorrectedPrice] = useState("");
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (

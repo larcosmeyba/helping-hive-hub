@@ -213,6 +213,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Household size: ${householdSize} people
 - Allergies: ${allergies}
 - Dietary preferences: ${dietPrefs}
+- Cuisine preferences: ${foodPrefs} (prioritize recipes from these cuisines when possible, while staying within budget)
 - Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
 - Preferred stores: ${stores}
 - Location: ${cityInfo.city}, ${cityInfo.state} (ZIP: ${zipCode || "unknown"}, cost multiplier: ${regionInfo.costMultiplier}x)
