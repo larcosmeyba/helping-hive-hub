@@ -375,6 +375,17 @@ export default function GroceryListPage() {
                     {activeStore && (
                       <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setPriceCorrection({ itemName: item.name, currentPrice: price });
+                        setCorrectedPrice("");
+                      }}
+                      className="text-[9px] text-muted-foreground hover:text-primary mt-0.5 block"
+                    >
+                      Wrong price?
+                    </button>
                   </div>
                 </label>
               );
