@@ -1,19 +1,23 @@
 import { useState, useEffect } from "react";
-import { Settings, Save } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useMealPlan } from "@/contexts/MealPlanContext";
+import { useNavigate } from "react-router-dom";
 
 const STORE_OPTIONS = ["Walmart", "Aldi", "Target", "Kroger", "Costco", "Publix", "H-E-B", "Trader Joe's"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { mealPlan } = useMealPlan();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [householdSize, setHouseholdSize] = useState(2);
   const [weeklyBudget, setWeeklyBudget] = useState(75);
@@ -60,6 +64,16 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const spent = mealPlan?.totalEstimatedCost ?? 0;
+  const saved = weeklyBudget - spent;
+  const pantrySavings = mealPlan?.pantrySavings ?? 0;
+  const costPerMeal = mealPlan?.costPerMeal ?? 0;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
@@ -67,6 +81,32 @@ export default function SettingsPage() {
           <Settings className="w-6 h-6 text-primary" /> Account Settings
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Changes will regenerate your meal plan</p>
+      </div>
+
+      {/* Budget Insights Summary */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-5">
+        <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-primary" /> Budget Overview
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Budget", value: `$${weeklyBudget}`, icon: Target, color: "text-primary" },
+            { label: "Est. Spend", value: `$${spent.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
+            { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
+            { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-muted/30 rounded-xl p-3 text-center">
+              <stat.icon className={`w-4 h-4 ${stat.color} mx-auto mb-1`} />
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+        {pantrySavings > 0 && (
+          <p className="text-xs text-muted-foreground mt-3 text-center">
+            Including ${pantrySavings.toFixed(0)} saved from pantry items
+          </p>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-6">
@@ -129,6 +169,11 @@ export default function SettingsPage() {
           <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
         </Button>
       </div>
+
+      {/* Sign Out */}
+      <Button variant="outline" onClick={handleSignOut} className="w-full">
+        <LogOut className="w-4 h-4 mr-2" /> Sign Out
+      </Button>
     </div>
   );
 }
