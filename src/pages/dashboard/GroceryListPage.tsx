@@ -189,6 +189,10 @@ export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState("");
+  const [extraItems, setExtraItems] = useState<{ name: string; price: number }[]>([]);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
