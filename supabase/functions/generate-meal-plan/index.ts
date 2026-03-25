@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     const dietPrefs = (profile.dietary_preferences || []).join(", ") || "no restrictions";
     const cookTimePref = profile.cooking_time_preference || "medium";
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
+    const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
 
     const zipCode = profile.zip_code || "";
     const regionInfo = getRegionInfo(zipCode);
@@ -212,6 +213,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
 - Household size: ${householdSize} people
 - Allergies: ${allergies}
 - Dietary preferences: ${dietPrefs}
+- Cuisine preferences: ${foodPrefs} (prioritize recipes from these cuisines when possible, while staying within budget)
 - Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
 - Preferred stores: ${stores}
 - Location: ${cityInfo.city}, ${cityInfo.state} (ZIP: ${zipCode || "unknown"}, cost multiplier: ${regionInfo.costMultiplier}x)

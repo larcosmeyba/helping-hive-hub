@@ -29,7 +29,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props
         : { weekly_budget: budgetValue };
       const { error } = await supabase.from("profiles").update(update).eq("user_id", user.id);
       if (error) throw error;
-      toast({ title: "Updated!", description: `${field === "zip" ? "ZIP code" : "Weekly budget"} saved.` });
+      toast({ title: "Updated!", description: `${field === "zip" ? "ZIP code" : "Weekly budget"} saved. Your next meal plan will use updated ${field === "zip" ? "location and store prices" : "budget"}.` });
       setEditingField(null);
       onUpdate();
     } catch (err: any) {
