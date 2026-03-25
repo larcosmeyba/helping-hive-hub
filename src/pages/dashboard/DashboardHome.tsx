@@ -115,26 +115,35 @@ export default function DashboardHome() {
             </h2>
             <Link to="/dashboard/meal-plan" className="text-sm md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
           </div>
-          {mealPlan.weeklyPlan.slice(0, 2).map((day) => (
-            <div key={day.day} className="mb-4 md:mb-6">
-              <h3 className="text-sm md:text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
-              </h3>
-              {isMobile ? (
-                <div className="space-y-3">
-                  {day.meals.map((meal, i) => (
-                    <MealCard key={`${day.day}-${i}`} meal={meal} />
-                  ))}
+          {isMobile ? (
+            <div className="flex overflow-x-auto gap-4 pb-3 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {mealPlan.weeklyPlan.slice(0, 3).map((day) => (
+                <div key={day.day} className="flex-shrink-0 w-[85vw] snap-start">
+                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                    <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
+                  </h3>
+                  <div className="space-y-3">
+                    {day.meals.map((meal, i) => (
+                      <MealCard key={`${day.day}-${i}`} meal={meal} compact />
+                    ))}
+                  </div>
                 </div>
-              ) : (
+              ))}
+            </div>
+          ) : (
+            mealPlan.weeklyPlan.slice(0, 2).map((day) => (
+              <div key={day.day} className="mb-6">
+                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                  <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
+                </h3>
                 <div className="grid grid-cols-3 gap-3">
                   {day.meals.map((meal, i) => (
                     <MealCard key={`${day.day}-${i}`} meal={meal} compact />
                   ))}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            ))
+          )}
           <Link
             to="/dashboard/meal-plan"
             className="inline-flex items-center justify-center w-full md:w-auto bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-xl h-11 md:h-auto md:py-2 md:px-4 text-sm font-semibold text-primary transition-colors"
