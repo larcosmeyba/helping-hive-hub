@@ -3,6 +3,9 @@ import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag,
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
