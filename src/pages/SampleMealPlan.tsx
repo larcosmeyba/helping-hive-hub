@@ -12,7 +12,7 @@ const SAMPLE_PLANS: Record<string, {
   tag: string | null;
   servings: string;
   meals: number;
-  days: { day: string; meals: { type: string; name: string; cost: string; time: string; emoji: string; ingredients: string[]; calories: number; protein: number; carbs: number; fats: number }[] }[];
+  days: { day: string; meals: { type: string; name: string; cost: string; time: string; ingredients: string[]; calories: number; protein: number; carbs: number; fats: number }[] }[];
   groceryHighlights: string[];
   tips: string[];
 }> = {
