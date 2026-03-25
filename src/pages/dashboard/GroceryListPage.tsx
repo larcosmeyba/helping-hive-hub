@@ -373,6 +373,72 @@ export default function GroceryListPage() {
         </div>
       ))}
 
+      {/* Add Extra Items */}
+      <div className="bg-card rounded-2xl border border-border shadow-card p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
+            <Plus className="w-4 h-4 text-primary" /> Additional Purchases
+          </h3>
+          <button
+            onClick={() => setShowAddItem(!showAddItem)}
+            className="text-xs text-primary font-medium hover:underline"
+          >
+            {showAddItem ? "Cancel" : "Add Item"}
+          </button>
+        </div>
+        {showAddItem && (
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="Item name"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-sm"
+            />
+            <input
+              type="number"
+              placeholder="Price"
+              value={newItemPrice}
+              onChange={(e) => setNewItemPrice(e.target.value)}
+              className="w-20 h-9 rounded-lg border border-border bg-background px-3 text-sm"
+              step="0.01"
+              min="0"
+            />
+            <button
+              onClick={() => {
+                if (newItemName && newItemPrice) {
+                  setExtraItems([...extraItems, { name: newItemName, price: parseFloat(newItemPrice) }]);
+                  setNewItemName("");
+                  setNewItemPrice("");
+                  setShowAddItem(false);
+                }
+              }}
+              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
+        )}
+        {extraItems.length > 0 && (
+          <div className="space-y-2">
+            {extraItems.map((item, i) => (
+              <div key={i} className="flex items-center justify-between text-sm bg-muted/30 px-3 py-2 rounded-lg">
+                <span className="text-foreground">{item.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-foreground">${item.price.toFixed(2)}</span>
+                  <button
+                    onClick={() => setExtraItems(extraItems.filter((_, idx) => idx !== i))}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Totals */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <div className="space-y-3 text-sm">
@@ -380,19 +446,27 @@ export default function GroceryListPage() {
             <span className="text-muted-foreground">Subtotal ({activeStore || "Average"})</span>
             <span className="text-foreground font-medium">${subtotal.toFixed(2)}</span>
           </div>
+          {extraItems.length > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Additional Items ({extraItems.length})</span>
+              <span className="text-foreground font-medium">${extraItems.reduce((s, i) => s + i.price, 0).toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Estimated Tax ({(taxRate * 100).toFixed(1)}%)</span>
-            <span className="text-foreground">${tax.toFixed(2)}</span>
+            <span className="text-foreground">${((subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate).toFixed(2)}</span>
           </div>
           {mealPlan.pantrySavings > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pantry Savings</span>
-              <span className="text-accent font-semibold">−${mealPlan.pantrySavings.toFixed(2)}</span>
+              <span className="text-accent font-semibold">-${mealPlan.pantrySavings.toFixed(2)}</span>
             </div>
           )}
           <div className="border-t border-border pt-3 flex justify-between">
             <span className="font-semibold text-foreground text-base">Total</span>
-            <span className="font-bold text-2xl text-primary">${total.toFixed(2)}</span>
+            <span className="font-bold text-2xl text-primary">
+              ${(subtotal + extraItems.reduce((s, i) => s + i.price, 0) + (subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate - (mealPlan.pantrySavings || 0)).toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
