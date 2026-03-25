@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const CATEGORIES = ["All", "Budget Friendly", "Quick Meals", "Slow Cooker", "Pantry Staples", "High Protein", "Vegetarian", "Family Favorites", "Holiday"];
+const CATEGORIES = ["All", "Budget Friendly", "Quick Meals", "Slow Cooker", "Pantry Staples", "High Protein", "Vegetarian", "Family Favorites", "Holiday", "Special Occasions"];
 
 interface Recipe {
   title: string;
