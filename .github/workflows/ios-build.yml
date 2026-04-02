@@ -74,6 +74,18 @@ jobs:
           echo "Installed provisioning profile: $PROFILE_NAME ($PROFILE_UUID)"
           echo "App identifier in profile: $APP_IDENTIFIER"
 
+      - name: Debug provisioning profile
+        run: |
+          echo "PROFILE_UUID=$PROFILE_UUID"
+          echo "PROFILE_NAME=$PROFILE_NAME"
+          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}"
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles"
+          security cms -D -i "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision" > "$RUNNER_TEMP/decoded-profile.plist"
+          /usr/libexec/PlistBuddy -c "Print Name" "$RUNNER_TEMP/decoded-profile.plist"
+          /usr/libexec/PlistBuddy -c "Print UUID" "$RUNNER_TEMP/decoded-profile.plist"
+          /usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" "$RUNNER_TEMP/decoded-profile.plist"
+          /usr/libexec/PlistBuddy -c "Print Entitlements:application-identifier" "$RUNNER_TEMP/decoded-profile.plist"
+
       - name: Build iOS archive
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
