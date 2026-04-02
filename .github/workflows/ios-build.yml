@@ -70,6 +70,8 @@ jobs:
       - name: Build iOS archive
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROFILE_UUID: ${{ env.PROFILE_UUID }}
+          PROFILE_NAME: ${{ env.PROFILE_NAME }}
         run: |
           cd ios/App
           xcodebuild -project App.xcodeproj \
@@ -113,11 +115,6 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export"
-
-          xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
-            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
-            -exportPath $RUNNER_TEMP/export
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
