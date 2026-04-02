@@ -38,7 +38,6 @@ jobs:
           # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -65,17 +64,17 @@ jobs:
           ls
           ls ios || true
           ls ios/App || true
-         find ios -maxdepth 3 \( -name "*.xcworkspace" -o -name "*.xcodeproj" \) || true
+          find ios -maxdepth 3 \( -name "*.xcworkspace" -o -name "*.xcodeproj" \) || true
 
-         cd ios/App
-         xcodebuild -workspace App.xcworkspace \
-         -scheme App \
-         -sdk iphoneos \
-         -configuration Release \
-         -archivePath $RUNNER_TEMP/App.xcarchive \
-         archive \
-         DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-         CODE_SIGN_STYLE=Manual
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual
 
       - name: Export IPA
         run: |
