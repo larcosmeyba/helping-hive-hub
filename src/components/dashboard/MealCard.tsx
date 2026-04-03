@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Flame, ChevronDown, ChevronUp } from "lucide-react";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
 const MEAL_IMAGES: Record<string, string> = {
@@ -40,27 +40,28 @@ export function MealCard({ meal, compact }: Props) {
 
   return (
     <div className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0' : 'w-full'}`}>
-      <div className={`relative overflow-hidden ${compact ? 'h-24 md:h-32' : 'h-40 md:h-44'}`} style={!compact ? { aspectRatio: '4/3' } : undefined}>
+      {/* Reduced height by ~30% */}
+      <div className={`relative overflow-hidden ${compact ? 'h-16 md:h-24' : 'h-28 md:h-32'}`}>
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <div className={`absolute top-2 left-2 ${compact ? 'md:top-2 md:left-2' : ''}`}>
+        <div className={`absolute top-2 left-2`}>
           <span className={`bg-primary/90 text-primary-foreground font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px] md:text-[10px]' : 'text-[10px]'}`}>
             {meal.type}
           </span>
         </div>
         <div className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent ${compact ? 'p-1.5 md:p-2' : 'p-3'}`}>
-          <p className={`text-white font-semibold line-clamp-2 leading-tight ${compact ? 'text-[10px] md:text-sm' : 'text-base'}`}>{meal.name}</p>
+          <p className={`text-white font-semibold line-clamp-2 leading-tight ${compact ? 'text-[10px] md:text-sm' : 'text-sm'}`}>{meal.name}</p>
         </div>
       </div>
 
       <div className={compact ? 'p-1.5 md:p-3' : 'p-3'}>
+        {/* Only show calories, no price */}
         <div className={`flex items-center gap-3 text-muted-foreground ${compact ? 'text-[9px] md:text-xs gap-1.5 md:gap-3' : 'text-sm'}`}>
           <span className="flex items-center gap-1"><Flame className={`text-primary ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />{meal.calories} cal</span>
-          <span className="flex items-center gap-1"><DollarSign className={`text-accent ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />${meal.estimatedCost.toFixed(2)}</span>
         </div>
 
         {!compact && (
