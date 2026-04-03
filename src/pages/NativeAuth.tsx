@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
 
 export default function NativeAuth() {
+  const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
