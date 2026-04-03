@@ -26,7 +26,8 @@ jobs:
 
       - name: Ensure iOS platform exists
         run: |
-          if [ ! -d "ios/App" ]; then
+          if [ ! -d "ios/App/App.xcodeproj" ]; then
+            rm -rf ios/App
             npx cap add ios
           else
             echo "iOS platform already exists"
