@@ -180,8 +180,9 @@ export default function MealPlanPage() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
       ))}
+      </AnimatePresence>
 
       {/* Full Recipe Dialog */}
       <Dialog open={!!selectedMeal} onOpenChange={() => setSelectedMeal(null)}>
