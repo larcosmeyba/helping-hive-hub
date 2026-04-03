@@ -14,9 +14,18 @@ export default function NativeAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // If already logged in, redirect to dashboard
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <img src="/favicon.png" alt="Loading" className="h-10 w-10 animate-float" />
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
