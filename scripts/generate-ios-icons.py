@@ -10,70 +10,61 @@ ASSET_DIR = "ios/App/App/Assets.xcassets/AppIcon.appiconset"
 
 # All sizes required for a universal iOS app icon (Xcode 15+)
 ICONS = [
-    # iPhone notifications
-    {"size": 40, "scale": 2, "idiom": "iphone"},
-    {"size": 40, "scale": 3, "idiom": "iphone"},
-    # iPhone settings
-    {"size": 58, "scale": 2, "idiom": "iphone"},
-    {"size": 58, "scale": 3, "idiom": "iphone"},
-    # iPhone Spotlight
-    {"size": 80, "scale": 2, "idiom": "iphone"},
-    {"size": 80, "scale": 3, "idiom": "iphone"},
-    # iPhone App
-    {"size": 120, "scale": 2, "idiom": "iphone"},
-    {"size": 120, "scale": 3, "idiom": "iphone"},
-    # iPhone (iOS 7+)
-    {"size": 180, "scale": 3, "idiom": "iphone"},
-    # iPad notifications
-    {"size": 20, "scale": 1, "idiom": "ipad"},
-    {"size": 40, "scale": 2, "idiom": "ipad"},
-    # iPad settings
-    {"size": 29, "scale": 1, "idiom": "ipad"},
-    {"size": 58, "scale": 2, "idiom": "ipad"},
-    # iPad Spotlight
-    {"size": 40, "scale": 1, "idiom": "ipad"},
-    {"size": 80, "scale": 2, "idiom": "ipad"},
-    # iPad App
-    {"size": 76, "scale": 1, "idiom": "ipad"},
-    {"size": 152, "scale": 2, "idiom": "ipad"},
-    # iPad Pro
-    {"size": 167, "scale": 2, "idiom": "ipad"},
-    # App Store
-    {"size": 1024, "scale": 1, "idiom": "ios-marketing"},
+    {"points": 20, "scale": 2, "idiom": "iphone"},
+    {"points": 20, "scale": 3, "idiom": "iphone"},
+    {"points": 29, "scale": 2, "idiom": "iphone"},
+    {"points": 29, "scale": 3, "idiom": "iphone"},
+    {"points": 40, "scale": 2, "idiom": "iphone"},
+    {"points": 40, "scale": 3, "idiom": "iphone"},
+    {"points": 60, "scale": 2, "idiom": "iphone"},
+    {"points": 60, "scale": 3, "idiom": "iphone"},
+    {"points": 20, "scale": 1, "idiom": "ipad"},
+    {"points": 20, "scale": 2, "idiom": "ipad"},
+    {"points": 29, "scale": 1, "idiom": "ipad"},
+    {"points": 29, "scale": 2, "idiom": "ipad"},
+    {"points": 40, "scale": 1, "idiom": "ipad"},
+    {"points": 40, "scale": 2, "idiom": "ipad"},
+    {"points": 76, "scale": 1, "idiom": "ipad"},
+    {"points": 76, "scale": 2, "idiom": "ipad"},
+    {"points": 83.5, "scale": 2, "idiom": "ipad"},
+    {"points": 1024, "scale": 1, "idiom": "ios-marketing"},
 ]
+
+
+def format_points(points):
+    return str(int(points)) if float(points).is_integer() else str(points).replace(".", "_")
+
+
+def flatten_icon(image, size):
+    resized = image.resize((size, size), Image.LANCZOS)
+    if resized.mode != "RGBA":
+        return resized.convert("RGB")
+
+    background = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+    composited = Image.alpha_composite(background, resized)
+    return composited.convert("RGB")
 
 def main():
     os.makedirs(ASSET_DIR, exist_ok=True)
     src = Image.open(SOURCE).convert("RGBA")
     
     contents_images = []
-    seen = set()
-    
     for icon in ICONS:
-        px = icon["size"]
-        filename = f"icon-{px}.png"
-        
-        if filename not in seen:
-            resized = src.resize((px, px), Image.LANCZOS)
-            # iOS icons must not have alpha channel (except marketing)
-            if icon["idiom"] != "ios-marketing":
-                bg = Image.new("RGB", (px, px), (255, 255, 255))
-                bg.paste(resized, mask=resized.split()[3] if resized.mode == "RGBA" else None)
-                bg.save(os.path.join(ASSET_DIR, filename), "PNG")
-            else:
-                resized.convert("RGB").save(os.path.join(ASSET_DIR, filename), "PNG")
-            seen.add(filename)
-            print(f"  Generated {filename} ({px}x{px})")
-        
-        # Determine the "size" field for Contents.json (points)
+        points = icon["points"]
         scale = icon["scale"]
-        points = px // scale if scale > 1 else px
+        px = int(round(points * scale))
+        points_label = format_points(points)
+        filename = f"icon-{icon['idiom']}-{points_label}@{scale}x.png"
+
+        flattened = flatten_icon(src, px)
+        flattened.save(os.path.join(ASSET_DIR, filename), "PNG")
+        print(f"  Generated {filename} ({px}x{px})")
         
         contents_images.append({
             "filename": filename,
             "idiom": icon["idiom"],
             "scale": f"{scale}x",
-            "size": f"{points}x{points}"
+            "size": f"{str(points).replace('_', '.')}x{str(points).replace('_', '.')}"
         })
     
     contents = {
@@ -84,7 +75,7 @@ def main():
     with open(os.path.join(ASSET_DIR, "Contents.json"), "w") as f:
         json.dump(contents, f, indent=2)
     
-    print(f"\nGenerated {len(seen)} icon files + Contents.json in {ASSET_DIR}")
+    print(f"\nGenerated {len(ICONS)} icon files + Contents.json in {ASSET_DIR}")
 
 if __name__ == "__main__":
     main()
