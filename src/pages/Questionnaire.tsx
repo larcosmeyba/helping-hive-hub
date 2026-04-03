@@ -124,6 +124,44 @@ export default function Questionnaire() {
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
   };
 
+  const requestLocation = async () => {
+    setLocationStatus("requesting");
+    try {
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        const perm = await Geolocation.requestPermissions();
+        if (perm.location !== "granted") {
+          setLocationStatus("denied");
+          return;
+        }
+      }
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      setUserLatitude(lat);
+      setUserLongitude(lng);
+      setLocationStatus("granted");
+
+      // Reverse geocode to get ZIP code
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
+          headers: { "User-Agent": "HelpTheHive/1.0" },
+        });
+        const data = await res.json();
+        if (data?.address?.postcode) {
+          setZipCode(data.address.postcode.slice(0, 5));
+        }
+        if (data?.address?.city || data?.address?.town || data?.address?.village) {
+          setLocationCity(data.address.city || data.address.town || data.address.village);
+        }
+      } catch {
+        // Reverse geocode failed, user can still enter ZIP manually
+      }
+    } catch {
+      setLocationStatus("denied");
+    }
+  };
+
   const addCustomPantry = () => {
     const trimmed = customPantryItem.trim();
     if (trimmed && !pantryItems.includes(trimmed)) {
