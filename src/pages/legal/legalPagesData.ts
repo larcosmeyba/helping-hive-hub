@@ -225,7 +225,13 @@ We do not guarantee:
       },
       {
         heading: "8. Payments and Subscriptions",
-        content: "Paid features may be offered through monthly or annual subscriptions or other billing models. By purchasing a paid service, you agree to the pricing and billing terms shown at checkout."
+        content: `Paid features may be offered through monthly or annual subscriptions or other billing models. By purchasing a paid service, you agree to the pricing and billing terms shown at checkout.
+
+**Auto-Renewal:** Subscriptions automatically renew at the end of each billing period unless you cancel before the renewal date. You will be charged the then-current subscription rate upon each renewal. You can manage or cancel your subscription at any time through your account settings or through the app store where you originally subscribed.
+
+**In-App Purchases:** If you subscribe or make purchases through the Apple App Store or Google Play Store, the respective store's payment terms apply. Billing is managed by the app store, and refund requests for in-app purchases must be directed to Apple or Google per their refund policies.
+
+**Free Trials:** If offered, free trials automatically convert to paid subscriptions at the end of the trial period unless canceled beforehand.`
       },
       {
         heading: "9. Suspension and Termination",
@@ -257,11 +263,45 @@ We do not guarantee:
         content: "These Terms are governed by the laws of the State of California, without regard to conflict of law principles, except where otherwise required by applicable law."
       },
       {
-        heading: "15. Changes to These Terms",
+        heading: "15. Account Deletion",
+        content: `You may request deletion of your account and associated personal data at any time by contacting us or using the account deletion option in your app settings.
+
+Upon deletion:
+• Your account will be deactivated and personal data will be scheduled for deletion
+• Some information may be retained as required by law, for fraud prevention, or to resolve disputes
+• Active subscriptions should be canceled through your app store before requesting account deletion
+
+Account deletion requests will be processed within 30 days of the request.`
+      },
+      {
+        heading: "16. End User License Agreement (EULA)",
+        content: `This agreement serves as the End User License Agreement (EULA) for the Help the Hive mobile application distributed through the Apple App Store and Google Play Store.
+
+By downloading or using the Help the Hive app, you agree to the terms set forth in this document.
+
+• The app is licensed, not sold, to you for personal, non-commercial use
+• You may not copy, modify, distribute, sell, or lease any part of the app
+• You may not reverse engineer or attempt to extract the source code
+• This license is effective until terminated by you or Help the Hive
+• Apple and Google are not responsible for the app or its content
+• Apple and Google have no obligation to provide maintenance or support for the app`
+      },
+      {
+        heading: "17. Third-Party App Store Terms",
+        content: `If you download or use Help the Hive through the Apple App Store or Google Play Store, the following applies:
+
+• These Terms are between you and Help the Hive, not Apple Inc. or Google LLC
+• Apple and Google are not responsible for the app, its content, or any claims related to its use
+• Apple and Google are third-party beneficiaries of these Terms and may enforce them
+• You must comply with any applicable third-party terms of agreement when using the app
+• In the event of any failure of the app to conform to any applicable warranty, you may notify Apple or Google for a refund of the purchase price (if any); to the maximum extent permitted by law, Apple and Google have no other warranty obligations with respect to the app`
+      },
+      {
+        heading: "18. Changes to These Terms",
         content: "We may update these Terms from time to time. Continued use of the platform after changes become effective constitutes acceptance of the updated Terms."
       },
       {
-        heading: "16. Contact",
+        heading: "19. Contact",
         content: `Questions about these Terms may be sent to:\n\n📧 [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
       }
     ]
@@ -342,18 +382,49 @@ Requests may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})
       },
       {
         heading: "8. Children's Privacy",
-        content: "Help the Hive is not directed to children under 13, and we do not knowingly collect personal information from children under 13 without appropriate legal authorization."
+        content: "Help the Hive is not directed to children under 13, and we do not knowingly collect personal information from children under 13 without appropriate legal authorization. If we learn that we have collected personal information from a child under 13, we will take steps to delete that information as quickly as possible."
       },
       {
-        heading: "9. International Use",
-        content: "If the platform is accessed outside the United States, information may be processed in the United States or other jurisdictions where service providers operate."
+        heading: "9. Account Deletion and Data Removal",
+        content: `You have the right to request deletion of your account and the personal data associated with it. You can do this by:
+• Using the account deletion option in the app settings
+• Contacting us at ${CONTACT_SUPPORT}
+
+Upon receiving a valid deletion request, we will:
+• Delete or anonymize your personal data within 30 days
+• Confirm completion of the deletion
+• Retain only data required by law, for fraud prevention, or to resolve disputes
+
+If you subscribed through the Apple App Store or Google Play Store, you must cancel your subscription through the respective store before requesting account deletion.`
       },
       {
-        heading: "10. Changes to This Policy",
-        content: "We may update this Privacy Policy from time to time. Updates become effective when posted."
+        heading: "10. California Privacy Rights (CCPA)",
+        content: `If you are a California resident, you have the right to:
+• Know what personal information we collect, use, and disclose
+• Request deletion of your personal information
+• Opt out of the sale of your personal information (we do not sell personal data)
+• Not be discriminated against for exercising your privacy rights
+
+To exercise these rights, contact us at ${CONTACT_SUPPORT}.`
       },
       {
-        heading: "11. Contact",
+        heading: "11. International Use and Data Transfers",
+        content: "If the platform is accessed outside the United States, information may be processed in the United States or other jurisdictions where service providers operate. By using Help the Hive, you consent to the transfer and processing of your data in the United States."
+      },
+      {
+        heading: "12. App Store and Play Store Data Practices",
+        content: `When you use Help the Hive through the Apple App Store or Google Play Store:
+• Data collection and usage are governed by this Privacy Policy
+• Apple and Google may collect additional data per their own privacy policies
+• In-app purchase and subscription data is processed by the respective app store
+• We do not share your personal data with Apple or Google beyond what is required for app functionality`
+      },
+      {
+        heading: "13. Changes to This Policy",
+        content: "We may update this Privacy Policy from time to time. Updates become effective when posted. We will notify you of material changes through the app or by email."
+      },
+      {
+        heading: "14. Contact",
         content: `For privacy questions:\n\n📧 [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
       }
     ]
