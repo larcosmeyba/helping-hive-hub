@@ -27,6 +27,29 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
   const [summary, setSummary] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const compressImage = (base64Data: string, maxWidth = 800): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas not supported"));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.onerror = () => reject(new Error("Failed to load image for compression"));
+      img.src = base64Data;
+    });
+  };
+
   const processImage = async (base64Data: string) => {
     setScanning(true);
     setDialogOpen(true);
@@ -34,20 +57,24 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     setDetectedItems(null);
 
     try {
+      // Compress image to reduce payload size (critical for iOS high-res photos)
+      const compressed = await compressImage(base64Data);
+      console.log(`Image compressed: ${Math.round(compressed.length / 1024)}KB`);
+
       const { data, error } = await supabase.functions.invoke("scan-pantry-photo", {
-        body: { image: base64Data, mode: mode === "pantry" ? "pantry" : "fridge-chef" },
+        body: { image: compressed, mode: mode === "pantry" ? "pantry" : "fridge-chef" },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(error.message || "Scan request failed");
+      }
       if (data?.error) throw new Error(data.error);
 
-      if (mode === "fridge-chef") {
-        setDetectedItems(data.items || []);
-      } else {
-        setDetectedItems(data.items || []);
-      }
+      setDetectedItems(data.items || []);
       setSummary(data.summary || "");
     } catch (err: any) {
+      console.error("Photo scan failed:", err);
       toast({ title: "Scan failed", description: err.message, variant: "destructive" });
       setDialogOpen(false);
     } finally {
@@ -59,22 +86,24 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
-          quality: 80,
+          quality: 60,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Camera,
-          width: 1024,
-          height: 1024,
+          width: 800,
+          height: 800,
+          correctOrientation: true,
+          presentationStyle: "fullscreen",
         });
         if (photo.base64String) {
-          const mimeType = photo.format === "png" ? "image/png" : "image/jpeg";
-          await processImage(`data:${mimeType};base64,${photo.base64String}`);
+          await processImage(`data:image/jpeg;base64,${photo.base64String}`);
         }
       } else {
         fileRef.current?.click();
       }
     } catch (err: any) {
-      if (!err.message?.includes("User cancelled")) {
+      if (!err.message?.includes("User cancelled") && !err.message?.includes("cancelled")) {
+        console.error("Camera error:", err);
         toast({ title: "Camera error", description: err.message, variant: "destructive" });
       }
     }
@@ -84,16 +113,17 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
-          quality: 80,
+          quality: 60,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Photos,
-          width: 1024,
-          height: 1024,
+          width: 800,
+          height: 800,
+          correctOrientation: true,
+          presentationStyle: "fullscreen",
         });
         if (photo.base64String) {
-          const mimeType = photo.format === "png" ? "image/png" : "image/jpeg";
-          await processImage(`data:${mimeType};base64,${photo.base64String}`);
+          await processImage(`data:image/jpeg;base64,${photo.base64String}`);
         }
       } else {
         fileRef.current?.click();
