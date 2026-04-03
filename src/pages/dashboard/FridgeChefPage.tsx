@@ -101,8 +101,11 @@ export default function FridgeChefPage() {
           <ChefHat className="w-8 h-8 text-primary" />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">FridgeChef</h1>
-          <p className="text-muted-foreground mt-1">Tell us what's in your fridge — we'll create meals using <span className="text-primary font-medium">only those ingredients</span>.</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">Fridge Chef</h1>
+          <p className="text-muted-foreground mt-1">
+            <strong>How Fridge Chef Works</strong><br />
+            Add foods from your fridge or pantry → We find recipes using those ingredients → Save money by using what you already have.
+          </p>
         </div>
       </div>
 

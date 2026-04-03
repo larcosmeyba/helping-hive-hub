@@ -467,56 +467,65 @@ export default function GroceryListPage() {
 
       {/* Price Correction Modal */}
       {priceCorrection && (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-4 h-4 text-primary" />
-            <h3 className="font-display text-sm font-semibold text-foreground">Report Incorrect Price</h3>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            <strong>{priceCorrection.itemName}</strong> — current: ${priceCorrection.currentPrice.toFixed(2)} at {activeStore}
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="Correct price"
-              value={correctedPrice}
-              onChange={(e) => setCorrectedPrice(e.target.value)}
-              className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-sm"
-              step="0.01"
-              min="0"
-            />
-            <button
-              onClick={async () => {
-                if (!correctedPrice || !user) return;
-                try {
-                  await supabase.from("activity_logs").insert({
-                    user_id: user.id,
-                    action: "price_correction",
-                    entity_type: "grocery_item",
-                    entity_id: priceCorrection.itemName,
-                    details: {
-                      item: priceCorrection.itemName,
-                      store: activeStore,
-                      old_price: priceCorrection.currentPrice,
-                      new_price: parseFloat(correctedPrice),
-                    },
-                  });
-                  toast({ title: "Price reported!", description: "Thank you for helping improve our pricing data." });
-                  setPriceCorrection(null);
-                } catch {
-                  toast({ title: "Error", description: "Failed to submit correction", variant: "destructive" });
-                }
-              }}
-              className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-            >
-              Submit
-            </button>
-            <button
-              onClick={() => setPriceCorrection(null)}
-              className="h-9 px-3 rounded-lg border border-border text-sm text-muted-foreground"
-            >
-              Cancel
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setPriceCorrection(null)}>
+          <div className="bg-card rounded-2xl border border-border shadow-elevated p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="w-5 h-5 text-primary" />
+              <h3 className="font-display text-base font-semibold text-foreground">Correct Price</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>{priceCorrection.itemName}</strong><br />
+              Current: ${priceCorrection.currentPrice.toFixed(2)} at {activeStore}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Enter new price</label>
+                <input
+                  type="number"
+                  placeholder="$0.00"
+                  value={correctedPrice}
+                  onChange={(e) => setCorrectedPrice(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm"
+                  step="0.01"
+                  min="0"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPriceCorrection(null)}
+                  className="flex-1 h-11 rounded-xl border border-border text-sm text-muted-foreground font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!correctedPrice || !user) return;
+                    try {
+                      await supabase.from("activity_logs").insert({
+                        user_id: user.id,
+                        action: "price_correction",
+                        entity_type: "grocery_item",
+                        entity_id: priceCorrection.itemName,
+                        details: {
+                          item: priceCorrection.itemName,
+                          store: activeStore,
+                          old_price: priceCorrection.currentPrice,
+                          new_price: parseFloat(correctedPrice),
+                        },
+                      });
+                      toast({ title: "Price reported!", description: "Thank you for helping improve our pricing data." });
+                      setPriceCorrection(null);
+                    } catch {
+                      toast({ title: "Error", description: "Failed to submit correction", variant: "destructive" });
+                    }
+                  }}
+                  className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

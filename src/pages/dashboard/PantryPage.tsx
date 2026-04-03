@@ -170,9 +170,9 @@ export default function PantryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Package className="w-5 h-5 md:w-6 md:h-6 text-accent" /> My Fridge & Pantry
+            <Camera className="w-5 h-5 md:w-6 md:h-6 text-accent" /> Scan Your Fridge & Pantry
           </h1>
-          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">{inStockItems.length} in stock • {outOfStockItems.length} out • AI uses this data</p>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">Add foods you already have so we can build cheaper meal plans.</p>
         </div>
         <div className="flex items-center gap-2">
           <PhotoScanner

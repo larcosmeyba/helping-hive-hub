@@ -2,13 +2,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Loader2, Sparkles, Refrigerator } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Leaf, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EditableProfileFields } from "@/components/dashboard/EditableProfileFields";
 import { MealCard } from "@/components/dashboard/MealCard";
-import { ExtraRecipes } from "@/components/dashboard/ExtraRecipes";
-import { CookFromFridge } from "@/components/dashboard/CookFromFridge";
+import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function DashboardHome() {
@@ -34,6 +33,25 @@ export default function DashboardHome() {
   const budget = profile?.weekly_budget ?? 75;
   const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
   const pantrySavings = mealPlan?.pantrySavings ?? 0;
+  const saved = budget - estimatedCost;
+  const costPerMeal = mealPlan?.costPerMeal ?? 0;
+
+  // Smart grocery score (simple heuristic)
+  const groceryScore = mealPlan ? Math.min(99, Math.round(70 + (pantrySavings / budget) * 30)) : 0;
+
+  // Pantry utilization (mock — would be real with pantry data)
+  const { data: pantryItems } = useQuery({
+    queryKey: ["pantry_count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("pantry_items")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("is_out_of_stock", false);
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
 
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
 
@@ -67,14 +85,15 @@ export default function DashboardHome() {
         </Button>
       </div>
 
-      {/* Stats Grid — 2x2 on mobile, 4 cols on desktop */}
+      {/* Budget Stats */}
       <div className={`grid gap-3 md:gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
         {[
-          { label: "Budget", value: `$${budget}`, icon: DollarSign, color: "text-primary" },
+          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
-          { label: "Savings", value: `$${pantrySavings.toFixed(0)}`, icon: TrendingDown, color: "text-accent" },
+          { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
+          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-2xl border border-border p-3 md:p-4 shadow-card min-h-[80px] flex flex-col justify-between">
+          <div key={stat.label} className="bg-card rounded-2xl border border-border p-3 md:p-4 shadow-card min-h-[72px] flex flex-col justify-between">
             <div className="flex items-center gap-1.5 mb-1">
               <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
               <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
@@ -82,18 +101,43 @@ export default function DashboardHome() {
             <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
           </div>
         ))}
-
-        <Link
-          to="/dashboard/pantry"
-          className="group bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl border border-accent/20 p-3 md:p-4 shadow-card hover:shadow-elevated hover:border-accent/40 transition-all duration-300 min-h-[80px] flex flex-col justify-between"
-        >
-          <div className="flex items-center gap-1.5 mb-1">
-            <Refrigerator className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-            <span className="text-xs md:text-sm text-muted-foreground">My Fridge</span>
-          </div>
-          <p className="text-base md:text-lg font-bold text-foreground">Add Items</p>
-        </Link>
       </div>
+
+      {/* Smart Insights Row */}
+      {mealPlan && (
+        <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {/* Grocery Score */}
+          <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Grocery Score</span>
+            </div>
+            <p className="text-2xl font-bold text-primary">{groceryScore}<span className="text-sm text-muted-foreground">/100</span></p>
+          </div>
+
+          {/* Pantry Utilization */}
+          <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Refrigerator className="w-4 h-4 text-accent" />
+              <span className="text-xs text-muted-foreground">Pantry Items</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{pantryItems ?? 0}</p>
+            <p className="text-[10px] text-muted-foreground">in stock</p>
+          </div>
+
+          {/* Food Waste Prevented */}
+          {!isMobile && (
+            <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Leaf className="w-4 h-4 text-accent" />
+                <span className="text-xs text-muted-foreground">Waste Prevented</span>
+              </div>
+              <p className="text-2xl font-bold text-accent">${pantrySavings.toFixed(0)}</p>
+              <p className="text-[10px] text-muted-foreground">this week</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* This Week's Meals */}
       {!mealPlan ? (
@@ -116,13 +160,13 @@ export default function DashboardHome() {
             <Link to="/dashboard/meal-plan" className="text-sm md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
           </div>
           {isMobile ? (
-            <div className="flex overflow-x-auto gap-4 pb-3 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex overflow-x-auto gap-3 pb-3 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
               {mealPlan.weeklyPlan.slice(0, 3).map((day) => (
-                <div key={day.day} className="flex-shrink-0 w-[85vw] snap-start">
+                <div key={day.day} className="flex-shrink-0 w-[80vw] snap-start">
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
                     <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {day.meals.map((meal, i) => (
                       <MealCard key={`${day.day}-${i}`} meal={meal} compact />
                     ))}
@@ -153,11 +197,8 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* Fridge Chef */}
-      <CookFromFridge />
-
-      {/* Extra Recipes */}
-      <ExtraRecipes />
+      {/* Recipe Categories (replaces Extra Recipes + Fridge Chef) */}
+      <RecipeCategoryTiles />
     </div>
   );
 }
