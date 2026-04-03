@@ -86,22 +86,24 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
-          quality: 80,
+          quality: 60,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Camera,
-          width: 1024,
-          height: 1024,
+          width: 800,
+          height: 800,
+          correctOrientation: true,
+          presentationStyle: "fullscreen",
         });
         if (photo.base64String) {
-          const mimeType = photo.format === "png" ? "image/png" : "image/jpeg";
-          await processImage(`data:${mimeType};base64,${photo.base64String}`);
+          await processImage(`data:image/jpeg;base64,${photo.base64String}`);
         }
       } else {
         fileRef.current?.click();
       }
     } catch (err: any) {
-      if (!err.message?.includes("User cancelled")) {
+      if (!err.message?.includes("User cancelled") && !err.message?.includes("cancelled")) {
+        console.error("Camera error:", err);
         toast({ title: "Camera error", description: err.message, variant: "destructive" });
       }
     }
@@ -111,16 +113,17 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
-          quality: 80,
+          quality: 60,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Photos,
-          width: 1024,
-          height: 1024,
+          width: 800,
+          height: 800,
+          correctOrientation: true,
+          presentationStyle: "fullscreen",
         });
         if (photo.base64String) {
-          const mimeType = photo.format === "png" ? "image/png" : "image/jpeg";
-          await processImage(`data:${mimeType};base64,${photo.base64String}`);
+          await processImage(`data:image/jpeg;base64,${photo.base64String}`);
         }
       } else {
         fileRef.current?.click();
