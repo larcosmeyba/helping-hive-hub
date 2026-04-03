@@ -21,7 +21,7 @@ const navItems = [
   { title: "Grocery List", url: "/dashboard/grocery-list", icon: ShoppingCart },
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
   { title: "Fridge Chef", url: "/dashboard/fridge-chef", icon: ChefHat },
-  { title: "Recipes", url: "/dashboard/recipes", icon: BookOpen },
+  
 ];
 
 export function DashboardSidebar() {
