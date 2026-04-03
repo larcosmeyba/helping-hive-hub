@@ -12,6 +12,10 @@ const config: CapacitorConfig = {
       launchShowDuration: 0,
       autoHide: true,
       androidScaleType: 'CENTER_CROP'
+    },
+    Camera: {
+      presentationStyle: 'fullscreen',
+      saveToGallery: false
     }
   }
 };
