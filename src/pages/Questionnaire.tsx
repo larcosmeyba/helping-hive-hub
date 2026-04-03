@@ -276,10 +276,59 @@ export default function Questionnaire() {
 
   return (
     <div className="min-h-dvh bg-background">
-      {/* Step 1: ZIP Code */}
+      {/* Step 1: Location & ZIP Code */}
       {step === 1 && (
-        <QuestionnaireStep step={1} totalSteps={TOTAL_STEPS} title="What is your ZIP Code?" subtitle="We'll use this to find local grocery prices and stores near you." onNext={next} onBack={undefined} nextDisabled={zipCode.length < 5}>
-          <div className="mt-4">
+        <QuestionnaireStep step={1} totalSteps={TOTAL_STEPS} title="Where are you located?" subtitle="We'll find grocery stores and prices near you." onNext={next} onBack={undefined} nextDisabled={zipCode.length < 5}>
+          <div className="mt-4 space-y-5">
+            {/* Location request button */}
+            {locationStatus === "idle" && (
+              <button
+                onClick={requestLocation}
+                className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-md hover:opacity-90 transition-opacity"
+              >
+                <MapPin className="w-5 h-5" />
+                Use My Location
+              </button>
+            )}
+
+            {locationStatus === "requesting" && (
+              <div className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-muted text-muted-foreground font-medium">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Finding your location...
+              </div>
+            )}
+
+            {locationStatus === "granted" && (
+              <div className="flex items-center gap-3 bg-primary/10 border-2 border-primary rounded-2xl px-4 py-3">
+                <MapPin className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {locationCity ? `📍 ${locationCity}` : "📍 Location found"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">We'll show you nearby stores and local prices</p>
+                </div>
+              </div>
+            )}
+
+            {locationStatus === "denied" && (
+              <div className="flex items-center gap-3 bg-muted/50 rounded-2xl px-4 py-3">
+                <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">No worries! Just enter your ZIP code below.</p>
+              </div>
+            )}
+
+            {/* Divider */}
+            {locationStatus !== "granted" && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground font-medium">
+                  {locationStatus === "idle" ? "or enter manually" : "Enter your ZIP code"}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
+
+            {/* ZIP code input */}
             <Input
               value={zipCode}
               onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
