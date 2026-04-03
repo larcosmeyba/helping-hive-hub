@@ -15,8 +15,8 @@ export function BottomNavBar() {
   const location = useLocation();
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-[65px] px-1">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg safe-area-bottom" style={{ boxShadow: '0 -1px 12px -4px rgba(0,0,0,0.1)' }}>
+      <div className="flex items-center justify-around h-[72px] px-2">
         {tabs.map((tab) => {
           const isActive = tab.end
             ? location.pathname === tab.to
@@ -28,13 +28,13 @@ export function BottomNavBar() {
               to={tab.to}
               end={tab.end}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 py-1.5 text-[11px] font-medium transition-colors min-h-[44px]",
+                "flex flex-col items-center justify-center gap-1.5 flex-1 py-2 text-[11px] transition-colors min-h-[48px]",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground font-medium"
               )}
             >
-              <tab.icon className={cn("h-6 w-6", isActive && "text-primary")} />
+              <tab.icon className={cn("h-[26px] w-[26px] transition-colors", isActive ? "text-primary" : "text-muted-foreground")} strokeWidth={isActive ? 2.2 : 1.8} />
               <span className="truncate">{tab.label}</span>
             </NavLink>
           );
