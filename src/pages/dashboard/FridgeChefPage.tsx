@@ -108,13 +108,25 @@ export default function FridgeChefPage() {
 
       {/* Ingredient Selection */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-display text-lg font-semibold text-foreground">Select Your Ingredients</h2>
-          {pantryItems && pantryItems.length > 0 && (
-            <Button variant="outline" size="sm" onClick={loadPantry}>
-              <Refrigerator className="w-3.5 h-3.5 mr-1.5" /> Load Pantry ({pantryItems.length})
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <PhotoScanner
+              mode="fridge-chef"
+              onItemsDetected={(items) => {
+                const names = (items as string[]);
+                setSelectedItems((prev) => {
+                  const combined = new Set([...prev, ...names]);
+                  return Array.from(combined);
+                });
+              }}
+            />
+            {pantryItems && pantryItems.length > 0 && (
+              <Button variant="outline" size="sm" onClick={loadPantry}>
+                <Refrigerator className="w-3.5 h-3.5 mr-1.5" /> Load Pantry ({pantryItems.length})
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Common Items */}
