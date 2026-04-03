@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Leaf, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { EditableProfileFields } from "@/components/dashboard/EditableProfileFields";
 import { MealCard } from "@/components/dashboard/MealCard";
