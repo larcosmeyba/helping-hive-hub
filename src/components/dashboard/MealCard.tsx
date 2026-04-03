@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Flame, ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
 const MEAL_IMAGES: Record<string, string> = {
@@ -39,8 +40,13 @@ export function MealCard({ meal, compact }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0' : 'w-full'}`}>
-      {/* Reduced height by ~30% */}
+    <motion.div
+      className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0' : 'w-full'}`}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileTap={{ scale: 0.98 }}
+    >
       <div className={`relative overflow-hidden ${compact ? 'h-16 md:h-24' : 'h-28 md:h-32'}`}>
         <img
           src={getMealImage(meal.name)}
@@ -48,7 +54,7 @@ export function MealCard({ meal, compact }: Props) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <div className={`absolute top-2 left-2`}>
+        <div className="absolute top-2 left-2">
           <span className={`bg-primary/90 text-primary-foreground font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px] md:text-[10px]' : 'text-[10px]'}`}>
             {meal.type}
           </span>
@@ -59,7 +65,6 @@ export function MealCard({ meal, compact }: Props) {
       </div>
 
       <div className={compact ? 'p-1.5 md:p-3' : 'p-3'}>
-        {/* Only show calories, no price */}
         <div className={`flex items-center gap-3 text-muted-foreground ${compact ? 'text-[9px] md:text-xs gap-1.5 md:gap-3' : 'text-sm'}`}>
           <span className="flex items-center gap-1"><Flame className={`text-primary ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />{meal.calories} cal</span>
         </div>
@@ -75,7 +80,13 @@ export function MealCard({ meal, compact }: Props) {
         )}
 
         {expanded && (
-          <div className="mt-3 space-y-3 border-t border-border pt-3">
+          <motion.div
+            className="mt-3 space-y-3 border-t border-border pt-3"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+          >
             <div>
               <p className="text-sm font-semibold text-foreground mb-1">Ingredients</p>
               <ul className="text-sm text-muted-foreground space-y-1">
@@ -102,9 +113,9 @@ export function MealCard({ meal, compact }: Props) {
               <span>{meal.carbs}g carbs</span>
               <span>{meal.fats}g fat</span>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
