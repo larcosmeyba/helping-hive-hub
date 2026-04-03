@@ -213,6 +213,9 @@ export default function Questionnaire() {
         membership_tier: needsVerification ? "pending" : "standard",
         membership_discount: needsVerification ? 0 : 0,
         questionnaire_completed: true,
+        latitude: userLatitude,
+        longitude: userLongitude,
+        city: locationCity || null,
       }).eq("user_id", user.id);
       if (error) throw error;
 
