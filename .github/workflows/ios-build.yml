@@ -39,11 +39,12 @@ jobs:
       - name: Add iOS privacy usage strings
         run: |
           PLIST="ios/App/App/Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Help The Hive needs camera access to scan your pantry and fridge items.'" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Help The Hive needs photo library access to select images of your food items.'" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you.'" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :NSLocationAlwaysAndWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you.'" "$PLIST"
-          echo "Privacy usage strings added to Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Help The Hive uses your camera to scan food items in your fridge and pantry so we can generate cheaper meal plans.'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription 'Help The Hive uses your camera to scan food items in your fridge and pantry so we can generate cheaper meal plans.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Help The Hive uses your photo library to select images of food items for pantry scanning.'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 'Help The Hive uses your photo library to select images of food items for pantry scanning.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'Help The Hive may save scanned food photos to your library.'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryAddUsageDescription 'Help The Hive may save scanned food photos to your library.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you for better pricing.'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription 'Help The Hive uses your location to find grocery stores near you for better pricing.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationAlwaysAndWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you for better pricing.'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :NSLocationAlwaysAndWhenInUseUsageDescription 'Help The Hive uses your location to find grocery stores near you for better pricing.'" "$PLIST"
+          echo "Privacy usage strings added to Info.plist (including NSPhotoLibraryAddUsageDescription)"
 
       - name: Generate iOS App Icons
         run: |
