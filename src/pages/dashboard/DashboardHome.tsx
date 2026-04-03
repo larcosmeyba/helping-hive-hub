@@ -87,7 +87,12 @@ export default function DashboardHome() {
       </div>
 
       {/* Budget Stats */}
-      <div className={`grid gap-3 md:gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+      <motion.div
+        className={`grid gap-3 md:gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+      >
         {[
           { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
