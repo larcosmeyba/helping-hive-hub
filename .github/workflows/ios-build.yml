@@ -32,6 +32,11 @@ jobs:
             echo "iOS platform already exists"
           fi
 
+      - name: Generate iOS App Icons
+        run: |
+          pip3 install Pillow
+          python3 scripts/generate-ios-icons.py src/assets/logo.png
+
       - name: Sync Capacitor
         run: npx cap sync ios
 
@@ -104,7 +109,7 @@ jobs:
             PRODUCT_BUNDLE_IDENTIFIER="com.helpthehive" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             MARKETING_VERSION="1.0" \
-            CURRENT_PROJECT_VERSION="6"
+            CURRENT_PROJECT_VERSION="7"
 
       - name: Export IPA
         env:
