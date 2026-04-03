@@ -7,7 +7,9 @@ import { QuestionnaireStep } from "@/components/questionnaire/QuestionnaireStep"
 import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
-import { Upload, ShieldCheck, X, Plus, Utensils } from "lucide-react";
+import { Upload, ShieldCheck, X, Plus, Utensils, MapPin, Loader2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 
 const TOTAL_STEPS = 14;
 
@@ -112,8 +114,52 @@ export default function Questionnaire() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Location state
+  const [userLatitude, setUserLatitude] = useState<number | null>(null);
+  const [userLongitude, setUserLongitude] = useState<number | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
+  const [locationCity, setLocationCity] = useState("");
+
   const toggleMulti = (arr: string[], setArr: (v: string[]) => void, item: string) => {
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
+  };
+
+  const requestLocation = async () => {
+    setLocationStatus("requesting");
+    try {
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        const perm = await Geolocation.requestPermissions();
+        if (perm.location !== "granted") {
+          setLocationStatus("denied");
+          return;
+        }
+      }
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      setUserLatitude(lat);
+      setUserLongitude(lng);
+      setLocationStatus("granted");
+
+      // Reverse geocode to get ZIP code
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
+          headers: { "User-Agent": "HelpTheHive/1.0" },
+        });
+        const data = await res.json();
+        if (data?.address?.postcode) {
+          setZipCode(data.address.postcode.slice(0, 5));
+        }
+        if (data?.address?.city || data?.address?.town || data?.address?.village) {
+          setLocationCity(data.address.city || data.address.town || data.address.village);
+        }
+      } catch {
+        // Reverse geocode failed, user can still enter ZIP manually
+      }
+    } catch {
+      setLocationStatus("denied");
+    }
   };
 
   const addCustomPantry = () => {
@@ -167,6 +213,9 @@ export default function Questionnaire() {
         membership_tier: needsVerification ? "pending" : "standard",
         membership_discount: needsVerification ? 0 : 0,
         questionnaire_completed: true,
+        latitude: userLatitude,
+        longitude: userLongitude,
+        city: locationCity || null,
       }).eq("user_id", user.id);
       if (error) throw error;
 
@@ -227,10 +276,59 @@ export default function Questionnaire() {
 
   return (
     <div className="min-h-dvh bg-background">
-      {/* Step 1: ZIP Code */}
+      {/* Step 1: Location & ZIP Code */}
       {step === 1 && (
-        <QuestionnaireStep step={1} totalSteps={TOTAL_STEPS} title="What is your ZIP Code?" subtitle="We'll use this to find local grocery prices and stores near you." onNext={next} onBack={undefined} nextDisabled={zipCode.length < 5}>
-          <div className="mt-4">
+        <QuestionnaireStep step={1} totalSteps={TOTAL_STEPS} title="Where are you located?" subtitle="We'll find grocery stores and prices near you." onNext={next} onBack={undefined} nextDisabled={zipCode.length < 5}>
+          <div className="mt-4 space-y-5">
+            {/* Location request button */}
+            {locationStatus === "idle" && (
+              <button
+                onClick={requestLocation}
+                className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-md hover:opacity-90 transition-opacity"
+              >
+                <MapPin className="w-5 h-5" />
+                Use My Location
+              </button>
+            )}
+
+            {locationStatus === "requesting" && (
+              <div className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-muted text-muted-foreground font-medium">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Finding your location...
+              </div>
+            )}
+
+            {locationStatus === "granted" && (
+              <div className="flex items-center gap-3 bg-primary/10 border-2 border-primary rounded-2xl px-4 py-3">
+                <MapPin className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {locationCity ? `📍 ${locationCity}` : "📍 Location found"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">We'll show you nearby stores and local prices</p>
+                </div>
+              </div>
+            )}
+
+            {locationStatus === "denied" && (
+              <div className="flex items-center gap-3 bg-muted/50 rounded-2xl px-4 py-3">
+                <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">No worries! Just enter your ZIP code below.</p>
+              </div>
+            )}
+
+            {/* Divider */}
+            {locationStatus !== "granted" && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground font-medium">
+                  {locationStatus === "idle" ? "or enter manually" : "Enter your ZIP code"}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
+
+            {/* ZIP code input */}
             <Input
               value={zipCode}
               onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}

@@ -657,6 +657,8 @@ export type Database = {
           id: string
           kitchen_equipment: string[] | null
           last_active: string | null
+          latitude: number | null
+          longitude: number | null
           meal_repetition: string | null
           membership_discount: number | null
           membership_tier: string | null
@@ -691,6 +693,8 @@ export type Database = {
           id?: string
           kitchen_equipment?: string[] | null
           last_active?: string | null
+          latitude?: number | null
+          longitude?: number | null
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
@@ -725,6 +729,8 @@ export type Database = {
           id?: string
           kitchen_equipment?: string[] | null
           last_active?: string | null
+          latitude?: number | null
+          longitude?: number | null
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
