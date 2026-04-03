@@ -36,7 +36,7 @@ jobs:
         run: |
           python3 -m venv /tmp/iconvenv
           /tmp/iconvenv/bin/pip install Pillow
-          /tmp/iconvenv/bin/python scripts/generate-ios-icons.py src/assets/logo.png
+          /tmp/iconvenv/bin/python scripts/generate-ios-icons.py src/assets/app-icon.png
 
       - name: Sync Capacitor
         run: npx cap sync ios
