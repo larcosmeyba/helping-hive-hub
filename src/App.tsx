@@ -17,6 +17,7 @@ import Questionnaire from "./pages/Questionnaire.tsx";
 import SampleMealPlan from "./pages/SampleMealPlan.tsx";
 import LegalPage from "./pages/legal/LegalPage.tsx";
 import NativeAuth from "./pages/NativeAuth.tsx";
+import NativeSplash from "./pages/NativeSplash.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
@@ -42,18 +43,6 @@ import AdminVerifications from "./pages/admin/AdminVerifications.tsx";
 
 const queryClient = new QueryClient();
 
-function NativeRedirectHome() {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <img src="/favicon.png" alt="Loading" className="h-10 w-10 animate-float" />
-      </div>
-    );
-  }
-  return <Navigate to={user ? "/dashboard" : "/auth"} replace />;
-}
-
 const App = () => {
   const native = isNativeApp();
 
@@ -65,8 +54,8 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Homepage: native app → redirect to /auth, web → marketing page */}
-              <Route path="/" element={native ? <NativeRedirectHome /> : <Index />} />
+              {/* Homepage: native app → splash screen, web → marketing page */}
+              <Route path="/" element={native ? <NativeSplash /> : <Index />} />
 
               {/* Native auth screen */}
               <Route path="/auth" element={<NativeAuth />} />
