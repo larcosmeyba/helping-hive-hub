@@ -119,8 +119,15 @@ export default function MealPlanPage() {
         Regenerate Meal Plan
       </Button>
 
+      <AnimatePresence>
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
-        <div key={day.day} className="space-y-2 md:space-y-3">
+        <motion.div
+          key={day.day}
+          className="space-y-2 md:space-y-3"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: dayIndex * 0.06 }}
+        >
           <h2 className="font-display text-sm md:text-lg font-semibold text-foreground flex items-center gap-1.5">
             <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs md:text-sm font-bold">{day.day}</span>
           </h2>
