@@ -99,15 +99,19 @@ export default function DashboardHome() {
           { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-2xl border border-border p-3 md:p-4 shadow-card min-h-[72px] flex flex-col justify-between">
+          <motion.div
+            key={stat.label}
+            className="bg-card rounded-2xl border border-border p-3 md:p-4 shadow-card min-h-[72px] flex flex-col justify-between"
+            variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+          >
             <div className="flex items-center gap-1.5 mb-1">
               <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
               <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
             </div>
             <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Smart Insights Row */}
       {mealPlan && (
