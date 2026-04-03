@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
 @layer base {
   :root {
@@ -45,7 +45,6 @@
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 40 92% 49%;
 
-    /* Custom tokens */
     --honey-gold: 40 92% 49%;
     --hive-black: 0 0% 7%;
     --honey-cream: 43 100% 96%;
