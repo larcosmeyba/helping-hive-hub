@@ -32,14 +32,14 @@ jobs:
             echo "iOS platform already exists"
           fi
 
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
       - name: Generate iOS App Icons
         run: |
           python3 -m venv /tmp/iconvenv
           /tmp/iconvenv/bin/pip install Pillow
           /tmp/iconvenv/bin/python scripts/generate-ios-icons.py src/assets/app-icon.png
-
-      - name: Sync Capacitor
-        run: npx cap sync ios
 
       - name: Install Apple certificate and provisioning profile
         env:
@@ -109,8 +109,9 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             PRODUCT_BUNDLE_IDENTIFIER="com.helpthehive" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon" \
             MARKETING_VERSION="1.0" \
-            CURRENT_PROJECT_VERSION="8"
+            CURRENT_PROJECT_VERSION="9"
 
       - name: Export IPA
         env:
