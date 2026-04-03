@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { isNativeApp } from "@/hooks/useIsNativeApp";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,7 +16,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to={isNativeApp() ? "/auth" : "/login"} replace />;
 
   return <>{children}</>;
 }
