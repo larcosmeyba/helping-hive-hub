@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Help the Hive',
   webDir: 'dist',
   server: {
-    url: 'https://helping-hive-hub.lovable.app',
+    url: 'https://helpthehive.com',
     cleartext: false
   }
 };
