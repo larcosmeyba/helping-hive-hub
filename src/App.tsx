@@ -23,7 +23,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
 import GroceryListPage from "./pages/dashboard/GroceryListPage.tsx";
 import PantryPage from "./pages/dashboard/PantryPage.tsx";
-import RecipesPage from "./pages/dashboard/RecipesPage.tsx";
+
 import BudgetInsightsPage from "./pages/dashboard/BudgetInsightsPage.tsx";
 import FridgeChefPage from "./pages/dashboard/FridgeChefPage.tsx";
 import SettingsPage from "./pages/dashboard/SettingsPage.tsx";

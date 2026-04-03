@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, BookOpen, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
