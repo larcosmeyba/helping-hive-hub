@@ -17,6 +17,7 @@ import Questionnaire from "./pages/Questionnaire.tsx";
 import SampleMealPlan from "./pages/SampleMealPlan.tsx";
 import LegalPage from "./pages/legal/LegalPage.tsx";
 import NativeAuth from "./pages/NativeAuth.tsx";
+import NativeSplash from "./pages/NativeSplash.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
