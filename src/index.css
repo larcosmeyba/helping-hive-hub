@@ -148,6 +148,10 @@
   .safe-area-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
+  /* Native app: ensure the root body also respects safe areas */
+  .native-app {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
 }
 
 /* Mobile-first smooth scrolling */
