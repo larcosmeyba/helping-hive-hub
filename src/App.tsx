@@ -43,7 +43,15 @@ import AdminVerifications from "./pages/admin/AdminVerifications.tsx";
 const queryClient = new QueryClient();
 
 function NativeRedirectHome() {
-  return <Navigate to="/auth" replace />;
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <img src="/favicon.png" alt="Loading" className="h-10 w-10 animate-float" />
+      </div>
+    );
+  }
+  return <Navigate to={user ? "/dashboard" : "/auth"} replace />;
 }
 
 const App = () => {
