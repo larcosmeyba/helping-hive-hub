@@ -7,7 +7,9 @@ import { QuestionnaireStep } from "@/components/questionnaire/QuestionnaireStep"
 import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
-import { Upload, ShieldCheck, X, Plus, Utensils } from "lucide-react";
+import { Upload, ShieldCheck, X, Plus, Utensils, MapPin, Loader2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 
 const TOTAL_STEPS = 14;
 
