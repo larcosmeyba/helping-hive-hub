@@ -20,7 +20,7 @@ export default function DashboardLayout() {
           {!isMobile && <DashboardSidebar />}
 
           <div className="flex-1 flex flex-col w-full min-w-0">
-            <header className={`flex items-center justify-between border-b border-border bg-card ${isMobile ? 'min-h-14 px-4 pt-[env(safe-area-inset-top,0px)]' : 'h-14 px-4'}`}>
+            <header className={`flex items-center justify-between border-b border-border bg-card ${isMobile ? 'px-4 py-2' : 'h-14 px-4'}`}>
               <div className="flex items-center gap-2">
                 {!isMobile && <SidebarTrigger className="text-foreground" />}
                 <Link to="/dashboard" className="flex items-center gap-2">
