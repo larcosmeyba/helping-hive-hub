@@ -34,8 +34,9 @@ jobs:
 
       - name: Generate iOS App Icons
         run: |
-          pip3 install Pillow
-          python3 scripts/generate-ios-icons.py src/assets/logo.png
+          python3 -m venv /tmp/iconvenv
+          /tmp/iconvenv/bin/pip install Pillow
+          /tmp/iconvenv/bin/python scripts/generate-ios-icons.py src/assets/logo.png
 
       - name: Sync Capacitor
         run: npx cap sync ios
