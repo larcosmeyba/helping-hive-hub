@@ -32,6 +32,11 @@ jobs:
             echo "iOS platform already exists"
           fi
 
+      - name: Generate iOS App Icons
+        run: |
+          pip3 install Pillow
+          python3 scripts/generate-ios-icons.py src/assets/logo.png
+
       - name: Sync Capacitor
         run: npx cap sync ios
 
