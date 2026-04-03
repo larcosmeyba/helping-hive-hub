@@ -174,33 +174,50 @@ export default function PantryPage() {
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5">{inStockItems.length} in stock • {outOfStockItems.length} out • AI uses this data</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="bg-gradient-honey text-primary-foreground hover:opacity-90">
-              <Plus className="w-4 h-4 mr-1.5" /> Add Item
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">Add Pantry Item</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Item Name</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Rice" /></div>
-              <div><Label>Quantity</Label><Input value={newQty} onChange={(e) => setNewQty(e.target.value)} placeholder="e.g. 1 bag" /></div>
-              <div>
-                <Label>Category</Label>
-                <Select value={newCat} onValueChange={setNewCat}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Expiration Date (optional)</Label><Input type="date" value={newExp} onChange={(e) => setNewExp(e.target.value)} /></div>
-              <Button onClick={() => addMutation.mutate()} disabled={!newName || !newQty || !newCat || addMutation.isPending} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
-                {addMutation.isPending ? "Adding..." : "Add to Pantry"}
+        <div className="flex items-center gap-2">
+          <PhotoScanner
+            mode="pantry"
+            onItemsDetected={(items) => {
+              const pantryItems = items as { name: string; category: string; quantity: string }[];
+              pantryItems.forEach(async (item) => {
+                await supabase.from("pantry_items").insert({
+                  user_id: user!.id,
+                  item_name: item.name,
+                  quantity: item.quantity || "some",
+                  category: item.category || "pantry_staples",
+                });
+              });
+              queryClient.invalidateQueries({ queryKey: ["pantry_items"] });
+            }}
+          />
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-gradient-honey text-primary-foreground hover:opacity-90">
+                <Plus className="w-4 h-4 mr-1.5" /> Add
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">Add Pantry Item</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Item Name</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Rice" /></div>
+                <div><Label>Quantity</Label><Input value={newQty} onChange={(e) => setNewQty(e.target.value)} placeholder="e.g. 1 bag" /></div>
+                <div>
+                  <Label>Category</Label>
+                  <Select value={newCat} onValueChange={setNewCat}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Expiration Date (optional)</Label><Input type="date" value={newExp} onChange={(e) => setNewExp(e.target.value)} /></div>
+                <Button onClick={() => addMutation.mutate()} disabled={!newName || !newQty || !newCat || addMutation.isPending} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
+                  {addMutation.isPending ? "Adding..." : "Add to Pantry"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Alerts */}

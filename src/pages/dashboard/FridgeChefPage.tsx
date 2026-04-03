@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame } from "lucide-react";
+import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PhotoScanner } from "@/components/dashboard/PhotoScanner";
 
 const COMMON_ITEMS = [
   "Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "Onions", "Tomatoes",
