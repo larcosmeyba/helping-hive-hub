@@ -36,6 +36,15 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
+      - name: Add iOS privacy usage strings
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Help The Hive needs camera access to scan your pantry and fridge items.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Help The Hive needs photo library access to select images of your food items.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you.'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationAlwaysAndWhenInUseUsageDescription string 'Help The Hive uses your location to find grocery stores near you.'" "$PLIST"
+          echo "Privacy usage strings added to Info.plist"
+
       - name: Generate iOS App Icons
         run: |
           python3 -m venv /tmp/iconvenv
