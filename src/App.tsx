@@ -23,7 +23,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MealPlanPage from "./pages/dashboard/MealPlanPage.tsx";
 import GroceryListPage from "./pages/dashboard/GroceryListPage.tsx";
 import PantryPage from "./pages/dashboard/PantryPage.tsx";
-import RecipesPage from "./pages/dashboard/RecipesPage.tsx";
+
 import BudgetInsightsPage from "./pages/dashboard/BudgetInsightsPage.tsx";
 import FridgeChefPage from "./pages/dashboard/FridgeChefPage.tsx";
 import SettingsPage from "./pages/dashboard/SettingsPage.tsx";
@@ -73,7 +73,7 @@ const App = () => {
                 <Route path="grocery-list" element={<GroceryListPage />} />
                 <Route path="pantry" element={<PantryPage />} />
                 <Route path="fridge-chef" element={<FridgeChefPage />} />
-                <Route path="recipes" element={<RecipesPage />} />
+                
                 <Route path="budget" element={<BudgetInsightsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="support" element={<SupportPage />} />
