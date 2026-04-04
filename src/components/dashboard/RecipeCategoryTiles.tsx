@@ -175,6 +175,7 @@ export function RecipeCategoryTiles() {
                       alt={recipe.title}
                       className="w-24 h-24 object-cover shrink-0"
                       loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CATEGORY_IMAGE; }}
                     />
                     <div className="p-3 flex-1">
                       <p className="font-semibold text-foreground text-sm">{recipe.title}</p>
