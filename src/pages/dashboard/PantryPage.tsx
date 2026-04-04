@@ -198,15 +198,16 @@ export default function PantryPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Camera className="w-5 h-5 md:w-6 md:h-6 text-accent" /> Scan Your Fridge & Pantry
-          </h1>
-          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">Add foods you already have so we can build cheaper meal plans.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Intro Section */}
+      <div className="space-y-4">
+        {/* Title */}
+        <h1 className="font-display text-[28px] md:text-[32px] font-bold text-[#2F2F2F] leading-[1.15] flex items-center gap-2.5">
+          <Package className="w-6 h-6 text-accent shrink-0" />
+          Scan Your Fridge & Pantry
+        </h1>
+
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           <PhotoScanner
             mode="pantry"
             onItemsDetected={(items) => {
@@ -224,7 +225,7 @@ export default function PantryPage() {
           />
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-gradient-honey text-primary-foreground hover:opacity-90">
+              <Button className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-[48px] px-5 text-sm font-semibold rounded-xl">
                 <Plus className="w-4 h-4 mr-1.5" /> Add
               </Button>
             </DialogTrigger>
@@ -250,6 +251,14 @@ export default function PantryPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Description below buttons */}
+        <p className="text-[15px] md:text-base text-[#6B6B6B] leading-relaxed">
+          Add what you already have in your fridge and pantry so your meal plan prioritizes those ingredients first, helps reduce waste, and keeps your grocery costs lower.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Snap a photo, choose one from your gallery, or add ingredients manually to keep your pantry up to date.
+        </p>
       </div>
 
       {/* Alerts */}
