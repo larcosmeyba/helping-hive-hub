@@ -137,6 +137,15 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
   };
 
   const pickFromGallery = async () => {
+    if (Capacitor.isNativePlatform() && cameraStatus !== "granted") {
+      setPendingAction("gallery");
+      setShowCameraPrompt(true);
+      return;
+    }
+    doPickGallery();
+  };
+
+  const doPickGallery = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
