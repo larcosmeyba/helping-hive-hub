@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function AdminAnalytics() {
   const [data, setData] = useState({
-    totalMembers: 0, activeMembers: 0, snapUsers: 0,
+    totalMembers: 0, activeMembers: 0, snapUsers: 0, betaUsers: 0,
     totalRecipes: 0, totalMealPlans: 0,
     completedQuestionnaires: 0, avgBudget: 0, avgHousehold: 0,
     typeBreakdown: {} as Record<string, number>,
@@ -18,6 +18,7 @@ export default function AdminAnalytics() {
     cookingStyleBreakdown: {} as Record<string, number>,
     verificationBreakdown: {} as Record<string, number>,
     tierBreakdown: {} as Record<string, number>,
+    referralBreakdown: {} as Record<string, number>,
   });
   const [loading, setLoading] = useState(true);
 
