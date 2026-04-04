@@ -137,6 +137,14 @@ export default function PantryPage() {
     const isOut = (item as any).is_out_of_stock;
     return (
       <div key={item.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/10 transition-colors ${isOut ? "opacity-50" : ""}`}>
+        {/* Item image */}
+        <img
+          src={getPantryImage(item.item_name)}
+          alt={item.item_name}
+          className="w-9 h-9 rounded-lg object-cover shrink-0"
+          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_PANTRY_IMAGE; }}
+        />
+
         {/* Check off / mark out */}
         <button
           onClick={() => toggleOutOfStock.mutate({ id: item.id, isOut: !!isOut })}
