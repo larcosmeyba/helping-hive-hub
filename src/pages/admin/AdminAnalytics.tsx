@@ -33,6 +33,7 @@ export default function AdminAnalytics() {
       const members = profiles.data || [];
       const active = members.filter(m => m.account_status === "active").length;
       const snap = members.filter(m => m.snap_status).length;
+      const beta = members.filter(m => (m as any).beta_user).length;
       const completed = members.filter(m => m.questionnaire_completed).length;
       const budgets = members.filter(m => m.weekly_budget).map(m => Number(m.weekly_budget));
       const avgBudget = budgets.length ? Math.round(budgets.reduce((a, b) => a + b, 0) / budgets.length) : 0;
