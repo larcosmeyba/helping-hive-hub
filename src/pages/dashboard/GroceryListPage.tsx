@@ -342,12 +342,7 @@ export default function GroceryListPage() {
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = `<span class="text-[10px] text-muted-foreground text-center leading-tight px-1">${item.name.slice(0, 12)}</span>`;
-                        }
+                        (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMG;
                       }}
                     />
                   </div>
