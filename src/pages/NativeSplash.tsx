@@ -50,17 +50,17 @@ export default function NativeSplash() {
       </div>
 
       {/* Logo + wordmark + welcome */}
-      <div className="relative flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-700">
+      <div className="relative flex flex-col items-center gap-8 animate-in fade-in zoom-in-95 duration-700">
         <img
           src={logo}
           alt="Help The Hive"
-          className="h-36 w-36 drop-shadow-lg"
+          className="h-52 w-52 drop-shadow-lg"
         />
-        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
+        <h1 className="font-display text-4xl font-bold text-foreground tracking-tight">
           Help <span className="text-gradient-honey">The Hive</span>
         </h1>
         {user && displayName && (
-          <p className="text-lg text-muted-foreground font-medium animate-in fade-in duration-500 delay-300">
+          <p className="text-xl text-muted-foreground font-medium animate-in fade-in duration-500 delay-300">
             Welcome Back, {displayName}
           </p>
         )}
