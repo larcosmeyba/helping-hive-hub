@@ -74,6 +74,9 @@ export default function AdminAnalytics() {
 
         const tier = m.membership_tier || "standard";
         tierBreakdown[tier] = (tierBreakdown[tier] || 0) + 1;
+
+        const ref = (m as any).referral_source || "Unknown";
+        referralBreakdown[ref] = (referralBreakdown[ref] || 0) + 1;
       });
 
       const growthByMonth = Object.entries(monthCounts).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
