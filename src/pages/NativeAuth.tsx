@@ -50,10 +50,10 @@ export default function NativeAuth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 safe-area-top safe-area-bottom">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex flex-col bg-background px-6" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="w-full max-w-sm mx-auto">
         <div className="text-center mb-8">
-          <img src={logo} alt="Help The Hive" className="h-16 w-16 mx-auto mb-4" />
+          <img src={logo} alt="Help The Hive" className="w-[68px] h-[68px] mx-auto mb-3" />
           <h1 className="font-display text-2xl font-bold text-foreground">
             Help <span className="text-gradient-honey">The Hive</span>
           </h1>
