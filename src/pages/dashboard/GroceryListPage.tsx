@@ -597,6 +597,27 @@ export default function GroceryListPage() {
           </div>
         </div>
       </div>
+      {/* Location permission prompt */}
+      <PermissionModal
+        open={showLocationPrompt}
+        type="location"
+        onContinue={async () => {
+          setShowLocationPrompt(false);
+          const pos = await requestLocation();
+          if (pos) {
+            toast({ title: "Location enabled", description: "Store pricing will be more accurate for your area." });
+          }
+        }}
+        onDismiss={() => setShowLocationPrompt(false)}
+      />
+
+      {/* Location denied fallback */}
+      {locationStatus === "denied" && (
+        <PermissionDeniedBanner type="location" onFallback={() => {
+          const el = document.querySelector('[data-zip-input]');
+          if (el) (el as HTMLInputElement).focus();
+        }} />
+      )}
     </div>
   );
 }
