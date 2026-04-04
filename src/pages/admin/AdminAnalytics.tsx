@@ -82,12 +82,12 @@ export default function AdminAnalytics() {
       const growthByMonth = Object.entries(monthCounts).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
 
       setData({
-        totalMembers: members.length, activeMembers: active, snapUsers: snap,
+        totalMembers: members.length, activeMembers: active, snapUsers: snap, betaUsers: beta,
         totalRecipes: recipes.count || 0, totalMealPlans: mealPlans.count || 0,
         completedQuestionnaires: completed, avgBudget, avgHousehold: Number(avgHousehold),
         typeBreakdown, locationBreakdown, growthByMonth,
         topGoals, topCuisines, topStores, cookingStyleBreakdown,
-        verificationBreakdown, tierBreakdown,
+        verificationBreakdown, tierBreakdown, referralBreakdown,
       });
       setLoading(false);
     }
