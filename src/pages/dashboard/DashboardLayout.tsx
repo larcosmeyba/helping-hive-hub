@@ -39,8 +39,9 @@ export default function DashboardLayout() {
               style={isMobile ? { paddingTop: "env(safe-area-inset-top)" } : undefined}
             >
               <div className={cn("flex items-center justify-between px-4", isMobile ? "h-14" : "h-14")}>
-                <Link to="/dashboard" className="flex items-center self-center shrink-0">
+                <Link to="/dashboard" className="flex items-center gap-2 self-center shrink-0">
                   <img src={logo} alt="Help The Hive" className="h-9 w-9" />
+                  <BetaBadge />
                 </Link>
 
                 <Link
