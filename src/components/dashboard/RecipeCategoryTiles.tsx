@@ -14,7 +14,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
   "High Protein": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
   "Vegetarian": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
   "Family Favorites": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
-  "Holiday": "https://images.unsplash.com/photo-1574672280600-4accfa404c94?w=400&h=300&fit=crop",
+  "Holiday": "https://images.unsplash.com/photo-1482275548304-a58859dc31b7?w=400&h=300&fit=crop",
   "Special Occasions": "https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=400&h=300&fit=crop",
 };
 
@@ -120,6 +120,7 @@ export function RecipeCategoryTiles() {
                 alt={cat}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
+                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CATEGORY_IMAGE; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 inset-x-0 p-3">
@@ -174,6 +175,7 @@ export function RecipeCategoryTiles() {
                       alt={recipe.title}
                       className="w-24 h-24 object-cover shrink-0"
                       loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CATEGORY_IMAGE; }}
                     />
                     <div className="p-3 flex-1">
                       <p className="font-semibold text-foreground text-sm">{recipe.title}</p>
