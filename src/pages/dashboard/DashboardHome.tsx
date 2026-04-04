@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, TrendingDown, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Leaf, Zap } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,36 @@ import { EditableProfileFields } from "@/components/dashboard/EditableProfileFie
 import { MealCard } from "@/components/dashboard/MealCard";
 import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+/* Circular progress ring */
+function GroceryScoreRing({ score }: { score: number }) {
+  const size = 64;
+  const stroke = 5;
+  const radius = (size - stroke) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (score / 100) * circ;
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth={stroke} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth={stroke}
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-700"
+        />
+      </svg>
+      <span className="absolute text-sm font-bold text-primary">{score}%</span>
+    </div>
+  );
+}
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -36,11 +66,8 @@ export default function DashboardHome() {
   const pantrySavings = mealPlan?.pantrySavings ?? 0;
   const saved = budget - estimatedCost;
   const costPerMeal = mealPlan?.costPerMeal ?? 0;
-
-  // Smart grocery score (simple heuristic)
   const groceryScore = mealPlan ? Math.min(99, Math.round(70 + (pantrySavings / budget) * 30)) : 0;
 
-  // Pantry utilization (mock — would be real with pantry data)
   const { data: pantryItems } = useQuery({
     queryKey: ["pantry_count", user?.id],
     queryFn: async () => {
@@ -56,15 +83,18 @@ export default function DashboardHome() {
 
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
 
+  const cardClass = "bg-card rounded-2xl border border-border p-3 md:p-4 min-h-[72px] flex flex-col justify-between";
+  const cardShadow = { boxShadow: "0px 6px 16px rgba(0,0,0,0.04)" };
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-5 md:space-y-6 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto space-y-4 md:space-y-6 overflow-x-hidden">
       {/* Welcome */}
       <div className="space-y-3">
         <div>
           <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
             Welcome back, {profile?.display_name ?? "there"}
           </h1>
-          <p className="text-sm md:text-sm text-muted-foreground mt-1">Your weekly meal plan overview</p>
+          <p className="text-sm text-muted-foreground mt-1">Your weekly meal plan overview</p>
         </div>
 
         <EditableProfileFields
@@ -73,22 +103,24 @@ export default function DashboardHome() {
           onUpdate={refreshProfile}
         />
 
-        <Button
-          onClick={generate}
-          disabled={generating}
-          className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-full md:w-auto h-12 md:h-10 text-sm md:text-sm font-semibold rounded-xl shadow-soft"
-        >
-          {generating ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
-          ) : (
-            <><Sparkles className="w-4 h-4 mr-2" /> {mealPlan ? "Regenerate Plan" : "Generate Plan"}</>
-          )}
-        </Button>
+        <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
+          <Button
+            onClick={generate}
+            disabled={generating}
+            className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-full md:w-auto h-14 md:h-10 text-sm md:text-sm font-semibold rounded-xl shadow-soft"
+          >
+            {generating ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+            ) : (
+              <><Sparkles className="w-4 h-4 mr-2" /> {mealPlan ? "Regenerate Plan" : "Generate Plan"}</>
+            )}
+          </Button>
+        </motion.div>
       </div>
 
       {/* Budget Stats */}
       <motion.div
-        className={`grid gap-3 md:gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}
+        className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
@@ -96,12 +128,13 @@ export default function DashboardHome() {
         {[
           { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
-          { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
+          { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : "0"}`, icon: PiggyBank, color: "text-accent" },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
         ].map((stat) => (
           <motion.div
             key={stat.label}
-            className="bg-card rounded-2xl border border-border p-3 md:p-4 shadow-card min-h-[72px] flex flex-col justify-between"
+            className={cardClass}
+            style={cardShadow}
             variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
           >
             <div className="flex items-center gap-1.5 mb-1">
@@ -115,18 +148,20 @@ export default function DashboardHome() {
 
       {/* Smart Insights Row */}
       {mealPlan && (
-        <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {/* Grocery Score */}
-          <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
-            <div className="flex items-center gap-1.5 mb-1">
+        <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-3"}`}>
+          {/* Grocery Score with ring */}
+          <div className={cardClass} style={cardShadow}>
+            <div className="flex items-center gap-1.5 mb-2">
               <Zap className="w-4 h-4 text-primary" />
               <span className="text-xs text-muted-foreground">Grocery Score</span>
             </div>
-            <p className="text-2xl font-bold text-primary">{groceryScore}<span className="text-sm text-muted-foreground">/100</span></p>
+            <div className="flex justify-center">
+              <GroceryScoreRing score={groceryScore} />
+            </div>
           </div>
 
           {/* Pantry Utilization */}
-          <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
+          <div className={cardClass} style={cardShadow}>
             <div className="flex items-center gap-1.5 mb-1">
               <Refrigerator className="w-4 h-4 text-accent" />
               <span className="text-xs text-muted-foreground">Pantry Items</span>
@@ -134,40 +169,30 @@ export default function DashboardHome() {
             <p className="text-2xl font-bold text-foreground">{pantryItems ?? 0}</p>
             <p className="text-[10px] text-muted-foreground">in stock</p>
           </div>
-
-          {/* Food Waste Prevented */}
-          {!isMobile && (
-            <div className="bg-card rounded-2xl border border-border p-3 shadow-card">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Leaf className="w-4 h-4 text-accent" />
-                <span className="text-xs text-muted-foreground">Waste Prevented</span>
-              </div>
-              <p className="text-2xl font-bold text-accent">${pantrySavings.toFixed(0)}</p>
-              <p className="text-[10px] text-muted-foreground">this week</p>
-            </div>
-          )}
         </div>
       )}
 
       {/* This Week's Meals */}
       {!mealPlan ? (
-        <div className="bg-card rounded-2xl border border-border p-6 md:p-12 text-center shadow-card">
+        <div className={cardClass + " p-6 md:p-12 text-center"} style={cardShadow}>
           <Sparkles className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3" />
           <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-1">No Meal Plan Yet</h2>
-          <p className="text-sm md:text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
             Tap "Generate Plan" to create your personalized weekly plan.
           </p>
-          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 text-sm rounded-xl shadow-soft px-6">
-            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Plan</>}
-          </Button>
+          <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
+            <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-14 text-sm rounded-xl shadow-soft px-6">
+              {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Plan</>}
+            </Button>
+          </motion.div>
         </div>
       ) : (
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 mt-6">
             <h2 className="font-display text-lg md:text-xl font-semibold text-foreground flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-primary" /> This Week's Meals
             </h2>
-            <Link to="/dashboard/meal-plan" className="text-sm md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
+            <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">Full Plan →</Link>
           </div>
           {isMobile ? (
             <div className="space-y-4">
@@ -207,7 +232,6 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* Recipe Categories (replaces Extra Recipes + Fridge Chef) */}
       <RecipeCategoryTiles />
     </div>
   );

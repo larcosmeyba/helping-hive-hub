@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Bell, X } from "lucide-react";
+import { Bell, X, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface Notification {
   id: string;
@@ -23,7 +23,6 @@ export function NotificationBell() {
     const checkNotifications = async () => {
       const items: Notification[] = [];
 
-      // Check profile completeness
       const { data: profile } = await supabase
         .from("profiles")
         .select("zip_code, questionnaire_completed, weekly_budget")
@@ -31,10 +30,10 @@ export function NotificationBell() {
         .single();
 
       if (profile && !profile.zip_code) {
-        items.push({ id: "zip", message: "Add your ZIP code for local store pricing", action: "/dashboard/settings" });
+        items.push({ id: "zip", message: "Add your ZIP code for local pricing", action: "/dashboard/settings" });
       }
       if (profile && !profile.questionnaire_completed) {
-        items.push({ id: "questionnaire", message: "Complete your profile to get better meal plans", action: "/questionnaire" });
+        items.push({ id: "questionnaire", message: "Complete your profile for better plans", action: "/questionnaire" });
       }
       if (!mealPlan) {
         items.push({ id: "meal-plan", message: "Generate your first meal plan", action: "/dashboard" });
@@ -50,34 +49,49 @@ export function NotificationBell() {
 
   return (
     <>
-      {/* Floating bell */}
+      {/* Floating bell - clean circle */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-[92px] left-4 z-[45] w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-elevated flex items-center justify-center animate-in fade-in slide-in-from-left-2 duration-300"
+        className="fixed z-[45] flex items-center justify-center w-12 h-12 rounded-full bg-primary shadow-lg active:scale-95 transition-transform"
+        style={{ bottom: "calc(76px + 16px + env(safe-area-inset-bottom, 0px))", left: 16 }}
       >
-        <Bell className="w-[18px] h-[18px]" />
-        <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+        <Bell className="w-5 h-5 text-primary-foreground" />
+        <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
           {notifications.length}
         </span>
       </button>
 
       {/* Notification panel */}
       {open && (
-        <div className="fixed bottom-[150px] left-4 right-4 z-[45] bg-card rounded-2xl border border-border shadow-elevated p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold text-foreground text-sm">Needs Attention</h3>
-            <button onClick={() => setOpen(false)}>
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-[44] bg-black/10" onClick={() => setOpen(false)} />
+
+          <div
+            className="fixed left-4 right-4 z-[46] bg-card rounded-2xl border border-border shadow-xl p-4 max-w-sm animate-in slide-in-from-bottom-4 duration-200"
+            style={{ bottom: "calc(76px + 16px + 56px + env(safe-area-inset-bottom, 0px))" }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold text-foreground text-sm">Needs Attention</h3>
+              <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-muted transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {notifications.map((n) => (
+                <Link
+                  key={n.id}
+                  to={n.action || "/dashboard"}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between bg-muted/50 rounded-xl p-3 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <span>{n.message}</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
+                </Link>
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            {notifications.map((n) => (
-              <div key={n.id} className="bg-muted/50 rounded-xl p-3 text-sm text-foreground">
-                {n.message}
-              </div>
-            ))}
-          </div>
-        </div>
+        </>
       )}
     </>
   );
