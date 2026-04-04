@@ -35,23 +35,23 @@ export default function DashboardLayout() {
             {/* Native-style header */}
             <header
               className={cn(
-                "flex items-center justify-between bg-card transition-shadow duration-200",
+                "flex items-center justify-between bg-card transition-shadow duration-200 px-4",
                 isMobile
-                  ? "h-[72px] px-4 pt-[env(safe-area-inset-top)]"
-                  : "h-16 px-4",
-                scrolled && "shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                  ? "h-14 pt-[env(safe-area-inset-top)]"
+                  : "h-14",
+                scrolled && "shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
               )}
-              style={isMobile ? { minHeight: "calc(72px + env(safe-area-inset-top))" } : undefined}
+              style={isMobile ? { minHeight: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)" } : undefined}
             >
               <Link to="/dashboard" className="flex items-center">
-                <img src={logo} alt="Help The Hive" className="h-8 w-8" />
+                <img src={logo} alt="Help The Hive" className="h-[34px] w-[34px]" />
               </Link>
 
               <Link
                 to="/dashboard/settings"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/60 hover:bg-muted transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60 hover:bg-muted transition-colors"
               >
-                <User className="h-[18px] w-[18px] text-foreground/70" />
+                <User className="h-5 w-5 text-foreground/70" />
               </Link>
             </header>
 
