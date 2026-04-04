@@ -284,22 +284,28 @@ export default function GroceryListPage() {
                 <button
                   key={store.store}
                   onClick={() => setSelectedStore(store.store)}
-                  className={`snap-start shrink-0 w-[130px] md:w-auto relative p-3 md:p-4 rounded-2xl border text-left transition-all ${
-                    isActive
+                  className={`snap-start shrink-0 relative text-left transition-all rounded-2xl border ${
+                    isCheapest
+                      ? "w-[150px] md:w-auto p-4 md:p-5 border-2 border-accent bg-accent/10 shadow-elevated scale-[1.02]"
+                      : "w-[130px] md:w-auto p-3 md:p-4"
+                  } ${
+                    isActive && !isCheapest
                       ? "border-primary bg-primary/5 shadow-card"
-                      : "border-border hover:border-primary/30"
+                      : !isCheapest
+                        ? "border-border hover:border-primary/30"
+                        : ""
                   }`}
                 >
                   {isCheapest && (
-                    <span className="absolute -top-1.5 right-2 bg-accent text-accent-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                      Best
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] md:text-xs font-bold px-3 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                      ★ BEST PRICE
                     </span>
                   )}
                   <div className="flex items-center gap-1.5 mb-1">
                     <Store className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
-                    <p className="font-semibold text-xs md:text-sm text-foreground truncate">{store.store}</p>
+                    <p className={`font-semibold text-foreground truncate ${isCheapest ? 'text-sm md:text-base' : 'text-xs md:text-sm'}`}>{store.store}</p>
                   </div>
-                  <p className="text-lg md:text-xl font-bold text-primary">${store.estimatedTotal?.toFixed(2)}</p>
+                  <p className={`font-bold text-primary ${isCheapest ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
                   <p className="text-[10px] md:text-xs text-muted-foreground">Est. + tax</p>
                 </button>
               );
