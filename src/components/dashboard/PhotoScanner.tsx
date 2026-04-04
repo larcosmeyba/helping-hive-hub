@@ -29,6 +29,8 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
   const [detectedItems, setDetectedItems] = useState<string[] | PantryItem[] | null>(null);
   const [summary, setSummary] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { status: cameraStatus, showPrompt: showCameraPrompt, setShowPrompt: setShowCameraPrompt, requestCamera } = useCameraPermission();
+  const [pendingAction, setPendingAction] = useState<"photo" | "gallery" | null>(null);
 
   const compressImage = (base64Data: string, maxWidth = 800): Promise<string> => {
     return new Promise((resolve, reject) => {
