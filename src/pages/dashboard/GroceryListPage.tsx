@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
+import { useLocationPermission } from "@/hooks/usePermissions";
+import { PermissionModal } from "@/components/dashboard/PermissionModal";
+import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
