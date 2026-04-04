@@ -48,6 +48,7 @@ export default function DashboardHome() {
   const { mealPlan, generating, generate } = useMealPlan();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
