@@ -203,6 +203,19 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
   const [correctedPrice, setCorrectedPrice] = useState("");
+  const { status: locationStatus, showPrompt: showLocationPrompt, setShowPrompt: setShowLocationPrompt, requestLocation } = useLocationPermission();
+  const [locationAsked, setLocationAsked] = useState(false);
+
+  // Ask for location contextually when grocery page loads and we haven't asked yet
+  useEffect(() => {
+    if (locationStatus === "prompt" && !locationAsked && mealPlan?.groceryList?.length) {
+      const timer = setTimeout(() => {
+        setShowLocationPrompt(true);
+        setLocationAsked(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [locationStatus, locationAsked, mealPlan]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
