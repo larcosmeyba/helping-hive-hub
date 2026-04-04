@@ -36,17 +36,18 @@ export default function DashboardLayout() {
                 "bg-card transition-shadow duration-200",
                 scrolled && "shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
               )}
-              style={isMobile ? { paddingTop: "env(safe-area-inset-top)" } : undefined}
             >
-              <div className={cn("flex items-center justify-between px-4", isMobile ? "h-14" : "h-14")}>
-                <Link to="/dashboard" className="flex items-center gap-2 self-center shrink-0">
+              {/* Safe area spacer — just the notch height, no extra padding */}
+              {isMobile && <div style={{ height: "env(safe-area-inset-top, 0px)" }} />}
+              <div className="flex items-center justify-between px-4 h-11">
+                <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
                   <img src={logo} alt="Help The Hive" className="h-9 w-9" />
                   <BetaBadge />
                 </Link>
 
                 <Link
                   to="/dashboard/settings"
-                  className="flex items-center justify-center self-center rounded-full bg-muted/60 hover:bg-muted transition-colors w-[42px] h-[42px] shrink-0"
+                  className="flex items-center justify-center rounded-full bg-muted/60 hover:bg-muted transition-colors w-10 h-10 shrink-0"
                 >
                   <User className="h-5 w-5 text-foreground/70" />
                 </Link>
