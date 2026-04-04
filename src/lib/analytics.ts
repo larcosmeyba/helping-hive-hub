@@ -6,12 +6,12 @@ export async function trackEvent(
 ) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from("activity_logs").insert({
+    await supabase.from("activity_logs").insert([{
       user_id: user?.id ?? null,
       action,
       entity_type: "onboarding",
       details: metadata ?? {},
-    });
+    }]);
   } catch {
     // Silent fail — analytics should never block UX
   }
