@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +10,17 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
 import { useLocationPermission, useCameraPermission } from "@/hooks/usePermissions";
 
-const STORE_OPTIONS = ["Walmart", "Aldi", "Target", "Kroger", "Costco", "Publix", "H-E-B", "Trader Joe's"];
+const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
+const USER_TYPE_OPTIONS = [
+  { value: "snap", label: "SNAP / EBT recipient" },
+  { value: "teacher", label: "Teacher / Educator" },
+  { value: "student", label: "Student" },
+  { value: "military", label: "Military / Veteran" },
+  { value: "first_responder", label: "First Responder" },
+  { value: "general", label: "None of these" },
+];
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -26,6 +34,8 @@ export default function SettingsPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  const [userType, setUserType] = useState("general");
+  const [verificationStatus, setVerificationStatus] = useState("not_started");
   const { status: locationStatus } = useLocationPermission();
   const { status: cameraStatus } = useCameraPermission();
 
@@ -39,6 +49,8 @@ export default function SettingsPage() {
       setSelectedStores((data.preferred_stores as string[]) ?? []);
       setAllergies((data.allergies as string[]) ?? []);
       setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
+      setUserType(data.user_type ?? "general");
+      setVerificationStatus(data.verification_status ?? "not_started");
     });
   }, [user]);
 
@@ -57,6 +69,7 @@ export default function SettingsPage() {
         preferred_stores: selectedStores,
         allergies,
         dietary_preferences: dietaryPreferences,
+        user_type: userType,
       }).eq("user_id", user.id);
       if (error) throw error;
       toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
@@ -168,6 +181,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div>
+          <Label>Your Category</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {USER_TYPE_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setUserType(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${userType === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
           <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
         </Button>
@@ -227,6 +252,41 @@ export default function SettingsPage() {
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           We use your approximate location for store and pricing relevance. Photos are processed securely and never stored without your permission.
         </p>
+      </div>
+
+      {/* Eligibility Verification */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-primary" /> Eligibility Verification
+        </h2>
+
+        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+          <div>
+            <p className="text-sm font-medium text-foreground">Verification Status</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Verification is coming soon. During beta, no proof is required.
+            </p>
+          </div>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+            Not Started
+          </span>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          In the future, SNAP recipients, teachers, students, military, veterans, and first responders will be able to verify their status for free or discounted membership benefits.
+        </p>
+      </div>
+
+      {/* Beta Access */}
+      <div className="flex items-center justify-between bg-primary/5 rounded-xl border border-primary/20 p-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Beta Access</p>
+            <p className="text-[11px] text-muted-foreground">All features are free during testing</p>
+          </div>
+        </div>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">Active</span>
       </div>
 
       {/* Sign Out */}

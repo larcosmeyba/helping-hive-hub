@@ -644,6 +644,7 @@ export type Database = {
         Row: {
           account_status: string | null
           allergies: string[] | null
+          beta_user: boolean
           city: string | null
           cooking_style: string | null
           cooking_time_preference: string | null
@@ -662,9 +663,11 @@ export type Database = {
           meal_repetition: string | null
           membership_discount: number | null
           membership_tier: string | null
+          onboarding_completed_at: string | null
           phone_number: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
+          referral_source: string | null
           snap_status: boolean | null
           state: string | null
           updated_at: string
@@ -680,6 +683,7 @@ export type Database = {
         Insert: {
           account_status?: string | null
           allergies?: string[] | null
+          beta_user?: boolean
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
@@ -698,9 +702,11 @@ export type Database = {
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
+          onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          referral_source?: string | null
           snap_status?: boolean | null
           state?: string | null
           updated_at?: string
@@ -716,6 +722,7 @@ export type Database = {
         Update: {
           account_status?: string | null
           allergies?: string[] | null
+          beta_user?: boolean
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
@@ -734,9 +741,11 @@ export type Database = {
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
+          onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          referral_source?: string | null
           snap_status?: boolean | null
           state?: string | null
           updated_at?: string

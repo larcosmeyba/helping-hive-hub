@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, CalendarDays, TrendingUp, MapPin, UserCheck, ShoppingCart, Utensils, Target, Heart } from "lucide-react";
+import { Users, BookOpen, CalendarDays, TrendingUp, MapPin, UserCheck, ShoppingCart, Utensils, Target, Heart, Megaphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminAnalytics() {
   const [data, setData] = useState({
-    totalMembers: 0, activeMembers: 0, snapUsers: 0,
+    totalMembers: 0, activeMembers: 0, snapUsers: 0, betaUsers: 0,
     totalRecipes: 0, totalMealPlans: 0,
     completedQuestionnaires: 0, avgBudget: 0, avgHousehold: 0,
     typeBreakdown: {} as Record<string, number>,
@@ -18,6 +18,7 @@ export default function AdminAnalytics() {
     cookingStyleBreakdown: {} as Record<string, number>,
     verificationBreakdown: {} as Record<string, number>,
     tierBreakdown: {} as Record<string, number>,
+    referralBreakdown: {} as Record<string, number>,
   });
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +33,7 @@ export default function AdminAnalytics() {
       const members = profiles.data || [];
       const active = members.filter(m => m.account_status === "active").length;
       const snap = members.filter(m => m.snap_status).length;
+      const beta = members.filter(m => (m as any).beta_user).length;
       const completed = members.filter(m => m.questionnaire_completed).length;
       const budgets = members.filter(m => m.weekly_budget).map(m => Number(m.weekly_budget));
       const avgBudget = budgets.length ? Math.round(budgets.reduce((a, b) => a + b, 0) / budgets.length) : 0;
@@ -47,6 +49,7 @@ export default function AdminAnalytics() {
       const cookingStyleBreakdown: Record<string, number> = {};
       const verificationBreakdown: Record<string, number> = {};
       const tierBreakdown: Record<string, number> = {};
+      const referralBreakdown: Record<string, number> = {};
 
       members.forEach(m => {
         const t = m.user_type || "other";
@@ -70,17 +73,20 @@ export default function AdminAnalytics() {
 
         const tier = m.membership_tier || "standard";
         tierBreakdown[tier] = (tierBreakdown[tier] || 0) + 1;
+
+        const ref = (m as any).referral_source || "Unknown";
+        referralBreakdown[ref] = (referralBreakdown[ref] || 0) + 1;
       });
 
       const growthByMonth = Object.entries(monthCounts).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
 
       setData({
-        totalMembers: members.length, activeMembers: active, snapUsers: snap,
+        totalMembers: members.length, activeMembers: active, snapUsers: snap, betaUsers: beta,
         totalRecipes: recipes.count || 0, totalMealPlans: mealPlans.count || 0,
         completedQuestionnaires: completed, avgBudget, avgHousehold: Number(avgHousehold),
         typeBreakdown, locationBreakdown, growthByMonth,
         topGoals, topCuisines, topStores, cookingStyleBreakdown,
-        verificationBreakdown, tierBreakdown,
+        verificationBreakdown, tierBreakdown, referralBreakdown,
       });
       setLoading(false);
     }
@@ -113,13 +119,13 @@ export default function AdminAnalytics() {
 
   const statCards = [
     { label: "Total Members", value: data.totalMembers, icon: Users },
+    { label: "Beta Users", value: data.betaUsers, icon: TrendingUp },
     { label: "Active Members", value: data.activeMembers, icon: UserCheck },
     { label: "SNAP Users", value: data.snapUsers, icon: TrendingUp },
     { label: "Recipes", value: data.totalRecipes, icon: BookOpen },
     { label: "Meal Plans", value: data.totalMealPlans, icon: CalendarDays },
     { label: "Avg Budget", value: `$${data.avgBudget}`, icon: ShoppingCart },
-    { label: "Avg Household", value: data.avgHousehold, icon: Users },
-    { label: "Questionnaires", value: `${questPct}%`, icon: Target },
+    { label: "Onboarding", value: `${questPct}%`, icon: Target },
   ];
 
   return (
@@ -277,6 +283,18 @@ export default function AdminAnalytics() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Referral Sources */}
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone className="h-4 w-4 text-primary" /> Referral Sources</CardTitle></CardHeader>
+          <CardContent>
+            {Object.keys(data.referralBreakdown).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No referral data yet</p>
+            ) : (
+              <BarChart items={sortedEntries(data.referralBreakdown)} max={Math.max(...Object.values(data.referralBreakdown))} />
+            )}
           </CardContent>
         </Card>
       </div>

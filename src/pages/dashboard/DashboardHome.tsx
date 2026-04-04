@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap } from "lucide-react";
@@ -46,6 +48,7 @@ export default function DashboardHome() {
   const { mealPlan, generating, generate } = useMealPlan();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -60,6 +63,13 @@ export default function DashboardHome() {
     },
     enabled: !!user,
   });
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (profile && !profile.questionnaire_completed) {
+      navigate("/questionnaire", { replace: true });
+    }
+  }, [profile, navigate]);
 
   const budget = profile?.weekly_budget ?? 75;
   const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
