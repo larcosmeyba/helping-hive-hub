@@ -34,6 +34,8 @@ export default function SettingsPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  const [userType, setUserType] = useState("general");
+  const [verificationStatus, setVerificationStatus] = useState("not_started");
   const { status: locationStatus } = useLocationPermission();
   const { status: cameraStatus } = useCameraPermission();
 
