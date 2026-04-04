@@ -49,6 +49,8 @@ export default function SettingsPage() {
       setSelectedStores((data.preferred_stores as string[]) ?? []);
       setAllergies((data.allergies as string[]) ?? []);
       setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
+      setUserType(data.user_type ?? "general");
+      setVerificationStatus(data.verification_status ?? "not_started");
     });
   }, [user]);
 
