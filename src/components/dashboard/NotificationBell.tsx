@@ -63,7 +63,7 @@ export function NotificationBell() {
 
       {/* Notification panel */}
       {open && (
-        <div className="fixed bottom-[160px] left-4 right-4 z-50 bg-card rounded-2xl border border-border shadow-elevated p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-sm">
+        <div className="fixed bottom-[150px] left-4 right-4 z-[45] bg-card rounded-2xl border border-border shadow-elevated p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-semibold text-foreground text-sm">Needs Attention</h3>
             <button onClick={() => setOpen(false)}>
