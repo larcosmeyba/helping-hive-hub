@@ -64,12 +64,12 @@ export default function DashboardHome() {
     enabled: !!user,
   });
 
-  // Redirect to onboarding if not completed
+  // Redirect to onboarding if not completed (only on fresh fetch, not cache)
   useEffect(() => {
-    if (profile && !profile.questionnaire_completed) {
+    if (profile && profile.questionnaire_completed === false) {
       navigate("/questionnaire", { replace: true });
     }
-  }, [profile, navigate]);
+  }, [profile?.questionnaire_completed, navigate]);
 
   const budget = profile?.weekly_budget ?? 75;
   const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
