@@ -316,6 +316,14 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Camera permission pre-prompt */}
+      <PermissionModal
+        open={showCameraPrompt}
+        type="camera"
+        onContinue={handleCameraPermissionContinue}
+        onDismiss={() => { setShowCameraPrompt(false); setPendingAction(null); }}
+      />
     </>
   );
 }
