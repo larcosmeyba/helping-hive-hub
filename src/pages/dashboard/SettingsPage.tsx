@@ -254,6 +254,41 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* Eligibility Verification */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-primary" /> Eligibility Verification
+        </h2>
+
+        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+          <div>
+            <p className="text-sm font-medium text-foreground">Verification Status</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Verification is coming soon. During beta, no proof is required.
+            </p>
+          </div>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+            Not Started
+          </span>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          In the future, SNAP recipients, teachers, students, military, veterans, and first responders will be able to verify their status for free or discounted membership benefits.
+        </p>
+      </div>
+
+      {/* Beta Access */}
+      <div className="flex items-center justify-between bg-primary/5 rounded-xl border border-primary/20 p-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Beta Access</p>
+            <p className="text-[11px] text-muted-foreground">All features are free during testing</p>
+          </div>
+        </div>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">Active</span>
+      </div>
+
       {/* Sign Out */}
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         <LogOut className="w-4 h-4 mr-2" /> Sign Out
