@@ -118,7 +118,7 @@
   }
 
   .bg-gradient-warm {
-    background: linear-gradient(180deg, hsl(43 100% 96%), hsl(0 0% 100%));
+    background: hsl(43 100% 96%);
   }
 
   .shadow-soft {
