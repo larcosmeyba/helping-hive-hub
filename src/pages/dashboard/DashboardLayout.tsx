@@ -37,11 +37,11 @@ export default function DashboardLayout() {
               className={cn(
                 "flex items-center justify-between bg-card transition-shadow duration-200 px-4",
                 isMobile
-                  ? "h-14 pt-[env(safe-area-inset-top)]"
+                  ? "h-11 pt-[env(safe-area-inset-top)]"
                   : "h-14",
                 scrolled && "shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
               )}
-              style={isMobile ? { minHeight: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)" } : undefined}
+              style={isMobile ? { minHeight: "calc(44px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)" } : undefined}
             >
               <Link to="/dashboard" className="flex items-center">
                 <img src={logo} alt="Help The Hive" className="h-[34px] w-[34px]" />
