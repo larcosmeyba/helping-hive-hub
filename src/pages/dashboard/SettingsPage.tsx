@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
+import { useLocationPermission, useCameraPermission } from "@/hooks/usePermissions";
 
 const STORE_OPTIONS = ["Walmart", "Aldi", "Target", "Kroger", "Costco", "Publix", "H-E-B", "Trader Joe's"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
