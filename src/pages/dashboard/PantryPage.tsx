@@ -19,6 +19,30 @@ const CATEGORY_LABELS: Record<string, string> = {
   dairy: "Dairy", pantry_staples: "Pantry Staples", frozen_foods: "Frozen Foods", canned_goods: "Canned Goods",
 };
 
+const PANTRY_ITEM_IMAGES: Record<string, string> = {
+  oats: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=80&h=80&fit=crop",
+  oatmeal: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=80&h=80&fit=crop",
+  "peanut butter": "https://images.unsplash.com/photo-1598511726623-d2e9996892f0?w=80&h=80&fit=crop",
+  rice: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=80&h=80&fit=crop",
+  beans: "https://images.unsplash.com/photo-1511690743698-d9d18f7e20f1?w=80&h=80&fit=crop",
+  pasta: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=80&h=80&fit=crop",
+  eggs: "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=80&h=80&fit=crop",
+  milk: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=80&h=80&fit=crop",
+  bread: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=80&h=80&fit=crop",
+  chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=80&h=80&fit=crop",
+  tomato: "https://images.unsplash.com/photo-1546470427-0d4db154ceb8?w=80&h=80&fit=crop",
+};
+
+const DEFAULT_PANTRY_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=80&h=80&fit=crop";
+
+function getPantryImage(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [keyword, url] of Object.entries(PANTRY_ITEM_IMAGES)) {
+    if (lower.includes(keyword)) return url;
+  }
+  return DEFAULT_PANTRY_IMAGE;
+}
+
 export default function PantryPage() {
   const { user } = useAuth();
   const { toast } = useToast();
