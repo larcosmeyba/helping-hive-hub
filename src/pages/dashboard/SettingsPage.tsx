@@ -10,9 +10,17 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
 import { useLocationPermission, useCameraPermission } from "@/hooks/usePermissions";
 
-const STORE_OPTIONS = ["Walmart", "Aldi", "Target", "Kroger", "Costco", "Publix", "H-E-B", "Trader Joe's"];
+const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
+const USER_TYPE_OPTIONS = [
+  { value: "snap", label: "SNAP / EBT recipient" },
+  { value: "teacher", label: "Teacher / Educator" },
+  { value: "student", label: "Student" },
+  { value: "military", label: "Military / Veteran" },
+  { value: "first_responder", label: "First Responder" },
+  { value: "general", label: "None of these" },
+];
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
