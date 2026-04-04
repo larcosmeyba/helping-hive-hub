@@ -5,7 +5,7 @@ import os
 import sys
 from PIL import Image
 
-SOURCE = sys.argv[1] if len(sys.argv) > 1 else "src/assets/logo.png"
+SOURCE = sys.argv[1] if len(sys.argv) > 1 else "src/assets/app-icon-flat-1024.png"
 ASSET_DIR = "ios/App/App/Assets.xcassets/AppIcon.appiconset"
 
 # All sizes required for a universal iOS app icon (Xcode 15+)
