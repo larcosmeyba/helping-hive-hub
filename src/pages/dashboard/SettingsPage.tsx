@@ -26,6 +26,8 @@ export default function SettingsPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  const { status: locationStatus } = useLocationPermission();
+  const { status: cameraStatus } = useCameraPermission();
 
   useEffect(() => {
     if (!user) return;
