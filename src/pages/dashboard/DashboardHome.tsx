@@ -64,6 +64,13 @@ export default function DashboardHome() {
     enabled: !!user,
   });
 
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (profile && !profile.questionnaire_completed) {
+      navigate("/questionnaire", { replace: true });
+    }
+  }, [profile, navigate]);
+
   const budget = profile?.weekly_budget ?? 75;
   const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
   const pantrySavings = mealPlan?.pantrySavings ?? 0;
