@@ -278,7 +278,8 @@ export default function GroceryListPage() {
             const cheapestIdx = storeCards.findIndex((s) =>
               storeCards.every((o) => s.estimatedTotal <= o.estimatedTotal)
             );
-            // Reorder: put cheapest in the middle (index 1 for 3 cards)
+            const highestTotal = Math.max(...storeCards.map((s) => s.estimatedTotal));
+            // Reorder: put cheapest in the middle
             const sorted = [...storeCards];
             if (cheapestIdx !== -1 && sorted.length >= 3) {
               const [cheapest] = sorted.splice(cheapestIdx, 1);
@@ -288,18 +289,19 @@ export default function GroceryListPage() {
               sorted.splice(1, 0, cheapest);
             }
             return (
-              <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <div className="grid gap-2 md:gap-4 mt-1" style={{ gridTemplateColumns: '1fr 1.08fr 1fr' }}>
                 {sorted.map((store) => {
                   const isActive = activeStore === store.store;
                   const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
+                  const savings = isCheapest ? (highestTotal - store.estimatedTotal) : 0;
                   return (
                     <button
                       key={store.store}
                       onClick={() => setSelectedStore(store.store)}
-                      className={`relative text-left transition-all rounded-2xl border min-h-[100px] ${
+                      className={`relative text-left transition-all rounded-2xl border min-h-[108px] ${
                         isCheapest
-                          ? "p-3 md:p-5 border-2 border-accent bg-accent/10 shadow-elevated"
-                          : "p-3 md:p-4"
+                          ? "p-3 md:p-5 border-2 border-accent bg-accent/10 shadow-lg"
+                          : "p-2.5 md:p-4"
                       } ${
                         isActive && !isCheapest
                           ? "border-primary bg-primary/5 shadow-card"
@@ -309,7 +311,7 @@ export default function GroceryListPage() {
                       }`}
                     >
                       {isCheapest && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] md:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
                           ★ BEST PRICE
                         </span>
                       )}
@@ -317,8 +319,11 @@ export default function GroceryListPage() {
                         <Store className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                         <p className={`font-semibold text-foreground truncate ${isCheapest ? 'text-xs md:text-base' : 'text-[11px] md:text-sm'}`}>{store.store}</p>
                       </div>
-                      <p className={`font-bold text-primary ${isCheapest ? 'text-base md:text-2xl' : 'text-sm md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
+                      <p className={`font-bold text-primary ${isCheapest ? 'text-lg md:text-2xl' : 'text-sm md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
                       <p className="text-[9px] md:text-xs text-muted-foreground">Est. + tax</p>
+                      {isCheapest && savings > 0 && (
+                        <p className="text-[9px] md:text-xs text-accent font-semibold mt-1">Save ${savings.toFixed(2)}</p>
+                      )}
                     </button>
                   );
                 })}
