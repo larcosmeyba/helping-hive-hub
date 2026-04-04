@@ -181,6 +181,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div>
+          <Label>Your Category</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {USER_TYPE_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setUserType(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${userType === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
           <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
         </Button>
