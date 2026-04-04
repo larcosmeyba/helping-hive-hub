@@ -6,6 +6,9 @@ import { Capacitor } from "@capacitor/core";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCameraPermission } from "@/hooks/usePermissions";
+import { PermissionModal } from "@/components/dashboard/PermissionModal";
+import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
 interface PantryItem {
   name: string;
