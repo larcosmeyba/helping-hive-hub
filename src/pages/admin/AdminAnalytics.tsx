@@ -50,7 +50,6 @@ export default function AdminAnalytics() {
       const verificationBreakdown: Record<string, number> = {};
       const tierBreakdown: Record<string, number> = {};
       const referralBreakdown: Record<string, number> = {};
-      const tierBreakdown: Record<string, number> = {};
 
       members.forEach(m => {
         const t = m.user_type || "other";
