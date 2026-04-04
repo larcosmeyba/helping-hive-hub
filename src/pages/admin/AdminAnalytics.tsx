@@ -119,13 +119,13 @@ export default function AdminAnalytics() {
 
   const statCards = [
     { label: "Total Members", value: data.totalMembers, icon: Users },
+    { label: "Beta Users", value: data.betaUsers, icon: TrendingUp },
     { label: "Active Members", value: data.activeMembers, icon: UserCheck },
     { label: "SNAP Users", value: data.snapUsers, icon: TrendingUp },
     { label: "Recipes", value: data.totalRecipes, icon: BookOpen },
     { label: "Meal Plans", value: data.totalMealPlans, icon: CalendarDays },
     { label: "Avg Budget", value: `$${data.avgBudget}`, icon: ShoppingCart },
-    { label: "Avg Household", value: data.avgHousehold, icon: Users },
-    { label: "Questionnaires", value: `${questPct}%`, icon: Target },
+    { label: "Onboarding", value: `${questPct}%`, icon: Target },
   ];
 
   return (
