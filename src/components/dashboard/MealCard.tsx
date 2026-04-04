@@ -67,9 +67,9 @@ export function MealCard({ meal, compact }: Props) {
         </div>
       </div>
 
-      <div className={compact ? 'p-1.5 md:p-3' : 'p-3'}>
-        <div className={`flex items-center gap-3 text-muted-foreground ${compact ? 'text-[9px] md:text-xs gap-1.5 md:gap-3' : 'text-sm'}`}>
-          <span className="flex items-center gap-1"><Flame className={`text-primary ${compact ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-3.5 h-3.5'}`} />{meal.calories} cal</span>
+      <div className={compact ? 'p-1' : 'p-3'}>
+        <div className={`flex items-center gap-1 text-muted-foreground ${compact ? 'text-[8px]' : 'text-sm'}`}>
+          <span className="flex items-center gap-0.5"><Flame className={`text-primary ${compact ? 'w-2 h-2' : 'w-3.5 h-3.5'}`} />{meal.calories}</span>
         </div>
 
         {!compact && (

@@ -170,13 +170,13 @@ export default function DashboardHome() {
             <Link to="/dashboard/meal-plan" className="text-sm md:text-sm text-primary hover:underline font-medium">Full Plan →</Link>
           </div>
           {isMobile ? (
-            <div className="flex overflow-x-auto gap-3 pb-3 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="space-y-4">
               {mealPlan.weeklyPlan.slice(0, 3).map((day) => (
-                <div key={day.day} className="flex-shrink-0 w-[80vw] snap-start">
+                <div key={day.day}>
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
                     <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">{day.day}</span>
                   </h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {day.meals.map((meal, i) => (
                       <MealCard key={`${day.day}-${i}`} meal={meal} compact />
                     ))}
