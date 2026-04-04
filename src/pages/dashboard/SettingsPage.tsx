@@ -69,6 +69,7 @@ export default function SettingsPage() {
         preferred_stores: selectedStores,
         allergies,
         dietary_preferences: dietaryPreferences,
+        user_type: userType,
       }).eq("user_id", user.id);
       if (error) throw error;
       toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
