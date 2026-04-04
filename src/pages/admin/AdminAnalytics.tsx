@@ -285,6 +285,18 @@ export default function AdminAnalytics() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Referral Sources */}
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone className="h-4 w-4 text-primary" /> Referral Sources</CardTitle></CardHeader>
+          <CardContent>
+            {Object.keys(data.referralBreakdown).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No referral data yet</p>
+            ) : (
+              <BarChart items={sortedEntries(data.referralBreakdown)} max={Math.max(...Object.values(data.referralBreakdown))} />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
