@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
 import logo from "@/assets/logo-transparent.png";
 
 export default function NativeSplash() {
@@ -13,7 +14,6 @@ export default function NativeSplash() {
   useEffect(() => {
     if (loading) return;
 
-    // Fetch display name for returning users
     if (user) {
       supabase
         .from("profiles")
@@ -22,7 +22,7 @@ export default function NativeSplash() {
         .single()
         .then(({ data }) => {
           if (data?.display_name) {
-            setDisplayName(data.display_name.split(" ")[0]); // First name only
+            setDisplayName(data.display_name.split(" ")[0]);
           }
         });
     }
@@ -40,29 +40,32 @@ export default function NativeSplash() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-600 safe-area-top safe-area-bottom ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-600 safe-area-top safe-area-bottom ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
+      style={{ backgroundColor: "#F2B233" }}
     >
-      {/* Warm glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/8 blur-[120px]" />
-      </div>
-
-      {/* Logo + wordmark + welcome */}
-      <div className="relative flex flex-col items-center gap-8 animate-in fade-in zoom-in-95 duration-700">
-        <img
+      {/* Logo + welcome */}
+      <div className="relative flex flex-col items-center">
+        <motion.img
           src={logo}
           alt="Help The Hive"
-          className="h-52 w-52 drop-shadow-lg"
+          className="h-60 w-60"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         />
-        <h1 className="font-display text-4xl font-bold text-foreground tracking-tight">
-          Help <span className="text-gradient-honey">The Hive</span>
-        </h1>
+
         {user && displayName && (
-          <p className="text-xl text-muted-foreground font-medium animate-in fade-in duration-500 delay-300">
-            Welcome Back, {displayName}
-          </p>
+          <motion.p
+            className="mt-7 text-xl font-normal"
+            style={{ color: "#1A1A1A" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
+          >
+            Welcome back, {displayName}
+          </motion.p>
         )}
       </div>
     </div>
