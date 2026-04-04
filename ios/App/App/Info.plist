@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Help the Hive uses your camera to scan pantry and fridge items and upload food photos for meal planning.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Help the Hive uses your photo library so you can upload food photos to scan pantry and fridge items for meal planning.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Help the Hive uses your location to show nearby grocery stores, improve price comparisons, and provide more accurate grocery cost estimates in your area.</string>
+</dict>
+</plist>

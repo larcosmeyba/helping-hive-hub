@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
+import { useLocationPermission, useCameraPermission } from "@/hooks/usePermissions";
 
 const STORE_OPTIONS = ["Walmart", "Aldi", "Target", "Kroger", "Costco", "Publix", "H-E-B", "Trader Joe's"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  const { status: locationStatus } = useLocationPermission();
+  const { status: cameraStatus } = useCameraPermission();
 
   useEffect(() => {
     if (!user) return;
@@ -168,6 +171,62 @@ export default function SettingsPage() {
         <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
           <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
         </Button>
+      </div>
+
+      {/* Permissions Section */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary" /> Permissions & Privacy
+        </h2>
+
+        <div className="space-y-3">
+          {/* Location */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Location</p>
+                <p className="text-[11px] text-muted-foreground">Nearby stores & pricing accuracy</p>
+              </div>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              locationStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+            }`}>
+              {locationStatus === "granted" ? "On" : locationStatus === "denied" ? "Off" : "Not Set"}
+            </span>
+          </div>
+
+          {/* Camera */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Camera className="w-4 h-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Camera</p>
+                <p className="text-[11px] text-muted-foreground">Scan pantry & fridge items</p>
+              </div>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              cameraStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+            }`}>
+              {cameraStatus === "granted" ? "On" : cameraStatus === "denied" ? "Off" : "Not Set"}
+            </span>
+          </div>
+        </div>
+
+        {(locationStatus === "denied" || cameraStatus === "denied") && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("app-settings:", "_blank")}
+            className="w-full text-sm gap-2"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Open Device Settings
+          </Button>
+        )}
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          We use your approximate location for store and pricing relevance. Photos are processed securely and never stored without your permission.
+        </p>
       </div>
 
       {/* Sign Out */}

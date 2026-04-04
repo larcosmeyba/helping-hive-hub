@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
+import { useLocationPermission } from "@/hooks/usePermissions";
+import { PermissionModal } from "@/components/dashboard/PermissionModal";
+import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
@@ -200,6 +203,19 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
   const [correctedPrice, setCorrectedPrice] = useState("");
+  const { status: locationStatus, showPrompt: showLocationPrompt, setShowPrompt: setShowLocationPrompt, requestLocation } = useLocationPermission();
+  const [locationAsked, setLocationAsked] = useState(false);
+
+  // Ask for location contextually when grocery page loads and we haven't asked yet
+  useEffect(() => {
+    if (locationStatus === "prompt" && !locationAsked && mealPlan?.groceryList?.length) {
+      const timer = setTimeout(() => {
+        setShowLocationPrompt(true);
+        setLocationAsked(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [locationStatus, locationAsked, mealPlan]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -581,6 +597,27 @@ export default function GroceryListPage() {
           </div>
         </div>
       </div>
+      {/* Location permission prompt */}
+      <PermissionModal
+        open={showLocationPrompt}
+        type="location"
+        onContinue={async () => {
+          setShowLocationPrompt(false);
+          const pos = await requestLocation();
+          if (pos) {
+            toast({ title: "Location enabled", description: "Store pricing will be more accurate for your area." });
+          }
+        }}
+        onDismiss={() => setShowLocationPrompt(false)}
+      />
+
+      {/* Location denied fallback */}
+      {locationStatus === "denied" && (
+        <PermissionDeniedBanner type="location" onFallback={() => {
+          const el = document.querySelector('[data-zip-input]');
+          if (el) (el as HTMLInputElement).focus();
+        }} />
+      )}
     </div>
   );
 }

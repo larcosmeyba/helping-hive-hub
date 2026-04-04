@@ -6,6 +6,9 @@ import { Capacitor } from "@capacitor/core";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCameraPermission } from "@/hooks/usePermissions";
+import { PermissionModal } from "@/components/dashboard/PermissionModal";
+import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
 interface PantryItem {
   name: string;
@@ -26,6 +29,8 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
   const [detectedItems, setDetectedItems] = useState<string[] | PantryItem[] | null>(null);
   const [summary, setSummary] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { status: cameraStatus, showPrompt: showCameraPrompt, setShowPrompt: setShowCameraPrompt, requestCamera } = useCameraPermission();
+  const [pendingAction, setPendingAction] = useState<"photo" | "gallery" | null>(null);
 
   const compressImage = (base64Data: string, maxWidth = 800): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -82,7 +87,29 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     }
   };
 
+  const handleCameraPermissionContinue = async () => {
+    setShowCameraPrompt(false);
+    const granted = await requestCamera();
+    if (granted && pendingAction === "photo") {
+      doTakePhoto();
+    } else if (granted && pendingAction === "gallery") {
+      doPickGallery();
+    } else if (!granted) {
+      toast({ title: "Permission denied", description: "You can still add items manually or from your gallery.", variant: "destructive" });
+    }
+    setPendingAction(null);
+  };
+
   const takePhoto = async () => {
+    if (Capacitor.isNativePlatform() && cameraStatus !== "granted") {
+      setPendingAction("photo");
+      setShowCameraPrompt(true);
+      return;
+    }
+    doTakePhoto();
+  };
+
+  const doTakePhoto = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
@@ -110,6 +137,15 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
   };
 
   const pickFromGallery = async () => {
+    if (Capacitor.isNativePlatform() && cameraStatus !== "granted") {
+      setPendingAction("gallery");
+      setShowCameraPrompt(true);
+      return;
+    }
+    doPickGallery();
+  };
+
+  const doPickGallery = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
@@ -280,6 +316,14 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Camera permission pre-prompt */}
+      <PermissionModal
+        open={showCameraPrompt}
+        type="camera"
+        onContinue={handleCameraPermissionContinue}
+        onDismiss={() => { setShowCameraPrompt(false); setPendingAction(null); }}
+      />
     </>
   );
 }
