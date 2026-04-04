@@ -22,7 +22,7 @@ export default function DashboardLayout() {
 
           <div className="flex-1 flex flex-col w-full min-w-0">
             {/* Simplified header */}
-            <header className={`flex items-center justify-between border-b border-border bg-card safe-area-top ${isMobile ? 'px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+10px)]' : 'h-14 px-4'}`}>
+            <header className={`flex items-center justify-between border-b border-border bg-card safe-area-top ${isMobile ? 'h-14 px-4 pt-[env(safe-area-inset-top)]' : 'h-14 px-4'}`}>
               <div className="flex items-center gap-2">
                 {!isMobile && <SidebarTrigger className="text-foreground" />}
                 <Link to="/dashboard" className="flex items-center gap-2">

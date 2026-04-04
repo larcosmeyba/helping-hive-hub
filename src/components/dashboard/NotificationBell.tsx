@@ -53,17 +53,17 @@ export function NotificationBell() {
       {/* Floating bell */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-[100px] left-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center animate-in fade-in duration-300"
+        className="fixed bottom-[92px] left-4 z-[45] w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-elevated flex items-center justify-center animate-in fade-in slide-in-from-left-2 duration-300"
       >
-        <Bell className="w-5 h-5" />
-        <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+        <Bell className="w-[18px] h-[18px]" />
+        <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
           {notifications.length}
         </span>
       </button>
 
       {/* Notification panel */}
       {open && (
-        <div className="fixed bottom-[160px] left-4 right-4 z-50 bg-card rounded-2xl border border-border shadow-elevated p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-sm">
+        <div className="fixed bottom-[150px] left-4 right-4 z-[45] bg-card rounded-2xl border border-border shadow-elevated p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-semibold text-foreground text-sm">Needs Attention</h3>
             <button onClick={() => setOpen(false)}>
