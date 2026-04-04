@@ -49,20 +49,21 @@ export function MealCard({ meal, compact }: Props) {
       transition={{ duration: 0.3 }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className={`relative overflow-hidden ${compact ? 'h-16 md:h-24' : 'h-28 md:h-32'}`}>
+      <div className={`relative overflow-hidden ${compact ? 'h-20' : 'h-28 md:h-32'}`}>
         <img
           src={getMealImage(meal.name)}
           alt={meal.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
         />
-        <div className="absolute top-2 left-2">
-          <span className={`bg-primary/90 text-primary-foreground font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px] md:text-[10px]' : 'text-[10px]'}`}>
+        <div className="absolute top-1 left-1">
+          <span className={`bg-primary/90 text-primary-foreground font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px]' : 'text-[10px]'}`}>
             {meal.type}
           </span>
         </div>
-        <div className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent ${compact ? 'p-1.5 md:p-2' : 'p-3'}`}>
-          <p className={`text-white font-semibold line-clamp-2 leading-tight ${compact ? 'text-[10px] md:text-sm' : 'text-sm'}`}>{meal.name}</p>
+        <div className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent ${compact ? 'p-1.5' : 'p-3'}`}>
+          <p className={`text-white font-semibold line-clamp-2 leading-tight ${compact ? 'text-[9px]' : 'text-sm'}`}>{meal.name}</p>
         </div>
       </div>
 
