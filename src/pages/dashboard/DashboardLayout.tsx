@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { BottomNavBar } from "@/components/dashboard/BottomNavBar";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
-import { useAuth } from "@/contexts/AuthContext";
 import { MealPlanProvider } from "@/contexts/MealPlanContext";
 import { User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,7 +11,6 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-transparent.png";
 
 export default function DashboardLayout() {
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [scrolled, setScrolled] = useState(false);
 
@@ -32,30 +30,27 @@ export default function DashboardLayout() {
           {!isMobile && <DashboardSidebar />}
 
           <div className="flex-1 flex flex-col w-full min-w-0">
-            {/* Native-style header */}
             <header
               className={cn(
-                "flex items-center justify-between bg-card transition-shadow duration-200 px-4",
-                isMobile
-                  ? "h-11 pt-[env(safe-area-inset-top)]"
-                  : "h-14",
+                "bg-card transition-shadow duration-200",
                 scrolled && "shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
               )}
-              style={isMobile ? { minHeight: "calc(44px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)" } : undefined}
+              style={isMobile ? { paddingTop: "env(safe-area-inset-top)" } : undefined}
             >
-              <Link to="/dashboard" className="flex items-center">
-                <img src={logo} alt="Help The Hive" className="h-[34px] w-[34px]" />
-              </Link>
+              <div className={cn("flex items-center justify-between px-4", isMobile ? "h-14 pb-3" : "h-14")}>
+                <Link to="/dashboard" className="flex items-center self-center shrink-0">
+                  <img src={logo} alt="Help The Hive" className="h-9 w-9" />
+                </Link>
 
-              <Link
-                to="/dashboard/settings"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/60 hover:bg-muted transition-colors"
-              >
-                <User className="h-5 w-5 text-foreground/70" />
-              </Link>
+                <Link
+                  to="/dashboard/settings"
+                  className="flex items-center justify-center self-center rounded-full bg-muted/60 hover:bg-muted transition-colors w-[42px] h-[42px] shrink-0"
+                >
+                  <User className="h-5 w-5 text-foreground/70" />
+                </Link>
+              </div>
             </header>
 
-            {/* Divider */}
             <div className="h-px w-full" style={{ backgroundColor: "#E8E2D8" }} />
 
             <main
