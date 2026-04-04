@@ -74,6 +74,22 @@ export default function Questionnaire() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // If user already completed onboarding, skip straight to dashboard
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("questionnaire_completed")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.questionnaire_completed) {
+          clearProgress();
+          navigate("/dashboard", { replace: true });
+        }
+      });
+  }, [user, navigate]);
+
   const [zipCode, setZipCode] = useState<string>((saved.zipCode as string) || "");
   const [householdSize, setHouseholdSize] = useState<number | null>((saved.householdSize as number) ?? null);
   const [weeklyBudget, setWeeklyBudget] = useState<string>((saved.weeklyBudget as string) || "");
