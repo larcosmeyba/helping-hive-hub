@@ -87,7 +87,29 @@ export function PhotoScanner({ mode, onItemsDetected }: PhotoScannerProps) {
     }
   };
 
+  const handleCameraPermissionContinue = async () => {
+    setShowCameraPrompt(false);
+    const granted = await requestCamera();
+    if (granted && pendingAction === "photo") {
+      doTakePhoto();
+    } else if (granted && pendingAction === "gallery") {
+      doPickGallery();
+    } else if (!granted) {
+      toast({ title: "Permission denied", description: "You can still add items manually or from your gallery.", variant: "destructive" });
+    }
+    setPendingAction(null);
+  };
+
   const takePhoto = async () => {
+    if (Capacitor.isNativePlatform() && cameraStatus !== "granted") {
+      setPendingAction("photo");
+      setShowCameraPrompt(true);
+      return;
+    }
+    doTakePhoto();
+  };
+
+  const doTakePhoto = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
