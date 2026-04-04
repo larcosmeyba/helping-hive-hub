@@ -173,6 +173,62 @@ export default function SettingsPage() {
         </Button>
       </div>
 
+      {/* Permissions Section */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary" /> Permissions & Privacy
+        </h2>
+
+        <div className="space-y-3">
+          {/* Location */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Location</p>
+                <p className="text-[11px] text-muted-foreground">Nearby stores & pricing accuracy</p>
+              </div>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              locationStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+            }`}>
+              {locationStatus === "granted" ? "On" : locationStatus === "denied" ? "Off" : "Not Set"}
+            </span>
+          </div>
+
+          {/* Camera */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Camera className="w-4 h-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Camera</p>
+                <p className="text-[11px] text-muted-foreground">Scan pantry & fridge items</p>
+              </div>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              cameraStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+            }`}>
+              {cameraStatus === "granted" ? "On" : cameraStatus === "denied" ? "Off" : "Not Set"}
+            </span>
+          </div>
+        </div>
+
+        {(locationStatus === "denied" || cameraStatus === "denied") && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("app-settings:", "_blank")}
+            className="w-full text-sm gap-2"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Open Device Settings
+          </Button>
+        )}
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          We use your approximate location for store and pricing relevance. Photos are processed securely and never stored without your permission.
+        </p>
+      </div>
+
       {/* Sign Out */}
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         <LogOut className="w-4 h-4 mr-2" /> Sign Out
