@@ -13,12 +13,13 @@ interface Props {
   onUpdate: () => void;
 }
 
-export function EditableProfileFields({ zipCode, weeklyBudget, onUpdate }: Props) {
+export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, onUpdate }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [editingField, setEditingField] = useState<"zip" | "budget" | null>(null);
+  const [editingField, setEditingField] = useState<"zip" | "budget" | "household" | null>(null);
   const [zipValue, setZipValue] = useState(zipCode ?? "");
   const [budgetValue, setBudgetValue] = useState(weeklyBudget ?? 75);
+  const [householdValue, setHouseholdValue] = useState(householdSize ?? 1);
   const [saving, setSaving] = useState(false);
 
   const save = async (field: "zip" | "budget") => {
