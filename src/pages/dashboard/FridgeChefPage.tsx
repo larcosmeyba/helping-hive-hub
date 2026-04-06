@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame, Camera } from "lucide-react";
+import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
