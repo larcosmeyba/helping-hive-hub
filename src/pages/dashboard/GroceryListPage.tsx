@@ -206,6 +206,32 @@ export default function GroceryListPage() {
   const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus, showPrompt: showLocationPrompt, setShowPrompt: setShowLocationPrompt, requestLocation } = useLocationPermission();
   const [locationAsked, setLocationAsked] = useState(false);
+  const { prices: krogerPrices, loading: krogerLoading, storeName: krogerStoreName, findNearestStore, fetchPricesForItems } = useKrogerPrices();
+  const [krogerInitialized, setKrogerInitialized] = useState(false);
+
+  // Fetch user's ZIP and load Kroger prices for grocery items
+  useEffect(() => {
+    if (!user || !mealPlan?.groceryList?.length || krogerInitialized) return;
+
+    const init = async () => {
+      // Get user ZIP
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("zip_code")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const zip = profile?.zip_code || "45202";
+      const store = await findNearestStore(zip);
+      if (store) {
+        const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+        await fetchPricesForItems(itemNames, store.locationId);
+      }
+      setKrogerInitialized(true);
+    };
+
+    init();
+  }, [user, mealPlan?.groceryList?.length, krogerInitialized]);
 
   // Ask for location contextually when grocery page loads and we haven't asked yet
   useEffect(() => {
