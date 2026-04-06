@@ -104,8 +104,8 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { action, zipCode, searchTerm, locationId } = body;
+
+
 
     const krogerToken = await getKrogerToken();
 
