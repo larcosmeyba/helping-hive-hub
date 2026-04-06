@@ -65,6 +65,22 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    const { action, zipCode, searchTerm, locationId } = body;
+
+    // Public test-connection action (no auth needed)
+    if (action === "test-connection") {
+      const krogerToken = await getKrogerToken();
+      const locData = await findLocations(krogerToken, zipCode || "90210", 2);
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Kroger API connection working",
+        sampleLocations: (locData.data || []).length,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -88,8 +104,8 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { action, zipCode, searchTerm, locationId } = body;
+
+
 
     const krogerToken = await getKrogerToken();
 
