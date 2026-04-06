@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_retailer_products_provider ON public.retailer_products (retailer_id, provider_product_reference) WHERE provider_product_reference IS NOT NULL;

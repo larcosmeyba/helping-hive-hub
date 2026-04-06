@@ -97,14 +97,14 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = user.id;
 
 
 
@@ -285,7 +285,7 @@ serve(async (req) => {
 
     if (action === "sync-products") {
       const { data: isAdminData } = await supabase.rpc("is_admin", {
-        _user_id: claimsData.claims.sub,
+        _user_id: userId,
       });
       if (!isAdminData) {
         return new Response(JSON.stringify({ error: "Admin access required" }), {
