@@ -145,7 +145,7 @@ export function RecipeShowcase() {
   const [selectedRecipe, setSelectedRecipe] = useState<(typeof recipes)[0] | null>(null);
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-12 md:py-16 bg-background">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
