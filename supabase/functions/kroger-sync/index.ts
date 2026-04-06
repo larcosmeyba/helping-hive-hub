@@ -134,7 +134,18 @@ serve(async (req) => {
         });
       }
       const prodData = await searchProducts(krogerToken, searchTerm, locationId);
-      return new Response(JSON.stringify({ products: prodData.data || [] }), {
+      const products = (prodData.data || []).map((p: any) => ({
+        productId: p.productId,
+        description: p.description,
+        brand: p.brand,
+        upc: p.upc,
+        size: p.items?.[0]?.size,
+        imageUrl: p.images?.[0]?.sizes?.find((s: any) => s.size === "medium")?.url ||
+          p.images?.[0]?.sizes?.find((s: any) => s.size === "small")?.url ||
+          p.images?.[0]?.sizes?.[0]?.url || null,
+        price: p.items?.[0]?.price || null,
+      }));
+      return new Response(JSON.stringify({ products }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

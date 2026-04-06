@@ -19,6 +19,7 @@ const pageTitles: Record<string, string> = {
   "/admin/recipes": "Recipes",
   "/admin/special-meals": "Special Meals",
   "/admin/marketing": "Marketing Studio",
+  "/admin/kroger-sync": "Kroger Sync",
   "/admin/analytics": "Analytics",
   "/admin/admins": "Admin Management",
   "/admin/settings": "Settings",
