@@ -1,10 +1,13 @@
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HeroSection } from "@/components/home/HeroSection";
-import { MissionSection } from "@/components/home/MissionSection";
+import { HowItWorksSection } from "@/components/home/HowItWorksSection";
+import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { WhoWeHelpSection } from "@/components/home/WhoWeHelpSection";
 import { MealPlanSection } from "@/components/home/MealPlanSection";
 import { RecipeShowcase } from "@/components/home/RecipeShowcase";
+import { WhyDifferentSection } from "@/components/home/WhyDifferentSection";
+import { TrustSection } from "@/components/home/TrustSection";
 import { FounderSection } from "@/components/home/FounderSection";
 import { CTASection } from "@/components/home/CTASection";
 
@@ -14,10 +17,13 @@ const Index = () => {
       <Navbar />
       <main className="flex-1">
         <HeroSection />
-        <MissionSection />
+        <HowItWorksSection />
+        <FeaturesSection />
         <WhoWeHelpSection />
         <MealPlanSection />
         <RecipeShowcase />
+        <WhyDifferentSection />
+        <TrustSection />
         <FounderSection />
         <CTASection />
       </main>

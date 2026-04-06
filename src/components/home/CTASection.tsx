@@ -1,28 +1,43 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 export function CTASection() {
   return (
-    <section className="py-20 bg-gradient-dark">
-      <div className="container mx-auto px-4">
+    <section className="py-20 md:py-28 bg-hive-black relative overflow-hidden">
+      {/* Subtle glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/[0.04] rounded-full blur-[100px]" />
+
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="max-w-2xl mx-auto text-center"
         >
-          <img src="/favicon.png" alt="Help The Hive" className="h-14 w-14 mx-auto mb-6 brightness-0 invert" />
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-honey-cream mb-6">
-            Ready to Start Saving?
+          <h2 className="font-display text-3xl md:text-5xl font-bold text-honey-cream mb-6 leading-tight">
+            Ready to plan smarter meals?
           </h2>
-          <p className="text-honey-cream/70 text-lg mb-10 leading-relaxed">
-            Join Help The Hive and let our smart engine plan your meals,
-            optimize your grocery list, and keep your family fed — on budget.
+          <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
+            Join Help The Hive during our early access period — completely free.
+            Start planning meals, building grocery lists, and saving money today.
           </p>
-          <Button variant="hero" size="lg" asChild>
-            <Link to="/signup">Get Started Free</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
+              <Link to="/signup">
+                Get Early Access <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="text-honey-cream/60 hover:text-honey-cream hover:bg-honey-cream/5 text-base h-12"
+              asChild
+            >
+              <a href="#meal-plan-examples">View Sample Plans</a>
+            </Button>
+          </div>
         </motion.div>
       </div>
     </section>
