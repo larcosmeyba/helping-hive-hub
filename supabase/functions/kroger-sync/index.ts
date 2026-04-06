@@ -5,9 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const KROGER_TOKEN_URL = "https://api.kroger.com/v1/connect/oauth2/token";
-const KROGER_PRODUCTS_URL = "https://api.kroger.com/v1/products";
-const KROGER_LOCATIONS_URL = "https://api.kroger.com/v1/locations";
+const KROGER_BASE_URL = "https://api-ce.kroger.com/v1";
+const KROGER_TOKEN_URL = `${KROGER_BASE_URL}/connect/oauth2/token`;
+const KROGER_PRODUCTS_URL = `${KROGER_BASE_URL}/products`;
+const KROGER_LOCATIONS_URL = `${KROGER_BASE_URL}/locations`;
 
 async function getKrogerToken(): Promise<string> {
   const clientId = Deno.env.get("KROGER_CLIENT_ID");
