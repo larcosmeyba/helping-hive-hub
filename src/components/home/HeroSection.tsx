@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import heroFamily from "@/assets/hero-family.jpg";
 
 export function HeroSection() {
@@ -46,19 +46,8 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
                 <Link to="/signup">
-                  Get Early Access <ArrowRight className="w-4 h-4 ml-1" />
+                  Download Today <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                className="text-honey-cream/70 hover:text-honey-cream hover:bg-honey-cream/10 text-base h-12 backdrop-blur-sm"
-                asChild
-              >
-                <a href="#how-it-works">
-                  <Play className="w-4 h-4 mr-1.5 fill-current" />
-                  See How It Works
-                </a>
               </Button>
             </div>
           </motion.div>
