@@ -40,6 +40,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics.tsx";
 import AdminManagement from "./pages/admin/AdminManagement.tsx";
 import AdminSettings from "./pages/admin/AdminSettings.tsx";
 import AdminVerifications from "./pages/admin/AdminVerifications.tsx";
+import AdminKrogerSync from "./pages/admin/AdminKrogerSync.tsx";
 
 const queryClient = new QueryClient();
 
