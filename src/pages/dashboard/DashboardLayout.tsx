@@ -39,7 +39,7 @@ export default function DashboardLayout() {
             >
               {/* Safe area spacer — just the notch height, no extra padding */}
               {isMobile && <div style={{ height: "env(safe-area-inset-top, 0px)" }} />}
-              <div className="flex items-center justify-between px-4 h-11">
+              <div className="flex items-center justify-between px-4 h-11 -mt-0.5">
                 <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
                   <img src={logo} alt="Help The Hive" className="h-9 w-9" />
                   <BetaBadge />
