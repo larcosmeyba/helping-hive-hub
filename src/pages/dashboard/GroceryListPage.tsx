@@ -269,12 +269,27 @@ export default function GroceryListPage() {
 
   const sections = Array.from(new Set(groceryItems.map((i) => i.section || "Other")));
 
-  // Get store-specific price for an item
+  // Get store-specific price for an item — prefer Kroger real-time price
   const getItemPrice = (item: typeof groceryItems[0]) => {
+    const krogerPrice = krogerPrices[item.name.toLowerCase()];
+    if (krogerPrice) {
+      return krogerPrice.salePrice ?? krogerPrice.regularPrice;
+    }
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
       return item.storePrices[activeStore];
     }
     return item.estimatedPrice || 0;
+  };
+
+  // Get Kroger image or fallback
+  const getItemImage = (item: typeof groceryItems[0]) => {
+    const krogerPrice = krogerPrices[item.name.toLowerCase()];
+    if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    return getProductImage(item.name);
+  };
+
+  const getKrogerInfo = (item: typeof groceryItems[0]) => {
+    return krogerPrices[item.name.toLowerCase()] || null;
   };
 
   const subtotal = groceryItems.reduce((sum, i) => sum + getItemPrice(i), 0);
