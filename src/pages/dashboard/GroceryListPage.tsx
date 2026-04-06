@@ -300,6 +300,21 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
+      {/* Kroger live pricing banner */}
+      {krogerLoading && (
+        <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-xl px-4 py-2.5 text-sm font-medium">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading live Kroger prices for your area...
+        </div>
+      )}
+      {krogerStoreName && !krogerLoading && Object.keys(krogerPrices).length > 0 && (
+        <div className="flex items-center gap-2 bg-accent/10 text-accent-foreground rounded-xl px-4 py-2.5 text-sm">
+          <Store className="w-4 h-4 text-accent" />
+          <span>Live prices from <strong className="text-accent">{krogerStoreName}</strong></span>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {Object.values(krogerPrices).filter(p => p.isOnSale).length} items on sale
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
