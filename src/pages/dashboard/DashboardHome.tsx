@@ -132,18 +132,20 @@ export default function DashboardHome() {
         </motion.div>
       </div>
 
-      {/* Budget Stats */}
+      {/* Stats Grid — all 6 uniform */}
       <motion.div
-        className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}
+        className={`grid gap-3 ${isMobile ? "grid-cols-3" : "grid-cols-6"}`}
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
           { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : "0"}`, icon: PiggyBank, color: "text-accent" },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
+          { label: "Grocery Score", value: mealPlan ? `${groceryScore}%` : "—", icon: Zap, color: "text-primary" },
+          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent" },
         ].map((stat) => (
           <motion.div
             key={stat.label}
@@ -151,40 +153,14 @@ export default function DashboardHome() {
             style={cardShadow}
             variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
-              <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
+            <div className="flex items-center gap-1 mb-1">
+              <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
+              <span className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-lg md:text-xl font-bold text-foreground">{stat.value}</p>
           </motion.div>
         ))}
       </motion.div>
-
-      {/* Smart Insights Row */}
-      {mealPlan && (
-        <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-3"}`}>
-          {/* Grocery Score with ring */}
-          <div className={cardClass} style={cardShadow}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Grocery Score</span>
-            </div>
-            <div className="flex justify-center">
-              <GroceryScoreRing score={groceryScore} />
-            </div>
-          </div>
-
-          {/* Pantry Utilization */}
-          <div className={cardClass} style={cardShadow}>
-            <div className="flex items-center gap-1.5 mb-1">
-              <Refrigerator className="w-4 h-4 text-accent" />
-              <span className="text-xs text-muted-foreground">Pantry Items</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{pantryItems ?? 0}</p>
-            <p className="text-[10px] text-muted-foreground">in stock</p>
-          </div>
-        </div>
-      )}
 
       {/* This Week's Meals */}
       {!mealPlan ? (
