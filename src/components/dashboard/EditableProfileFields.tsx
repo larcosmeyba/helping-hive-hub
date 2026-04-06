@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, DollarSign, Pencil, Check, X } from "lucide-react";
+import { MapPin, DollarSign, Users, Pencil, Check, X } from "lucide-react";
 
 interface Props {
   zipCode: string | null;
   weeklyBudget: number | null;
+  householdSize: number | null;
   onUpdate: () => void;
 }
 
