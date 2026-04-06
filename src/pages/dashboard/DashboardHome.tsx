@@ -1,17 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap, Flame, ChefHat } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EditableProfileFields } from "@/components/dashboard/EditableProfileFields";
 import { MealCard } from "@/components/dashboard/MealCard";
 import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { MealPlanMeal } from "@/types/mealPlan";
 
 /* Circular progress ring */
 function GroceryScoreRing({ score }: { score: number }) {
@@ -49,6 +51,7 @@ export default function DashboardHome() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [selectedMeal, setSelectedMeal] = useState<MealPlanMeal | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -110,6 +113,7 @@ export default function DashboardHome() {
         <EditableProfileFields
           zipCode={profile?.zip_code ?? null}
           weeklyBudget={profile?.weekly_budget ?? null}
+          householdSize={profile?.household_size ?? null}
           onUpdate={refreshProfile}
         />
 
@@ -128,18 +132,20 @@ export default function DashboardHome() {
         </motion.div>
       </div>
 
-      {/* Budget Stats */}
+      {/* Stats Grid — all 6 uniform */}
       <motion.div
-        className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}
+        className={`grid gap-3 ${isMobile ? "grid-cols-3" : "grid-cols-6"}`}
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
           { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : "0"}`, icon: PiggyBank, color: "text-accent" },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
+          { label: "Grocery Score", value: mealPlan ? `${groceryScore}%` : "—", icon: Zap, color: "text-primary" },
+          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent" },
         ].map((stat) => (
           <motion.div
             key={stat.label}
@@ -147,40 +153,14 @@ export default function DashboardHome() {
             style={cardShadow}
             variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
-              <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
+            <div className="flex items-center gap-1 mb-1">
+              <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
+              <span className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-lg md:text-xl font-bold text-foreground">{stat.value}</p>
           </motion.div>
         ))}
       </motion.div>
-
-      {/* Smart Insights Row */}
-      {mealPlan && (
-        <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-3"}`}>
-          {/* Grocery Score with ring */}
-          <div className={cardClass} style={cardShadow}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Grocery Score</span>
-            </div>
-            <div className="flex justify-center">
-              <GroceryScoreRing score={groceryScore} />
-            </div>
-          </div>
-
-          {/* Pantry Utilization */}
-          <div className={cardClass} style={cardShadow}>
-            <div className="flex items-center gap-1.5 mb-1">
-              <Refrigerator className="w-4 h-4 text-accent" />
-              <span className="text-xs text-muted-foreground">Pantry Items</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{pantryItems ?? 0}</p>
-            <p className="text-[10px] text-muted-foreground">in stock</p>
-          </div>
-        </div>
-      )}
 
       {/* This Week's Meals */}
       {!mealPlan ? (
@@ -213,7 +193,7 @@ export default function DashboardHome() {
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
                     {day.meals.map((meal, i) => (
-                      <MealCard key={`${day.day}-${i}`} meal={meal} compact />
+                      <MealCard key={`${day.day}-${i}`} meal={meal} compact onClick={() => setSelectedMeal(meal)} />
                     ))}
                   </div>
                 </div>
@@ -227,7 +207,7 @@ export default function DashboardHome() {
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
                   {day.meals.map((meal, i) => (
-                    <MealCard key={`${day.day}-${i}`} meal={meal} compact />
+                    <MealCard key={`${day.day}-${i}`} meal={meal} compact onClick={() => setSelectedMeal(meal)} />
                   ))}
                 </div>
               </div>
@@ -241,6 +221,54 @@ export default function DashboardHome() {
           </Link>
         </div>
       )}
+
+      {/* Recipe Detail Dialog */}
+      <Dialog open={!!selectedMeal} onOpenChange={() => setSelectedMeal(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl flex items-center gap-2">
+                  <ChefHat className="w-5 h-5 text-primary" /> {selectedMeal.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
+                    <Flame className="w-3 h-3" /> {selectedMeal.calories} cal
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein}g</p><p className="text-muted-foreground">Protein</p></div>
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.carbs}g</p><p className="text-muted-foreground">Carbs</p></div>
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.fats}g</p><p className="text-muted-foreground">Fats</p></div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>
+                  <ul className="space-y-1">
+                    {selectedMeal.ingredients.map((ing, i) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" /> {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">Instructions</h4>
+                  <ol className="space-y-2">
+                    {selectedMeal.instructions.map((step, i) => (
+                      <li key={i} className="text-sm text-muted-foreground flex gap-3">
+                        <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <RecipeCategoryTiles />
     </div>

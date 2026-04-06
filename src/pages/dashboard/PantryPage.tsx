@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, AlertTriangle, Clock, Utensils, Trash2, Loader2, CheckCircle2, Circle, AlertCircle, Camera } from "lucide-react";
-import { PhotoScanner } from "@/components/dashboard/PhotoScanner";
+import { Package, Plus, AlertTriangle, Clock, Utensils, Trash2, Loader2, CheckCircle2, Circle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +40,63 @@ function getPantryImage(name: string): string {
     if (lower.includes(keyword)) return url;
   }
   return DEFAULT_PANTRY_IMAGE;
+}
+const PANTRY_STAPLES = [
+  { name: "Rice (10 lb bag)", category: "Grains", shelf: "6-12 months" },
+  { name: "Dried Pinto Beans (4 lb bag)", category: "Proteins", shelf: "1-2 years" },
+  { name: "Dried Black Beans (4 lb bag)", category: "Proteins", shelf: "1-2 years" },
+  { name: "Dried Lentils (2 lb bag)", category: "Proteins", shelf: "1-2 years" },
+  { name: "Oats (Large canister)", category: "Grains", shelf: "1-2 years" },
+  { name: "Flour (5 lb bag)", category: "Grains", shelf: "6-8 months" },
+  { name: "Pasta (2 lb box)", category: "Grains", shelf: "1-2 years" },
+  { name: "Canned Tomatoes (28 oz)", category: "Canned Goods", shelf: "1-2 years" },
+  { name: "Canned Tuna", category: "Proteins", shelf: "2-5 years" },
+  { name: "Peanut Butter (Large jar)", category: "Proteins", shelf: "6-9 months" },
+  { name: "Cooking Oil (48 oz)", category: "Pantry Staples", shelf: "1-2 years" },
+  { name: "Salt (26 oz)", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Sugar (4 lb bag)", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Dried Chickpeas (2 lb bag)", category: "Proteins", shelf: "1-2 years" },
+  { name: "Cornmeal (5 lb bag)", category: "Grains", shelf: "6-12 months" },
+  { name: "Canned Corn", category: "Canned Goods", shelf: "2-5 years" },
+  { name: "Canned Green Beans", category: "Canned Goods", shelf: "2-5 years" },
+  { name: "Powdered Milk", category: "Dairy", shelf: "1-2 years" },
+  { name: "Honey (Large bottle)", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Soy Sauce", category: "Pantry Staples", shelf: "2-3 years" },
+];
+
+function PantryStaplesSection() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Package className="w-4 h-4 text-primary" />
+          <span className="font-display font-semibold text-foreground text-sm">Pantry Staples Every Family Should Have</span>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
+          <p className="text-xs text-muted-foreground mb-2">
+            Long-shelf-life essentials to stock up on. Prices vary by location.
+          </p>
+          {PANTRY_STAPLES.map((item, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+              <div>
+                <p className="text-sm font-medium text-foreground">{item.name}</p>
+                <p className="text-[10px] text-muted-foreground">{item.category}</p>
+              </div>
+              <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{item.shelf}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function PantryPage() {
@@ -200,33 +256,17 @@ export default function PantryPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Intro Section */}
       <div className="space-y-4">
-        {/* Title */}
         <h1 className="font-display text-[28px] md:text-[32px] font-bold text-[#2F2F2F] leading-[1.15] flex items-center gap-2.5">
           <Package className="w-6 h-6 text-accent shrink-0" />
-          Scan Your Fridge & Pantry
+          Your Pantry
         </h1>
 
         {/* Action Buttons Row */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <PhotoScanner
-            mode="pantry"
-            onItemsDetected={(items) => {
-              const pantryItems = items as { name: string; category: string; quantity: string }[];
-              pantryItems.forEach(async (item) => {
-                await supabase.from("pantry_items").insert({
-                  user_id: user!.id,
-                  item_name: item.name,
-                  quantity: item.quantity || "some",
-                  category: item.category || "pantry_staples",
-                });
-              });
-              queryClient.invalidateQueries({ queryKey: ["pantry_items"] });
-            }}
-          />
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-[48px] px-5 text-sm font-semibold rounded-xl">
-                <Plus className="w-4 h-4 mr-1.5" /> Add
+                <Plus className="w-4 h-4 mr-1.5" /> Add Item
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -252,14 +292,13 @@ export default function PantryPage() {
           </Dialog>
         </div>
 
-        {/* Description below buttons */}
         <p className="text-[15px] md:text-base text-[#6B6B6B] leading-relaxed">
-          Add what you already have in your fridge and pantry so your meal plan prioritizes those ingredients first, helps reduce waste, and keeps your grocery costs lower.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Snap a photo, choose one from your gallery, or add ingredients manually to keep your pantry up to date.
+          Add what you already have so your meal plan uses it first, reduces waste, and keeps grocery costs lower.
         </p>
       </div>
+
+      {/* Pantry Staples Checklist */}
+      <PantryStaplesSection />
 
       {/* Alerts */}
       {(lowStock.length > 0 || expiringSoon.length > 0) && (

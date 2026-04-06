@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame, Camera } from "lucide-react";
+import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PhotoScanner } from "@/components/dashboard/PhotoScanner";
+
 
 const COMMON_ITEMS = [
   "Chicken", "Rice", "Eggs", "Pasta", "Beans", "Potatoes", "Onions", "Tomatoes",
@@ -114,16 +114,6 @@ export default function FridgeChefPage() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-display text-lg font-semibold text-foreground">Select Your Ingredients</h2>
           <div className="flex items-center gap-2">
-            <PhotoScanner
-              mode="fridge-chef"
-              onItemsDetected={(items) => {
-                const names = (items as string[]);
-                setSelectedItems((prev) => {
-                  const combined = new Set([...prev, ...names]);
-                  return Array.from(combined);
-                });
-              }}
-            />
             {pantryItems && pantryItems.length > 0 && (
               <Button variant="outline" size="sm" onClick={loadPantry}>
                 <Refrigerator className="w-3.5 h-3.5 mr-1.5" /> Load Pantry ({pantryItems.length})
