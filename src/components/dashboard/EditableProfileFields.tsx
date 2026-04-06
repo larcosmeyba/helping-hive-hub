@@ -33,7 +33,8 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, on
         : { household_size: householdValue };
       const { error } = await supabase.from("profiles").update(update).eq("user_id", user.id);
       if (error) throw error;
-      toast({ title: "Updated!", description: `${field === "zip" ? "ZIP code" : "Weekly budget"} saved. Your next meal plan will use updated ${field === "zip" ? "location and store prices" : "budget"}.` });
+      const labels: Record<string, string> = { zip: "ZIP code", budget: "Weekly budget", household: "Household size" };
+      toast({ title: "Updated!", description: `${labels[field]} saved.` });
       setEditingField(null);
       onUpdate();
     } catch (err: any) {
