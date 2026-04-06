@@ -22,7 +22,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, on
   const [householdValue, setHouseholdValue] = useState(householdSize ?? 1);
   const [saving, setSaving] = useState(false);
 
-  const save = async (field: "zip" | "budget") => {
+  const save = async (field: "zip" | "budget" | "household") => {
     if (!user) return;
     setSaving(true);
     try {
