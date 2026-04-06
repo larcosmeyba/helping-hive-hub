@@ -39,16 +39,17 @@ interface Props {
   onClick?: () => void;
 }
 
-export function MealCard({ meal, compact }: Props) {
+export function MealCard({ meal, compact, onClick }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <motion.div
-      className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0' : 'w-full'}`}
+      className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-elevated transition-shadow ${compact ? 'min-w-0 cursor-pointer' : 'w-full'}`}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       whileTap={{ scale: 0.98 }}
+      onClick={compact && onClick ? onClick : undefined}
     >
       <div className={`relative overflow-hidden ${compact ? 'h-20' : 'h-28 md:h-32'}`}>
         <img
