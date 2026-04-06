@@ -99,7 +99,7 @@ function PantryStaplesSection() {
   );
 }
 
-
+export default function PantryPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
