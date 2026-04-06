@@ -36,6 +36,7 @@ function getMealImage(name: string): string {
 interface Props {
   meal: MealPlanMeal;
   compact?: boolean;
+  onClick?: () => void;
 }
 
 export function MealCard({ meal, compact }: Props) {
