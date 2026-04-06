@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 
 export function MissionSection() {
   return (
-    <section className="py-10 bg-card">
+    <section className="py-20 md:py-28 bg-card">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -19,10 +19,10 @@ export function MissionSection() {
             Our Mission
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Helping households reduce grocery costs and simplify meal planning.
-            We believe every family deserves nutritious meals without the stress
-            of overspending. Help The Hive combines smart technology with real
-            grocery data to make affordable eating effortless.
+            We believe every household deserves access to nutritious, affordable meals — 
+            without the stress of overspending or the waste of unused groceries. Help The Hive 
+            combines smart technology with real grocery data to make practical food planning 
+            accessible to everyone.
           </p>
         </motion.div>
       </div>
