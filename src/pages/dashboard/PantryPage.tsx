@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, AlertTriangle, Clock, Utensils, Trash2, Loader2, CheckCircle2, Circle, AlertCircle, Camera } from "lucide-react";
-import { PhotoScanner } from "@/components/dashboard/PhotoScanner";
+import { Package, Plus, AlertTriangle, Clock, Utensils, Trash2, Loader2, CheckCircle2, Circle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
