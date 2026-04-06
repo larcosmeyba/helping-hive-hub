@@ -406,6 +406,7 @@ export default function GroceryListPage() {
               const price = getItemPrice(item);
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
+              const krogerInfo = getKrogerInfo(item);
               return (
                 <label
                   key={item.name}
@@ -414,8 +415,8 @@ export default function GroceryListPage() {
                   <Checkbox checked={isChecked} onCheckedChange={() => toggle(item.name)} />
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center">
                     <img
-                      src={getProductImage(item.name)}
-                      alt={displayProduct.productDescription}
+                      src={getItemImage(item)}
+                      alt={krogerInfo?.description || displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
@@ -425,38 +426,33 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {displayProduct.productDescription}
+                      {krogerInfo?.description || displayProduct.productDescription}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {displayProduct.brand && (
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {(krogerInfo?.brand || displayProduct.brand) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> Maker: {displayProduct.brand}
+                          <Package className="w-2.5 h-2.5" /> {krogerInfo?.brand || displayProduct.brand}
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">{item.quantity}</span>
+                      {krogerInfo?.isOnSale && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded">
+                          <Percent className="w-2.5 h-2.5" /> SALE
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">{krogerInfo?.size || item.quantity}</span>
                     </div>
-                    {/* Per-store price breakdown */}
-                    {item.storePrices && Object.keys(item.storePrices).length > 1 && (
-                      <div className="flex gap-2 mt-1 flex-wrap">
-                        {Object.entries(item.storePrices).map(([store, storePrice]) => (
-                          <span
-                            key={store}
-                            className={`text-[10px] px-1.5 py-0.5 rounded ${
-                              store === activeStore
-                                ? "bg-primary/15 text-primary font-semibold"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {store}: ${(storePrice as number).toFixed(2)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    {activeStore && (
-                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                    {krogerInfo?.isOnSale ? (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through block">${krogerInfo.regularPrice.toFixed(2)}</span>
+                        <span className="text-sm font-bold text-accent">${krogerInfo.salePrice!.toFixed(2)}</span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
+                    )}
+                    {krogerStoreName && (
+                      <p className="text-[10px] text-muted-foreground">at Kroger</p>
                     )}
                     <button
                       onClick={(e) => {
