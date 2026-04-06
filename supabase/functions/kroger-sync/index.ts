@@ -285,7 +285,7 @@ serve(async (req) => {
 
     if (action === "sync-products") {
       const { data: isAdminData } = await supabase.rpc("is_admin", {
-        _user_id: claimsData.claims.sub,
+        _user_id: userId,
       });
       if (!isAdminData) {
         return new Response(JSON.stringify({ error: "Admin access required" }), {
