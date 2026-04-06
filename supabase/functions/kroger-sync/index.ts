@@ -61,6 +61,152 @@ async function findLocations(token: string, zipCode: string, limit = 5) {
   return await res.json();
 }
 
+function getServiceClient() {
+  return createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+}
+
+async function getOrCreateKrogerRetailer(serviceClient: any): Promise<string> {
+  const { data: existing } = await serviceClient
+    .from("retailers")
+    .select("retailer_id")
+    .eq("retailer_slug", "kroger")
+    .maybeSingle();
+
+  if (existing) return existing.retailer_id;
+
+  const { data: created, error } = await serviceClient
+    .from("retailers")
+    .insert({
+      retailer_name: "Kroger",
+      retailer_slug: "kroger",
+      provider_name: "kroger_api",
+      supports_live_pricing: true,
+      supports_live_inventory: false,
+    })
+    .select("retailer_id")
+    .single();
+
+  if (error) throw new Error(`Failed to create Kroger retailer: ${error.message}`);
+  return created.retailer_id;
+}
+
+async function upsertProductAndPrice(
+  serviceClient: any,
+  retailerId: string,
+  product: any,
+  zipCode?: string
+) {
+  const title = product.description || "Unknown Product";
+  const brand = product.brand || null;
+  const category = product.categories?.[0] || null;
+  const imageUrl = product.images?.[0]?.sizes?.find((s: any) => s.size === "medium")?.url ||
+    product.images?.[0]?.sizes?.find((s: any) => s.size === "small")?.url ||
+    product.images?.[0]?.sizes?.[0]?.url || null;
+  const size = product.items?.[0]?.size || null;
+  const upc = product.upc || null;
+  const priceInfo = product.items?.[0]?.price;
+  const basePrice = priceInfo?.regular ?? priceInfo?.promo ?? 0;
+  const salePrice = priceInfo?.promo && priceInfo.promo < (priceInfo.regular || Infinity) ? priceInfo.promo : null;
+
+  // Try to find existing product first
+  let rpId: string | null = null;
+  const { data: existingRp } = await serviceClient
+    .from("retailer_products")
+    .select("retailer_product_id")
+    .eq("retailer_id", retailerId)
+    .eq("provider_product_reference", product.productId)
+    .maybeSingle();
+
+  if (existingRp) {
+    rpId = existingRp.retailer_product_id;
+    // Update it
+    await serviceClient
+      .from("retailer_products")
+      .update({
+        retailer_product_title: title,
+        retailer_brand: brand,
+        retailer_category: category,
+        gtin_upc: upc,
+        image_url: imageUrl,
+        package_size_text: size,
+        active_status: "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("retailer_product_id", rpId);
+  } else {
+    // Insert new
+    const { data: newRp, error: insertErr } = await serviceClient
+      .from("retailer_products")
+      .insert({
+        retailer_id: retailerId,
+        provider_name: "kroger_api",
+        provider_product_reference: product.productId,
+        retailer_product_title: title,
+        retailer_brand: brand,
+        retailer_category: category,
+        gtin_upc: upc,
+        image_url: imageUrl,
+        package_size_text: size,
+        active_status: "active",
+      })
+      .select("retailer_product_id")
+      .single();
+
+    if (insertErr) {
+      console.error(`Failed to insert product "${title}": ${insertErr.message}`);
+      return null;
+    }
+    rpId = newRp.retailer_product_id;
+  }
+
+  // Now upsert price
+  if (rpId && basePrice > 0) {
+    // Check if price row exists
+    const { data: existingPrice } = await serviceClient
+      .from("store_product_prices")
+      .select("store_price_id")
+      .eq("retailer_product_id", rpId)
+      .eq("retailer_id", retailerId)
+      .maybeSingle();
+
+    if (existingPrice) {
+      await serviceClient
+        .from("store_product_prices")
+        .update({
+          base_price: basePrice,
+          sale_price: salePrice,
+          freshness_status: "recent",
+          last_verified_at: new Date().toISOString(),
+          zip_code_context: zipCode || null,
+          source_system: "kroger_api",
+        })
+        .eq("store_price_id", existingPrice.store_price_id);
+    } else {
+      const { error: priceErr } = await serviceClient
+        .from("store_product_prices")
+        .insert({
+          retailer_product_id: rpId,
+          retailer_id: retailerId,
+          base_price: basePrice,
+          sale_price: salePrice,
+          source_system: "kroger_api",
+          freshness_status: "recent",
+          last_verified_at: new Date().toISOString(),
+          zip_code_context: zipCode || null,
+        });
+
+      if (priceErr) {
+        console.error(`Failed to insert price for "${title}": ${priceErr.message}`);
+      }
+    }
+  }
+
+  return { rpId, basePrice, salePrice, imageUrl, title, brand, size };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -105,9 +251,6 @@ serve(async (req) => {
       });
     }
     const userId = user.id;
-
-
-
 
     const krogerToken = await getKrogerToken();
 
@@ -160,10 +303,10 @@ serve(async (req) => {
         });
       }
 
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+      console.log(`batch-lookup: ${items.length} items, locationId=${locationId}`);
+
+      const serviceClient = getServiceClient();
+      const retailerId = await getOrCreateKrogerRetailer(serviceClient);
 
       // 1. Check cache: retailer_products + store_product_prices updated in last 4 hours
       const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
@@ -172,13 +315,13 @@ serve(async (req) => {
 
       for (const item of items) {
         const key = item.toLowerCase().trim();
-        // Search cached products by title match
         const { data: cached } = await serviceClient
           .from("retailer_products")
           .select(`
             retailer_product_id, retailer_product_title, retailer_brand, image_url, package_size_text,
             store_product_prices!inner(base_price, sale_price, last_verified_at)
           `)
+          .eq("retailer_id", retailerId)
           .ilike("retailer_product_title", `%${key}%`)
           .gte("store_product_prices.last_verified_at", fourHoursAgo)
           .limit(1);
@@ -202,20 +345,27 @@ serve(async (req) => {
         }
       }
 
-      // 2. Fetch cache misses from Kroger API (max 10 to stay fast)
-      const toFetch = cacheMisses.slice(0, 10);
+      console.log(`batch-lookup: ${items.length - cacheMisses.length} cache hits, ${cacheMisses.length} misses`);
+
+      // 2. Fetch cache misses from Kroger API
+      const toFetch = cacheMisses.slice(0, 15);
       for (const item of toFetch) {
         try {
           const prodData = await searchProducts(krogerToken, item, locationId, 1);
           const p = prodData.data?.[0];
-          if (!p) continue;
+          if (!p) {
+            console.log(`batch-lookup: no Kroger result for "${item}"`);
+            continue;
+          }
 
           const price = p.items?.[0]?.price;
           const imageUrl = p.images?.[0]?.sizes?.find((s: any) => s.size === "medium")?.url ||
             p.images?.[0]?.sizes?.find((s: any) => s.size === "small")?.url ||
             p.images?.[0]?.sizes?.[0]?.url || null;
           const regularPrice = price?.regular ?? price?.promo ?? 0;
-          const salePrice = price?.promo && price.promo < price.regular ? price.promo : null;
+          const salePrice = price?.promo && price.promo < (price?.regular || Infinity) ? price.promo : null;
+
+          console.log(`batch-lookup: "${item}" → $${regularPrice} (sale: ${salePrice ?? 'none'}), image: ${imageUrl ? 'yes' : 'no'}`);
 
           results[item.toLowerCase().trim()] = {
             productId: p.productId,
@@ -229,48 +379,18 @@ serve(async (req) => {
             cached: false,
           };
 
-          // 3. Write to cache (fire-and-forget)
-          // Get or create Kroger retailer
-          const { data: retailer } = await serviceClient
-            .from("retailers")
-            .select("retailer_id")
-            .eq("retailer_slug", "kroger")
-            .maybeSingle();
-
-          if (retailer) {
-            const { data: rp } = await serviceClient
-              .from("retailer_products")
-              .upsert({
-                retailer_id: retailer.retailer_id,
-                provider_name: "kroger_api",
-                provider_product_reference: p.productId,
-                retailer_product_title: p.description || "Unknown",
-                retailer_brand: p.brand || null,
-                gtin_upc: p.upc || null,
-                image_url: imageUrl,
-                package_size_text: p.items?.[0]?.size || null,
-                active_status: "active",
-              }, { onConflict: "retailer_id,provider_product_reference", ignoreDuplicates: false })
-              .select("retailer_product_id")
-              .single();
-
-            if (rp) {
-              await serviceClient.from("store_product_prices").upsert({
-                retailer_product_id: rp.retailer_product_id,
-                retailer_id: retailer.retailer_id,
-                base_price: regularPrice,
-                sale_price: salePrice,
-                source_system: "kroger_api",
-                freshness_status: "recent",
-                last_verified_at: new Date().toISOString(),
-                zip_code_context: zipCode || null,
-              }, { onConflict: "retailer_product_id,retailer_id", ignoreDuplicates: false });
-            }
+          // 3. Write to cache
+          try {
+            await upsertProductAndPrice(serviceClient, retailerId, p, zipCode);
+          } catch (cacheErr) {
+            console.error(`Cache write failed for "${item}":`, cacheErr);
           }
-        } catch {
-          // Skip failed items
+        } catch (fetchErr) {
+          console.error(`Kroger API fetch failed for "${item}":`, fetchErr);
         }
       }
+
+      console.log(`batch-lookup complete: ${Object.keys(results).length} total results`);
 
       return new Response(JSON.stringify({
         prices: results,
@@ -282,11 +402,9 @@ serve(async (req) => {
       });
     }
 
-
+    // --- ACTION: sync-products (admin only) ---
     if (action === "sync-products") {
-      const { data: isAdminData } = await supabase.rpc("is_admin", {
-        _user_id: userId,
-      });
+      const { data: isAdminData } = await supabase.rpc("is_admin", { _user_id: userId });
       if (!isAdminData) {
         return new Response(JSON.stringify({ error: "Admin access required" }), {
           status: 403,
@@ -301,112 +419,22 @@ serve(async (req) => {
         });
       }
 
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
-      // Ensure Kroger retailer exists
-      const { data: existingRetailer } = await serviceClient
-        .from("retailers")
-        .select("retailer_id")
-        .eq("retailer_slug", "kroger")
-        .maybeSingle();
-
-      let retailerId: string;
-      if (existingRetailer) {
-        retailerId = existingRetailer.retailer_id;
-      } else {
-        const { data: newRetailer, error: retErr } = await serviceClient
-          .from("retailers")
-          .insert({
-            retailer_name: "Kroger",
-            retailer_slug: "kroger",
-            provider_name: "kroger_api",
-            supports_live_pricing: true,
-            supports_live_inventory: false,
-          })
-          .select("retailer_id")
-          .single();
-        if (retErr) throw retErr;
-        retailerId = newRetailer.retailer_id;
-      }
+      const serviceClient = getServiceClient();
+      const retailerId = await getOrCreateKrogerRetailer(serviceClient);
 
       const prodData = await searchProducts(krogerToken, searchTerm, locationId, 50);
       const products = prodData.data || [];
+
+      console.log(`sync-products: "${searchTerm}" returned ${products.length} products`);
 
       let synced = 0;
       let failed = 0;
 
       for (const product of products) {
         try {
-          const upc = product.upc || null;
-          const title = product.description || "Unknown Product";
-          const brand = product.brand || null;
-          const category = product.categories?.[0] || null;
-          const imageUrl = product.images?.[0]?.sizes?.find((s: any) => s.size === "medium")?.url ||
-            product.images?.[0]?.sizes?.[0]?.url || null;
-          const size = product.items?.[0]?.size || null;
-
-          // Upsert retailer product
-          const { data: rp, error: rpErr } = await serviceClient
-            .from("retailer_products")
-            .upsert(
-              {
-                retailer_id: retailerId,
-                provider_name: "kroger_api",
-                provider_product_reference: product.productId,
-                retailer_product_title: title,
-                retailer_brand: brand,
-                retailer_category: category,
-                gtin_upc: upc,
-                image_url: imageUrl,
-                package_size_text: size,
-                active_status: "active",
-              },
-              { onConflict: "retailer_id,provider_product_reference", ignoreDuplicates: false }
-            )
-            .select("retailer_product_id")
-            .single();
-
-          if (rpErr) {
-            // Fallback: try insert if upsert fails due to missing unique constraint
-            const { data: existingRp } = await serviceClient
-              .from("retailer_products")
-              .select("retailer_product_id")
-              .eq("retailer_id", retailerId)
-              .eq("provider_product_reference", product.productId)
-              .maybeSingle();
-
-            const rpId = existingRp?.retailer_product_id;
-            if (!rpId) {
-              const { data: insertedRp, error: insertErr } = await serviceClient
-                .from("retailer_products")
-                .insert({
-                  retailer_id: retailerId,
-                  provider_name: "kroger_api",
-                  provider_product_reference: product.productId,
-                  retailer_product_title: title,
-                  retailer_brand: brand,
-                  retailer_category: category,
-                  gtin_upc: upc,
-                  image_url: imageUrl,
-                  package_size_text: size,
-                  active_status: "active",
-                })
-                .select("retailer_product_id")
-                .single();
-              if (insertErr) { failed++; continue; }
-              // Sync price with insertedRp
-              await syncPrice(serviceClient, insertedRp.retailer_product_id, retailerId, product, locationId, zipCode);
-            } else {
-              await syncPrice(serviceClient, rpId, retailerId, product, locationId, zipCode);
-            }
-          } else {
-            await syncPrice(serviceClient, rp.retailer_product_id, retailerId, product, locationId, zipCode);
-          }
-
-          synced++;
+          const result = await upsertProductAndPrice(serviceClient, retailerId, product, zipCode);
+          if (result) synced++;
+          else failed++;
         } catch {
           failed++;
         }
@@ -415,7 +443,7 @@ serve(async (req) => {
       // Log the sync
       await serviceClient.from("provider_sync_logs").insert({
         provider_name: "kroger_api",
-        sync_type: "product_price",
+        sync_type: `product_price: ${searchTerm}`,
         request_status: failed === 0 ? "completed" : "partial",
         records_created: synced,
         records_failed: failed,
@@ -429,7 +457,7 @@ serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action. Use: find-locations, search-products, sync-products" }), {
+    return new Response(JSON.stringify({ error: "Invalid action. Use: find-locations, search-products, sync-products, batch-lookup" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -442,32 +470,3 @@ serve(async (req) => {
     });
   }
 });
-
-async function syncPrice(
-  serviceClient: any,
-  retailerProductId: string,
-  retailerId: string,
-  product: any,
-  locationId: string,
-  zipCode?: string
-) {
-  const priceInfo = product.items?.[0]?.price;
-  if (!priceInfo) return;
-
-  const basePrice = priceInfo.regular ?? priceInfo.promo ?? 0;
-  const salePrice = priceInfo.promo && priceInfo.promo < priceInfo.regular ? priceInfo.promo : null;
-
-  await serviceClient.from("store_product_prices").upsert(
-    {
-      retailer_product_id: retailerProductId,
-      retailer_id: retailerId,
-      base_price: basePrice,
-      sale_price: salePrice,
-      source_system: "kroger_api",
-      freshness_status: "recent",
-      last_verified_at: new Date().toISOString(),
-      zip_code_context: zipCode || null,
-    },
-    { onConflict: "retailer_product_id,retailer_id", ignoreDuplicates: false }
-  );
-}
