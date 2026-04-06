@@ -645,6 +645,7 @@ export type Database = {
           account_status: string | null
           allergies: string[] | null
           beta_user: boolean
+          children_ages: string[] | null
           city: string | null
           cooking_style: string | null
           cooking_time_preference: string | null
@@ -656,6 +657,7 @@ export type Database = {
           food_preferences: string[] | null
           household_size: number | null
           id: string
+          infant_formula: boolean | null
           kitchen_equipment: string[] | null
           last_active: string | null
           latitude: number | null
@@ -684,6 +686,7 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           beta_user?: boolean
+          children_ages?: string[] | null
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
@@ -695,6 +698,7 @@ export type Database = {
           food_preferences?: string[] | null
           household_size?: number | null
           id?: string
+          infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
           last_active?: string | null
           latitude?: number | null
@@ -723,6 +727,7 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           beta_user?: boolean
+          children_ages?: string[] | null
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
@@ -734,6 +739,7 @@ export type Database = {
           food_preferences?: string[] | null
           household_size?: number | null
           id?: string
+          infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
           last_active?: string | null
           latitude?: number | null
