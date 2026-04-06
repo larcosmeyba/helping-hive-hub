@@ -217,7 +217,7 @@ export default function DashboardHome() {
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
                     {day.meals.map((meal, i) => (
-                      <MealCard key={`${day.day}-${i}`} meal={meal} compact />
+                      <MealCard key={`${day.day}-${i}`} meal={meal} compact onClick={() => setSelectedMeal(meal)} />
                     ))}
                   </div>
                 </div>
