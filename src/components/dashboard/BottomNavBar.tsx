@@ -32,19 +32,18 @@ export function BottomNavBar() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] transition-colors min-h-[52px]",
                 isActive
-                  ? "text-primary font-bold"
-                  : "text-foreground/70 font-medium"
+                  ? "text-foreground font-bold"
+                  : "text-foreground/60 font-medium"
               )}
             >
               <tab.icon
                 className={cn(
-                  "h-[24px] w-[24px] transition-all",
-                  isActive ? "text-primary" : "text-foreground/80"
+                  "h-[24px] w-[24px] transition-all text-foreground",
                 )}
-                strokeWidth={isActive ? 2.4 : 2}
+                strokeWidth={isActive ? 2.4 : 1.8}
                 fill={isActive ? "currentColor" : "none"}
               />
-              <span className={cn("truncate", isActive && "text-primary")}>{tab.label}</span>
+              <span className={cn("truncate", isActive ? "text-foreground font-bold" : "text-foreground/60")}>{tab.label}</span>
             </NavLink>
           );
         })}

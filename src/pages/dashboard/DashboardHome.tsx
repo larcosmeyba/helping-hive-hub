@@ -110,6 +110,7 @@ export default function DashboardHome() {
         <EditableProfileFields
           zipCode={profile?.zip_code ?? null}
           weeklyBudget={profile?.weekly_budget ?? null}
+          householdSize={profile?.household_size ?? null}
           onUpdate={refreshProfile}
         />
 
