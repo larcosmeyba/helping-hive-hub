@@ -37,45 +37,34 @@ export function useKrogerPrices() {
     }
   }, []);
 
-  const fetchPricesForItems = useCallback(async (items: string[], locId?: string) => {
+  const fetchPricesForItems = useCallback(async (items: string[], locId?: string, zipCode?: string) => {
     const storeId = locId || locationId;
     if (!storeId || !items.length) return;
     
     setLoading(true);
-    const newPrices: KrogerPriceMap = { ...prices };
+    try {
+      const uniqueItems = [...new Set(items.map(i => i.toLowerCase().trim()))];
 
-    // Batch items in groups to avoid too many API calls
-    const uniqueItems = [...new Set(items)].filter(item => !newPrices[item.toLowerCase()]);
-    
-    for (const item of uniqueItems) {
-      try {
-        const { data, error } = await supabase.functions.invoke("kroger-sync", {
-          body: { action: "search-products", searchTerm: item, locationId: storeId },
-        });
-        if (error || !data?.products?.length) continue;
-        
-        // Take the best match (first result)
-        const product = data.products[0];
-        const price = product.price;
-        
-        newPrices[item.toLowerCase()] = {
-          productId: product.productId,
-          description: product.description,
-          brand: product.brand,
-          imageUrl: product.imageUrl || null,
-          regularPrice: price?.regular || 0,
-          salePrice: price?.promo && price.promo < price.regular ? price.promo : null,
-          size: product.size || "",
-          isOnSale: !!(price?.promo && price.promo < price.regular),
-        };
-      } catch {
-        // Skip failed items
+      const { data, error } = await supabase.functions.invoke("kroger-sync", {
+        body: {
+          action: "batch-lookup",
+          items: uniqueItems,
+          locationId: storeId,
+          zipCode,
+        },
+      });
+
+      if (error || !data?.prices) {
+        setLoading(false);
+        return;
       }
-    }
 
-    setPrices(newPrices);
+      setPrices(prev => ({ ...prev, ...data.prices }));
+    } catch {
+      // Silently fail — grocery list still works with estimated prices
+    }
     setLoading(false);
-  }, [locationId, prices]);
+  }, [locationId]);
 
   return {
     prices,
