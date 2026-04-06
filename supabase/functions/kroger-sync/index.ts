@@ -13,8 +13,9 @@ async function getKrogerToken(): Promise<string> {
   const clientId = Deno.env.get("KROGER_CLIENT_ID");
   const clientSecret = Deno.env.get("KROGER_CLIENT_SECRET");
   if (!clientId || !clientSecret) {
-    throw new Error("Kroger API credentials not configured");
+    throw new Error(`Kroger API credentials not configured. ID present: ${!!clientId}, Secret present: ${!!clientSecret}`);
   }
+  console.log(`Kroger auth: clientId starts with "${clientId.substring(0, 8)}...", secret length: ${clientSecret.length}`);
 
   const credentials = btoa(`${clientId}:${clientSecret}`);
   const res = await fetch(KROGER_TOKEN_URL, {
