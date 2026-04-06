@@ -1,5 +1,16 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, ShieldCheck, Sparkles } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -293,6 +304,53 @@ export default function SettingsPage() {
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         <LogOut className="w-4 h-4 mr-2" /> Sign Out
       </Button>
+
+      {/* Delete Account */}
+      <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 space-y-3">
+        <h2 className="font-display text-lg font-semibold text-destructive flex items-center gap-2">
+          <Trash2 className="w-5 h-5" /> Delete Account
+        </h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Permanently delete your account and all associated data including meal plans, grocery lists, pantry items, and profile information. This action cannot be undone.
+        </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="w-full">
+              <Trash2 className="w-4 h-4 mr-2" /> Request Account Deletion
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will submit a request to permanently delete your account and all associated data. Our team will process your request within 72 hours. You will receive a confirmation email when the deletion is complete.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    await supabase.from("support_tickets").insert({
+                      user_id: user!.id,
+                      name: user!.email ?? "User",
+                      email: user!.email ?? "",
+                      message: "Account deletion request — please delete my account and all associated data.",
+                      ticket_type: "account_deletion",
+                    });
+                    toast({ title: "Request submitted", description: "Your account deletion request has been received. We'll process it within 72 hours." });
+                  } catch {
+                    toast({ title: "Error", description: "Could not submit request. Please try again.", variant: "destructive" });
+                  }
+                }}
+              >
+                Yes, Delete My Account
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
