@@ -246,6 +246,54 @@ export default function DashboardHome() {
         </div>
       )}
 
+      {/* Recipe Detail Dialog */}
+      <Dialog open={!!selectedMeal} onOpenChange={() => setSelectedMeal(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl flex items-center gap-2">
+                  <ChefHat className="w-5 h-5 text-primary" /> {selectedMeal.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
+                    <Flame className="w-3 h-3" /> {selectedMeal.calories} cal
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein}g</p><p className="text-muted-foreground">Protein</p></div>
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.carbs}g</p><p className="text-muted-foreground">Carbs</p></div>
+                  <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.fats}g</p><p className="text-muted-foreground">Fats</p></div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>
+                  <ul className="space-y-1">
+                    {selectedMeal.ingredients.map((ing, i) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" /> {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">Instructions</h4>
+                  <ol className="space-y-2">
+                    {selectedMeal.instructions.map((step, i) => (
+                      <li key={i} className="text-sm text-muted-foreground flex gap-3">
+                        <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <RecipeCategoryTiles />
     </div>
   );
