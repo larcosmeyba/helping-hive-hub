@@ -199,33 +199,17 @@ export default function PantryPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Intro Section */}
       <div className="space-y-4">
-        {/* Title */}
         <h1 className="font-display text-[28px] md:text-[32px] font-bold text-[#2F2F2F] leading-[1.15] flex items-center gap-2.5">
           <Package className="w-6 h-6 text-accent shrink-0" />
-          Scan Your Fridge & Pantry
+          Your Pantry
         </h1>
 
         {/* Action Buttons Row */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <PhotoScanner
-            mode="pantry"
-            onItemsDetected={(items) => {
-              const pantryItems = items as { name: string; category: string; quantity: string }[];
-              pantryItems.forEach(async (item) => {
-                await supabase.from("pantry_items").insert({
-                  user_id: user!.id,
-                  item_name: item.name,
-                  quantity: item.quantity || "some",
-                  category: item.category || "pantry_staples",
-                });
-              });
-              queryClient.invalidateQueries({ queryKey: ["pantry_items"] });
-            }}
-          />
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-[48px] px-5 text-sm font-semibold rounded-xl">
-                <Plus className="w-4 h-4 mr-1.5" /> Add
+                <Plus className="w-4 h-4 mr-1.5" /> Add Item
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -251,14 +235,13 @@ export default function PantryPage() {
           </Dialog>
         </div>
 
-        {/* Description below buttons */}
         <p className="text-[15px] md:text-base text-[#6B6B6B] leading-relaxed">
-          Add what you already have in your fridge and pantry so your meal plan prioritizes those ingredients first, helps reduce waste, and keeps your grocery costs lower.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Snap a photo, choose one from your gallery, or add ingredients manually to keep your pantry up to date.
+          Add what you already have so your meal plan uses it first, reduces waste, and keeps grocery costs lower.
         </p>
       </div>
+
+      {/* Pantry Staples Checklist */}
+      <PantryStaplesSection />
 
       {/* Alerts */}
       {(lowStock.length > 0 || expiringSoon.length > 0) && (
