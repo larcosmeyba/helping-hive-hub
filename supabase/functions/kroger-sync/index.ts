@@ -5,7 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const KROGER_BASE_URL = "https://api-ce.kroger.com/v1";
+// Environment-driven base URL: set KROGER_ENV=production to use live API
+const KROGER_ENV = Deno.env.get("KROGER_ENV") || "certification";
+const KROGER_HOST = KROGER_ENV === "production"
+  ? "https://api.kroger.com"
+  : "https://api-ce.kroger.com";
+const KROGER_BASE_URL = `${KROGER_HOST}/v1`;
 const KROGER_TOKEN_URL = `${KROGER_BASE_URL}/connect/oauth2/token`;
 const KROGER_PRODUCTS_URL = `${KROGER_BASE_URL}/products`;
 const KROGER_LOCATIONS_URL = `${KROGER_BASE_URL}/locations`;
@@ -223,7 +228,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         message: "Kroger API connection working",
+        environment: KROGER_ENV,
+        baseUrl: KROGER_HOST,
         sampleLocations: (locData.data || []).length,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Return current environment config
+    if (action === "get-environment") {
+      return new Response(JSON.stringify({
+        environment: KROGER_ENV,
+        baseUrl: KROGER_HOST,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -457,7 +474,55 @@ serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action. Use: find-locations, search-products, sync-products, batch-lookup" }), {
+    // --- ACTION: clear-cache (admin only) — wipe Kroger product/price cache for env switch ---
+    if (action === "clear-cache") {
+      const { data: isAdminData } = await supabase.rpc("is_admin", { _user_id: userId });
+      if (!isAdminData) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const serviceClient = getServiceClient();
+      const { data: krogerRetailer } = await serviceClient
+        .from("retailers")
+        .select("retailer_id")
+        .eq("retailer_slug", "kroger")
+        .maybeSingle();
+
+      if (!krogerRetailer) {
+        return new Response(JSON.stringify({ cleared: 0, message: "No Kroger retailer found" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const rid = krogerRetailer.retailer_id;
+
+      // Delete prices, then products (FK order)
+      const { count: pricesDeleted } = await serviceClient
+        .from("store_product_prices")
+        .delete({ count: "exact" })
+        .eq("retailer_id", rid);
+
+      const { count: productsDeleted } = await serviceClient
+        .from("retailer_products")
+        .delete({ count: "exact" })
+        .eq("retailer_id", rid);
+
+      console.log(`clear-cache: deleted ${pricesDeleted} prices, ${productsDeleted} products`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        pricesDeleted: pricesDeleted || 0,
+        productsDeleted: productsDeleted || 0,
+        environment: KROGER_ENV,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Invalid action. Use: find-locations, search-products, sync-products, batch-lookup, clear-cache, get-environment" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
