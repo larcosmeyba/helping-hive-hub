@@ -228,7 +228,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         message: "Kroger API connection working",
+        environment: KROGER_ENV,
+        baseUrl: KROGER_HOST,
         sampleLocations: (locData.data || []).length,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Return current environment config
+    if (action === "get-environment") {
+      return new Response(JSON.stringify({
+        environment: KROGER_ENV,
+        baseUrl: KROGER_HOST,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
