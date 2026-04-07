@@ -5,7 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const KROGER_BASE_URL = "https://api-ce.kroger.com/v1";
+// Environment-driven base URL: set KROGER_ENV=production to use live API
+const KROGER_ENV = Deno.env.get("KROGER_ENV") || "certification";
+const KROGER_HOST = KROGER_ENV === "production"
+  ? "https://api.kroger.com"
+  : "https://api-ce.kroger.com";
+const KROGER_BASE_URL = `${KROGER_HOST}/v1`;
 const KROGER_TOKEN_URL = `${KROGER_BASE_URL}/connect/oauth2/token`;
 const KROGER_PRODUCTS_URL = `${KROGER_BASE_URL}/products`;
 const KROGER_LOCATIONS_URL = `${KROGER_BASE_URL}/locations`;
