@@ -311,7 +311,7 @@ export default function PantryPage() {
                   </Select>
                 </div>
                 <div><Label>Expiration Date (optional)</Label><Input type="date" value={newExp} onChange={(e) => setNewExp(e.target.value)} /></div>
-                <Button onClick={() => addMutation.mutate()} disabled={!newName || !newQty || !newCat || addMutation.isPending} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
+                <Button onClick={() => addMutation.mutate(undefined)} disabled={!newName || !newQty || !newCat || addMutation.isPending} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
                   {addMutation.isPending ? "Adding..." : "Add to Pantry"}
                 </Button>
               </div>
