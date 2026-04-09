@@ -376,7 +376,10 @@ export default function GroceryListPage() {
             <h2 className="font-display text-sm md:text-lg font-semibold text-foreground">Compare Stores</h2>
           </div>
           {(() => {
-            const storeCards = stores.slice(0, 6);
+            const storeCards = stores.slice(0, 6).map((s) => ({
+              ...s,
+              estimatedTotal: getStoreTotalFromItems(s.store),
+            }));
             const cheapestIdx = storeCards.findIndex((s) =>
               storeCards.every((o) => s.estimatedTotal <= o.estimatedTotal)
             );
