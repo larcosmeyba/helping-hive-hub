@@ -14,6 +14,7 @@ export interface MealPlanHistoryEntry {
 
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
+  setMealPlan: (plan: GeneratedMealPlan | null) => void;
   loading: boolean;
   generating: boolean;
   generate: () => Promise<void>;
