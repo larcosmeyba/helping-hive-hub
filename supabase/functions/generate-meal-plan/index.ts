@@ -226,6 +226,9 @@ Requirements:
 - Keep total grocery cost at or below $${budget}
 - Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and full step-by-step instructions
 - Generate the grocery list from ingredients NOT already in the pantry
+- CRITICAL: The grocery list MUST contain EVERY ingredient used across ALL 18 meals. Cross-reference each meal's ingredients list and ensure nothing is missing. If an ingredient appears in any meal, it MUST appear in the grocery list (unless it's in the pantry).
+- The "totalEstimatedCost" field MUST equal the exact sum of all groceryList items' "estimatedPrice" values. Do the math: add up every estimatedPrice and use that sum as totalEstimatedCost. They MUST match exactly.
+- Each storeRecommendation's "estimatedTotal" MUST equal the sum of that store's prices from every item's "storePrices" for that store name. Calculate it, don't estimate.
 - EVERY grocery item MUST have:
   1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
   2. Full product description as it appears on the shelf (include size, count, variety)
