@@ -264,6 +264,21 @@ export default function GroceryListPage() {
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
 
+  // Compute per-store totals from actual item prices so top & bottom always match
+  const getStoreTotalFromItems = (storeName: string) => {
+    return groceryItems.reduce((sum, item) => {
+      const useKroger = isKrogerOwnedStore(storeName);
+      if (useKroger) {
+        const kp = krogerPrices[item.name.toLowerCase()];
+        if (kp) return sum + (kp.salePrice ?? kp.regularPrice);
+      }
+      if (item.storePrices && item.storePrices[storeName]) {
+        return sum + item.storePrices[storeName];
+      }
+      return sum + (item.estimatedPrice || 0);
+    }, 0);
+  };
+
   const toggle = (name: string) => {
     const next = new Set(checked);
     next.has(name) ? next.delete(name) : next.add(name);
