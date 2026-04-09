@@ -269,11 +269,19 @@ export default function GroceryListPage() {
 
   const sections = Array.from(new Set(groceryItems.map((i) => i.section || "Other")));
 
-  // Get store-specific price for an item — prefer Kroger real-time price
+  // Check if active store is Kroger-owned
+  const isKrogerOwnedStore = (storeName: string) => {
+    return /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter|mariano|pick.n.save|metro market|qfc/i.test(storeName);
+  };
+
+  // Get store-specific price for an item — prefer Kroger real-time price only for Kroger stores
   const getItemPrice = (item: typeof groceryItems[0]) => {
-    const krogerPrice = krogerPrices[item.name.toLowerCase()];
-    if (krogerPrice) {
-      return krogerPrice.salePrice ?? krogerPrice.regularPrice;
+    const useKroger = isKrogerOwnedStore(activeStore);
+    if (useKroger) {
+      const krogerPrice = krogerPrices[item.name.toLowerCase()];
+      if (krogerPrice) {
+        return krogerPrice.salePrice ?? krogerPrice.regularPrice;
+      }
     }
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
       return item.storePrices[activeStore];
@@ -281,14 +289,17 @@ export default function GroceryListPage() {
     return item.estimatedPrice || 0;
   };
 
-  // Get Kroger image or fallback
+  // Get Kroger image or fallback — only use Kroger images for Kroger stores
   const getItemImage = (item: typeof groceryItems[0]) => {
-    const krogerPrice = krogerPrices[item.name.toLowerCase()];
-    if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    if (isKrogerOwnedStore(activeStore)) {
+      const krogerPrice = krogerPrices[item.name.toLowerCase()];
+      if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    }
     return getProductImage(item.name);
   };
 
   const getKrogerInfo = (item: typeof groceryItems[0]) => {
+    if (!isKrogerOwnedStore(activeStore)) return null;
     return krogerPrices[item.name.toLowerCase()] || null;
   };
 
@@ -367,37 +378,41 @@ export default function GroceryListPage() {
                   const isActive = activeStore === store.store;
                   const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
                   const savings = isCheapest ? (highestTotal - store.estimatedTotal) : 0;
-                  return (
-                    <button
-                      key={store.store}
-                      onClick={() => setSelectedStore(store.store)}
-                      className={`relative text-left transition-all rounded-2xl border min-h-[108px] ${
-                        isCheapest
-                          ? "p-3 md:p-5 border-2 border-accent bg-accent/10 shadow-lg"
-                          : "p-2.5 md:p-4"
-                      } ${
-                        isActive && !isCheapest
-                          ? "border-primary bg-primary/5 shadow-card"
-                          : !isCheapest
-                            ? "border-border hover:border-primary/30"
-                            : ""
-                      }`}
-                    >
-                      {isCheapest && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
-                          ★ BEST PRICE
-                        </span>
-                      )}
-                      <div className="flex items-center gap-1 mb-1">
-                        <Store className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                        <p className={`font-semibold text-foreground truncate ${isCheapest ? 'text-xs md:text-base' : 'text-[11px] md:text-sm'}`}>{store.store}</p>
-                      </div>
-                      <p className={`font-bold text-primary ${isCheapest ? 'text-lg md:text-2xl' : 'text-sm md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
-                      <p className="text-[9px] md:text-xs text-muted-foreground">Est. + tax</p>
-                      {isCheapest && savings > 0 && (
-                        <p className="text-[9px] md:text-xs text-accent font-semibold mt-1">Save ${savings.toFixed(2)}</p>
-                      )}
-                    </button>
+                    const isKrogerStore = /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter/i.test(store.store);
+                    return (
+                      <button
+                        key={store.store}
+                        onClick={() => setSelectedStore(store.store)}
+                        className={`relative text-left transition-all rounded-2xl border min-h-[108px] ${
+                          isActive
+                            ? isCheapest
+                              ? "p-3 md:p-5 border-2 border-accent bg-accent/10 shadow-lg ring-2 ring-accent/30"
+                              : "p-2.5 md:p-4 border-2 border-primary bg-primary/10 shadow-lg ring-2 ring-primary/30"
+                            : isCheapest
+                              ? "p-3 md:p-5 border-2 border-accent/50 bg-accent/5 shadow-md"
+                              : "p-2.5 md:p-4 border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {isCheapest && (
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
+                            ★ BEST PRICE
+                          </span>
+                        )}
+                        {isActive && !isCheapest && (
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
+                            SELECTED
+                          </span>
+                        )}
+                        <div className="flex items-center gap-1 mb-1">
+                          <Store className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+                          <p className={`font-semibold text-foreground truncate ${isCheapest ? 'text-xs md:text-base' : 'text-[11px] md:text-sm'}`}>{store.store}</p>
+                        </div>
+                        <p className={`font-bold text-primary ${isCheapest ? 'text-lg md:text-2xl' : 'text-sm md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
+                        <p className="text-[9px] md:text-xs text-muted-foreground">Est. + tax</p>
+                        {isCheapest && savings > 0 && (
+                          <p className="text-[9px] md:text-xs text-accent font-semibold mt-1">Save ${savings.toFixed(2)}</p>
+                        )}
+                      </button>
                   );
                 })}
               </div>
@@ -466,8 +481,11 @@ export default function GroceryListPage() {
                     ) : (
                       <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
                     )}
-                    {krogerStoreName && (
-                      <p className="text-[10px] text-muted-foreground">at Kroger</p>
+                    {krogerInfo && krogerStoreName && (
+                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                    )}
+                    {!krogerInfo && activeStore && (
+                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
                     )}
                     <button
                       onClick={(e) => {
