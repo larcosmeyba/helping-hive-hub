@@ -135,7 +135,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   }, [user, toast, loadHistory]);
 
   return (
-    <MealPlanContext.Provider value={{ mealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
+    <MealPlanContext.Provider value={{ mealPlan, setMealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
       {children}
     </MealPlanContext.Provider>
   );
