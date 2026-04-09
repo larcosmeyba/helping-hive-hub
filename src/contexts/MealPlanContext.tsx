@@ -14,6 +14,7 @@ export interface MealPlanHistoryEntry {
 
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
+  setMealPlan: (plan: GeneratedMealPlan | null) => void;
   loading: boolean;
   generating: boolean;
   generate: () => Promise<void>;
@@ -134,7 +135,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   }, [user, toast, loadHistory]);
 
   return (
-    <MealPlanContext.Provider value={{ mealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
+    <MealPlanContext.Provider value={{ mealPlan, setMealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
       {children}
     </MealPlanContext.Provider>
   );
