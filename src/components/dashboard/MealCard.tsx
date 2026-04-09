@@ -3,19 +3,20 @@ import { Flame, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
-// Comprehensive meal image map — prioritizes specific dish matches then main ingredient
+// Use shared meal image lookup from MealPlanPage
 const MEAL_IMAGES: Record<string, string> = {
-  // Specific dishes (multi-word first for priority)
   "yogurt parfait": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop",
   parfait: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop",
   pancake: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
   waffle: "https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&h=300&fit=crop",
+  "french toast": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop",
   burrito: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
   wrap: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
   quesadilla: "https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=400&h=300&fit=crop",
   chili: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400&h=300&fit=crop",
   curry: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=300&fit=crop",
   "fried rice": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop",
+  "stir fry": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
   casserole: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&h=300&fit=crop",
   lasagna: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&h=300&fit=crop",
   pizza: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
@@ -26,14 +27,9 @@ const MEAL_IMAGES: Record<string, string> = {
   macaroni: "https://images.unsplash.com/photo-1543339494-b4cd4f7ba686?w=400&h=300&fit=crop",
   ramen: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
   noodle: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
-  "roast potato": "https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=400&h=300&fit=crop",
-  "potato wedge": "https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=400&h=300&fit=crop",
-  "baked potato": "https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=400&h=300&fit=crop",
-  "mashed potato": "https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=400&h=300&fit=crop",
   fajita: "https://images.unsplash.com/photo-1534352956036-cd81e27dd615?w=400&h=300&fit=crop",
   enchilada: "https://images.unsplash.com/photo-1534352956036-cd81e27dd615?w=400&h=300&fit=crop",
   "grilled cheese": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=300&fit=crop",
-  "french toast": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop",
   "overnight oat": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
   porridge: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
   shakshuka: "https://images.unsplash.com/photo-1590412200988-a436970781fa?w=400&h=300&fit=crop",
@@ -41,8 +37,10 @@ const MEAL_IMAGES: Record<string, string> = {
   omelet: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
   omelette: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
   bolognese: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
-
-  // Main ingredients
+  "chicken thigh": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
+  "grilled chicken": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
+  "chicken soup": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
+  teriyaki: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
   rice: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=300&fit=crop",
   pasta: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",

@@ -121,8 +121,8 @@ jobs:
             PRODUCT_BUNDLE_IDENTIFIER="com.helpthehive" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon" \
-            MARKETING_VERSION="1.2" \
-            CURRENT_PROJECT_VERSION="20"
+            MARKETING_VERSION="1.3" \
+            CURRENT_PROJECT_VERSION="21"
 
       - name: Export IPA
         env:

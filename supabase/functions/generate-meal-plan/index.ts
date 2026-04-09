@@ -226,6 +226,9 @@ Requirements:
 - Keep total grocery cost at or below $${budget}
 - Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and full step-by-step instructions
 - Generate the grocery list from ingredients NOT already in the pantry
+- CRITICAL: The grocery list MUST contain EVERY ingredient used across ALL 18 meals. Cross-reference each meal's ingredients list and ensure nothing is missing. If an ingredient appears in any meal, it MUST appear in the grocery list (unless it's in the pantry).
+- The "totalEstimatedCost" field MUST equal the exact sum of all groceryList items' "estimatedPrice" values. Do the math: add up every estimatedPrice and use that sum as totalEstimatedCost. They MUST match exactly.
+- Each storeRecommendation's "estimatedTotal" MUST equal the sum of that store's prices from every item's "storePrices" for that store name. Calculate it, don't estimate.
 - EVERY grocery item MUST have:
   1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
   2. Full product description as it appears on the shelf (include size, count, variety)
@@ -309,6 +312,50 @@ Requirements:
         storeProducts,
       };
     });
+
+    // Validate: ensure grocery list covers all meal ingredients
+    const allIngredients = new Set<string>();
+    for (const day of mealPlan.weeklyPlan || []) {
+      for (const meal of day.meals || []) {
+        for (const ing of meal.ingredients || []) {
+          allIngredients.add(ing.toLowerCase().replace(/[^a-z ]/g, "").trim());
+        }
+      }
+    }
+    const groceryNames = new Set(
+      (mealPlan.groceryList || []).map((g: any) => g.name.toLowerCase().replace(/[^a-z ]/g, "").trim())
+    );
+    const missing = [...allIngredients].filter(
+      (ing) => !groceryNames.has(ing) && ![...groceryNames].some((gn) => ing.includes(gn) || gn.includes(ing))
+    );
+    if (missing.length > 0) {
+      console.warn("Grocery list may be missing ingredients:", missing);
+    }
+
+    // Recalculate totalEstimatedCost from actual grocery items to ensure consistency
+    const recalcTotal = (mealPlan.groceryList || []).reduce(
+      (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
+    );
+    mealPlan.totalEstimatedCost = Math.round(recalcTotal * 100) / 100;
+
+    // Recalculate store recommendation totals from actual storePrices
+    if (mealPlan.storeRecommendations) {
+      for (const rec of mealPlan.storeRecommendations) {
+        const storeTotal = (mealPlan.groceryList || []).reduce((sum: number, item: any) => {
+          const sp = item.storePrices?.[rec.store];
+          return sum + (sp ?? item.estimatedPrice ?? 0);
+        }, 0);
+        rec.estimatedTotal = Math.round(storeTotal * 100) / 100;
+      }
+    }
+
+    // Recalculate costPerMeal
+    const totalMealCount = (mealPlan.weeklyPlan || []).reduce(
+      (n: number, d: any) => n + (d.meals?.length || 0), 0
+    );
+    if (totalMealCount > 0) {
+      mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
+    }
 
     // Save meal plan to database
     const weekStart = getNextMonday();
