@@ -269,11 +269,19 @@ export default function GroceryListPage() {
 
   const sections = Array.from(new Set(groceryItems.map((i) => i.section || "Other")));
 
-  // Get store-specific price for an item — prefer Kroger real-time price
+  // Check if active store is Kroger-owned
+  const isKrogerOwnedStore = (storeName: string) => {
+    return /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter|mariano|pick.n.save|metro market|qfc/i.test(storeName);
+  };
+
+  // Get store-specific price for an item — prefer Kroger real-time price only for Kroger stores
   const getItemPrice = (item: typeof groceryItems[0]) => {
-    const krogerPrice = krogerPrices[item.name.toLowerCase()];
-    if (krogerPrice) {
-      return krogerPrice.salePrice ?? krogerPrice.regularPrice;
+    const useKroger = isKrogerOwnedStore(activeStore);
+    if (useKroger) {
+      const krogerPrice = krogerPrices[item.name.toLowerCase()];
+      if (krogerPrice) {
+        return krogerPrice.salePrice ?? krogerPrice.regularPrice;
+      }
     }
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
       return item.storePrices[activeStore];
@@ -281,14 +289,17 @@ export default function GroceryListPage() {
     return item.estimatedPrice || 0;
   };
 
-  // Get Kroger image or fallback
+  // Get Kroger image or fallback — only use Kroger images for Kroger stores
   const getItemImage = (item: typeof groceryItems[0]) => {
-    const krogerPrice = krogerPrices[item.name.toLowerCase()];
-    if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    if (isKrogerOwnedStore(activeStore)) {
+      const krogerPrice = krogerPrices[item.name.toLowerCase()];
+      if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    }
     return getProductImage(item.name);
   };
 
   const getKrogerInfo = (item: typeof groceryItems[0]) => {
+    if (!isKrogerOwnedStore(activeStore)) return null;
     return krogerPrices[item.name.toLowerCase()] || null;
   };
 
