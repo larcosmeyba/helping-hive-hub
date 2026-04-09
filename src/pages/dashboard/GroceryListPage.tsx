@@ -481,8 +481,11 @@ export default function GroceryListPage() {
                     ) : (
                       <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
                     )}
-                    {krogerStoreName && (
-                      <p className="text-[10px] text-muted-foreground">at Kroger</p>
+                    {krogerInfo && krogerStoreName && (
+                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                    )}
+                    {!krogerInfo && activeStore && (
+                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
                     )}
                     <button
                       onClick={(e) => {
