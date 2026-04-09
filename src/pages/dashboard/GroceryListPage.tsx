@@ -207,11 +207,14 @@ export default function GroceryListPage() {
   const { status: locationStatus, showPrompt: showLocationPrompt, setShowPrompt: setShowLocationPrompt, requestLocation } = useLocationPermission();
   const [locationAsked, setLocationAsked] = useState(false);
   const { prices: krogerPrices, loading: krogerLoading, storeName: krogerStoreName, findNearestStore, fetchPricesForItems } = useKrogerPrices();
-  const [krogerInitialized, setKrogerInitialized] = useState(false);
+  const [krogerInitialized, setKrogerInitialized] = useState<string | null>(null);
+
+  // Reset Kroger state when meal plan changes (e.g., regeneration)
+  const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
 
   // Fetch user's ZIP and load Kroger prices for grocery items
   useEffect(() => {
-    if (!user || !mealPlan?.groceryList?.length || krogerInitialized) return;
+    if (!user || !mealPlan?.groceryList?.length || krogerInitialized === planFingerprint) return;
 
     const init = async () => {
       // Get user ZIP
@@ -227,11 +230,11 @@ export default function GroceryListPage() {
         const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
         await fetchPricesForItems(itemNames, store.locationId);
       }
-      setKrogerInitialized(true);
+      setKrogerInitialized(planFingerprint);
     };
 
     init();
-  }, [user, mealPlan?.groceryList?.length, krogerInitialized]);
+  }, [user, planFingerprint, krogerInitialized]);
 
   // Ask for location contextually when grocery page loads and we haven't asked yet
   useEffect(() => {
