@@ -30,6 +30,8 @@ const PANTRY_ITEM_IMAGES: Record<string, string> = {
   bread: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=80&h=80&fit=crop",
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=80&h=80&fit=crop",
   tomato: "https://images.unsplash.com/photo-1546470427-0d4db154ceb8?w=80&h=80&fit=crop",
+  butter: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc0d?w=80&h=80&fit=crop",
+  frozen: "https://images.unsplash.com/photo-1580910365203-91ea9115a319?w=80&h=80&fit=crop",
 };
 
 const DEFAULT_PANTRY_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=80&h=80&fit=crop";
@@ -41,6 +43,23 @@ function getPantryImage(name: string): string {
   }
   return DEFAULT_PANTRY_IMAGE;
 }
+
+// Quick-add items with category mapping
+const QUICK_ADD_ITEMS = [
+  { name: "Eggs", quantity: "1 dozen", category: "dairy" },
+  { name: "Rice", quantity: "1 bag", category: "grains" },
+  { name: "Chicken", quantity: "1 lb", category: "proteins" },
+  { name: "Pasta", quantity: "1 box", category: "grains" },
+  { name: "Beans", quantity: "2 cans", category: "canned_goods" },
+  { name: "Milk", quantity: "1 gallon", category: "dairy" },
+  { name: "Butter", quantity: "1 stick", category: "dairy" },
+  { name: "Bread", quantity: "1 loaf", category: "grains" },
+  { name: "Frozen Veggies", quantity: "1 bag", category: "frozen_foods" },
+  { name: "Onions", quantity: "3 lb bag", category: "vegetables" },
+  { name: "Potatoes", quantity: "5 lb bag", category: "vegetables" },
+  { name: "Garlic", quantity: "1 head", category: "vegetables" },
+];
+
 const PANTRY_STAPLES = [
   { name: "Rice (10 lb bag)", category: "Grains", shelf: "6-12 months" },
   { name: "Dried Pinto Beans (4 lb bag)", category: "Proteins", shelf: "1-2 years" },
@@ -124,21 +143,27 @@ export default function PantryPage() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (params?: { name: string; quantity: string; category: string }) => {
+      const itemName = params?.name || newName;
+      const itemQty = params?.quantity || newQty;
+      const itemCat = params?.category || newCat;
       const { error } = await supabase.from("pantry_items").insert({
         user_id: user!.id,
-        item_name: newName,
-        quantity: newQty,
-        category: newCat,
-        expiration_date: newExp || null,
+        item_name: itemName,
+        quantity: itemQty,
+        category: itemCat,
+        expiration_date: params ? null : (newExp || null),
       });
       if (error) throw error;
+      return itemName;
     },
-    onSuccess: () => {
+    onSuccess: (itemName) => {
       queryClient.invalidateQueries({ queryKey: ["pantry_items"] });
-      setNewName(""); setNewQty(""); setNewCat(""); setNewExp("");
-      setAddOpen(false);
-      toast({ title: "Added!", description: `${newName} added to pantry.` });
+      if (!itemName) {
+        setNewName(""); setNewQty(""); setNewCat(""); setNewExp("");
+        setAddOpen(false);
+      }
+      toast({ title: "Added!", description: `${itemName || newName} added to pantry.` });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
@@ -172,6 +197,16 @@ export default function PantryPage() {
     },
   });
 
+  const handleQuickAdd = (item: typeof QUICK_ADD_ITEMS[0]) => {
+    // Check if item already exists
+    const exists = items.some(i => i.item_name.toLowerCase() === item.name.toLowerCase());
+    if (exists) {
+      toast({ title: "Already in pantry", description: `${item.name} is already in your pantry.` });
+      return;
+    }
+    addMutation.mutate({ name: item.name, quantity: item.quantity, category: item.category });
+  };
+
   const inStockItems = items.filter((i) => !(i as any).is_out_of_stock);
   const outOfStockItems = items.filter((i) => (i as any).is_out_of_stock);
   const lowStock = items.filter((i) => i.is_low_stock && !(i as any).is_out_of_stock);
@@ -193,15 +228,12 @@ export default function PantryPage() {
     const isOut = (item as any).is_out_of_stock;
     return (
       <div key={item.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/10 transition-colors ${isOut ? "opacity-50" : ""}`}>
-        {/* Item image */}
         <img
           src={getPantryImage(item.item_name)}
           alt={item.item_name}
           className="w-9 h-9 rounded-lg object-cover shrink-0"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_PANTRY_IMAGE; }}
         />
-
-        {/* Check off / mark out */}
         <button
           onClick={() => toggleOutOfStock.mutate({ id: item.id, isOut: !!isOut })}
           className="shrink-0"
@@ -213,14 +245,11 @@ export default function PantryPage() {
             <Circle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
           )}
         </button>
-
         <div className="flex-1 min-w-0">
           <p className={`font-medium text-foreground text-sm ${isOut ? "line-through" : ""}`}>{item.item_name}</p>
           <p className="text-xs text-muted-foreground">{item.quantity}</p>
         </div>
-
         <div className="flex items-center gap-1.5">
-          {/* Low stock toggle */}
           {!isOut && (
             <button
               onClick={() => toggleLowStock.mutate({ id: item.id, isLow: !!item.is_low_stock })}
@@ -234,11 +263,9 @@ export default function PantryPage() {
               {item.is_low_stock ? "Low" : "Mark Low"}
             </button>
           )}
-
           {item.expiration_date && (
             <span className="text-[10px] text-muted-foreground hidden sm:inline">Exp: {item.expiration_date}</span>
           )}
-
           <Button
             variant="ghost"
             size="icon"
@@ -297,6 +324,32 @@ export default function PantryPage() {
         </p>
       </div>
 
+      {/* Quick Add Section */}
+      <div className="bg-card rounded-2xl border border-border shadow-card p-4">
+        <h3 className="font-display font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+          <Plus className="w-4 h-4 text-primary" /> Quick Add Common Items
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_ADD_ITEMS.map((item) => {
+            const alreadyInPantry = items.some(i => i.item_name.toLowerCase() === item.name.toLowerCase());
+            return (
+              <button
+                key={item.name}
+                onClick={() => handleQuickAdd(item)}
+                disabled={alreadyInPantry || addMutation.isPending}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                  alreadyInPantry
+                    ? "bg-primary/10 text-primary border-primary/30 cursor-default"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-primary active:scale-95"
+                }`}
+              >
+                {alreadyInPantry ? "✓ " : "+ "}{item.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Pantry Staples Checklist */}
       <PantryStaplesSection />
 
@@ -334,13 +387,10 @@ export default function PantryPage() {
 
       {/* Tabs: In Stock / Out of Stock */}
       {items.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-10 text-center">
+        <div className="bg-card rounded-2xl border border-border shadow-card p-8 text-center">
           <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <h2 className="font-display text-lg font-semibold text-foreground mb-2">Pantry is Empty</h2>
-          <p className="text-sm text-muted-foreground mb-4">Add items you already have to save money on your next meal plan.</p>
-          <Button onClick={() => setAddOpen(true)} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
-            <Plus className="w-4 h-4 mr-2" /> Add Your First Item
-          </Button>
+          <p className="text-sm text-muted-foreground mb-4">Use the quick add buttons above, or tap "Add Item" to get started.</p>
         </div>
       ) : (
         <Tabs defaultValue="in-stock">
