@@ -673,7 +673,7 @@ CRITICAL REQUIREMENTS:
       .eq("user_id", user.id)
       .eq("status", "active");
 
-    const { data: groceryList, error: glError } = await supabase
+    const { data: savedGroceryList, error: glError } = await supabase
       .from("grocery_lists")
       .insert({
         user_id: user.id,
@@ -686,9 +686,9 @@ CRITICAL REQUIREMENTS:
       .select("id")
       .single();
 
-    if (!glError && groceryList) {
+    if (!glError && savedGroceryList) {
       const groceryItems = (mealPlan.groceryList || []).map((item: any) => ({
-        grocery_list_id: groceryList.id,
+        grocery_list_id: savedGroceryList.id,
         user_id: user.id,
         ingredient_name: item.name,
         quantity: item.quantity,
