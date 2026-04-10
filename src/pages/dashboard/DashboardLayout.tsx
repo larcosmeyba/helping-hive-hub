@@ -78,5 +78,6 @@ export default function DashboardLayout() {
         </div>
       </SidebarProvider>
     </MealPlanProvider>
+    </LocationProvider>
   );
 }
