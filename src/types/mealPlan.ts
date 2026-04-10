@@ -6,6 +6,7 @@ export interface MealPlanMeal {
   carbs: number;
   fats: number;
   estimatedCost: number;
+  costPerServing?: number;
   cookTimeMinutes: number;
   ingredients: string[];
   instructions: string[];
