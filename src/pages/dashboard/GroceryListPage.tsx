@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
 import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,7 +7,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { GroceryItem, PricingConfidenceSummary } from "@/types/mealPlan";
+import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
 import { useLocationPermission } from "@/hooks/usePermissions";
 import { PermissionModal } from "@/components/dashboard/PermissionModal";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
@@ -265,6 +265,7 @@ export default function GroceryListPage() {
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
+  const savings = mealPlan.savingsSummary as SavingsSummary | undefined;
 
   // Compute live-priced count from Kroger prices
   const livePricedCount = Object.keys(krogerPrices).length;
@@ -401,6 +402,34 @@ export default function GroceryListPage() {
               />
             </div>
           </div>
+        </div>
+      )}
+      {/* Weekly Savings Banner */}
+      {savings && savings.estimatedSavings > 0 && (
+        <div className="bg-gradient-to-r from-accent/10 to-primary/10 rounded-2xl border border-accent/30 p-4 md:p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <PiggyBank className="w-5 h-5 text-accent" />
+            <h3 className="font-display text-sm md:text-base font-semibold text-foreground">Weekly Grocery Savings</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Your Cost</p>
+              <p className="text-base md:text-xl font-bold text-primary">${savings.actualGroceryCost.toFixed(2)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Typical Cost</p>
+              <p className="text-base md:text-xl font-bold text-muted-foreground line-through">${savings.regionalAverageCost.toFixed(2)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">You Save</p>
+              <p className="text-base md:text-xl font-bold text-accent flex items-center justify-center gap-1">
+                <TrendingDown className="w-4 h-4" />${savings.estimatedSavings.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <p className="text-[10px] md:text-xs text-muted-foreground text-center mt-2">
+            Saving ~{savings.savingsPercent}% vs typical grocery spending in your area
+          </p>
         </div>
       )}
       <div className="flex items-center justify-between">

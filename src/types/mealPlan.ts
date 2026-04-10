@@ -48,6 +48,14 @@ export interface PricingConfidenceSummary {
   confidencePercent: number;
 }
 
+export interface SavingsSummary {
+  actualGroceryCost: number;
+  regionalAverageCost: number;
+  estimatedSavings: number;
+  savingsPercent: number;
+  confidenceScore: number;
+}
+
 export interface GeneratedMealPlan {
   weeklyPlan: MealPlanDay[];
   groceryList: GroceryItem[];
@@ -59,4 +67,5 @@ export interface GeneratedMealPlan {
   regionLabel?: string;
   costOfLivingMultiplier?: number;
   pricingConfidence?: PricingConfidenceSummary;
+  savingsSummary?: SavingsSummary;
 }
