@@ -2,3 +2,6 @@ project_id = "ndbqbhghjsjkpgcvkvtq"
 
 [functions.generate-meal-plan]
 verify_jwt = false
+
+[functions.kroger-sync]
+verify_jwt = false
