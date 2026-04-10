@@ -297,7 +297,26 @@ export default function GroceryListPage() {
     setChecked(next);
   };
 
-  const sections = Array.from(new Set(groceryItems.map((i) => i.section || "Other")));
+  // Order sections by grocery store aisle logic
+  const SECTION_ORDER = [
+    "Fruits", "Vegetables", "Produce",
+    "Meat & Protein", "Protein",
+    "Dairy & Eggs", "Dairy",
+    "Grains & Bread",
+    "Canned & Pantry", "Pantry",
+    "Oils & Condiments",
+    "Baking & Spices",
+    "Frozen",
+    "Beverages",
+    "Snacks",
+    "Other",
+  ];
+  const rawSections = Array.from(new Set(groceryItems.map((i) => i.section || "Other")));
+  const sections = rawSections.sort((a, b) => {
+    const ai = SECTION_ORDER.findIndex(s => a.toLowerCase().includes(s.toLowerCase()));
+    const bi = SECTION_ORDER.findIndex(s => b.toLowerCase().includes(s.toLowerCase()));
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
   // Check if active store is Kroger-owned
   const isKrogerOwnedStore = (storeName: string) => {
