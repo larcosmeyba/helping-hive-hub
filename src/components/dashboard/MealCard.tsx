@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
+import { ReportIssueButton } from "./ReportIssueButton";
 
 // Use shared meal image lookup from MealPlanPage
 const MEAL_IMAGES: Record<string, string> = {
@@ -171,10 +172,13 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 ))}
               </ol>
             </div>
-            <div className="flex gap-3 text-xs text-muted-foreground pt-1">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <span>{meal.protein}g protein</span>
               <span>{meal.carbs}g carbs</span>
               <span>{meal.fats}g fat</span>
+              <span className="ml-auto">
+                <ReportIssueButton entityType="meal" entityName={meal.name} />
+              </span>
             </div>
           </motion.div>
         )}

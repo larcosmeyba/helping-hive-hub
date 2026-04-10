@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck } from "lucide-react";
+import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
@@ -583,6 +584,9 @@ export default function GroceryListPage() {
                     >
                       Wrong price?
                     </button>
+                    <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <ReportIssueButton entityType="grocery_item" entityName={item.name} compact />
+                    </span>
                   </div>
                 </label>
               );

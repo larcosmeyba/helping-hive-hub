@@ -41,6 +41,7 @@ import AdminManagement from "./pages/admin/AdminManagement.tsx";
 import AdminSettings from "./pages/admin/AdminSettings.tsx";
 import AdminVerifications from "./pages/admin/AdminVerifications.tsx";
 import AdminKrogerSync from "./pages/admin/AdminKrogerSync.tsx";
+import AdminFeedback from "./pages/admin/AdminFeedback.tsx";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => {
                 <Route path="admins" element={<AdminManagement />} />
                 <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="kroger-sync" element={<AdminKrogerSync />} />
+                <Route path="feedback" element={<AdminFeedback />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
