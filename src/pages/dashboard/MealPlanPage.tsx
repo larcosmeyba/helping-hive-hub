@@ -261,8 +261,14 @@ export default function MealPlanPage() {
           variant="outline"
           className="flex-1 h-12 text-sm font-semibold rounded-xl"
         >
-          {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Regenerate Meal Plan
+          {generating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {generationStage === "preparing" ? "Preparing…" : generationStage === "generating" ? "AI generating…" : generationStage === "saving" ? "Saving…" : "Regenerating…"}
+            </>
+          ) : (
+            <><RefreshCw className="w-4 h-4 mr-2" /> Regenerate Meal Plan</>
+          )}
         </Button>
         {previousPlan && (
           <Button
