@@ -236,6 +236,23 @@ export default function MealPlanPage() {
         </div>
       </div>
 
+      {/* Swap Cost Impact Banner */}
+      {Object.keys(swappedMeals).length > 0 && (() => {
+        const impact = getSwapCostImpact();
+        return (
+          <div className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ${impact > 0 ? 'bg-destructive/10 text-destructive' : impact < 0 ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>
+              {impact > 0
+                ? `Swaps add +$${impact.toFixed(2)} to grocery cost`
+                : impact < 0
+                  ? `Swaps save $${Math.abs(impact).toFixed(2)} on grocery cost`
+                  : "Swaps have no cost impact"}
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Regenerate + Restore buttons */}
       <div className="flex gap-2">
         <Button
