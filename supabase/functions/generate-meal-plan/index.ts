@@ -702,6 +702,21 @@ CRITICAL REQUIREMENTS:
       }
     }
 
+    // Save savings comparison
+    if (mealPlan.savingsSummary) {
+      await supabase.from("grocery_cost_comparisons").insert({
+        user_id: user.id,
+        meal_plan_id: mealPlanId,
+        zip_code: zipCode || null,
+        selected_store: mealPlan.storeRecommendations?.[0]?.store || null,
+        actual_grocery_cost: mealPlan.savingsSummary.actualGroceryCost,
+        regional_average_cost: mealPlan.savingsSummary.regionalAverageCost,
+        estimated_savings: mealPlan.savingsSummary.estimatedSavings,
+        confidence_score: mealPlan.savingsSummary.confidenceScore,
+        store_comparisons: mealPlan.storeRecommendations || [],
+      });
+    }
+
     return new Response(JSON.stringify(mealPlan), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
