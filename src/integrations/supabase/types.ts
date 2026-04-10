@@ -138,6 +138,8 @@ export type Database = {
           category: string | null
           created_at: string
           default_image_url: string | null
+          default_price: number | null
+          default_unit: string | null
           gtin_upc: string | null
           ingredient_type: string | null
           is_generic: boolean
@@ -156,6 +158,8 @@ export type Database = {
           category?: string | null
           created_at?: string
           default_image_url?: string | null
+          default_price?: number | null
+          default_unit?: string | null
           gtin_upc?: string | null
           ingredient_type?: string | null
           is_generic?: boolean
@@ -174,6 +178,8 @@ export type Database = {
           category?: string | null
           created_at?: string
           default_image_url?: string | null
+          default_price?: number | null
+          default_unit?: string | null
           gtin_upc?: string | null
           ingredient_type?: string | null
           is_generic?: boolean
