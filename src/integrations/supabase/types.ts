@@ -220,6 +220,56 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_cost_comparisons: {
+        Row: {
+          actual_grocery_cost: number
+          confidence_score: number | null
+          created_at: string
+          estimated_savings: number
+          id: string
+          meal_plan_id: string | null
+          regional_average_cost: number
+          selected_store: string | null
+          store_comparisons: Json | null
+          user_id: string
+          zip_code: string | null
+        }
+        Insert: {
+          actual_grocery_cost?: number
+          confidence_score?: number | null
+          created_at?: string
+          estimated_savings?: number
+          id?: string
+          meal_plan_id?: string | null
+          regional_average_cost?: number
+          selected_store?: string | null
+          store_comparisons?: Json | null
+          user_id: string
+          zip_code?: string | null
+        }
+        Update: {
+          actual_grocery_cost?: number
+          confidence_score?: number | null
+          created_at?: string
+          estimated_savings?: number
+          id?: string
+          meal_plan_id?: string | null
+          regional_average_cost?: number
+          selected_store?: string | null
+          store_comparisons?: Json | null
+          user_id?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grocery_cost_comparisons_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grocery_list_items: {
         Row: {
           created_at: string
