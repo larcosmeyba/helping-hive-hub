@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { GroceryItem } from "@/types/mealPlan";
+import type { GroceryItem, PricingConfidenceSummary } from "@/types/mealPlan";
 import { useLocationPermission } from "@/hooks/usePermissions";
 import { PermissionModal } from "@/components/dashboard/PermissionModal";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
@@ -263,6 +263,18 @@ export default function GroceryListPage() {
   const groceryItems = mealPlan.groceryList;
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
+  const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
+
+  // Compute live-priced count from Kroger prices
+  const livePricedCount = Object.keys(krogerPrices).length;
+  const computedConfidence = pricingConf ? {
+    ...pricingConf,
+    exactPricedCount: livePricedCount,
+    estimatedCount: pricingConf.totalItems - livePricedCount - (pricingConf.cachedPricedCount || 0),
+    confidencePercent: pricingConf.totalItems > 0 
+      ? Math.round(((livePricedCount + (pricingConf.cachedPricedCount || 0)) / pricingConf.totalItems) * 100)
+      : 0,
+  } : null;
 
   // Compute per-store totals from actual item prices so top & bottom always match
   const getStoreTotalFromItems = (storeName: string) => {
@@ -343,6 +355,32 @@ export default function GroceryListPage() {
           <span className="text-xs text-muted-foreground ml-auto">
             {Object.values(krogerPrices).filter(p => p.isOnSale).length} items on sale
           </span>
+        </div>
+      )}
+      {/* Pricing Confidence Banner */}
+      {computedConfidence && computedConfidence.totalItems > 0 && (
+        <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-4 py-2.5 text-sm border border-border">
+          <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground">
+                {computedConfidence.confidencePercent > 0 
+                  ? `${computedConfidence.confidencePercent}% exact pricing`
+                  : 'Estimated pricing'}
+              </span>
+              {computedConfidence.estimatedCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  • {computedConfidence.estimatedCount} estimated item{computedConfidence.estimatedCount !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <div className="w-full bg-border rounded-full h-1.5 mt-1.5">
+              <div 
+                className="bg-primary h-1.5 rounded-full transition-all" 
+                style={{ width: `${Math.max(computedConfidence.confidencePercent, 5)}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
       <div className="flex items-center justify-between">
@@ -492,6 +530,12 @@ export default function GroceryListPage() {
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground">{krogerInfo?.size || item.quantity}</span>
+                      {!krogerInfo && item.pricingSource === 'internal_estimate' && (
+                        <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
+                      )}
+                      {krogerInfo && (
+                        <span className="text-[9px] text-accent/80 font-medium">live</span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

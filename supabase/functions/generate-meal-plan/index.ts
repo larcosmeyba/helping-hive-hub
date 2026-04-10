@@ -388,8 +388,77 @@ CRITICAL REQUIREMENTS:
       console.warn("Added missing ingredients to grocery list:", missingIngredients);
     }
 
-    // Step 4: Ensure store-specific brand/product naming
+    // Step 4: Enrich pricing from cached DB data (canonical_products + store_product_prices)
+    const { data: canonicalProducts } = await supabase
+      .from("canonical_products")
+      .select("canonical_product_id, canonical_name, default_price, default_unit, category");
+    
+    const canonicalMap = new Map<string, { id: string; price: number; unit: string; category: string }>();
+    for (const cp of (canonicalProducts || [])) {
+      if (cp.default_price) {
+        canonicalMap.set(cp.canonical_name.toLowerCase(), {
+          id: cp.canonical_product_id,
+          price: Number(cp.default_price),
+          unit: cp.default_unit || '',
+          category: cp.category || '',
+        });
+      }
+    }
+
+    // Also load aliases for fuzzy matching
+    const { data: aliases } = await supabase
+      .from("canonical_product_aliases")
+      .select("alias_text, canonical_product_id");
+    
+    const aliasMap = new Map<string, string>();
+    for (const a of (aliases || [])) {
+      aliasMap.set(a.alias_text.toLowerCase(), a.canonical_product_id);
+    }
+
+    // Load cached store prices (last 7 days)
+    const { data: cachedPrices } = await supabase
+      .from("store_product_prices")
+      .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
+      .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+    const cachedPriceMap = new Map<string, { price: number; salePrice: number | null; fresh: boolean }>();
+    for (const cp of (cachedPrices || [])) {
+      cachedPriceMap.set(cp.retailer_product_id, {
+        price: Number(cp.base_price),
+        salePrice: cp.sale_price ? Number(cp.sale_price) : null,
+        fresh: cp.freshness_status === 'verified' || cp.freshness_status === 'recent',
+      });
+    }
+
+    // Step 5: Assign pricing source and confidence to each grocery item
     mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
+      const lowerName = item.name.toLowerCase();
+      let pricingSource = 'ai_estimate';
+      let pricingConfidence = 'low';
+
+      // Try canonical product match for internal estimate pricing
+      const canonical = canonicalMap.get(lowerName) || 
+        [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
+      
+      if (canonical) {
+        // Use canonical DB price as baseline (more accurate than AI guess)
+        const dbPrice = canonical.price * regionInfo.costMultiplier;
+        item.estimatedPrice = Math.round(dbPrice * 100) / 100;
+        pricingSource = 'internal_estimate';
+        pricingConfidence = 'medium';
+      }
+
+      // Check if we have any cached store prices (would override internal)
+      // This happens when Kroger sync has previously cached prices
+      if (item.storePrices && Object.keys(item.storePrices).length > 0) {
+        pricingSource = 'ai_estimate'; // store prices from AI prompt
+        pricingConfidence = 'medium';
+      }
+
+      item.pricingSource = pricingSource;
+      item.pricingConfidence = pricingConfidence;
+
+      // Ensure store-specific brand/product naming
       const storeNames = Object.keys(item.storePrices || {});
       const storeProducts: Record<string, { brand: string; productDescription: string }> = {
         ...(item.storeProducts || {}),
@@ -408,7 +477,28 @@ CRITICAL REQUIREMENTS:
       return { ...item, storeProducts };
     });
 
-    // Step 5: Recalculate ALL totals from actual grocery items (single source of truth)
+    // Step 6: Calculate pricing confidence summary
+    const groceryList = mealPlan.groceryList || [];
+    let exactCount = 0;
+    let cachedCount = 0;
+    let estimatedCount = 0;
+    for (const item of groceryList) {
+      if (item.pricingSource === 'live') exactCount++;
+      else if (item.pricingSource === 'cached') cachedCount++;
+      else estimatedCount++;
+    }
+    const totalGroceryItems = groceryList.length;
+    mealPlan.pricingConfidence = {
+      exactPricedCount: exactCount,
+      cachedPricedCount: cachedCount,
+      estimatedCount: estimatedCount,
+      totalItems: totalGroceryItems,
+      confidencePercent: totalGroceryItems > 0 
+        ? Math.round(((exactCount + cachedCount) / totalGroceryItems) * 100)
+        : 0,
+    };
+
+    // Step 7: Recalculate ALL totals from actual grocery items (single source of truth)
     const recalcTotal = (mealPlan.groceryList || []).reduce(
       (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
     );
