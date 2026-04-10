@@ -321,8 +321,9 @@ export default function GroceryListPage() {
     return krogerPrices[item.name.toLowerCase()] || null;
   };
 
-  const subtotal = groceryItems.reduce((sum, i) => sum + getItemPrice(i), 0);
-  const taxRate = mealPlan.taxEstimate ? mealPlan.taxEstimate / mealPlan.totalEstimatedCost : 0.03;
+  // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
+  const subtotal = getStoreTotalFromItems(activeStore);
+  const taxRate = mealPlan.taxEstimate && mealPlan.totalEstimatedCost ? mealPlan.taxEstimate / mealPlan.totalEstimatedCost : 0.03;
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
   const checkedCount = checked.size;

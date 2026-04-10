@@ -124,7 +124,8 @@ const MEAL_IMAGES: Record<string, string> = {
   skillet: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
 };
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+// Neutral placeholder — shown when no keyword matches (never a random food photo)
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=400&h=300&fit=crop&q=80";
 
 function getMealImage(name: string): string {
   const lower = name.toLowerCase();
@@ -136,7 +137,7 @@ function getMealImage(name: string): string {
   for (const [keyword, url] of Object.entries(MEAL_IMAGES)) {
     if (!keyword.includes(" ") && lower.includes(keyword)) return url;
   }
-  return DEFAULT_IMAGE;
+  return PLACEHOLDER_IMAGE;
 }
 
 export default function MealPlanPage() {
@@ -274,7 +275,7 @@ export default function MealPlanPage() {
                         alt={meal.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
                       />
                       <div className="absolute top-1 left-1">
                         <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
@@ -324,7 +325,7 @@ export default function MealPlanPage() {
                   src={getMealImage(selectedMeal.name)}
                   alt={selectedMeal.name}
                   className="w-full h-48 object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
                 />
               </div>
               <DialogHeader>

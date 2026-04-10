@@ -7,6 +7,46 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Internal fallback price estimates per ingredient keyword
+const FALLBACK_PRICES: Record<string, number> = {
+  chicken: 4.50, beef: 5.80, pork: 4.00, turkey: 4.50, salmon: 8.00, fish: 6.00, shrimp: 7.00, tofu: 2.50,
+  bacon: 5.50, sausage: 4.00, "ground beef": 5.80, "ground turkey": 4.50,
+  egg: 4.50, eggs: 4.50, milk: 4.20, cheese: 3.80, butter: 5.00, yogurt: 3.50, cream: 3.00, "sour cream": 2.50,
+  rice: 3.50, pasta: 1.80, bread: 3.80, tortilla: 3.00, flour: 4.00, oat: 3.50, oats: 3.50, cereal: 4.00, noodle: 2.00,
+  tomato: 1.50, onion: 1.20, potato: 4.50, garlic: 0.75, pepper: 1.00, broccoli: 2.00, carrot: 1.50, spinach: 2.50,
+  lettuce: 2.00, cucumber: 1.00, corn: 1.50, mushroom: 2.50, avocado: 1.50, zucchini: 1.50, cabbage: 2.00,
+  bean: 1.20, beans: 1.20, "black bean": 1.20, chickpea: 1.50, lentil: 1.50,
+  banana: 0.65, apple: 1.50, orange: 1.00, lemon: 0.50, lime: 0.50, berry: 3.50, strawberry: 3.50,
+  oil: 5.50, "olive oil": 5.50, vinegar: 3.00, "soy sauce": 2.50, ketchup: 3.00, mustard: 2.50, honey: 5.00,
+  sugar: 3.50, salt: 1.50, flour: 4.00, "baking powder": 2.50, "baking soda": 1.50,
+  spice: 2.00, seasoning: 2.00, cumin: 2.50, paprika: 2.50, oregano: 2.50, cinnamon: 3.00,
+  broth: 2.50, "tomato sauce": 1.50, "tomato paste": 1.00, salsa: 3.00,
+  "peanut butter": 3.50, jam: 3.50, jelly: 3.00,
+  juice: 3.50, coffee: 7.00, tea: 4.00,
+};
+
+function estimateFallbackPrice(ingredientName: string): number {
+  const lower = ingredientName.toLowerCase();
+  for (const [keyword, price] of Object.entries(FALLBACK_PRICES)) {
+    if (lower.includes(keyword)) return price;
+  }
+  return 2.50; // generic fallback
+}
+
+function inferSection(ingredientName: string): string {
+  const lower = ingredientName.toLowerCase();
+  if (/chicken|beef|pork|turkey|salmon|fish|shrimp|bacon|sausage|tofu/.test(lower)) return "Meat & Protein";
+  if (/egg|milk|cheese|butter|yogurt|cream|sour cream/.test(lower)) return "Dairy & Eggs";
+  if (/rice|pasta|bread|tortilla|flour|oat|cereal|noodle/.test(lower)) return "Grains & Bread";
+  if (/banana|apple|orange|lemon|lime|berry|strawberry|grape|fruit/.test(lower)) return "Fruits";
+  if (/tomato|onion|potato|garlic|pepper|broccoli|carrot|spinach|lettuce|cucumber|corn|mushroom|avocado|zucchini|cabbage|celery|bean|pea/.test(lower)) return "Vegetables";
+  if (/oil|vinegar|soy sauce|ketchup|mustard|honey|mayo|sauce|salsa/.test(lower)) return "Oils & Condiments";
+  if (/sugar|salt|spice|seasoning|cumin|paprika|oregano|cinnamon|baking/.test(lower)) return "Baking & Spices";
+  if (/broth|soup|canned|tomato sauce|tomato paste|bean/.test(lower)) return "Canned & Pantry";
+  if (/juice|coffee|tea/.test(lower)) return "Beverages";
+  return "Other";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -29,7 +69,6 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Get user from auth token
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace("Bearer ", "");
 
@@ -45,7 +84,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -59,7 +97,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get pantry items
     const { data: pantryItems } = await supabase
       .from("pantry_items")
       .select("item_name, quantity, category")
@@ -68,6 +105,10 @@ Deno.serve(async (req) => {
     const pantryList = (pantryItems || [])
       .map((i: any) => `${i.item_name} (${i.quantity})`)
       .join(", ");
+
+    const pantrySet = new Set(
+      (pantryItems || []).map((i: any) => i.item_name.toLowerCase().replace(/[^a-z ]/g, "").trim())
+    );
 
     const budget = profile.weekly_budget || 75;
     const householdSize = profile.household_size || 2;
@@ -90,57 +131,45 @@ CRITICAL RULES:
 - Prioritize using pantry items the user already has to reduce costs
 - Adjust portion sizes for the household size
 - Respect all allergies and dietary preferences strictly
-- BATCH COOKING: Design recipes that make enough servings to stretch across multiple meals. For example:
-  * A big pot of soup/chili on Monday that also covers Wednesday lunch
-  * Batch-cook rice or beans that get repurposed across 2-3 meals
-  * Roast a whole chicken Monday dinner → use leftovers for Tuesday lunch wraps
-  * This is how real budget-conscious families cook — maximize every dollar
+- BATCH COOKING: Design recipes that share ingredients to minimize the grocery list size and cost.
 
 LOCATION:
 - ZIP code: ${zipCode || "unknown"}
 - City: ${cityInfo.city}, ${cityInfo.state}
 - Region: ${regionInfo.region}
 
-REAL-WORLD PRICING RULES (ABSOLUTELY CRITICAL — THIS IS THE CORE REQUIREMENT):
-You must use REAL, publicly available 2025-2026 US grocery prices. These prices must reflect what a shopper would ACTUALLY pay at each specific store in ${cityInfo.city}, ${cityInfo.state}.
+REAL-WORLD PRICING RULES:
+Use REAL 2025-2026 US grocery prices adjusted for ${cityInfo.city} using the ${regionInfo.costMultiplier}x regional multiplier.
 
-Reference these REAL average prices (national baseline), then adjust for ${cityInfo.city} using the ${regionInfo.costMultiplier}x regional multiplier:
+Reference baseline prices:
   * Eggs (dozen): $4.50  * Milk (gallon): $4.20  * Bread (loaf): $3.80
   * Chicken breast (lb): $4.50  * Ground beef 80/20 (lb): $5.80  * Rice (2lb bag): $3.50
   * Pasta (1lb box): $1.80  * Canned beans (15oz): $1.20  * Bananas (lb): $0.65
   * Potatoes (5lb bag): $4.50  * Onions (3lb bag): $3.50  * Frozen veggies (16oz): $2.50
   * Cheese block (8oz): $3.80  * Butter (1lb): $5.00  * Cooking oil (48oz): $5.50
-  * Flour (5lb): $4.00  * Sugar (4lb): $3.50  * Canned tomatoes (28oz): $2.00
 
-Store-specific price tiers (multiply baseline):
-  * Aldi/Lidl: 0.80x  * Walmart Supercenter: 0.90x  * Target (Good & Gather): 0.95x
-  * Kroger/Ralph's/Fred Meyer: 1.0x  * Safeway/Albertsons/Vons: 1.02x
-  * Publix/HEB: 1.05x  * Whole Foods (365 brand): 1.25x  * Trader Joe's: 1.15x
-  * Sprouts: 1.20x  * Food4Less/WinCo: 0.82x
+Store-specific price tiers:
+  * Aldi/Lidl: 0.80x  * Walmart: 0.90x  * Target: 0.95x  * Kroger: 1.0x
+  * Safeway/Albertsons: 1.02x  * Whole Foods: 1.25x  * Trader Joe's: 1.15x
 
-State sales tax on groceries: ${regionInfo.groceryTaxRate}%
+State grocery tax: ${regionInfo.groceryTaxRate}%
 
 STORE-SPECIFIC BRAND MAPPING (USE EXACT REAL BRANDS):
-For each grocery item, use the REAL store-brand name that is actually sold at each store:
-- Walmart: "Great Value" (store brand), plus national brands like Tyson, Barilla, Birds Eye
-- Aldi: "Simply Nature", "Friendly Farms", "Clancy's", "Specially Selected", "Happy Farms"
-- Target: "Good & Gather", "Market Pantry", "Favorite Day"
-- Kroger/Ralph's: "Kroger", "Private Selection", "Simple Truth"
-- Safeway/Vons/Albertsons: "O Organics", "Signature Select", "Lucerne"
-- Whole Foods: "365 by Whole Foods Market"
-- Trader Joe's: "Trader Joe's" (all store brand)
-- HEB: "Hill Country Fare", "HEB"
-- Publix: "Publix" (store brand)
-- Food4Less/WinCo: national brands at discount
+- Walmart: "Great Value"  - Aldi: "Simply Nature", "Friendly Farms"
+- Target: "Good & Gather"  - Kroger: "Kroger", "Simple Truth"
+- Safeway: "Signature Select"  - Whole Foods: "365 by Whole Foods Market"
+- Trader Joe's: "Trader Joe's"
 
-PRODUCT DESCRIPTION RULES:
-- The "productDescription" must be the EXACT product name as it appears on the store shelf
-- Include size, count, and variety (e.g., "Great Value Large White Eggs, 12 ct" not just "eggs")
-- The "brand" field must be the real brand name sold at the user's preferred stores
-- "storePrices" must include per-item prices for at least 3-4 stores available in ${cityInfo.city}, ${cityInfo.state}
-- "storeProducts" must include those same stores with exact per-store brand + exact per-store productDescription
+CRITICAL PIPELINE — YOU MUST FOLLOW THIS EXACT ORDER:
+1. Generate 18 meals (6 days × 3 meals), each with a complete ingredients list
+2. Collect EVERY ingredient from ALL 18 meals into one master list
+3. Combine duplicates (e.g., "chicken breast" from 3 meals → total quantity)
+4. Remove any items the user already has in their pantry
+5. Price each remaining item per-store
+6. Sum all item prices to get store totals
+7. The groceryList MUST contain EVERY ingredient from step 2 (minus pantry items)
 
-You must respond with ONLY valid JSON in exactly this structure, no markdown, no explanation:
+You must respond with ONLY valid JSON in exactly this structure:
 {
   "weeklyPlan": [
     {
@@ -155,7 +184,7 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
           "fats": 10,
           "estimatedCost": 1.50,
           "cookTimeMinutes": 15,
-          "ingredients": ["ingredient 1", "ingredient 2"],
+          "ingredients": ["1 lb chicken breast", "2 cups rice", "1 tbsp olive oil"],
           "instructions": ["Step 1", "Step 2"]
         }
       ]
@@ -163,41 +192,21 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   ],
   "groceryList": [
     {
-      "name": "Eggs",
-      "quantity": "1 dozen",
-      "estimatedPrice": 4.50,
-      "section": "Dairy & Eggs",
+      "name": "Chicken Breast",
+      "quantity": "3 lbs",
+      "estimatedPrice": 13.50,
+      "section": "Meat & Protein",
       "brand": "Great Value",
-      "productDescription": "Great Value Large White Eggs, 12 ct",
-      "storePrices": {
-        "Walmart": 3.98,
-        "Aldi": 3.49,
-        "Target": 4.29,
-        "Kroger": 4.49
-      },
+      "productDescription": "Great Value Boneless Skinless Chicken Breast, 3 lb",
+      "storePrices": { "Walmart": 12.15, "Kroger": 13.50, "Aldi": 10.80 },
       "storeProducts": {
-        "Walmart": {
-          "brand": "Great Value",
-          "productDescription": "Great Value Large White Eggs, 12 ct"
-        },
-        "Aldi": {
-          "brand": "Friendly Farms",
-          "productDescription": "Friendly Farms Grade A Large Eggs, 12 ct"
-        },
-        "Target": {
-          "brand": "Good & Gather",
-          "productDescription": "Good & Gather Cage Free Grade A Large Eggs, 12 ct"
-        },
-        "Kroger": {
-          "brand": "Kroger",
-          "productDescription": "Kroger Grade A Large White Eggs, 12 ct"
-        }
+        "Walmart": { "brand": "Great Value", "productDescription": "Great Value Boneless Skinless Chicken Breast, 3 lb" },
+        "Kroger": { "brand": "Kroger", "productDescription": "Kroger Boneless Skinless Chicken Breast, 3 lb" }
       }
     }
   ],
   "storeRecommendations": [
-    { "store": "Walmart", "estimatedTotal": 68.00 },
-    { "store": "Aldi", "estimatedTotal": 62.00 }
+    { "store": "Walmart", "estimatedTotal": 68.00 }
   ],
   "totalEstimatedCost": 68.00,
   "pantrySavings": 12.00,
@@ -207,55 +216,59 @@ You must respond with ONLY valid JSON in exactly this structure, no markdown, no
   "costOfLivingMultiplier": ${regionInfo.costMultiplier}
 }`;
 
-    const userPrompt = `Generate a 6-day meal plan (Monday–Saturday, 3 meals per day: breakfast, lunch, dinner) for this household. Sunday is a rest/leftover day — do NOT include Sunday. Design recipes that yield enough servings to last across multiple meals where possible (e.g., a big pot of chili for 2 dinners, batch-cook rice for several lunches). This maximizes value on a tight budget:
+    const userPrompt = `Generate a 6-day meal plan (Monday–Saturday, 3 meals per day: breakfast, lunch, dinner) for this household:
 
 - Weekly grocery budget: $${budget}
 - Household size: ${householdSize} people
 - Allergies: ${allergies}
 - Dietary preferences: ${dietPrefs}
-- Cuisine preferences: ${foodPrefs} (prioritize recipes from these cuisines when possible, while staying within budget)
-- Cooking time preference: ${cookTimePref} (quick = under 30 min, medium = 30-60 min, any = no limit)
+- Cuisine preferences: ${foodPrefs}
+- Cooking time: ${cookTimePref}
 - Preferred stores: ${stores}
 - Location: ${cityInfo.city}, ${cityInfo.state} (ZIP: ${zipCode || "unknown"}, cost multiplier: ${regionInfo.costMultiplier}x)
-- Items already in pantry: ${pantryList || "none specified"}
+- Items in pantry: ${pantryList || "none"}
 
-Requirements:
-- Use REAL publicly known prices for ${cityInfo.city}, ${cityInfo.state} — prices a shopper would see TODAY at each store
-- Apply the ${regionInfo.costMultiplier}x regional cost multiplier to national baseline prices
-- Use pantry items first to maximize savings
-- Keep total grocery cost at or below $${budget}
-- Each meal needs calories, protein, carbs, fats, cost, cook time, ingredients, and full step-by-step instructions
-- Generate the grocery list from ingredients NOT already in the pantry
-- CRITICAL: The grocery list MUST contain EVERY ingredient used across ALL 18 meals. Cross-reference each meal's ingredients list and ensure nothing is missing. If an ingredient appears in any meal, it MUST appear in the grocery list (unless it's in the pantry).
-- The "totalEstimatedCost" field MUST equal the exact sum of all groceryList items' "estimatedPrice" values. Do the math: add up every estimatedPrice and use that sum as totalEstimatedCost. They MUST match exactly.
-- Each storeRecommendation's "estimatedTotal" MUST equal the sum of that store's prices from every item's "storePrices" for that store name. Calculate it, don't estimate.
-- EVERY grocery item MUST have:
-  1. A real brand name actually sold at the store (Great Value at Walmart, Simply Nature at Aldi, Good & Gather at Target, etc.)
-  2. Full product description as it appears on the shelf (include size, count, variety)
-  3. Per-store prices for at least 3-4 stores that exist in ${cityInfo.city}, ${cityInfo.state}
-  4. A "storeProducts" object keyed by store name, containing the exact "brand" and exact shelf "productDescription" for each store
-- Store recommendations must reflect the real total if shopping entirely at that one store
-- Apply ${regionInfo.groceryTaxRate}% grocery tax rate for ${cityInfo.state}`;
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.7,
-        }),
-      }
-    );
+CRITICAL REQUIREMENTS:
+1. Every meal's "ingredients" must list SPECIFIC items with quantities (e.g., "1 lb chicken breast", not just "chicken")
+2. The "groceryList" must contain EVERY SINGLE ingredient from ALL 18 meals that is NOT in the pantry
+3. Aggregate quantities: if chicken breast appears in 3 meals (1lb + 1lb + 0.5lb), the grocery list entry should say "2.5 lbs"
+4. "totalEstimatedCost" MUST equal the EXACT sum of all groceryList items' "estimatedPrice" values
+5. Each store's "estimatedTotal" MUST equal the sum of that store's prices across ALL grocery items
+6. Every grocery item needs storePrices for at least 3 stores available in ${cityInfo.city}
+7. Include storeProducts with exact brand + product description per store
+8. Apply ${regionInfo.groceryTaxRate}% grocery tax for ${cityInfo.state}`;
+
+    let aiResponse;
+    try {
+      aiResponse = await fetch(
+        "https://ai.gateway.lovable.dev/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.7,
+          }),
+        }
+      );
+    } catch (fetchErr) {
+      console.error("AI fetch error:", fetchErr);
+      return new Response(
+        JSON.stringify({ error: "Failed to connect to AI service. Please try again." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!aiResponse.ok) {
+      const errText = await aiResponse.text();
+      console.error("AI gateway error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
@@ -264,33 +277,118 @@ Requirements:
       }
       if (aiResponse.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
+          JSON.stringify({ error: "AI credits exhausted. Please try again later." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errText);
-      throw new Error(`AI gateway error: ${aiResponse.status}`);
+      return new Response(
+        JSON.stringify({ error: "AI service error. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error("No content in AI response");
+      return new Response(
+        JSON.stringify({ error: "Empty AI response. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Parse JSON from AI response (strip markdown fences if present)
     let mealPlan;
     try {
       const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       mealPlan = JSON.parse(jsonStr);
     } catch (parseErr) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Failed to parse meal plan from AI");
+      console.error("Failed to parse AI response:", content.substring(0, 500));
+      return new Response(
+        JSON.stringify({ error: "Failed to parse meal plan. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Ensure every item has store-specific brand/product naming for each priced store
+    // ===== POST-AI VALIDATION: Enforce 1:1 ingredient→grocery mapping =====
+
+    // Step 1: Extract ALL ingredients from ALL meals
+    const ingredientAggregator: Record<string, { totalMentions: number; rawTexts: string[] }> = {};
+    for (const day of mealPlan.weeklyPlan || []) {
+      for (const meal of day.meals || []) {
+        for (const ing of meal.ingredients || []) {
+          // Normalize: strip quantities to get base ingredient name
+          const normalized = ing.toLowerCase()
+            .replace(/^\d+[\s\/]*\d*\s*(lb|lbs|oz|cup|cups|tbsp|tsp|can|cans|clove|cloves|bunch|bunches|head|heads|pkg|package|bag|bottle|jar|gallon|quart|pint|dozen|slice|slices|piece|pieces|stick|sticks|box|boxes)s?\s*/i, "")
+            .replace(/^\d+[\.\d]*\s*/g, "")
+            .replace(/[^a-z ]/g, "")
+            .trim();
+          
+          if (!normalized || normalized.length < 2) continue;
+          
+          // Skip pantry items
+          const inPantry = [...pantrySet].some(p => normalized.includes(p) || p.includes(normalized));
+          if (inPantry) continue;
+
+          if (!ingredientAggregator[normalized]) {
+            ingredientAggregator[normalized] = { totalMentions: 0, rawTexts: [] };
+          }
+          ingredientAggregator[normalized].totalMentions++;
+          ingredientAggregator[normalized].rawTexts.push(ing);
+        }
+      }
+    }
+
+    // Step 2: Build a map of existing grocery list items
+    const existingGroceryMap = new Map<string, any>();
+    for (const item of (mealPlan.groceryList || [])) {
+      const key = item.name.toLowerCase().replace(/[^a-z ]/g, "").trim();
+      existingGroceryMap.set(key, item);
+    }
+
+    // Step 3: Find missing ingredients and add them
+    const missingIngredients: string[] = [];
+    for (const [normalized, info] of Object.entries(ingredientAggregator)) {
+      const found = [...existingGroceryMap.keys()].some(
+        gn => normalized.includes(gn) || gn.includes(normalized)
+      );
+      if (!found) {
+        missingIngredients.push(normalized);
+        // Add missing item with fallback pricing
+        const price = estimateFallbackPrice(normalized) * regionInfo.costMultiplier;
+        const roundedPrice = Math.round(price * 100) / 100;
+        const displayName = normalized.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        
+        const newItem: any = {
+          name: displayName,
+          quantity: info.rawTexts[0] || "1",
+          estimatedPrice: roundedPrice,
+          section: inferSection(normalized),
+          brand: inferStoreBrand(stores.split(",")[0]?.trim() || ""),
+          productDescription: displayName,
+          storePrices: {},
+          storeProducts: {},
+        };
+
+        // Add store prices for user's preferred stores
+        const userStores = (profile.preferred_stores || []);
+        for (const storeName of userStores.slice(0, 4)) {
+          const multiplier = getStoreMultiplier(storeName);
+          newItem.storePrices[storeName] = Math.round(price * multiplier * 100) / 100;
+          newItem.storeProducts[storeName] = {
+            brand: inferStoreBrand(storeName),
+            productDescription: `${inferStoreBrand(storeName)} ${displayName}`,
+          };
+        }
+
+        mealPlan.groceryList.push(newItem);
+      }
+    }
+
+    if (missingIngredients.length > 0) {
+      console.warn("Added missing ingredients to grocery list:", missingIngredients);
+    }
+
+    // Step 4: Ensure store-specific brand/product naming
     mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
       const storeNames = Object.keys(item.storePrices || {});
       const storeProducts: Record<string, { brand: string; productDescription: string }> = {
@@ -307,38 +405,16 @@ Requirements:
         storeProducts[storeName] = { brand, productDescription };
       }
 
-      return {
-        ...item,
-        storeProducts,
-      };
+      return { ...item, storeProducts };
     });
 
-    // Validate: ensure grocery list covers all meal ingredients
-    const allIngredients = new Set<string>();
-    for (const day of mealPlan.weeklyPlan || []) {
-      for (const meal of day.meals || []) {
-        for (const ing of meal.ingredients || []) {
-          allIngredients.add(ing.toLowerCase().replace(/[^a-z ]/g, "").trim());
-        }
-      }
-    }
-    const groceryNames = new Set(
-      (mealPlan.groceryList || []).map((g: any) => g.name.toLowerCase().replace(/[^a-z ]/g, "").trim())
-    );
-    const missing = [...allIngredients].filter(
-      (ing) => !groceryNames.has(ing) && ![...groceryNames].some((gn) => ing.includes(gn) || gn.includes(ing))
-    );
-    if (missing.length > 0) {
-      console.warn("Grocery list may be missing ingredients:", missing);
-    }
-
-    // Recalculate totalEstimatedCost from actual grocery items to ensure consistency
+    // Step 5: Recalculate ALL totals from actual grocery items (single source of truth)
     const recalcTotal = (mealPlan.groceryList || []).reduce(
       (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
     );
     mealPlan.totalEstimatedCost = Math.round(recalcTotal * 100) / 100;
 
-    // Recalculate store recommendation totals from actual storePrices
+    // Recalculate store recommendation totals
     if (mealPlan.storeRecommendations) {
       for (const rec of mealPlan.storeRecommendations) {
         const storeTotal = (mealPlan.groceryList || []).reduce((sum: number, item: any) => {
@@ -357,10 +433,12 @@ Requirements:
       mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
     }
 
+    // Recalculate tax
+    mealPlan.taxEstimate = Math.round(recalcTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+
     // Save meal plan to database
     const weekStart = getNextMonday();
 
-    // Delete existing plan for this week
     await supabase
       .from("meal_plan_items")
       .delete()
@@ -447,7 +525,7 @@ Requirements:
         meal_plan_id: mealPlanId,
         store_name: mealPlan.storeRecommendations?.[0]?.store || "Any",
         estimated_total: mealPlan.totalEstimatedCost,
-        tax_rate: 0.03,
+        tax_rate: regionInfo.groceryTaxRate / 100,
         status: "active",
       })
       .select("id")
@@ -483,6 +561,22 @@ Requirements:
   }
 });
 
+function getStoreMultiplier(storeName: string): number {
+  const lower = storeName.toLowerCase();
+  if (lower.includes("aldi") || lower.includes("lidl")) return 0.80;
+  if (lower.includes("walmart")) return 0.90;
+  if (lower.includes("target")) return 0.95;
+  if (lower.includes("kroger") || lower.includes("ralph") || lower.includes("fred meyer")) return 1.0;
+  if (lower.includes("safeway") || lower.includes("albertsons") || lower.includes("vons")) return 1.02;
+  if (lower.includes("whole foods")) return 1.25;
+  if (lower.includes("trader joe")) return 1.15;
+  if (lower.includes("sprouts")) return 1.20;
+  if (lower.includes("food4less") || lower.includes("winco")) return 0.82;
+  if (lower.includes("publix") || lower.includes("heb")) return 1.05;
+  if (lower.includes("costco") || lower.includes("sam")) return 0.85;
+  return 1.0;
+}
+
 function getNextMonday(): string {
   const now = new Date();
   const day = now.getDay();
@@ -500,12 +594,9 @@ interface RegionInfo {
 
 function getRegionInfo(zip: string): RegionInfo {
   if (!zip) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
-
   const prefix = parseInt(zip.substring(0, 3), 10);
   if (isNaN(prefix)) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
 
-  // ZIP prefix ranges mapped to regions with cost-of-living multipliers and grocery tax
-  // Based on USDA regional food cost data and state grocery tax rates
   if (prefix >= 100 && prefix <= 149) return { region: "New York Metro", costMultiplier: 1.35, groceryTaxRate: 4.0 };
   if (prefix >= 150 && prefix <= 196) return { region: "Pennsylvania", costMultiplier: 1.05, groceryTaxRate: 0.0 };
   if (prefix >= 197 && prefix <= 199) return { region: "Delaware", costMultiplier: 1.0, groceryTaxRate: 0.0 };
@@ -554,17 +645,11 @@ function getRegionInfo(zip: string): RegionInfo {
   return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
 }
 
-interface CityInfo {
-  city: string;
-  state: string;
-}
+interface CityInfo { city: string; state: string; }
 
 function getCityFromZip(zip: string): CityInfo {
   if (!zip) return { city: "Unknown", state: "US" };
-
-  // Common ZIP code to city mapping for accurate location display
   const zipCityMap: Record<string, CityInfo> = {
-    // California
     "900": { city: "Los Angeles", state: "CA" }, "901": { city: "Los Angeles", state: "CA" },
     "902": { city: "Inglewood", state: "CA" }, "903": { city: "Inglewood", state: "CA" },
     "904": { city: "Santa Monica", state: "CA" }, "905": { city: "Torrance", state: "CA" },
@@ -595,50 +680,28 @@ function getCityFromZip(zip: string): CityInfo {
     "957": { city: "Sacramento", state: "CA" }, "958": { city: "Sacramento", state: "CA" },
     "959": { city: "Marysville", state: "CA" }, "960": { city: "Redding", state: "CA" },
     "961": { city: "Reno", state: "NV" },
-    // New York
     "100": { city: "New York", state: "NY" }, "101": { city: "New York", state: "NY" },
     "102": { city: "New York", state: "NY" }, "103": { city: "Staten Island", state: "NY" },
     "104": { city: "Bronx", state: "NY" }, "110": { city: "Queens", state: "NY" },
     "111": { city: "Brooklyn", state: "NY" }, "112": { city: "Brooklyn", state: "NY" },
     "113": { city: "Flushing", state: "NY" }, "114": { city: "Jamaica", state: "NY" },
-    "115": { city: "Western Nassau", state: "NY" }, "116": { city: "Far Rockaway", state: "NY" },
-    "117": { city: "Hicksville", state: "NY" }, "118": { city: "Hicksville", state: "NY" },
-    "119": { city: "Riverhead", state: "NY" },
-    // Texas
     "750": { city: "Dallas", state: "TX" }, "751": { city: "Dallas", state: "TX" },
     "752": { city: "Dallas", state: "TX" }, "753": { city: "Dallas", state: "TX" },
     "760": { city: "Fort Worth", state: "TX" }, "761": { city: "Fort Worth", state: "TX" },
     "770": { city: "Houston", state: "TX" }, "771": { city: "Houston", state: "TX" },
-    "772": { city: "Houston", state: "TX" }, "773": { city: "Huntsville", state: "TX" },
-    "780": { city: "San Antonio", state: "TX" }, "781": { city: "San Antonio", state: "TX" },
-    "782": { city: "San Antonio", state: "TX" }, "786": { city: "Austin", state: "TX" },
+    "772": { city: "Houston", state: "TX" }, "780": { city: "San Antonio", state: "TX" },
+    "781": { city: "San Antonio", state: "TX" }, "786": { city: "Austin", state: "TX" },
     "787": { city: "Austin", state: "TX" }, "799": { city: "El Paso", state: "TX" },
-    // Florida
     "320": { city: "Jacksonville", state: "FL" }, "321": { city: "Daytona Beach", state: "FL" },
-    "322": { city: "Jacksonville", state: "FL" }, "323": { city: "Tallahassee", state: "FL" },
-    "324": { city: "Panama City", state: "FL" }, "325": { city: "Pensacola", state: "FL" },
-    "326": { city: "Gainesville", state: "FL" }, "327": { city: "Orlando", state: "FL" },
-    "328": { city: "Orlando", state: "FL" }, "329": { city: "Melbourne", state: "FL" },
+    "327": { city: "Orlando", state: "FL" }, "328": { city: "Orlando", state: "FL" },
     "330": { city: "Miami", state: "FL" }, "331": { city: "Miami", state: "FL" },
     "332": { city: "Miami", state: "FL" }, "333": { city: "Fort Lauderdale", state: "FL" },
-    "334": { city: "West Palm Beach", state: "FL" }, "335": { city: "Tampa", state: "FL" },
-    "336": { city: "Tampa", state: "FL" }, "337": { city: "St. Petersburg", state: "FL" },
-    "338": { city: "Lakeland", state: "FL" }, "339": { city: "Fort Myers", state: "FL" },
-    "340": { city: "St. Thomas", state: "VI" }, "341": { city: "Naples", state: "FL" },
-    "342": { city: "Sarasota", state: "FL" },
-    // Illinois
+    "335": { city: "Tampa", state: "FL" }, "336": { city: "Tampa", state: "FL" },
     "600": { city: "Chicago", state: "IL" }, "601": { city: "Chicago", state: "IL" },
-    "602": { city: "Evanston", state: "IL" }, "603": { city: "Oak Park", state: "IL" },
-    "604": { city: "Aurora", state: "IL" }, "605": { city: "Joliet", state: "IL" },
     "606": { city: "Chicago", state: "IL" },
-    // Georgia
     "300": { city: "Atlanta", state: "GA" }, "301": { city: "Atlanta", state: "GA" },
     "302": { city: "Atlanta", state: "GA" }, "303": { city: "Atlanta", state: "GA" },
-    "310": { city: "Augusta", state: "GA" }, "312": { city: "Macon", state: "GA" },
-    "314": { city: "Savannah", state: "GA" },
-    // Other major cities
     "200": { city: "Washington", state: "DC" }, "201": { city: "Washington", state: "DC" },
-    "206": { city: "Waldorf", state: "MD" }, "208": { city: "Laurel", state: "MD" },
     "210": { city: "Baltimore", state: "MD" }, "211": { city: "Baltimore", state: "MD" },
     "150": { city: "Pittsburgh", state: "PA" }, "151": { city: "Pittsburgh", state: "PA" },
     "190": { city: "Philadelphia", state: "PA" }, "191": { city: "Philadelphia", state: "PA" },
@@ -646,54 +709,25 @@ function getCityFromZip(zip: string): CityInfo {
     "550": { city: "Minneapolis", state: "MN" }, "551": { city: "St. Paul", state: "MN" },
     "430": { city: "Columbus", state: "OH" }, "441": { city: "Cleveland", state: "OH" },
     "460": { city: "Indianapolis", state: "IN" }, "461": { city: "Indianapolis", state: "IN" },
-    "530": { city: "Milwaukee", state: "WI" }, "531": { city: "Milwaukee", state: "WI" },
-    "630": { city: "St. Louis", state: "MO" }, "631": { city: "St. Louis", state: "MO" },
-    "640": { city: "Kansas City", state: "MO" },
-    "660": { city: "Kansas City", state: "KS" },
-    "680": { city: "Omaha", state: "NE" },
-    "800": { city: "Denver", state: "CO" }, "801": { city: "Denver", state: "CO" }, "802": { city: "Denver", state: "CO" },
-    "840": { city: "Salt Lake City", state: "UT" }, "841": { city: "Salt Lake City", state: "UT" },
-    "850": { city: "Phoenix", state: "AZ" }, "851": { city: "Phoenix", state: "AZ" }, "852": { city: "Phoenix", state: "AZ" },
-    "853": { city: "Phoenix", state: "AZ" }, "855": { city: "Globe", state: "AZ" },
-    "856": { city: "Tucson", state: "AZ" }, "857": { city: "Tucson", state: "AZ" },
-    "889": { city: "Las Vegas", state: "NV" }, "890": { city: "Las Vegas", state: "NV" }, "891": { city: "Las Vegas", state: "NV" },
-    "970": { city: "Portland", state: "OR" }, "971": { city: "Portland", state: "OR" }, "972": { city: "Portland", state: "OR" },
+    "800": { city: "Denver", state: "CO" }, "801": { city: "Denver", state: "CO" },
+    "850": { city: "Phoenix", state: "AZ" }, "851": { city: "Phoenix", state: "AZ" },
+    "889": { city: "Las Vegas", state: "NV" }, "890": { city: "Las Vegas", state: "NV" },
+    "970": { city: "Portland", state: "OR" }, "971": { city: "Portland", state: "OR" },
     "980": { city: "Seattle", state: "WA" }, "981": { city: "Seattle", state: "WA" },
-    "982": { city: "Everett", state: "WA" }, "983": { city: "Tacoma", state: "WA" },
-    "984": { city: "Tacoma", state: "WA" },
-    "995": { city: "Anchorage", state: "AK" }, "996": { city: "Anchorage", state: "AK" },
-    "967": { city: "Honolulu", state: "HI" }, "968": { city: "Honolulu", state: "HI" },
-    // North Carolina
-    "270": { city: "Greensboro", state: "NC" }, "271": { city: "Winston-Salem", state: "NC" },
-    "272": { city: "Greensboro", state: "NC" }, "273": { city: "Greensboro", state: "NC" },
-    "274": { city: "Greensboro", state: "NC" }, "275": { city: "Raleigh", state: "NC" },
-    "276": { city: "Raleigh", state: "NC" }, "277": { city: "Charlotte", state: "NC" },
-    "278": { city: "Rocky Mount", state: "NC" }, "279": { city: "Rocky Mount", state: "NC" },
+    "995": { city: "Anchorage", state: "AK" }, "967": { city: "Honolulu", state: "HI" },
+    "270": { city: "Greensboro", state: "NC" }, "275": { city: "Raleigh", state: "NC" },
     "280": { city: "Charlotte", state: "NC" }, "281": { city: "Charlotte", state: "NC" },
-    "282": { city: "Charlotte", state: "NC" }, "283": { city: "Fayetteville", state: "NC" },
-    "284": { city: "Wilmington", state: "NC" }, "285": { city: "Kinston", state: "NC" },
-    "286": { city: "Hickory", state: "NC" }, "287": { city: "Asheville", state: "NC" },
-    "288": { city: "Asheville", state: "NC" }, "289": { city: "Asheville", state: "NC" },
-    // Tennessee
     "370": { city: "Nashville", state: "TN" }, "371": { city: "Nashville", state: "TN" },
-    "372": { city: "Nashville", state: "TN" }, "373": { city: "Chattanooga", state: "TN" },
-    "374": { city: "Chattanooga", state: "TN" }, "376": { city: "Johnson City", state: "TN" },
-    "377": { city: "Knoxville", state: "TN" }, "378": { city: "Knoxville", state: "TN" },
-    "379": { city: "Knoxville", state: "TN" }, "380": { city: "Memphis", state: "TN" },
-    "381": { city: "Memphis", state: "TN" },
+    "380": { city: "Memphis", state: "TN" }, "381": { city: "Memphis", state: "TN" },
   };
-
   const prefix3 = zip.substring(0, 3);
   if (zipCityMap[prefix3]) return zipCityMap[prefix3];
-
-  // Fallback: use region name
   const regionInfo = getRegionInfo(zip);
   return { city: regionInfo.region, state: "" };
 }
 
 function inferStoreBrand(storeName: string, fallbackBrand?: string): string {
   const lower = storeName.toLowerCase();
-
   if (lower.includes("walmart")) return "Great Value";
   if (lower.includes("aldi")) return "Simply Nature";
   if (lower.includes("target")) return "Good & Gather";
@@ -703,11 +737,9 @@ function inferStoreBrand(storeName: string, fallbackBrand?: string): string {
   if (lower.includes("trader joe")) return "Trader Joe's";
   if (lower.includes("heb") || lower.includes("h-e-b")) return "HEB";
   if (lower.includes("publix")) return "Publix";
-
   return fallbackBrand || storeName;
 }
 
-function buildStoreProductDescription(brand: string, itemName: string, quantity?: string): string {
-  const quantitySuffix = quantity ? `, ${quantity}` : "";
-  return `${brand} ${itemName}${quantitySuffix}`.trim();
+function buildStoreProductDescription(brand: string, itemName: string, quantity: string): string {
+  return `${brand} ${itemName}, ${quantity}`.trim();
 }
