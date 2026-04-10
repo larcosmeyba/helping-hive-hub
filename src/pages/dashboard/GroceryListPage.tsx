@@ -263,6 +263,18 @@ export default function GroceryListPage() {
   const groceryItems = mealPlan.groceryList;
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
+  const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
+
+  // Compute live-priced count from Kroger prices
+  const livePricedCount = Object.keys(krogerPrices).length;
+  const computedConfidence = pricingConf ? {
+    ...pricingConf,
+    exactPricedCount: livePricedCount,
+    estimatedCount: pricingConf.totalItems - livePricedCount - (pricingConf.cachedPricedCount || 0),
+    confidencePercent: pricingConf.totalItems > 0 
+      ? Math.round(((livePricedCount + (pricingConf.cachedPricedCount || 0)) / pricingConf.totalItems) * 100)
+      : 0,
+  } : null;
 
   // Compute per-store totals from actual item prices so top & bottom always match
   const getStoreTotalFromItems = (storeName: string) => {
