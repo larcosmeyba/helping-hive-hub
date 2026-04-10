@@ -383,6 +383,7 @@ export default function GroceryListPage() {
           </div>
         </div>
       )}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
             <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
