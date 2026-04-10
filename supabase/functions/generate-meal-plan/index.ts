@@ -7,7 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Internal fallback price estimates per ingredient keyword
 const FALLBACK_PRICES: Record<string, number> = {
   chicken: 4.50, beef: 5.80, pork: 4.00, turkey: 4.50, salmon: 8.00, fish: 6.00, shrimp: 7.00, tofu: 2.50,
   bacon: 5.50, sausage: 4.00, "ground beef": 5.80, "ground turkey": 4.50,
@@ -18,7 +17,7 @@ const FALLBACK_PRICES: Record<string, number> = {
   bean: 1.20, beans: 1.20, "black bean": 1.20, chickpea: 1.50, lentil: 1.50,
   banana: 0.65, apple: 1.50, orange: 1.00, lemon: 0.50, lime: 0.50, berry: 3.50, strawberry: 3.50,
   oil: 5.50, "olive oil": 5.50, vinegar: 3.00, "soy sauce": 2.50, ketchup: 3.00, mustard: 2.50, honey: 5.00,
-  sugar: 3.50, salt: 1.50, flour: 4.00, "baking powder": 2.50, "baking soda": 1.50,
+  sugar: 3.50, salt: 1.50, "baking powder": 2.50, "baking soda": 1.50,
   spice: 2.00, seasoning: 2.00, cumin: 2.50, paprika: 2.50, oregano: 2.50, cinnamon: 3.00,
   broth: 2.50, "tomato sauce": 1.50, "tomato paste": 1.00, salsa: 3.00,
   "peanut butter": 3.50, jam: 3.50, jelly: 3.00,
@@ -30,7 +29,7 @@ function estimateFallbackPrice(ingredientName: string): number {
   for (const [keyword, price] of Object.entries(FALLBACK_PRICES)) {
     if (lower.includes(keyword)) return price;
   }
-  return 2.50; // generic fallback
+  return 2.50;
 }
 
 function inferSection(ingredientName: string): string {
@@ -56,8 +55,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -65,9 +63,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace("Bearer ", "");
@@ -79,36 +75,52 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await anonClient.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
+    // ===== PARALLEL DB READS — fetch everything at once =====
+    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+      supabase.from("pantry_items").select("item_name, quantity, category").eq("user_id", user.id),
+      supabase.from("canonical_products").select("canonical_product_id, canonical_name, default_price, default_unit, category"),
+      supabase.from("canonical_product_aliases").select("alias_text, canonical_product_id"),
+      supabase.from("store_product_prices")
+        .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
+        .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+    ]);
 
-    if (profileError || !profile) {
+    const profile = profileRes.data;
+    if (profileRes.error || !profile) {
       return new Response(JSON.stringify({ error: "Profile not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: pantryItems } = await supabase
-      .from("pantry_items")
-      .select("item_name, quantity, category")
-      .eq("user_id", user.id);
+    const pantryItems = pantryRes.data || [];
+    const pantryList = pantryItems.map((i: any) => `${i.item_name} (${i.quantity})`).join(", ");
+    const pantrySet = new Set(pantryItems.map((i: any) => i.item_name.toLowerCase().replace(/[^a-z ]/g, "").trim()));
 
-    const pantryList = (pantryItems || [])
-      .map((i: any) => `${i.item_name} (${i.quantity})`)
-      .join(", ");
-
-    const pantrySet = new Set(
-      (pantryItems || []).map((i: any) => i.item_name.toLowerCase().replace(/[^a-z ]/g, "").trim())
-    );
+    // Build canonical + alias maps
+    const canonicalMap = new Map<string, { id: string; price: number; unit: string; category: string }>();
+    for (const cp of (canonicalRes.data || [])) {
+      if (cp.default_price) {
+        canonicalMap.set(cp.canonical_name.toLowerCase(), {
+          id: cp.canonical_product_id, price: Number(cp.default_price), unit: cp.default_unit || '', category: cp.category || '',
+        });
+      }
+    }
+    const aliasMap = new Map<string, string>();
+    for (const a of (aliasRes.data || [])) {
+      aliasMap.set(a.alias_text.toLowerCase(), a.canonical_product_id);
+    }
+    const cachedPriceMap = new Map<string, { price: number; salePrice: number | null; fresh: boolean }>();
+    for (const cp of (cachedPriceRes.data || [])) {
+      cachedPriceMap.set(cp.retailer_product_id, {
+        price: Number(cp.base_price), salePrice: cp.sale_price ? Number(cp.sale_price) : null,
+        fresh: cp.freshness_status === 'verified' || cp.freshness_status === 'recent',
+      });
+    }
 
     const budget = profile.weekly_budget || 75;
     const householdSize = profile.household_size || 2;
@@ -117,126 +129,28 @@ Deno.serve(async (req) => {
     const cookTimePref = profile.cooking_time_preference || "medium";
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
     const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
-
     const zipCode = profile.zip_code || "";
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
 
-    const systemPrompt = `You are the Hive Budget Meal Engine — an expert meal planning AI for Help The Hive. Your job is to generate a complete, realistic 6-day meal plan (Monday–Saturday) that stays within the user's grocery budget.
+    // Compact prompt — significantly fewer tokens for faster AI response
+    const systemPrompt = `You are the Hive Budget Meal Engine. Generate a 6-day meal plan (Mon–Sat, 3 meals/day) within the user's grocery budget.
 
-CRITICAL RULES:
-- Generate exactly 6 days: Monday through Saturday. Do NOT include Sunday.
-- Every meal must be a real, cookable recipe with common grocery store ingredients
-- The total grocery cost for ALL meals must stay at or below the weekly budget
-- Prioritize using pantry items the user already has to reduce costs
-- Adjust portion sizes for the household size
-- Respect all allergies and dietary preferences strictly
-- BATCH COOKING: Design recipes that share ingredients to minimize the grocery list size and cost.
+RULES: Real cookable recipes, common grocery ingredients, respect allergies/diet strictly, batch-cook to share ingredients, adjust for household size.
 
-LOCATION:
-- ZIP code: ${zipCode || "unknown"}
-- City: ${cityInfo.city}, ${cityInfo.state}
-- Region: ${regionInfo.region}
+LOCATION: ${cityInfo.city}, ${cityInfo.state} (ZIP ${zipCode || "?"}), region multiplier ${regionInfo.costMultiplier}x, tax ${regionInfo.groceryTaxRate}%.
 
-REAL-WORLD PRICING RULES:
-Use REAL 2025-2026 US grocery prices adjusted for ${cityInfo.city} using the ${regionInfo.costMultiplier}x regional multiplier.
+PRICING: Use real 2025-2026 US grocery prices. Store tiers: Aldi 0.80x, Walmart 0.90x, Target 0.95x, Kroger 1.0x, Safeway 1.02x, Whole Foods 1.25x, Trader Joe's 1.15x.
+Store brands: Walmart→Great Value, Aldi→Simply Nature, Target→Good & Gather, Kroger→Kroger/Simple Truth, Safeway→Signature Select, Whole Foods→365, Trader Joe's→Trader Joe's.
 
-Reference baseline prices:
-  * Eggs (dozen): $4.50  * Milk (gallon): $4.20  * Bread (loaf): $3.80
-  * Chicken breast (lb): $4.50  * Ground beef 80/20 (lb): $5.80  * Rice (2lb bag): $3.50
-  * Pasta (1lb box): $1.80  * Canned beans (15oz): $1.20  * Bananas (lb): $0.65
-  * Potatoes (5lb bag): $4.50  * Onions (3lb bag): $3.50  * Frozen veggies (16oz): $2.50
-  * Cheese block (8oz): $3.80  * Butter (1lb): $5.00  * Cooking oil (48oz): $5.50
+PIPELINE: 1) Generate 18 meals with ingredients+quantities 2) Aggregate all ingredients 3) Remove pantry items 4) Price per-store 5) Sum totals
 
-Store-specific price tiers:
-  * Aldi/Lidl: 0.80x  * Walmart: 0.90x  * Target: 0.95x  * Kroger: 1.0x
-  * Safeway/Albertsons: 1.02x  * Whole Foods: 1.25x  * Trader Joe's: 1.15x
+Respond with ONLY valid JSON:
+{"weeklyPlan":[{"day":"Monday","meals":[{"type":"breakfast","name":"...","calories":350,"protein":12,"carbs":45,"fats":10,"estimatedCost":1.50,"cookTimeMinutes":15,"ingredients":["1 lb chicken breast"],"instructions":["Step 1"]}]}],"groceryList":[{"name":"Chicken Breast","quantity":"3 lbs","estimatedPrice":13.50,"section":"Meat & Protein","brand":"Great Value","productDescription":"Great Value Boneless Skinless Chicken Breast, 3 lb","storePrices":{"Walmart":12.15,"Kroger":13.50},"storeProducts":{"Walmart":{"brand":"Great Value","productDescription":"..."}}}],"storeRecommendations":[{"store":"Walmart","estimatedTotal":68.00}],"totalEstimatedCost":68.00,"pantrySavings":12.00,"costPerMeal":2.50,"taxEstimate":2.04,"regionLabel":"${cityInfo.city}, ${cityInfo.state}","costOfLivingMultiplier":${regionInfo.costMultiplier}}`;
 
-State grocery tax: ${regionInfo.groceryTaxRate}%
+    const userPrompt = `Budget: $${budget} | Household: ${householdSize} | Allergies: ${allergies} | Diet: ${dietPrefs} | Cuisine: ${foodPrefs} | Cook time: ${cookTimePref} | Stores: ${stores} | Location: ${cityInfo.city}, ${cityInfo.state} (${regionInfo.costMultiplier}x) | Pantry: ${pantryList || "none"}
 
-STORE-SPECIFIC BRAND MAPPING (USE EXACT REAL BRANDS):
-- Walmart: "Great Value"  - Aldi: "Simply Nature", "Friendly Farms"
-- Target: "Good & Gather"  - Kroger: "Kroger", "Simple Truth"
-- Safeway: "Signature Select"  - Whole Foods: "365 by Whole Foods Market"
-- Trader Joe's: "Trader Joe's"
-
-CRITICAL PIPELINE — YOU MUST FOLLOW THIS EXACT ORDER:
-1. Generate 18 meals (6 days × 3 meals), each with a complete ingredients list
-2. Collect EVERY ingredient from ALL 18 meals into one master list
-3. Combine duplicates (e.g., "chicken breast" from 3 meals → total quantity)
-4. Remove any items the user already has in their pantry
-5. Price each remaining item per-store
-6. Sum all item prices to get store totals
-7. The groceryList MUST contain EVERY ingredient from step 2 (minus pantry items)
-
-You must respond with ONLY valid JSON in exactly this structure:
-{
-  "weeklyPlan": [
-    {
-      "day": "Monday",
-      "meals": [
-        {
-          "type": "breakfast",
-          "name": "Meal Name",
-          "calories": 350,
-          "protein": 12,
-          "carbs": 45,
-          "fats": 10,
-          "estimatedCost": 1.50,
-          "cookTimeMinutes": 15,
-          "ingredients": ["1 lb chicken breast", "2 cups rice", "1 tbsp olive oil"],
-          "instructions": ["Step 1", "Step 2"]
-        }
-      ]
-    }
-  ],
-  "groceryList": [
-    {
-      "name": "Chicken Breast",
-      "quantity": "3 lbs",
-      "estimatedPrice": 13.50,
-      "section": "Meat & Protein",
-      "brand": "Great Value",
-      "productDescription": "Great Value Boneless Skinless Chicken Breast, 3 lb",
-      "storePrices": { "Walmart": 12.15, "Kroger": 13.50, "Aldi": 10.80 },
-      "storeProducts": {
-        "Walmart": { "brand": "Great Value", "productDescription": "Great Value Boneless Skinless Chicken Breast, 3 lb" },
-        "Kroger": { "brand": "Kroger", "productDescription": "Kroger Boneless Skinless Chicken Breast, 3 lb" }
-      }
-    }
-  ],
-  "storeRecommendations": [
-    { "store": "Walmart", "estimatedTotal": 68.00 }
-  ],
-  "totalEstimatedCost": 68.00,
-  "pantrySavings": 12.00,
-  "costPerMeal": 2.50,
-  "taxEstimate": 2.04,
-  "regionLabel": "${cityInfo.city}, ${cityInfo.state}",
-  "costOfLivingMultiplier": ${regionInfo.costMultiplier}
-}`;
-
-    const userPrompt = `Generate a 6-day meal plan (Monday–Saturday, 3 meals per day: breakfast, lunch, dinner) for this household:
-
-- Weekly grocery budget: $${budget}
-- Household size: ${householdSize} people
-- Allergies: ${allergies}
-- Dietary preferences: ${dietPrefs}
-- Cuisine preferences: ${foodPrefs}
-- Cooking time: ${cookTimePref}
-- Preferred stores: ${stores}
-- Location: ${cityInfo.city}, ${cityInfo.state} (ZIP: ${zipCode || "unknown"}, cost multiplier: ${regionInfo.costMultiplier}x)
-- Items in pantry: ${pantryList || "none"}
-
-CRITICAL REQUIREMENTS:
-1. Every meal's "ingredients" must list SPECIFIC items with quantities (e.g., "1 lb chicken breast", not just "chicken")
-2. The "groceryList" must contain EVERY SINGLE ingredient from ALL 18 meals that is NOT in the pantry
-3. Aggregate quantities: if chicken breast appears in 3 meals (1lb + 1lb + 0.5lb), the grocery list entry should say "2.5 lbs"
-4. "totalEstimatedCost" MUST equal the EXACT sum of all groceryList items' "estimatedPrice" values
-5. Each store's "estimatedTotal" MUST equal the sum of that store's prices across ALL grocery items
-6. Every grocery item needs storePrices for at least 3 stores available in ${cityInfo.city}
-7. Include storeProducts with exact brand + product description per store
-8. Apply ${regionInfo.groceryTaxRate}% grocery tax for ${cityInfo.state}`;
+Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in groceryList (minus pantry). Aggregate quantities. Include storePrices for 3+ stores. totalEstimatedCost = sum of all estimatedPrice values.`;
 
     let aiResponse;
     try {
@@ -249,7 +163,7 @@ CRITICAL REQUIREMENTS:
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "google/gemini-2.5-flash-lite",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
@@ -270,279 +184,152 @@ CRITICAL REQUIREMENTS:
       const errText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please try again later." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please try again later." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      return new Response(
-        JSON.stringify({ error: "AI service error. Please try again." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "AI service error. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
-      return new Response(
-        JSON.stringify({ error: "Empty AI response. Please try again." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Empty AI response. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let mealPlan;
     try {
       const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       mealPlan = JSON.parse(jsonStr);
-    } catch (parseErr) {
+    } catch {
       console.error("Failed to parse AI response:", content.substring(0, 500));
-      return new Response(
-        JSON.stringify({ error: "Failed to parse meal plan. Please try again." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Failed to parse meal plan. Please try again." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ===== POST-AI VALIDATION: Enforce 1:1 ingredient→grocery mapping =====
-
-    // Step 1: Extract ALL ingredients from ALL meals
+    // ===== POST-AI VALIDATION =====
     const ingredientAggregator: Record<string, { totalMentions: number; rawTexts: string[] }> = {};
     for (const day of mealPlan.weeklyPlan || []) {
       for (const meal of day.meals || []) {
         for (const ing of meal.ingredients || []) {
-          // Normalize: strip quantities to get base ingredient name
           const normalized = ing.toLowerCase()
             .replace(/^\d+[\s\/]*\d*\s*(lb|lbs|oz|cup|cups|tbsp|tsp|can|cans|clove|cloves|bunch|bunches|head|heads|pkg|package|bag|bottle|jar|gallon|quart|pint|dozen|slice|slices|piece|pieces|stick|sticks|box|boxes)s?\s*/i, "")
-            .replace(/^\d+[\.\d]*\s*/g, "")
-            .replace(/[^a-z ]/g, "")
-            .trim();
-          
+            .replace(/^\d+[\.\d]*\s*/g, "").replace(/[^a-z ]/g, "").trim();
           if (!normalized || normalized.length < 2) continue;
-          
-          // Skip pantry items
           const inPantry = [...pantrySet].some(p => normalized.includes(p) || p.includes(normalized));
           if (inPantry) continue;
-
-          if (!ingredientAggregator[normalized]) {
-            ingredientAggregator[normalized] = { totalMentions: 0, rawTexts: [] };
-          }
+          if (!ingredientAggregator[normalized]) ingredientAggregator[normalized] = { totalMentions: 0, rawTexts: [] };
           ingredientAggregator[normalized].totalMentions++;
           ingredientAggregator[normalized].rawTexts.push(ing);
         }
       }
     }
 
-    // Step 2: Build a map of existing grocery list items
     const existingGroceryMap = new Map<string, any>();
     for (const item of (mealPlan.groceryList || [])) {
-      const key = item.name.toLowerCase().replace(/[^a-z ]/g, "").trim();
-      existingGroceryMap.set(key, item);
+      existingGroceryMap.set(item.name.toLowerCase().replace(/[^a-z ]/g, "").trim(), item);
     }
 
-    // Step 3: Find missing ingredients and add them
-    const missingIngredients: string[] = [];
     for (const [normalized, info] of Object.entries(ingredientAggregator)) {
-      const found = [...existingGroceryMap.keys()].some(
-        gn => normalized.includes(gn) || gn.includes(normalized)
-      );
+      const found = [...existingGroceryMap.keys()].some(gn => normalized.includes(gn) || gn.includes(normalized));
       if (!found) {
-        missingIngredients.push(normalized);
-        // Add missing item with fallback pricing
         const price = estimateFallbackPrice(normalized) * regionInfo.costMultiplier;
         const roundedPrice = Math.round(price * 100) / 100;
         const displayName = normalized.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-        
         const newItem: any = {
-          name: displayName,
-          quantity: info.rawTexts[0] || "1",
-          estimatedPrice: roundedPrice,
-          section: inferSection(normalized),
-          brand: inferStoreBrand(stores.split(",")[0]?.trim() || ""),
-          productDescription: displayName,
-          storePrices: {},
-          storeProducts: {},
+          name: displayName, quantity: info.rawTexts[0] || "1", estimatedPrice: roundedPrice,
+          section: inferSection(normalized), brand: inferStoreBrand(stores.split(",")[0]?.trim() || ""),
+          productDescription: displayName, storePrices: {}, storeProducts: {},
         };
-
-        // Add store prices for user's preferred stores
-        const userStores = (profile.preferred_stores || []);
-        for (const storeName of userStores.slice(0, 4)) {
+        for (const storeName of (profile.preferred_stores || []).slice(0, 4)) {
           const multiplier = getStoreMultiplier(storeName);
           newItem.storePrices[storeName] = Math.round(price * multiplier * 100) / 100;
-          newItem.storeProducts[storeName] = {
-            brand: inferStoreBrand(storeName),
-            productDescription: `${inferStoreBrand(storeName)} ${displayName}`,
-          };
+          newItem.storeProducts[storeName] = { brand: inferStoreBrand(storeName), productDescription: `${inferStoreBrand(storeName)} ${displayName}` };
         }
-
         mealPlan.groceryList.push(newItem);
       }
     }
 
-    if (missingIngredients.length > 0) {
-      console.warn("Added missing ingredients to grocery list:", missingIngredients);
-    }
-
-    // Step 4: Enrich pricing from cached DB data (canonical_products + store_product_prices)
-    const { data: canonicalProducts } = await supabase
-      .from("canonical_products")
-      .select("canonical_product_id, canonical_name, default_price, default_unit, category");
-    
-    const canonicalMap = new Map<string, { id: string; price: number; unit: string; category: string }>();
-    for (const cp of (canonicalProducts || [])) {
-      if (cp.default_price) {
-        canonicalMap.set(cp.canonical_name.toLowerCase(), {
-          id: cp.canonical_product_id,
-          price: Number(cp.default_price),
-          unit: cp.default_unit || '',
-          category: cp.category || '',
-        });
-      }
-    }
-
-    // Also load aliases for fuzzy matching
-    const { data: aliases } = await supabase
-      .from("canonical_product_aliases")
-      .select("alias_text, canonical_product_id");
-    
-    const aliasMap = new Map<string, string>();
-    for (const a of (aliases || [])) {
-      aliasMap.set(a.alias_text.toLowerCase(), a.canonical_product_id);
-    }
-
-    // Load cached store prices (last 7 days)
-    const { data: cachedPrices } = await supabase
-      .from("store_product_prices")
-      .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
-      .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-    const cachedPriceMap = new Map<string, { price: number; salePrice: number | null; fresh: boolean }>();
-    for (const cp of (cachedPrices || [])) {
-      cachedPriceMap.set(cp.retailer_product_id, {
-        price: Number(cp.base_price),
-        salePrice: cp.sale_price ? Number(cp.sale_price) : null,
-        fresh: cp.freshness_status === 'verified' || cp.freshness_status === 'recent',
-      });
-    }
-
-    // Step 5: Assign pricing source and confidence to each grocery item
+    // Enrich pricing from canonical DB
     mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
       const lowerName = item.name.toLowerCase();
       let pricingSource = 'ai_estimate';
       let pricingConfidence = 'low';
 
-      // Try canonical product match for internal estimate pricing
-      const canonical = canonicalMap.get(lowerName) || 
+      const canonical = canonicalMap.get(lowerName) ||
         [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
-      
+
       if (canonical) {
-        // Use canonical DB price as baseline (more accurate than AI guess)
-        const dbPrice = canonical.price * regionInfo.costMultiplier;
-        item.estimatedPrice = Math.round(dbPrice * 100) / 100;
+        item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
         pricingSource = 'internal_estimate';
         pricingConfidence = 'medium';
       }
 
-      // Check if we have any cached store prices (would override internal)
-      // This happens when Kroger sync has previously cached prices
       if (item.storePrices && Object.keys(item.storePrices).length > 0) {
-        pricingSource = 'ai_estimate'; // store prices from AI prompt
+        pricingSource = 'ai_estimate';
         pricingConfidence = 'medium';
       }
 
       item.pricingSource = pricingSource;
       item.pricingConfidence = pricingConfidence;
 
-      // Ensure store-specific brand/product naming
-      const storeNames = Object.keys(item.storePrices || {});
-      const storeProducts: Record<string, { brand: string; productDescription: string }> = {
-        ...(item.storeProducts || {}),
-      };
-
-      for (const storeName of storeNames) {
+      const storeProducts: Record<string, { brand: string; productDescription: string }> = { ...(item.storeProducts || {}) };
+      for (const storeName of Object.keys(item.storePrices || {})) {
         const existing = storeProducts[storeName] || {};
         const brand = existing.brand || inferStoreBrand(storeName, item.brand);
-        const productDescription =
-          existing.productDescription ||
-          buildStoreProductDescription(brand, item.name, item.quantity);
-
-        storeProducts[storeName] = { brand, productDescription };
+        storeProducts[storeName] = { brand, productDescription: existing.productDescription || `${brand} ${item.name}, ${item.quantity}`.trim() };
       }
 
       return { ...item, storeProducts };
     });
 
-    // Step 6: Calculate pricing confidence summary
+    // Pricing confidence summary
     const groceryList = mealPlan.groceryList || [];
-    let exactCount = 0;
-    let cachedCount = 0;
-    let estimatedCount = 0;
+    let exactCount = 0, cachedCount = 0, estimatedCount = 0;
     for (const item of groceryList) {
       if (item.pricingSource === 'live') exactCount++;
       else if (item.pricingSource === 'cached') cachedCount++;
       else estimatedCount++;
     }
-    const totalGroceryItems = groceryList.length;
     mealPlan.pricingConfidence = {
-      exactPricedCount: exactCount,
-      cachedPricedCount: cachedCount,
-      estimatedCount: estimatedCount,
-      totalItems: totalGroceryItems,
-      confidencePercent: totalGroceryItems > 0 
-        ? Math.round(((exactCount + cachedCount) / totalGroceryItems) * 100)
-        : 0,
+      exactPricedCount: exactCount, cachedPricedCount: cachedCount, estimatedCount,
+      totalItems: groceryList.length,
+      confidencePercent: groceryList.length > 0 ? Math.round(((exactCount + cachedCount) / groceryList.length) * 100) : 0,
     };
 
-    // Step 7: Calculate costPerServing for each meal
-    const householdSizeNum = profile.household_size || 2;
+    // costPerServing
     for (const day of (mealPlan.weeklyPlan || [])) {
       for (const meal of (day.meals || [])) {
-        if (meal.estimatedCost && householdSizeNum > 0) {
-          meal.costPerServing = Math.round((meal.estimatedCost / householdSizeNum) * 100) / 100;
+        if (meal.estimatedCost && householdSize > 0) {
+          meal.costPerServing = Math.round((meal.estimatedCost / householdSize) * 100) / 100;
         }
       }
     }
 
-    // Step 8: Recalculate ALL totals from actual grocery items (single source of truth)
-    const recalcTotal = (mealPlan.groceryList || []).reduce(
-      (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
-    );
+    // Recalculate totals
+    const recalcTotal = groceryList.reduce((sum: number, item: any) => sum + (item.estimatedPrice || 0), 0);
     mealPlan.totalEstimatedCost = Math.round(recalcTotal * 100) / 100;
 
-    // Recalculate store recommendation totals
     if (mealPlan.storeRecommendations) {
       for (const rec of mealPlan.storeRecommendations) {
-        const storeTotal = (mealPlan.groceryList || []).reduce((sum: number, item: any) => {
-          const sp = item.storePrices?.[rec.store];
-          return sum + (sp ?? item.estimatedPrice ?? 0);
-        }, 0);
-        rec.estimatedTotal = Math.round(storeTotal * 100) / 100;
+        rec.estimatedTotal = Math.round(groceryList.reduce((sum: number, item: any) => sum + (item.storePrices?.[rec.store] ?? item.estimatedPrice ?? 0), 0) * 100) / 100;
       }
     }
 
-    // Recalculate costPerMeal
-    const totalMealCount = (mealPlan.weeklyPlan || []).reduce(
-      (n: number, d: any) => n + (d.meals?.length || 0), 0
-    );
-    if (totalMealCount > 0) {
-      mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
-    }
-
-    // Recalculate tax
+    const totalMealCount = (mealPlan.weeklyPlan || []).reduce((n: number, d: any) => n + (d.meals?.length || 0), 0);
+    if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
     mealPlan.taxEstimate = Math.round(recalcTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
 
-    // Step 9: Budget lock — if total exceeds budget by >15%, flag it
-    const budgetNum = profile.weekly_budget || 75;
-    if (mealPlan.totalEstimatedCost > budgetNum * 1.15) {
-      console.warn(`Meal plan exceeds budget: $${mealPlan.totalEstimatedCost} vs $${budgetNum} budget. Scaling down prices.`);
-      // Scale grocery prices proportionally to fit within budget
-      const scaleFactor = budgetNum / mealPlan.totalEstimatedCost;
-      for (const item of (mealPlan.groceryList || [])) {
+    // Budget lock
+    if (mealPlan.totalEstimatedCost > budget * 1.15) {
+      const scaleFactor = budget / mealPlan.totalEstimatedCost;
+      for (const item of groceryList) {
         item.estimatedPrice = Math.round((item.estimatedPrice || 0) * scaleFactor * 100) / 100;
         if (item.storePrices) {
           for (const store of Object.keys(item.storePrices)) {
@@ -550,183 +337,107 @@ CRITICAL REQUIREMENTS:
           }
         }
       }
-      // Recalculate totals after scaling
-      const scaledTotal = (mealPlan.groceryList || []).reduce(
-        (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
-      );
+      const scaledTotal = groceryList.reduce((sum: number, item: any) => sum + (item.estimatedPrice || 0), 0);
       mealPlan.totalEstimatedCost = Math.round(scaledTotal * 100) / 100;
       if (mealPlan.storeRecommendations) {
         for (const rec of mealPlan.storeRecommendations) {
-          const storeTotal = (mealPlan.groceryList || []).reduce((sum: number, item: any) => {
-            const sp = item.storePrices?.[rec.store];
-            return sum + (sp ?? item.estimatedPrice ?? 0);
-          }, 0);
-          rec.estimatedTotal = Math.round(storeTotal * 100) / 100;
+          rec.estimatedTotal = Math.round(groceryList.reduce((sum: number, item: any) => sum + (item.storePrices?.[rec.store] ?? item.estimatedPrice ?? 0), 0) * 100) / 100;
         }
       }
-      if (totalMealCount > 0) {
-        mealPlan.costPerMeal = Math.round((scaledTotal / totalMealCount) * 100) / 100;
-      }
+      if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((scaledTotal / totalMealCount) * 100) / 100;
       mealPlan.taxEstimate = Math.round(scaledTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
     }
 
-    // Step 10: Calculate savings vs regional average
-    // Regional average = what similar meals would cost without optimization (no batch cooking, no pantry deductions, no budget scaling)
-    const REGIONAL_MARKUP = 1.30; // Typical non-optimized grocery cost is ~30% higher
+    // Savings summary
+    const REGIONAL_MARKUP = 1.30;
     const actualCost = mealPlan.totalEstimatedCost || 0;
     const regionalAverage = Math.round(actualCost * REGIONAL_MARKUP * 100) / 100;
     const estimatedSavings = Math.round((regionalAverage - actualCost) * 100) / 100;
-    const savingsPercent = regionalAverage > 0 ? Math.round((estimatedSavings / regionalAverage) * 100) : 0;
-
-    // Confidence is based on how many items have exact pricing
-    const savingsConfidence = mealPlan.pricingConfidence?.confidencePercent 
-      ? Math.min(mealPlan.pricingConfidence.confidencePercent + 20, 100) 
-      : 60;
-
     mealPlan.savingsSummary = {
       actualGroceryCost: actualCost,
       regionalAverageCost: regionalAverage,
       estimatedSavings,
-      savingsPercent,
-      confidenceScore: savingsConfidence,
+      savingsPercent: regionalAverage > 0 ? Math.round((estimatedSavings / regionalAverage) * 100) : 0,
+      confidenceScore: Math.min((mealPlan.pricingConfidence?.confidencePercent || 40) + 20, 100),
     };
 
-    // Save meal plan to database
+    // ===== PARALLEL DB WRITES =====
     const weekStart = getNextMonday();
 
-    await supabase
-      .from("meal_plan_items")
-      .delete()
-      .eq("user_id", user.id)
-      .gte("created_at", weekStart);
+    // Delete old data in parallel
+    await Promise.all([
+      supabase.from("meal_plan_items").delete().eq("user_id", user.id).gte("created_at", weekStart),
+      supabase.from("grocery_list_items").delete().eq("user_id", user.id),
+      supabase.from("grocery_lists").delete().eq("user_id", user.id).eq("status", "active"),
+    ]);
 
+    // Upsert meal plan
     const { data: existingPlan } = await supabase
-      .from("meal_plans")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("week_start", weekStart)
-      .single();
+      .from("meal_plans").select("id").eq("user_id", user.id).eq("week_start", weekStart).single();
 
     let mealPlanId: string;
-
     if (existingPlan) {
-      await supabase
-        .from("meal_plans")
-        .update({
-          total_estimated_cost: mealPlan.totalEstimatedCost,
-          status: "active",
-          plan_data: mealPlan,
-        })
-        .eq("id", existingPlan.id);
+      await supabase.from("meal_plans").update({
+        total_estimated_cost: mealPlan.totalEstimatedCost, status: "active", plan_data: mealPlan,
+      }).eq("id", existingPlan.id);
       mealPlanId = existingPlan.id;
     } else {
       const { data: newPlan, error: planError } = await supabase
-        .from("meal_plans")
-        .insert({
-          user_id: user.id,
-          week_start: weekStart,
-          total_estimated_cost: mealPlan.totalEstimatedCost,
-          status: "active",
-          plan_data: mealPlan,
-        })
-        .select("id")
-        .single();
-
+        .from("meal_plans").insert({
+          user_id: user.id, week_start: weekStart,
+          total_estimated_cost: mealPlan.totalEstimatedCost, status: "active", plan_data: mealPlan,
+        }).select("id").single();
       if (planError) throw planError;
       mealPlanId = newPlan.id;
     }
 
-    // Insert meal plan items
-    const dayMap: Record<string, number> = {
-      Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3,
-      Friday: 4, Saturday: 5, Sunday: 6,
-    };
-
+    // Build items for parallel insert
+    const dayMap: Record<string, number> = { Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6 };
     const mealItems = (mealPlan.weeklyPlan || []).flatMap((day: any) =>
       (day.meals || []).map((meal: any) => ({
-        meal_plan_id: mealPlanId,
-        user_id: user.id,
-        day_of_week: dayMap[day.day] ?? 0,
-        meal_type: meal.type || "dinner",
-        meal_name: meal.name,
-        calories: meal.calories,
-        protein_g: meal.protein,
-        carbs_g: meal.carbs,
-        fats_g: meal.fats,
-        estimated_cost: meal.estimatedCost,
+        meal_plan_id: mealPlanId, user_id: user.id, day_of_week: dayMap[day.day] ?? 0,
+        meal_type: meal.type || "dinner", meal_name: meal.name, calories: meal.calories,
+        protein_g: meal.protein, carbs_g: meal.carbs, fats_g: meal.fats, estimated_cost: meal.estimatedCost,
       }))
     );
 
-    if (mealItems.length > 0) {
-      await supabase.from("meal_plan_items").insert(mealItems);
-    }
+    // Grocery list + items + savings — all in parallel
+    const groceryListInsert = supabase.from("grocery_lists").insert({
+      user_id: user.id, meal_plan_id: mealPlanId,
+      store_name: mealPlan.storeRecommendations?.[0]?.store || "Any",
+      estimated_total: mealPlan.totalEstimatedCost, tax_rate: regionInfo.groceryTaxRate / 100, status: "active",
+    }).select("id").single();
 
-    // Save grocery list
-    await supabase
-      .from("grocery_list_items")
-      .delete()
-      .eq("user_id", user.id);
+    const mealItemsInsert = mealItems.length > 0 ? supabase.from("meal_plan_items").insert(mealItems) : Promise.resolve();
 
-    await supabase
-      .from("grocery_lists")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("status", "active");
+    const savingsInsert = mealPlan.savingsSummary ? supabase.from("grocery_cost_comparisons").insert({
+      user_id: user.id, meal_plan_id: mealPlanId, zip_code: zipCode || null,
+      selected_store: mealPlan.storeRecommendations?.[0]?.store || null,
+      actual_grocery_cost: mealPlan.savingsSummary.actualGroceryCost,
+      regional_average_cost: mealPlan.savingsSummary.regionalAverageCost,
+      estimated_savings: mealPlan.savingsSummary.estimatedSavings,
+      confidence_score: mealPlan.savingsSummary.confidenceScore,
+      store_comparisons: mealPlan.storeRecommendations || [],
+    }) : Promise.resolve();
 
-    const { data: savedGroceryList, error: glError } = await supabase
-      .from("grocery_lists")
-      .insert({
-        user_id: user.id,
-        meal_plan_id: mealPlanId,
-        store_name: mealPlan.storeRecommendations?.[0]?.store || "Any",
-        estimated_total: mealPlan.totalEstimatedCost,
-        tax_rate: regionInfo.groceryTaxRate / 100,
-        status: "active",
-      })
-      .select("id")
-      .single();
+    const [glResult] = await Promise.all([groceryListInsert, mealItemsInsert, savingsInsert]);
 
-    if (!glError && savedGroceryList) {
+    if (glResult?.data?.id) {
       const groceryItems = (mealPlan.groceryList || []).map((item: any) => ({
-        grocery_list_id: savedGroceryList.id,
-        user_id: user.id,
-        ingredient_name: item.name,
-        quantity: item.quantity,
-        estimated_price: item.estimatedPrice,
-        store_section: item.section,
-        is_checked: false,
+        grocery_list_id: glResult.data.id, user_id: user.id,
+        ingredient_name: item.name, quantity: item.quantity,
+        estimated_price: item.estimatedPrice, store_section: item.section, is_checked: false,
       }));
-
-      if (groceryItems.length > 0) {
-        await supabase.from("grocery_list_items").insert(groceryItems);
-      }
-    }
-
-    // Save savings comparison
-    if (mealPlan.savingsSummary) {
-      await supabase.from("grocery_cost_comparisons").insert({
-        user_id: user.id,
-        meal_plan_id: mealPlanId,
-        zip_code: zipCode || null,
-        selected_store: mealPlan.storeRecommendations?.[0]?.store || null,
-        actual_grocery_cost: mealPlan.savingsSummary.actualGroceryCost,
-        regional_average_cost: mealPlan.savingsSummary.regionalAverageCost,
-        estimated_savings: mealPlan.savingsSummary.estimatedSavings,
-        confidence_score: mealPlan.savingsSummary.confidenceScore,
-        store_comparisons: mealPlan.storeRecommendations || [],
-      });
+      if (groceryItems.length > 0) await supabase.from("grocery_list_items").insert(groceryItems);
     }
 
     return new Response(JSON.stringify(mealPlan), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Meal engine error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
@@ -756,17 +467,12 @@ function getNextMonday(): string {
   return monday.toISOString().split("T")[0];
 }
 
-interface RegionInfo {
-  region: string;
-  costMultiplier: number;
-  groceryTaxRate: number;
-}
+interface RegionInfo { region: string; costMultiplier: number; groceryTaxRate: number; }
 
 function getRegionInfo(zip: string): RegionInfo {
   if (!zip) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
   const prefix = parseInt(zip.substring(0, 3), 10);
   if (isNaN(prefix)) return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
-
   if (prefix >= 100 && prefix <= 149) return { region: "New York Metro", costMultiplier: 1.35, groceryTaxRate: 4.0 };
   if (prefix >= 150 && prefix <= 196) return { region: "Pennsylvania", costMultiplier: 1.05, groceryTaxRate: 0.0 };
   if (prefix >= 197 && prefix <= 199) return { region: "Delaware", costMultiplier: 1.0, groceryTaxRate: 0.0 };
@@ -811,7 +517,6 @@ function getRegionInfo(zip: string): RegionInfo {
   if (prefix >= 995 && prefix <= 999) return { region: "Alaska", costMultiplier: 1.40, groceryTaxRate: 0.0 };
   if (prefix >= 967 && prefix <= 968) return { region: "Hawaii", costMultiplier: 1.55, groceryTaxRate: 4.0 };
   if (prefix >= 10 && prefix <= 69) return { region: "Northeast US", costMultiplier: 1.15, groceryTaxRate: 0.0 };
-
   return { region: "National Average", costMultiplier: 1.0, groceryTaxRate: 3.0 };
 }
 
@@ -908,8 +613,4 @@ function inferStoreBrand(storeName: string, fallbackBrand?: string): string {
   if (lower.includes("heb") || lower.includes("h-e-b")) return "HEB";
   if (lower.includes("publix")) return "Publix";
   return fallbackBrand || storeName;
-}
-
-function buildStoreProductDescription(brand: string, itemName: string, quantity: string): string {
-  return `${brand} ${itemName}, ${quantity}`.trim();
 }
