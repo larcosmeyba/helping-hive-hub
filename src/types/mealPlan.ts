@@ -30,11 +30,21 @@ export interface GroceryItem {
   productDescription?: string;
   storePrices?: Record<string, number>;
   storeProducts?: Record<string, StoreSpecificProduct>;
+  pricingSource?: 'live' | 'cached' | 'internal_estimate' | 'ai_estimate';
+  pricingConfidence?: 'high' | 'medium' | 'low';
 }
 
 export interface StoreRecommendation {
   store: string;
   estimatedTotal: number;
+}
+
+export interface PricingConfidenceSummary {
+  exactPricedCount: number;
+  cachedPricedCount: number;
+  estimatedCount: number;
+  totalItems: number;
+  confidencePercent: number;
 }
 
 export interface GeneratedMealPlan {
@@ -47,4 +57,5 @@ export interface GeneratedMealPlan {
   taxEstimate: number;
   regionLabel?: string;
   costOfLivingMultiplier?: number;
+  pricingConfidence?: PricingConfidenceSummary;
 }
