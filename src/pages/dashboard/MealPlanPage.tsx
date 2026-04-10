@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2 } from "lucide-react";
+import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -157,6 +157,20 @@ export default function MealPlanPage() {
     setSubstituteOpen(null);
   };
 
+  // Calculate cost impact of current swaps
+  const getSwapCostImpact = () => {
+    if (!mealPlan) return 0;
+    let diff = 0;
+    for (const [key, newMeal] of Object.entries(swappedMeals)) {
+      const [dayIdx, mealIdx] = key.split("-").map(Number);
+      const originalMeal = mealPlan.weeklyPlan[dayIdx]?.meals[mealIdx];
+      if (originalMeal) {
+        diff += (newMeal.estimatedCost || 0) - (originalMeal.estimatedCost || 0);
+      }
+    }
+    return diff;
+  };
+
   const handleRegenerate = async () => {
     // Save current plan before regenerating
     if (mealPlan) {
@@ -222,6 +236,23 @@ export default function MealPlanPage() {
         </div>
       </div>
 
+      {/* Swap Cost Impact Banner */}
+      {Object.keys(swappedMeals).length > 0 && (() => {
+        const impact = getSwapCostImpact();
+        return (
+          <div className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ${impact > 0 ? 'bg-destructive/10 text-destructive' : impact < 0 ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>
+              {impact > 0
+                ? `Swaps add +$${impact.toFixed(2)} to grocery cost`
+                : impact < 0
+                  ? `Swaps save $${Math.abs(impact).toFixed(2)} on grocery cost`
+                  : "Swaps have no cost impact"}
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Regenerate + Restore buttons */}
       <div className="flex gap-2">
         <Button
@@ -286,6 +317,11 @@ export default function MealPlanPage() {
                     </div>
                     <div className="p-1.5 md:p-3 flex items-center gap-2 text-[9px] md:text-xs text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 text-primary" />{meal.calories} cal</span>
+                      {meal.costPerServing != null && (
+                        <span className="flex items-center gap-0.5 text-primary font-medium">
+                          <DollarSign className="w-2 h-2" />{meal.costPerServing.toFixed(2)}/srv
+                        </span>
+                      )}
                     </div>
                   </button>
                   {/* Only Swap button below card */}
@@ -339,6 +375,11 @@ export default function MealPlanPage() {
                   <span className="bg-muted px-3 py-1 rounded-full flex items-center gap-1">
                     <Clock className="w-3 h-3" /> {selectedMeal.cookTimeMinutes} min
                   </span>
+                  {selectedMeal.costPerServing != null && (
+                    <span className="bg-accent/10 text-accent px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+                      <DollarSign className="w-3 h-3" /> ${selectedMeal.costPerServing.toFixed(2)}/serving
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein}g</p><p className="text-muted-foreground">Protein</p></div>
@@ -394,19 +435,28 @@ export default function MealPlanPage() {
                   mealPlan.weeklyPlan[substituteOpen.dayIndex]?.meals[substituteOpen.mealIndex]
                 );
                 const alternatives = SUBSTITUTE_MEALS[currentMeal.type] || SUBSTITUTE_MEALS.dinner;
-                return alternatives.map((alt) => (
-                  <button
-                    key={alt.name}
-                    onClick={() => handleSwap(substituteOpen.dayIndex, substituteOpen.mealIndex, alt)}
-                    className="w-full text-left bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-card transition-all"
-                  >
-                    <h4 className="font-semibold text-foreground">{alt.name}</h4>
-                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
-                    </div>
-                  </button>
-                ));
+                return alternatives.map((alt) => {
+                  const costDiff = (alt.estimatedCost || 0) - (currentMeal.estimatedCost || 0);
+                  return (
+                    <button
+                      key={alt.name}
+                      onClick={() => handleSwap(substituteOpen.dayIndex, substituteOpen.mealIndex, alt)}
+                      className="w-full text-left bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-card transition-all"
+                    >
+                      <h4 className="font-semibold text-foreground">{alt.name}</h4>
+                      <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
+                        <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${alt.estimatedCost.toFixed(2)}</span>
+                        {costDiff !== 0 && (
+                          <span className={`font-semibold ${costDiff > 0 ? 'text-destructive' : 'text-accent'}`}>
+                            {costDiff > 0 ? `+$${costDiff.toFixed(2)}` : `-$${Math.abs(costDiff).toFixed(2)}`}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                });
               })()}
             </div>
           )}

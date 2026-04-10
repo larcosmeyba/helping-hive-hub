@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flame, ChevronDown, ChevronUp } from "lucide-react";
+import { Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
@@ -125,6 +125,11 @@ export function MealCard({ meal, compact, onClick }: Props) {
       <div className={compact ? 'p-1' : 'p-3'}>
         <div className={`flex items-center gap-1 text-muted-foreground ${compact ? 'text-[8px]' : 'text-sm'}`}>
           <span className="flex items-center gap-0.5"><Flame className={`text-primary ${compact ? 'w-2 h-2' : 'w-3.5 h-3.5'}`} />{meal.calories}</span>
+          {!compact && meal.costPerServing != null && (
+            <span className="flex items-center gap-0.5 text-primary font-medium">
+              <DollarSign className={compact ? 'w-2 h-2' : 'w-3 h-3'} />${meal.costPerServing.toFixed(2)}/srv
+            </span>
+          )}
         </div>
 
         {!compact && (
