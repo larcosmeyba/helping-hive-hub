@@ -275,7 +275,7 @@ export default function MealPlanPage() {
                         alt={meal.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
                       />
                       <div className="absolute top-1 left-1">
                         <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
@@ -325,7 +325,7 @@ export default function MealPlanPage() {
                   src={getMealImage(selectedMeal.name)}
                   alt={selectedMeal.name}
                   className="w-full h-48 object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
                 />
               </div>
               <DialogHeader>
