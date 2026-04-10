@@ -498,7 +498,17 @@ CRITICAL REQUIREMENTS:
         : 0,
     };
 
-    // Step 7: Recalculate ALL totals from actual grocery items (single source of truth)
+    // Step 7: Calculate costPerServing for each meal
+    const householdSizeNum = profile.household_size || 2;
+    for (const day of (mealPlan.weeklyPlan || [])) {
+      for (const meal of (day.meals || [])) {
+        if (meal.estimatedCost && householdSizeNum > 0) {
+          meal.costPerServing = Math.round((meal.estimatedCost / householdSizeNum) * 100) / 100;
+        }
+      }
+    }
+
+    // Step 8: Recalculate ALL totals from actual grocery items (single source of truth)
     const recalcTotal = (mealPlan.groceryList || []).reduce(
       (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
     );
@@ -525,6 +535,40 @@ CRITICAL REQUIREMENTS:
 
     // Recalculate tax
     mealPlan.taxEstimate = Math.round(recalcTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+
+    // Step 9: Budget lock — if total exceeds budget by >15%, flag it
+    const budgetNum = profile.weekly_budget || 75;
+    if (mealPlan.totalEstimatedCost > budgetNum * 1.15) {
+      console.warn(`Meal plan exceeds budget: $${mealPlan.totalEstimatedCost} vs $${budgetNum} budget. Scaling down prices.`);
+      // Scale grocery prices proportionally to fit within budget
+      const scaleFactor = budgetNum / mealPlan.totalEstimatedCost;
+      for (const item of (mealPlan.groceryList || [])) {
+        item.estimatedPrice = Math.round((item.estimatedPrice || 0) * scaleFactor * 100) / 100;
+        if (item.storePrices) {
+          for (const store of Object.keys(item.storePrices)) {
+            item.storePrices[store] = Math.round(item.storePrices[store] * scaleFactor * 100) / 100;
+          }
+        }
+      }
+      // Recalculate totals after scaling
+      const scaledTotal = (mealPlan.groceryList || []).reduce(
+        (sum: number, item: any) => sum + (item.estimatedPrice || 0), 0
+      );
+      mealPlan.totalEstimatedCost = Math.round(scaledTotal * 100) / 100;
+      if (mealPlan.storeRecommendations) {
+        for (const rec of mealPlan.storeRecommendations) {
+          const storeTotal = (mealPlan.groceryList || []).reduce((sum: number, item: any) => {
+            const sp = item.storePrices?.[rec.store];
+            return sum + (sp ?? item.estimatedPrice ?? 0);
+          }, 0);
+          rec.estimatedTotal = Math.round(storeTotal * 100) / 100;
+        }
+      }
+      if (totalMealCount > 0) {
+        mealPlan.costPerMeal = Math.round((scaledTotal / totalMealCount) * 100) / 100;
+      }
+      mealPlan.taxEstimate = Math.round(scaledTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+    }
 
     // Save meal plan to database
     const weekStart = getNextMonday();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2 } from "lucide-react";
+import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -157,6 +157,20 @@ export default function MealPlanPage() {
     setSubstituteOpen(null);
   };
 
+  // Calculate cost impact of current swaps
+  const getSwapCostImpact = () => {
+    if (!mealPlan) return 0;
+    let diff = 0;
+    for (const [key, newMeal] of Object.entries(swappedMeals)) {
+      const [dayIdx, mealIdx] = key.split("-").map(Number);
+      const originalMeal = mealPlan.weeklyPlan[dayIdx]?.meals[mealIdx];
+      if (originalMeal) {
+        diff += (newMeal.estimatedCost || 0) - (originalMeal.estimatedCost || 0);
+      }
+    }
+    return diff;
+  };
+
   const handleRegenerate = async () => {
     // Save current plan before regenerating
     if (mealPlan) {
@@ -286,6 +300,11 @@ export default function MealPlanPage() {
                     </div>
                     <div className="p-1.5 md:p-3 flex items-center gap-2 text-[9px] md:text-xs text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 text-primary" />{meal.calories} cal</span>
+                      {meal.costPerServing != null && (
+                        <span className="flex items-center gap-0.5 text-primary font-medium">
+                          <DollarSign className="w-2 h-2" />{meal.costPerServing.toFixed(2)}/srv
+                        </span>
+                      )}
                     </div>
                   </button>
                   {/* Only Swap button below card */}
