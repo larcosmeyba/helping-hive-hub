@@ -124,7 +124,8 @@ const MEAL_IMAGES: Record<string, string> = {
   skillet: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
 };
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+// Neutral placeholder — shown when no keyword matches (never a random food photo)
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=400&h=300&fit=crop&q=80";
 
 function getMealImage(name: string): string {
   const lower = name.toLowerCase();
@@ -136,7 +137,7 @@ function getMealImage(name: string): string {
   for (const [keyword, url] of Object.entries(MEAL_IMAGES)) {
     if (!keyword.includes(" ") && lower.includes(keyword)) return url;
   }
-  return DEFAULT_IMAGE;
+  return PLACEHOLDER_IMAGE;
 }
 
 export default function MealPlanPage() {
