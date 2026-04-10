@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { LocationProvider } from "@/contexts/LocationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 import { isNativeApp } from "@/hooks/useIsNativeApp";
@@ -55,6 +56,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <LocationProvider>
             <Routes>
               {/* Homepage: native app → splash screen, web → marketing page */}
               <Route path="/" element={native ? <NativeSplash /> : <Index />} />
@@ -97,6 +99,7 @@ const App = () => {
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </LocationProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

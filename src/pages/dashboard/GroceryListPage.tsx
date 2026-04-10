@@ -8,8 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
-import { useLocationPermission } from "@/hooks/usePermissions";
-import { PermissionModal } from "@/components/dashboard/PermissionModal";
+import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useKrogerPrices } from "@/hooks/useKrogerPrices";
 
@@ -205,8 +204,7 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
   const [correctedPrice, setCorrectedPrice] = useState("");
-  const { status: locationStatus, showPrompt: showLocationPrompt, setShowPrompt: setShowLocationPrompt, requestLocation } = useLocationPermission();
-  const [locationAsked, setLocationAsked] = useState(false);
+  const { status: locationStatus } = useLocation();
   const { prices: krogerPrices, loading: krogerLoading, storeName: krogerStoreName, findNearestStore, fetchPricesForItems } = useKrogerPrices();
   const [krogerInitialized, setKrogerInitialized] = useState<string | null>(null);
 
@@ -237,16 +235,7 @@ export default function GroceryListPage() {
     init();
   }, [user, planFingerprint, krogerInitialized]);
 
-  // Ask for location contextually when grocery page loads and we haven't asked yet
-  useEffect(() => {
-    if (locationStatus === "prompt" && !locationAsked && mealPlan?.groceryList?.length) {
-      const timer = setTimeout(() => {
-        setShowLocationPrompt(true);
-        setLocationAsked(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [locationStatus, locationAsked, mealPlan]);
+  // Location is now handled globally by LocationContext
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
