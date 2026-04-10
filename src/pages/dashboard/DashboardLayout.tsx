@@ -37,8 +37,7 @@ export default function DashboardLayout() {
                 scrolled && "shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
               )}
             >
-              {/* Safe area spacer — minimal, sits right below status bar */}
-              {isMobile && <div style={{ height: "env(safe-area-inset-top, 0px)" }} />}
+              {/* Safe area is handled by .native-app on body — no extra spacer needed */}
               <div className="flex items-center justify-between px-4 h-10">
                 <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
                   <img src={logo} alt="Help The Hive" className="h-9 w-9" />
