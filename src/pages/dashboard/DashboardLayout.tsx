@@ -26,6 +26,7 @@ export default function DashboardLayout() {
   }, [isMobile]);
 
   return (
+    <LocationProvider>
     <MealPlanProvider>
       <SidebarProvider>
         <div className="min-h-screen flex w-full overflow-x-hidden">
