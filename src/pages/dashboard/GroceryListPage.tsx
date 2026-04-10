@@ -530,6 +530,12 @@ export default function GroceryListPage() {
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground">{krogerInfo?.size || item.quantity}</span>
+                      {!krogerInfo && item.pricingSource === 'internal_estimate' && (
+                        <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
+                      )}
+                      {krogerInfo && (
+                        <span className="text-[9px] text-accent/80 font-medium">live</span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
