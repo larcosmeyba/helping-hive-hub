@@ -12,11 +12,14 @@ export interface MealPlanHistoryEntry {
   plan: GeneratedMealPlan;
 }
 
+type GenerationStage = "idle" | "preparing" | "generating" | "saving" | "done";
+
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
   setMealPlan: (plan: GeneratedMealPlan | null) => void;
   loading: boolean;
   generating: boolean;
+  generationStage: GenerationStage;
   generate: () => Promise<void>;
   history: MealPlanHistoryEntry[];
   historyLoading: boolean;
@@ -38,6 +41,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generationStage, setGenerationStage] = useState<GenerationStage>("idle");
   const [history, setHistory] = useState<MealPlanHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -116,26 +120,32 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   const generate = useCallback(async () => {
     if (!user) return;
     setGenerating(true);
+    setGenerationStage("preparing");
     try {
+      // Brief delay so "preparing" is visible
+      await new Promise(r => setTimeout(r, 300));
+      setGenerationStage("generating");
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
         body: {},
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
+      setGenerationStage("saving");
       setMealPlan(data as GeneratedMealPlan);
+      setGenerationStage("done");
       toast({ title: "Meal plan generated!", description: "Your personalized weekly plan is ready." });
-      // Refresh history after generating
       loadHistory();
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
     } finally {
       setGenerating(false);
+      setTimeout(() => setGenerationStage("idle"), 500);
     }
   }, [user, toast, loadHistory]);
 
   return (
-    <MealPlanContext.Provider value={{ mealPlan, setMealPlan, loading, generating, generate, history, historyLoading, loadHistory }}>
+    <MealPlanContext.Provider value={{ mealPlan, setMealPlan, loading, generating, generationStage, generate, history, historyLoading, loadHistory }}>
       {children}
     </MealPlanContext.Provider>
   );

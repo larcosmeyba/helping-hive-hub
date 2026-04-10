@@ -141,7 +141,7 @@ function getMealImage(name: string): string {
 }
 
 export default function MealPlanPage() {
-  const { mealPlan, setMealPlan, loading, generating, generate } = useMealPlan();
+  const { mealPlan, setMealPlan, loading, generating, generationStage, generate } = useMealPlan();
   const [selectedMeal, setSelectedMeal] = useState<MealPlanMeal | null>(null);
   const [substituteOpen, setSubstituteOpen] = useState<{ dayIndex: number; mealIndex: number } | null>(null);
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
@@ -187,7 +187,7 @@ export default function MealPlanPage() {
     }
   };
 
-  if (loading) return <MealPlanSkeleton />;
+  if (loading || (generating && !mealPlan)) return <MealPlanSkeleton stage={generating ? generationStage : "idle"} />;
 
   if (!mealPlan) {
     return (
@@ -261,8 +261,14 @@ export default function MealPlanPage() {
           variant="outline"
           className="flex-1 h-12 text-sm font-semibold rounded-xl"
         >
-          {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Regenerate Meal Plan
+          {generating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {generationStage === "preparing" ? "Preparing…" : generationStage === "generating" ? "AI generating…" : generationStage === "saving" ? "Saving…" : "Regenerating…"}
+            </>
+          ) : (
+            <><RefreshCw className="w-4 h-4 mr-2" /> Regenerate Meal Plan</>
+          )}
         </Button>
         {previousPlan && (
           <Button
