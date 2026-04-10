@@ -375,6 +375,11 @@ export default function MealPlanPage() {
                   <span className="bg-muted px-3 py-1 rounded-full flex items-center gap-1">
                     <Clock className="w-3 h-3" /> {selectedMeal.cookTimeMinutes} min
                   </span>
+                  {selectedMeal.costPerServing != null && (
+                    <span className="bg-accent/10 text-accent px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+                      <DollarSign className="w-3 h-3" /> ${selectedMeal.costPerServing.toFixed(2)}/serving
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein}g</p><p className="text-muted-foreground">Protein</p></div>
@@ -430,19 +435,28 @@ export default function MealPlanPage() {
                   mealPlan.weeklyPlan[substituteOpen.dayIndex]?.meals[substituteOpen.mealIndex]
                 );
                 const alternatives = SUBSTITUTE_MEALS[currentMeal.type] || SUBSTITUTE_MEALS.dinner;
-                return alternatives.map((alt) => (
-                  <button
-                    key={alt.name}
-                    onClick={() => handleSwap(substituteOpen.dayIndex, substituteOpen.mealIndex, alt)}
-                    className="w-full text-left bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-card transition-all"
-                  >
-                    <h4 className="font-semibold text-foreground">{alt.name}</h4>
-                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
-                    </div>
-                  </button>
-                ));
+                return alternatives.map((alt) => {
+                  const costDiff = (alt.estimatedCost || 0) - (currentMeal.estimatedCost || 0);
+                  return (
+                    <button
+                      key={alt.name}
+                      onClick={() => handleSwap(substituteOpen.dayIndex, substituteOpen.mealIndex, alt)}
+                      className="w-full text-left bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-card transition-all"
+                    >
+                      <h4 className="font-semibold text-foreground">{alt.name}</h4>
+                      <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
+                        <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${alt.estimatedCost.toFixed(2)}</span>
+                        {costDiff !== 0 && (
+                          <span className={`font-semibold ${costDiff > 0 ? 'text-destructive' : 'text-accent'}`}>
+                            {costDiff > 0 ? `+$${costDiff.toFixed(2)}` : `-$${Math.abs(costDiff).toFixed(2)}`}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                });
               })()}
             </div>
           )}
