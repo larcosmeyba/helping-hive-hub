@@ -7,7 +7,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { GroceryItem, PricingConfidenceSummary } from "@/types/mealPlan";
+import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
 import { useLocationPermission } from "@/hooks/usePermissions";
 import { PermissionModal } from "@/components/dashboard/PermissionModal";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
@@ -265,6 +265,7 @@ export default function GroceryListPage() {
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
+  const savings = mealPlan.savingsSummary as SavingsSummary | undefined;
 
   // Compute live-priced count from Kroger prices
   const livePricedCount = Object.keys(krogerPrices).length;
