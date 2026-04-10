@@ -775,19 +775,7 @@ export default function GroceryListPage() {
           </div>
         </div>
       </div>
-      {/* Location permission prompt */}
-      <PermissionModal
-        open={showLocationPrompt}
-        type="location"
-        onContinue={async () => {
-          setShowLocationPrompt(false);
-          const pos = await requestLocation();
-          if (pos) {
-            toast({ title: "Location enabled", description: "Store pricing will be more accurate for your area." });
-          }
-        }}
-        onDismiss={() => setShowLocationPrompt(false)}
-      />
+      {/* Location permission is handled globally by LocationContext */}
 
       {/* Location denied fallback */}
       {locationStatus === "denied" && (
