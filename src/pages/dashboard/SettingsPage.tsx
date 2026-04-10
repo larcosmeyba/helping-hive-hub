@@ -19,7 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
-import { useLocationPermission, useCameraPermission } from "@/hooks/usePermissions";
+import { useLocation } from "@/contexts/LocationContext";
+import { useCameraPermission } from "@/hooks/usePermissions";
 
 const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
@@ -47,7 +48,7 @@ export default function SettingsPage() {
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [userType, setUserType] = useState("general");
   const [verificationStatus, setVerificationStatus] = useState("not_started");
-  const { status: locationStatus } = useLocationPermission();
+  const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
 
   useEffect(() => {
