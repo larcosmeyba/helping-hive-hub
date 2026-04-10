@@ -71,7 +71,7 @@ const MEAL_IMAGES: Record<string, string> = {
   avocado: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=300&fit=crop",
 };
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=400&h=300&fit=crop&q=80";
 
 function getMealImage(name: string): string {
   const lower = name.toLowerCase();
@@ -83,7 +83,7 @@ function getMealImage(name: string): string {
   for (const [keyword, url] of Object.entries(MEAL_IMAGES)) {
     if (!keyword.includes(" ") && lower.includes(keyword)) return url;
   }
-  return DEFAULT_IMAGE;
+  return PLACEHOLDER_IMAGE;
 }
 
 interface Props {
@@ -110,7 +110,7 @@ export function MealCard({ meal, compact, onClick }: Props) {
           alt={meal.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+          onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
         />
         <div className="absolute top-1 left-1">
           <span className={`bg-primary/90 text-primary-foreground font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${compact ? 'text-[7px]' : 'text-[10px]'}`}>
