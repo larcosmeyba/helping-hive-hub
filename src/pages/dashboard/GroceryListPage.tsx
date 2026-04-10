@@ -357,7 +357,32 @@ export default function GroceryListPage() {
           </span>
         </div>
       )}
-      <div className="flex items-center justify-between">
+      {/* Pricing Confidence Banner */}
+      {computedConfidence && computedConfidence.totalItems > 0 && (
+        <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-4 py-2.5 text-sm border border-border">
+          <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground">
+                {computedConfidence.confidencePercent > 0 
+                  ? `${computedConfidence.confidencePercent}% exact pricing`
+                  : 'Estimated pricing'}
+              </span>
+              {computedConfidence.estimatedCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  • {computedConfidence.estimatedCount} estimated item{computedConfidence.estimatedCount !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <div className="w-full bg-border rounded-full h-1.5 mt-1.5">
+              <div 
+                className="bg-primary h-1.5 rounded-full transition-all" 
+                style={{ width: `${Math.max(computedConfidence.confidencePercent, 5)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
         <div>
           <h1 className="font-display text-sm md:text-2xl font-bold text-foreground flex items-center gap-1 md:gap-2">
             <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
