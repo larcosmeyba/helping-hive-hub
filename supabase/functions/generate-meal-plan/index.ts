@@ -688,7 +688,7 @@ CRITICAL REQUIREMENTS:
 
     if (!glError && savedGroceryList) {
       const groceryItems = (mealPlan.groceryList || []).map((item: any) => ({
-        grocery_list_id: groceryList.id,
+        grocery_list_id: savedGroceryList.id,
         user_id: user.id,
         ingredient_name: item.name,
         quantity: item.quantity,
