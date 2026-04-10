@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { GroceryItem } from "@/types/mealPlan";
+import type { GroceryItem, PricingConfidenceSummary } from "@/types/mealPlan";
 import { useLocationPermission } from "@/hooks/usePermissions";
 import { PermissionModal } from "@/components/dashboard/PermissionModal";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
