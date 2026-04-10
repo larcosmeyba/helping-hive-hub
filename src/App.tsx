@@ -56,7 +56,6 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <LocationProvider>
             <Routes>
               {/* Homepage: native app → splash screen, web → marketing page */}
               <Route path="/" element={native ? <NativeSplash /> : <Index />} />
@@ -99,7 +98,6 @@ const App = () => {
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </LocationProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
