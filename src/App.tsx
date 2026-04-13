@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import Questionnaire from "./pages/Questionnaire.tsx";
 import SampleMealPlan from "./pages/SampleMealPlan.tsx";
 import LegalPage from "./pages/legal/LegalPage.tsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import NativeAuth from "./pages/NativeAuth.tsx";
 import NativeSplash from "./pages/NativeSplash.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
@@ -63,6 +64,7 @@ const App = () => {
               <Route path="/auth" element={<NativeAuth />} />
 
               <Route path="/sample-plan/:slug" element={<SampleMealPlan />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/page/:slug" element={<LegalPage />} />
               <Route path="/login" element={native ? <Navigate to="/auth" replace /> : <Login />} />
               <Route path="/signup" element={native ? <Navigate to="/auth" replace /> : <Signup />} />
