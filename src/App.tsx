@@ -64,6 +64,7 @@ const App = () => {
               <Route path="/auth" element={<NativeAuth />} />
 
               <Route path="/sample-plan/:slug" element={<SampleMealPlan />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/page/:slug" element={<LegalPage />} />
               <Route path="/login" element={native ? <Navigate to="/auth" replace /> : <Login />} />
               <Route path="/signup" element={native ? <Navigate to="/auth" replace /> : <Signup />} />
