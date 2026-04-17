@@ -3,6 +3,7 @@ import { Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
+import { MacroBadges } from "./MacroBadges";
 
 // Use shared meal image lookup from MealPlanPage
 const MEAL_IMAGES: Record<string, string> = {
@@ -123,8 +124,8 @@ export function MealCard({ meal, compact, onClick }: Props) {
         </div>
       </div>
 
-      <div className={compact ? 'p-1' : 'p-3'}>
-        <div className={`flex items-center gap-1 text-muted-foreground ${compact ? 'text-[8px]' : 'text-sm'}`}>
+      <div className={compact ? 'p-1 space-y-1' : 'p-3 space-y-2'}>
+        <div className={`flex items-center gap-2 text-muted-foreground ${compact ? 'text-[8px]' : 'text-sm'}`}>
           <span className="flex items-center gap-0.5"><Flame className={`text-primary ${compact ? 'w-2 h-2' : 'w-3.5 h-3.5'}`} />{meal.calories}</span>
           {!compact && meal.costPerServing != null && (
             <span className="flex items-center gap-0.5 text-primary font-medium">
@@ -132,6 +133,12 @@ export function MealCard({ meal, compact, onClick }: Props) {
             </span>
           )}
         </div>
+        <MacroBadges
+          protein={meal.protein}
+          carbs={meal.carbs}
+          fats={meal.fats}
+          size={compact ? "xs" : "sm"}
+        />
 
         {!compact && (
           <button
