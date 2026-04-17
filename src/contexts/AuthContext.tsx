@@ -19,15 +19,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let initialized = false;
+
+    // Set up listener FIRST (synchronous registration)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      // Only flip loading off after initial session check has completed
+      if (initialized) setLoading(false);
     });
 
+    // THEN check existing session — this completes auth bootstrap
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      initialized = true;
       setLoading(false);
     });
 
