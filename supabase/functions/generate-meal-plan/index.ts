@@ -126,6 +126,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // === 3-Layer pricing maps (Layer 2 regional + Layer 3 national) ===
+    const ingredientByName = new Map<string, string>(); // lower(name) -> ingredient_id
+    for (const ing of (ingredientsRes.data || [])) {
+      ingredientByName.set(ing.ingredient_name.toLowerCase(), ing.ingredient_id);
+    }
+    const nationalByIngredient = new Map<string, { price: number; unit: string }>();
+    for (const np of (nationalPricesRes.data || [])) {
+      nationalByIngredient.set(np.ingredient_id, { price: Number(np.national_avg_price), unit: np.unit });
+    }
+    const regionalByKey = new Map<string, { price: number; unit: string }>(); // `${ingredient_id}|${state}`
+    for (const rp of (regionalPricesRes.data || [])) {
+      regionalByKey.set(`${rp.ingredient_id}|${rp.region}`, { price: Number(rp.average_price), unit: rp.unit });
+    }
+    const taxByState = new Map<string, number>();
+    for (const t of (taxRulesRes.data || [])) {
+      taxByState.set(t.state, Number(t.grocery_tax_rate));
+    }
+
     const budget = profile.weekly_budget || 75;
     const householdSize = profile.household_size || 2;
     const allergies = (profile.allergies || []).join(", ") || "none";
@@ -134,8 +152,13 @@ Deno.serve(async (req) => {
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
     const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
     const zipCode = profile.zip_code || "";
+    const userState = (profile.state || "").toUpperCase().slice(0, 2);
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
+    // Real state grocery tax rate (decimal, e.g. 0.04 = 4%) — prefers DB, falls back to legacy region info
+    const stateGroceryTaxRate = taxByState.has(userState)
+      ? taxByState.get(userState)!
+      : (regionInfo.groceryTaxRate || 0) / 100;
 
     // Compact prompt — significantly fewer tokens for faster AI response
     const systemPrompt = `You are the Hive Budget Meal Engine. Generate a 6-day meal plan (Mon–Sat, 3 meals/day) within the user's grocery budget.
