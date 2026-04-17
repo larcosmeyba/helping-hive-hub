@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     }
 
     // ===== PARALLEL DB READS — fetch everything at once =====
-    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes] = await Promise.all([
+    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes, ingredientsRes, nationalPricesRes, regionalPricesRes, taxRulesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
       supabase.from("pantry_items").select("item_name, quantity, category").eq("user_id", user.id),
       supabase.from("canonical_products").select("canonical_product_id, canonical_name, default_price, default_unit, category"),
@@ -88,6 +88,10 @@ Deno.serve(async (req) => {
       supabase.from("store_product_prices")
         .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
         .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("ingredients").select("ingredient_id, ingredient_name, category"),
+      supabase.from("national_food_prices").select("ingredient_id, national_avg_price, unit"),
+      supabase.from("regional_food_prices").select("ingredient_id, region, average_price, unit"),
+      supabase.from("state_tax_rules").select("state, grocery_tax_rate"),
     ]);
 
     const profile = profileRes.data;
@@ -122,6 +126,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // === 3-Layer pricing maps (Layer 2 regional + Layer 3 national) ===
+    const ingredientByName = new Map<string, string>(); // lower(name) -> ingredient_id
+    for (const ing of (ingredientsRes.data || [])) {
+      ingredientByName.set(ing.ingredient_name.toLowerCase(), ing.ingredient_id);
+    }
+    const nationalByIngredient = new Map<string, { price: number; unit: string }>();
+    for (const np of (nationalPricesRes.data || [])) {
+      nationalByIngredient.set(np.ingredient_id, { price: Number(np.national_avg_price), unit: np.unit });
+    }
+    const regionalByKey = new Map<string, { price: number; unit: string }>(); // `${ingredient_id}|${state}`
+    for (const rp of (regionalPricesRes.data || [])) {
+      regionalByKey.set(`${rp.ingredient_id}|${rp.region}`, { price: Number(rp.average_price), unit: rp.unit });
+    }
+    const taxByState = new Map<string, number>();
+    for (const t of (taxRulesRes.data || [])) {
+      taxByState.set(t.state, Number(t.grocery_tax_rate));
+    }
+
     const budget = profile.weekly_budget || 75;
     const householdSize = profile.household_size || 2;
     const allergies = (profile.allergies || []).join(", ") || "none";
@@ -130,8 +152,13 @@ Deno.serve(async (req) => {
     const stores = (profile.preferred_stores || []).join(", ") || "any store";
     const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
     const zipCode = profile.zip_code || "";
+    const userState = (profile.state || "").toUpperCase().slice(0, 2);
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
+    // Real state grocery tax rate (decimal, e.g. 0.04 = 4%) — prefers DB, falls back to legacy region info
+    const stateGroceryTaxRate = taxByState.has(userState)
+      ? taxByState.get(userState)!
+      : (regionInfo.groceryTaxRate || 0) / 100;
 
     // Compact prompt — significantly fewer tokens for faster AI response
     const systemPrompt = `You are the Hive Budget Meal Engine. Generate a 6-day meal plan (Mon–Sat, 3 meals/day) within the user's grocery budget.
@@ -256,23 +283,59 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       }
     }
 
-    // Enrich pricing from canonical DB
+    // === Enrich pricing using 3-LAYER hierarchy ===
+    // Layer 1 (retailer/Kroger live) — applied client-side via useKrogerPrices on the grocery page
+    // Layer 2 (regional baseline) and Layer 3 (national baseline) — applied here, override AI estimates
+    function findIngredientId(name: string): string | null {
+      const lower = name.toLowerCase();
+      if (ingredientByName.has(lower)) return ingredientByName.get(lower)!;
+      // partial match: ingredient name contains query, or vice versa
+      for (const [k, v] of ingredientByName.entries()) {
+        if (lower.includes(k) || k.includes(lower)) return v;
+      }
+      return null;
+    }
+
     mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
       const lowerName = item.name.toLowerCase();
       let pricingSource = 'ai_estimate';
       let pricingConfidence = 'low';
 
-      const canonical = canonicalMap.get(lowerName) ||
-        [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
-
-      if (canonical) {
-        item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
-        pricingSource = 'internal_estimate';
-        pricingConfidence = 'medium';
+      // Layer 2: regional baseline (preferred)
+      const ingredientId = findIngredientId(lowerName);
+      if (ingredientId && userState) {
+        const regional = regionalByKey.get(`${ingredientId}|${userState}`);
+        if (regional) {
+          item.estimatedPrice = Math.round(regional.price * 100) / 100;
+          pricingSource = 'regional_baseline';
+          pricingConfidence = 'medium';
+          item.pricingUnit = regional.unit;
+        }
       }
 
-      if (item.storePrices && Object.keys(item.storePrices).length > 0) {
-        pricingSource = 'ai_estimate';
+      // Layer 3: national baseline (fallback when no regional)
+      if (pricingSource === 'ai_estimate' && ingredientId) {
+        const national = nationalByIngredient.get(ingredientId);
+        if (national) {
+          item.estimatedPrice = Math.round(national.price * regionInfo.costMultiplier * 100) / 100;
+          pricingSource = 'national_baseline';
+          pricingConfidence = 'medium';
+          item.pricingUnit = national.unit;
+        }
+      }
+
+      // Legacy canonical fallback (only if no ingredient match at all)
+      if (pricingSource === 'ai_estimate') {
+        const canonical = canonicalMap.get(lowerName) ||
+          [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
+        if (canonical) {
+          item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
+          pricingSource = 'internal_estimate';
+          pricingConfidence = 'medium';
+        }
+      }
+
+      if (item.storePrices && Object.keys(item.storePrices).length > 0 && pricingSource === 'ai_estimate') {
         pricingConfidence = 'medium';
       }
 
@@ -289,12 +352,12 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       return { ...item, storeProducts };
     });
 
-    // Pricing confidence summary
+    // Pricing confidence summary — baseline (regional/national) prices count as "cached" tier
     const groceryList = mealPlan.groceryList || [];
     let exactCount = 0, cachedCount = 0, estimatedCount = 0;
     for (const item of groceryList) {
       if (item.pricingSource === 'live') exactCount++;
-      else if (item.pricingSource === 'cached') cachedCount++;
+      else if (item.pricingSource === 'cached' || item.pricingSource === 'regional_baseline' || item.pricingSource === 'national_baseline' || item.pricingSource === 'internal_estimate') cachedCount++;
       else estimatedCount++;
     }
     mealPlan.pricingConfidence = {
@@ -324,7 +387,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
 
     const totalMealCount = (mealPlan.weeklyPlan || []).reduce((n: number, d: any) => n + (d.meals?.length || 0), 0);
     if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
-    mealPlan.taxEstimate = Math.round(recalcTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+    mealPlan.taxEstimate = Math.round(recalcTotal * stateGroceryTaxRate * 100) / 100;
 
     // Budget lock
     if (mealPlan.totalEstimatedCost > budget * 1.15) {
@@ -345,7 +408,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
         }
       }
       if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((scaledTotal / totalMealCount) * 100) / 100;
-      mealPlan.taxEstimate = Math.round(scaledTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+      mealPlan.taxEstimate = Math.round(scaledTotal * stateGroceryTaxRate * 100) / 100;
     }
 
     // Savings summary
@@ -405,7 +468,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
     const groceryListInsert = supabase.from("grocery_lists").insert({
       user_id: user.id, meal_plan_id: mealPlanId,
       store_name: mealPlan.storeRecommendations?.[0]?.store || "Any",
-      estimated_total: mealPlan.totalEstimatedCost, tax_rate: regionInfo.groceryTaxRate / 100, status: "active",
+      estimated_total: mealPlan.totalEstimatedCost, tax_rate: stateGroceryTaxRate, status: "active",
     }).select("id").single();
 
     const mealItemsInsert = mealItems.length > 0 ? supabase.from("meal_plan_items").insert(mealItems) : Promise.resolve();
