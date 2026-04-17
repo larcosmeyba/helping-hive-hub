@@ -21,6 +21,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "@/contexts/LocationContext";
 import { useCameraPermission } from "@/hooks/usePermissions";
+import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
 
 const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
@@ -265,6 +266,9 @@ export default function SettingsPage() {
           We use your approximate location for store and pricing relevance. Photos are processed securely and never stored without your permission.
         </p>
       </div>
+
+      {/* Privacy & Data Controls */}
+      <PrivacyDataControls />
 
       {/* Eligibility Verification */}
       <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
