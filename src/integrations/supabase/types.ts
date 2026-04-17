@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions: {
+        Row: {
+          deleted_at: string
+          email: string | null
+          id: string
+          initiated_by: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          email?: string | null
+          id?: string
+          initiated_by?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          email?: string | null
+          id?: string
+          initiated_by?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string
@@ -700,12 +727,14 @@ export type Database = {
         Row: {
           account_status: string | null
           allergies: string[] | null
+          analytics_opt_in: boolean
           beta_user: boolean
           children_ages: string[] | null
           city: string | null
           cooking_style: string | null
           cooking_time_preference: string | null
           created_at: string
+          data_usage_opt_in: boolean
           dietary_preferences: string[] | null
           display_name: string | null
           eligibility_category: string | null
@@ -741,12 +770,14 @@ export type Database = {
         Insert: {
           account_status?: string | null
           allergies?: string[] | null
+          analytics_opt_in?: boolean
           beta_user?: boolean
           children_ages?: string[] | null
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
+          data_usage_opt_in?: boolean
           dietary_preferences?: string[] | null
           display_name?: string | null
           eligibility_category?: string | null
@@ -782,12 +813,14 @@ export type Database = {
         Update: {
           account_status?: string | null
           allergies?: string[] | null
+          analytics_opt_in?: boolean
           beta_user?: boolean
           children_ages?: string[] | null
           city?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
+          data_usage_opt_in?: boolean
           dietary_preferences?: string[] | null
           display_name?: string | null
           eligibility_category?: string | null
