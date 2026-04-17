@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     }
 
     // ===== PARALLEL DB READS — fetch everything at once =====
-    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes] = await Promise.all([
+    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes, ingredientsRes, nationalPricesRes, regionalPricesRes, taxRulesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
       supabase.from("pantry_items").select("item_name, quantity, category").eq("user_id", user.id),
       supabase.from("canonical_products").select("canonical_product_id, canonical_name, default_price, default_unit, category"),
@@ -88,6 +88,10 @@ Deno.serve(async (req) => {
       supabase.from("store_product_prices")
         .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
         .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("ingredients").select("ingredient_id, ingredient_name, category"),
+      supabase.from("national_food_prices").select("ingredient_id, national_avg_price, unit"),
+      supabase.from("regional_food_prices").select("ingredient_id, region, average_price, unit"),
+      supabase.from("state_tax_rules").select("state, grocery_tax_rate"),
     ]);
 
     const profile = profileRes.data;
