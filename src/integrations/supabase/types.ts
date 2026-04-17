@@ -895,13 +895,16 @@ export type Database = {
           created_at: string
           description: string | null
           fats_g: number | null
+          fiber_g: number | null
           id: string
           image_url: string | null
           ingredients: Json
           instructions: Json
           is_public: boolean | null
+          prep_time_minutes: number | null
           protein_g: number | null
           serving_size: number | null
+          tags: string[]
           title: string
         }
         Insert: {
@@ -913,13 +916,16 @@ export type Database = {
           created_at?: string
           description?: string | null
           fats_g?: number | null
+          fiber_g?: number | null
           id?: string
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
           is_public?: boolean | null
+          prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          tags?: string[]
           title: string
         }
         Update: {
@@ -931,13 +937,16 @@ export type Database = {
           created_at?: string
           description?: string | null
           fats_g?: number | null
+          fiber_g?: number | null
           id?: string
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
           is_public?: boolean | null
+          prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          tags?: string[]
           title?: string
         }
         Relationships: []
