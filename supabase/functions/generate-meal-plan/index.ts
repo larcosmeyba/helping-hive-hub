@@ -352,12 +352,12 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       return { ...item, storeProducts };
     });
 
-    // Pricing confidence summary
+    // Pricing confidence summary — baseline (regional/national) prices count as "cached" tier
     const groceryList = mealPlan.groceryList || [];
     let exactCount = 0, cachedCount = 0, estimatedCount = 0;
     for (const item of groceryList) {
       if (item.pricingSource === 'live') exactCount++;
-      else if (item.pricingSource === 'cached') cachedCount++;
+      else if (item.pricingSource === 'cached' || item.pricingSource === 'regional_baseline' || item.pricingSource === 'national_baseline' || item.pricingSource === 'internal_estimate') cachedCount++;
       else estimatedCount++;
     }
     mealPlan.pricingConfidence = {
@@ -387,7 +387,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
 
     const totalMealCount = (mealPlan.weeklyPlan || []).reduce((n: number, d: any) => n + (d.meals?.length || 0), 0);
     if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((recalcTotal / totalMealCount) * 100) / 100;
-    mealPlan.taxEstimate = Math.round(recalcTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+    mealPlan.taxEstimate = Math.round(recalcTotal * stateGroceryTaxRate * 100) / 100;
 
     // Budget lock
     if (mealPlan.totalEstimatedCost > budget * 1.15) {
