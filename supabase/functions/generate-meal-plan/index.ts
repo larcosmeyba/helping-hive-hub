@@ -408,7 +408,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
         }
       }
       if (totalMealCount > 0) mealPlan.costPerMeal = Math.round((scaledTotal / totalMealCount) * 100) / 100;
-      mealPlan.taxEstimate = Math.round(scaledTotal * (regionInfo.groceryTaxRate / 100) * 100) / 100;
+      mealPlan.taxEstimate = Math.round(scaledTotal * stateGroceryTaxRate * 100) / 100;
     }
 
     // Savings summary
@@ -468,7 +468,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
     const groceryListInsert = supabase.from("grocery_lists").insert({
       user_id: user.id, meal_plan_id: mealPlanId,
       store_name: mealPlan.storeRecommendations?.[0]?.store || "Any",
-      estimated_total: mealPlan.totalEstimatedCost, tax_rate: regionInfo.groceryTaxRate / 100, status: "active",
+      estimated_total: mealPlan.totalEstimatedCost, tax_rate: stateGroceryTaxRate, status: "active",
     }).select("id").single();
 
     const mealItemsInsert = mealItems.length > 0 ? supabase.from("meal_plan_items").insert(mealItems) : Promise.resolve();
