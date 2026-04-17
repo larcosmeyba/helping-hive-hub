@@ -37,11 +37,13 @@ export default function NativeAuth() {
     try {
       if (mode === "login") {
         await signIn(email, password);
+        // Don't navigate manually — the `if (user) Navigate` guard above will
+        // redirect once the auth state propagates. Navigating before state
+        // settles can cause ProtectedRoute to bounce back to /auth.
       } else {
         await signUp(email, password, displayName);
         toast({ title: "Account created!", description: "Please check your email to verify your account." });
       }
-      navigate("/dashboard");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
