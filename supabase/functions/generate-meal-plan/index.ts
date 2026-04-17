@@ -283,23 +283,59 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       }
     }
 
-    // Enrich pricing from canonical DB
+    // === Enrich pricing using 3-LAYER hierarchy ===
+    // Layer 1 (retailer/Kroger live) — applied client-side via useKrogerPrices on the grocery page
+    // Layer 2 (regional baseline) and Layer 3 (national baseline) — applied here, override AI estimates
+    function findIngredientId(name: string): string | null {
+      const lower = name.toLowerCase();
+      if (ingredientByName.has(lower)) return ingredientByName.get(lower)!;
+      // partial match: ingredient name contains query, or vice versa
+      for (const [k, v] of ingredientByName.entries()) {
+        if (lower.includes(k) || k.includes(lower)) return v;
+      }
+      return null;
+    }
+
     mealPlan.groceryList = (mealPlan.groceryList || []).map((item: any) => {
       const lowerName = item.name.toLowerCase();
       let pricingSource = 'ai_estimate';
       let pricingConfidence = 'low';
 
-      const canonical = canonicalMap.get(lowerName) ||
-        [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
-
-      if (canonical) {
-        item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
-        pricingSource = 'internal_estimate';
-        pricingConfidence = 'medium';
+      // Layer 2: regional baseline (preferred)
+      const ingredientId = findIngredientId(lowerName);
+      if (ingredientId && userState) {
+        const regional = regionalByKey.get(`${ingredientId}|${userState}`);
+        if (regional) {
+          item.estimatedPrice = Math.round(regional.price * 100) / 100;
+          pricingSource = 'regional_baseline';
+          pricingConfidence = 'medium';
+          item.pricingUnit = regional.unit;
+        }
       }
 
-      if (item.storePrices && Object.keys(item.storePrices).length > 0) {
-        pricingSource = 'ai_estimate';
+      // Layer 3: national baseline (fallback when no regional)
+      if (pricingSource === 'ai_estimate' && ingredientId) {
+        const national = nationalByIngredient.get(ingredientId);
+        if (national) {
+          item.estimatedPrice = Math.round(national.price * regionInfo.costMultiplier * 100) / 100;
+          pricingSource = 'national_baseline';
+          pricingConfidence = 'medium';
+          item.pricingUnit = national.unit;
+        }
+      }
+
+      // Legacy canonical fallback (only if no ingredient match at all)
+      if (pricingSource === 'ai_estimate') {
+        const canonical = canonicalMap.get(lowerName) ||
+          [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
+        if (canonical) {
+          item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
+          pricingSource = 'internal_estimate';
+          pricingConfidence = 'medium';
+        }
+      }
+
+      if (item.storePrices && Object.keys(item.storePrices).length > 0 && pricingSource === 'ai_estimate') {
         pricingConfidence = 'medium';
       }
 
