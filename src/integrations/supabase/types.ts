@@ -499,6 +499,57 @@ export type Database = {
           },
         ]
       }
+      ingredients: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          category: string | null
+          created_at: string
+          fat_g: number | null
+          fiber_g: number | null
+          ingredient_id: string
+          ingredient_name: string
+          protein_g: number | null
+          serving_size: string | null
+          serving_size_grams: number | null
+          updated_at: string
+          usda_description: string | null
+          usda_food_id: string | null
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          category?: string | null
+          created_at?: string
+          fat_g?: number | null
+          fiber_g?: number | null
+          ingredient_id?: string
+          ingredient_name: string
+          protein_g?: number | null
+          serving_size?: string | null
+          serving_size_grams?: number | null
+          updated_at?: string
+          usda_description?: string | null
+          usda_food_id?: string | null
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          category?: string | null
+          created_at?: string
+          fat_g?: number | null
+          fiber_g?: number | null
+          ingredient_id?: string
+          ingredient_name?: string
+          protein_g?: number | null
+          serving_size?: string | null
+          serving_size_grams?: number | null
+          updated_at?: string
+          usda_description?: string | null
+          usda_food_id?: string | null
+        }
+        Relationships: []
+      }
       marketing_campaigns: {
         Row: {
           caption: string | null
@@ -632,6 +683,41 @@ export type Database = {
           week_start?: string
         }
         Relationships: []
+      }
+      national_food_prices: {
+        Row: {
+          id: string
+          ingredient_id: string
+          last_updated: string
+          national_avg_price: number
+          source: string | null
+          unit: string
+        }
+        Insert: {
+          id?: string
+          ingredient_id: string
+          last_updated?: string
+          national_avg_price: number
+          source?: string | null
+          unit: string
+        }
+        Update: {
+          id?: string
+          ingredient_id?: string
+          last_updated?: string
+          national_avg_price?: number
+          source?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "national_food_prices_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["ingredient_id"]
+          },
+        ]
       }
       pantry_items: {
         Row: {
@@ -918,6 +1004,54 @@ export type Database = {
           },
         ]
       }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          display_text: string | null
+          id: string
+          ingredient_id: string
+          quantity: number | null
+          recipe_id: string
+          sort_order: number
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_text?: string | null
+          id?: string
+          ingredient_id: string
+          quantity?: number | null
+          recipe_id: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_text?: string | null
+          id?: string
+          ingredient_id?: string
+          quantity?: number | null
+          recipe_id?: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["ingredient_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipes: {
         Row: {
           calories: number | null
@@ -983,6 +1117,44 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      regional_food_prices: {
+        Row: {
+          average_price: number
+          id: string
+          ingredient_id: string
+          last_updated: string
+          region: string
+          source: string | null
+          unit: string
+        }
+        Insert: {
+          average_price: number
+          id?: string
+          ingredient_id: string
+          last_updated?: string
+          region: string
+          source?: string | null
+          unit: string
+        }
+        Update: {
+          average_price?: number
+          id?: string
+          ingredient_id?: string
+          last_updated?: string
+          region?: string
+          source?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_food_prices_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["ingredient_id"]
+          },
+        ]
       }
       retailer_products: {
         Row: {
@@ -1194,6 +1366,33 @@ export type Database = {
           publish_status?: string
           seasonal_tag?: string | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      state_tax_rules: {
+        Row: {
+          grocery_tax_rate: number
+          local_tax_possible: boolean
+          notes: string | null
+          state: string
+          state_name: string
+          updated_at: string
+        }
+        Insert: {
+          grocery_tax_rate?: number
+          local_tax_possible?: boolean
+          notes?: string | null
+          state: string
+          state_name: string
+          updated_at?: string
+        }
+        Update: {
+          grocery_tax_rate?: number
+          local_tax_possible?: boolean
+          notes?: string | null
+          state?: string
+          state_name?: string
           updated_at?: string
         }
         Relationships: []
