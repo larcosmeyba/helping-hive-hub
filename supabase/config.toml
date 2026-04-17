@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.kroger-sync]
 verify_jwt = false
+
+[functions.usda-lookup]
+verify_jwt = false
+
+[functions.resolve-price]
+verify_jwt = false
