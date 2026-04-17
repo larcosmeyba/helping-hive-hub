@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MacroBadges } from "@/components/dashboard/MacroBadges";
 
 
 const COMMON_ITEMS = [
@@ -214,6 +215,13 @@ export default function FridgeChefPage() {
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {recipe.cookTime}m</span>
                     <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${recipe.cost.toFixed(2)}</span>
                   </div>
+                  <MacroBadges
+                    protein={recipe.protein}
+                    carbs={recipe.carbs}
+                    fats={recipe.fats}
+                    size="xs"
+                    className="mt-2"
+                  />
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
                     Uses: {recipe.ingredients.join(", ")}
                   </p>
