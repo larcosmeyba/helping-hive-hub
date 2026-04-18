@@ -111,15 +111,14 @@ jobs:
           cd ios/App
           xcodebuild -project App.xcodeproj \
             -scheme App \
+            -destination 'generic/platform=iOS' \
             -sdk iphoneos \
             -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             archive \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Automatic \
             PRODUCT_BUNDLE_IDENTIFIER="com.helpthehive" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon" \
             MARKETING_VERSION="1.11" \
             CURRENT_PROJECT_VERSION="29"
