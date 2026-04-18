@@ -104,6 +104,74 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" "$RUNNER_TEMP/decoded-profile.plist"
           /usr/libexec/PlistBuddy -c "Print Entitlements:application-identifier" "$RUNNER_TEMP/decoded-profile.plist"
      
+      - name: Configure App target signing in project
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" <<'PY'
+          import re, sys
+          path, team, profile = sys.argv[1], sys.argv[2], sys.argv[3]
+          with open(path, 'r') as f:
+              src = f.read()
+
+          # Find buildSettings blocks belonging to the "App" target only
+          # Pattern: name = App;\n ... buildSettings = { ... };
+          # We modify the XCBuildConfiguration entries that contain PRODUCT_NAME = App
+          def patch(block):
+              out = block
+              # Replace or insert each setting
+              settings = {
+                  'CODE_SIGN_STYLE': 'Manual',
+                  'CODE_SIGN_IDENTITY': '"Apple Distribution"',
+                  '"CODE_SIGN_IDENTITY[sdk=iphoneos*]"': '"Apple Distribution"',
+                  'DEVELOPMENT_TEAM': team,
+                  '"DEVELOPMENT_TEAM[sdk=iphoneos*]"': team,
+                  'PROVISIONING_PROFILE_SPECIFIER': f'"{profile}"',
+                  '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]"': f'"{profile}"',
+                  'PRODUCT_BUNDLE_IDENTIFIER': 'com.helpthehive',
+                  'MARKETING_VERSION': '1.11',
+                  'CURRENT_PROJECT_VERSION': '29',
+                  'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
+              }
+              for k, v in settings.items():
+                  key_escaped = re.escape(k)
+                  pattern = re.compile(rf'{key_escaped}\s*=\s*[^;]+;')
+                  replacement = f'{k} = {v};'
+                  if pattern.search(out):
+                      out = pattern.sub(replacement, out)
+                  else:
+                      # Insert before closing of buildSettings
+                      out = out.replace('};', f'\t\t\t\t{k} = {v};\n\t\t\t}};', 1)
+              return out
+
+          # Match each XCBuildConfiguration block that targets the App product
+          pattern = re.compile(
+              r'(/\* (?:Debug|Release) \*/ = \{\s*isa = XCBuildConfiguration;\s*buildSettings = \{[^}]*PRODUCT_NAME = "?\$\(TARGET_NAME\)"?;[^}]*\};)',
+              re.DOTALL,
+          )
+
+          # Simpler: match blocks that contain ASSETCATALOG_COMPILER_APPICON_NAME or INFOPLIST_FILE = App/Info.plist
+          pattern2 = re.compile(
+              r'(\{\s*isa = XCBuildConfiguration;\s*buildSettings = \{)([^}]*INFOPLIST_FILE = App/Info\.plist;[^}]*)(\};\s*name = (?:Debug|Release);)',
+              re.DOTALL,
+          )
+
+          def repl(m):
+              head, body, tail = m.group(1), m.group(2), m.group(3)
+              new_body = patch('{' + body + '};').strip()
+              # strip outer braces we added
+              new_body = new_body[1:-2]
+              return head + new_body + tail
+
+          new_src, n = pattern2.subn(repl, src)
+          print(f"Patched {n} App target build configurations")
+          with open(path, 'w') as f:
+              f.write(new_src)
+          PY
+          echo "--- App target signing settings ---"
+          grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER|DEVELOPMENT_TEAM|PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj | sort -u
+
       - name: Build iOS archive
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -117,14 +185,6 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -allowProvisioningUpdates \
             archive \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            PRODUCT_BUNDLE_IDENTIFIER="com.helpthehive" \
-            ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon" \
-            MARKETING_VERSION="1.11" \
-            CURRENT_PROJECT_VERSION="29" \
             CODE_SIGNING_ALLOWED_FOR_PACKAGES=NO
 
       - name: Export IPA
