@@ -125,7 +125,7 @@ jobs:
             ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon" \
             MARKETING_VERSION="1.11" \
             CURRENT_PROJECT_VERSION="29" \
-            -only-testing:App
+            CODE_SIGNING_ALLOWED_FOR_PACKAGES=NO
 
       - name: Export IPA
         env:
