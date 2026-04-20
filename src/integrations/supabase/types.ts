@@ -1817,6 +1817,39 @@ export type Database = {
         }
         Relationships: []
       }
+      walmart_price_cache: {
+        Row: {
+          cached_at: string
+          id: string
+          image: string | null
+          in_stock: boolean | null
+          item_name: string
+          price: number | null
+          title: string | null
+          zip_code: string
+        }
+        Insert: {
+          cached_at?: string
+          id?: string
+          image?: string | null
+          in_stock?: boolean | null
+          item_name: string
+          price?: number | null
+          title?: string | null
+          zip_code: string
+        }
+        Update: {
+          cached_at?: string
+          id?: string
+          image?: string | null
+          in_stock?: boolean | null
+          item_name?: string
+          price?: number | null
+          title?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
