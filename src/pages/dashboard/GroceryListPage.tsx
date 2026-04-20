@@ -774,6 +774,12 @@ export default function GroceryListPage() {
               ${(subtotal + extraItems.reduce((s, i) => s + i.price, 0) + (subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate - (mealPlan.pantrySavings || 0)).toFixed(2)}
             </span>
           </div>
+          {mealPlan.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-1">
+              <MapPin className="w-3 h-3 text-primary" />
+              Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
+            </p>
+          )}
         </div>
       </div>
       {/* Location permission is handled globally by LocationContext */}
