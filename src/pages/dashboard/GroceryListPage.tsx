@@ -206,18 +206,17 @@ export default function GroceryListPage() {
   const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
   const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus } = useLocation();
-  const { prices: krogerPrices, loading: krogerLoading, storeName: krogerStoreName, findNearestStore, fetchPricesForItems } = useKrogerPrices();
-  const [krogerInitialized, setKrogerInitialized] = useState<string | null>(null);
+  const { prices: walmartPrices, loading: walmartLoading, fetchPrices: fetchWalmartPrices } = useWalmartPrices();
+  const [walmartInitialized, setWalmartInitialized] = useState<string | null>(null);
 
-  // Reset Kroger state when meal plan changes (e.g., regeneration)
+  // Reset Walmart state when meal plan changes (e.g., regeneration)
   const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
 
-  // Fetch user's ZIP and load Kroger prices for grocery items
+  // Fetch user's ZIP and load Walmart prices for grocery items
   useEffect(() => {
-    if (!user || !mealPlan?.groceryList?.length || krogerInitialized === planFingerprint) return;
+    if (!user || !mealPlan?.groceryList?.length || walmartInitialized === planFingerprint) return;
 
     const init = async () => {
-      // Get user ZIP
       const { data: profile } = await supabase
         .from("profiles")
         .select("zip_code")
@@ -225,18 +224,13 @@ export default function GroceryListPage() {
         .maybeSingle();
 
       const zip = profile?.zip_code || "45202";
-      const store = await findNearestStore(zip);
-      if (store) {
-        const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
-        await fetchPricesForItems(itemNames, store.locationId);
-      }
-      setKrogerInitialized(planFingerprint);
+      const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+      await fetchWalmartPrices(itemNames, zip);
+      setWalmartInitialized(planFingerprint);
     };
 
     init();
-  }, [user, planFingerprint, krogerInitialized]);
-
-  // Location is now handled globally by LocationContext
+  }, [user, planFingerprint, walmartInitialized, mealPlan?.groceryList, fetchWalmartPrices]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -257,24 +251,25 @@ export default function GroceryListPage() {
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
   const savings = mealPlan.savingsSummary as SavingsSummary | undefined;
 
-  // Compute live-priced count from Kroger prices
-  const livePricedCount = Object.keys(krogerPrices).length;
+  // Compute live-priced count from Walmart prices (only items with a real price)
+  const livePricedCount = Object.values(walmartPrices).filter((p) => p.price != null).length;
   const computedConfidence = pricingConf ? {
     ...pricingConf,
     exactPricedCount: livePricedCount,
     estimatedCount: pricingConf.totalItems - livePricedCount - (pricingConf.cachedPricedCount || 0),
-    confidencePercent: pricingConf.totalItems > 0 
+    confidencePercent: pricingConf.totalItems > 0
       ? Math.round(((livePricedCount + (pricingConf.cachedPricedCount || 0)) / pricingConf.totalItems) * 100)
       : 0,
   } : null;
 
+  const isWalmart = (storeName: string) => /walmart/i.test(storeName);
+
   // Compute per-store totals from actual item prices so top & bottom always match
   const getStoreTotalFromItems = (storeName: string) => {
     return groceryItems.reduce((sum, item) => {
-      const useKroger = isKrogerOwnedStore(storeName);
-      if (useKroger) {
-        const kp = krogerPrices[item.name.toLowerCase()];
-        if (kp) return sum + (kp.salePrice ?? kp.regularPrice);
+      if (isWalmart(storeName)) {
+        const wp = walmartPrices[item.name.toLowerCase()];
+        if (wp?.price != null) return sum + wp.price;
       }
       if (item.storePrices && item.storePrices[storeName]) {
         return sum + item.storePrices[storeName];
@@ -310,19 +305,11 @@ export default function GroceryListPage() {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
-  // Check if active store is Kroger-owned
-  const isKrogerOwnedStore = (storeName: string) => {
-    return /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter|mariano|pick.n.save|metro market|qfc/i.test(storeName);
-  };
-
-  // Get store-specific price for an item — prefer Kroger real-time price only for Kroger stores
+  // Get store-specific price for an item — prefer Walmart real-time price only for Walmart
   const getItemPrice = (item: typeof groceryItems[0]) => {
-    const useKroger = isKrogerOwnedStore(activeStore);
-    if (useKroger) {
-      const krogerPrice = krogerPrices[item.name.toLowerCase()];
-      if (krogerPrice) {
-        return krogerPrice.salePrice ?? krogerPrice.regularPrice;
-      }
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[item.name.toLowerCase()];
+      if (wp?.price != null) return wp.price;
     }
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
       return item.storePrices[activeStore];
@@ -330,18 +317,18 @@ export default function GroceryListPage() {
     return item.estimatedPrice || 0;
   };
 
-  // Get Kroger image or fallback — only use Kroger images for Kroger stores
+  // Get Walmart product image or fallback — only for Walmart
   const getItemImage = (item: typeof groceryItems[0]) => {
-    if (isKrogerOwnedStore(activeStore)) {
-      const krogerPrice = krogerPrices[item.name.toLowerCase()];
-      if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[item.name.toLowerCase()];
+      if (wp?.image) return wp.image;
     }
     return getProductImage(item.name);
   };
 
-  const getKrogerInfo = (item: typeof groceryItems[0]) => {
-    if (!isKrogerOwnedStore(activeStore)) return null;
-    return krogerPrices[item.name.toLowerCase()] || null;
+  const getWalmartInfo = (item: typeof groceryItems[0]) => {
+    if (!isWalmart(activeStore)) return null;
+    return walmartPrices[item.name.toLowerCase()] || null;
   };
 
   // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
