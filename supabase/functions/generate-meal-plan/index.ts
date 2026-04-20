@@ -406,6 +406,11 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
     const recalcTotal = groceryList.reduce((sum: number, item: any) => sum + (item.estimatedPrice || 0), 0);
     mealPlan.totalEstimatedCost = Math.round(recalcTotal * 100) / 100;
 
+    // Persist regional adjustment metadata so UI can show "Prices adjusted for your region"
+    mealPlan.costOfLivingMultiplier = effectiveMultiplier;
+    if (blsRegionLabel) mealPlan.regionLabel = `${blsRegionLabel} (BLS)`;
+    else if (!mealPlan.regionLabel) mealPlan.regionLabel = `${cityInfo.city}, ${cityInfo.state}`;
+
     if (mealPlan.storeRecommendations) {
       for (const rec of mealPlan.storeRecommendations) {
         rec.estimatedTotal = Math.round(groceryList.reduce((sum: number, item: any) => sum + (item.storePrices?.[rec.store] ?? item.estimatedPrice ?? 0), 0) * 100) / 100;
