@@ -32,6 +32,29 @@ export default function MealPlanPage() {
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
   const [previousPlan, setPreviousPlan] = useState<GeneratedMealPlan | null>(null);
   const [showRestored, setShowRestored] = useState(false);
+  const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+
+  // Fetch Open Food Facts data for all meal names once per plan
+  useEffect(() => {
+    if (!mealPlan?.weeklyPlan?.length) return;
+    const names = Array.from(
+      new Set(mealPlan.weeklyPlan.flatMap((d) => d.meals.map((m) => m.name)))
+    );
+    if (names.length) fetchOffProducts(names);
+  }, [mealPlan, fetchOffProducts]);
+
+  // Enrich a meal with Open Food Facts nutrition when available; fall back to AI data
+  const enrich = (meal: MealPlanMeal): MealPlanMeal => {
+    const off = offProducts[meal.name.toLowerCase()];
+    if (!off) return meal;
+    return {
+      ...meal,
+      calories: off.calories != null ? Math.round(off.calories) : meal.calories,
+      protein: off.protein != null ? Math.round(off.protein) : meal.protein,
+      carbs: off.carbs != null ? Math.round(off.carbs) : meal.carbs,
+      fats: off.fat != null ? Math.round(off.fat) : meal.fats,
+    };
+  };
 
   const getMeal = (dayIndex: number, mealIndex: number, original: MealPlanMeal) => {
     return swappedMeals[`${dayIndex}-${mealIndex}`] || original;
