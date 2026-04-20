@@ -806,6 +806,45 @@ export type Database = {
           },
         ]
       }
+      open_food_facts_cache: {
+        Row: {
+          brand: string | null
+          cached_at: string
+          calories: number | null
+          carbs: number | null
+          fat: number | null
+          id: string
+          image: string | null
+          item_name: string
+          product_name: string | null
+          protein: number | null
+        }
+        Insert: {
+          brand?: string | null
+          cached_at?: string
+          calories?: number | null
+          carbs?: number | null
+          fat?: number | null
+          id?: string
+          image?: string | null
+          item_name: string
+          product_name?: string | null
+          protein?: number | null
+        }
+        Update: {
+          brand?: string | null
+          cached_at?: string
+          calories?: number | null
+          carbs?: number | null
+          fat?: number | null
+          id?: string
+          image?: string | null
+          item_name?: string
+          product_name?: string | null
+          protein?: number | null
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null
