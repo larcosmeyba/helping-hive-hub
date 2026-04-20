@@ -195,7 +195,13 @@ export default function FridgeChefPage() {
               >
                 {recipe.image && (
                   <div className="relative h-36 overflow-hidden">
-                    <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    <img
+                      src={recipe.image}
+                      alt={recipe.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=400&h=300&fit=crop&q=80"; }}
+                    />
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                       <p className="text-white font-semibold text-sm">{recipe.name}</p>
                     </div>
@@ -244,7 +250,12 @@ export default function FridgeChefPage() {
               </DialogHeader>
               {selectedRecipe.image && (
                 <div className="rounded-xl overflow-hidden -mx-2">
-                  <img src={selectedRecipe.image} alt={selectedRecipe.name} className="w-full h-48 object-cover" />
+                  <img
+                    src={selectedRecipe.image}
+                    alt={selectedRecipe.name}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=400&h=300&fit=crop&q=80"; }}
+                  />
                 </div>
               )}
               <div className="space-y-4">

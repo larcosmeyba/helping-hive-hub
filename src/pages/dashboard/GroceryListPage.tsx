@@ -471,7 +471,7 @@ export default function GroceryListPage() {
               sorted.splice(1, 0, cheapest);
             }
             return (
-              <div className="grid gap-2 md:gap-4 mt-1" style={{ gridTemplateColumns: '1fr 1.08fr 1fr' }}>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mt-1">
                 {sorted.map((store) => {
                   const isActive = activeStore === store.store;
                   const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
@@ -598,7 +598,7 @@ export default function GroceryListPage() {
                         setPriceCorrection({ itemName: item.name, currentPrice: price });
                         setCorrectedPrice("");
                       }}
-                      className="text-[9px] text-muted-foreground hover:text-primary mt-0.5 block"
+                      className="text-[9px] text-muted-foreground hover:text-primary active:scale-95 transition-colors mt-0.5 block"
                     >
                       Wrong price?
                     </button>
