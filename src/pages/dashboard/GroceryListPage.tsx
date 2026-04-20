@@ -522,7 +522,8 @@ export default function GroceryListPage() {
               const price = getItemPrice(item);
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
-              const krogerInfo = getKrogerInfo(item);
+              const walmartInfo = getWalmartInfo(item);
+              const showLive = !!walmartInfo && walmartInfo.price != null;
               return (
                 <label
                   key={item.name}
@@ -532,7 +533,7 @@ export default function GroceryListPage() {
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center">
                     <img
                       src={getItemImage(item)}
-                      alt={krogerInfo?.description || displayProduct.productDescription}
+                      alt={walmartInfo?.title || displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
@@ -542,42 +543,34 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {krogerInfo?.description || displayProduct.productDescription}
+                      {walmartInfo?.title || displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {(krogerInfo?.brand || displayProduct.brand) && (
+                      {displayProduct.brand && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> {krogerInfo?.brand || displayProduct.brand}
+                          <Package className="w-2.5 h-2.5" /> {displayProduct.brand}
                         </span>
                       )}
-                      {krogerInfo?.isOnSale && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded">
-                          <Percent className="w-2.5 h-2.5" /> SALE
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground">{krogerInfo?.size || item.quantity}</span>
-                      {!krogerInfo && item.pricingSource === 'internal_estimate' && (
+                      <span className="text-xs text-muted-foreground">{item.quantity}</span>
+                      {!showLive && item.pricingSource === 'internal_estimate' && (
                         <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
                       )}
-                      {krogerInfo && (
+                      {showLive && (
                         <span className="text-[9px] text-accent/80 font-medium">live</span>
+                      )}
+                      {walmartInfo && walmartInfo.inStock === false && (
+                        <span className="text-[9px] text-destructive font-medium">out of stock</span>
                       )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    {krogerInfo?.isOnSale ? (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through block">${krogerInfo.regularPrice.toFixed(2)}</span>
-                        <span className="text-sm font-bold text-accent">${krogerInfo.salePrice!.toFixed(2)}</span>
-                      </>
+                    <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
+                    {showLive ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
+                        at <img src={walmartLogo} alt="Walmart" className="h-3 w-auto inline-block" loading="lazy" />
+                      </p>
                     ) : (
-                      <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    )}
-                    {krogerInfo && krogerStoreName && (
-                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
-                    )}
-                    {!krogerInfo && activeStore && (
-                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                      activeStore && <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
                     )}
                     <button
                       onClick={(e) => {
