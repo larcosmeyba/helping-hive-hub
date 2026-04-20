@@ -11,6 +11,7 @@ import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/ty
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useWalmartPrices } from "@/hooks/useWalmartPrices";
+import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
@@ -207,7 +208,9 @@ export default function GroceryListPage() {
   const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus } = useLocation();
   const { prices: walmartPrices, loading: walmartLoading, fetchPrices: fetchWalmartPrices } = useWalmartPrices();
+  const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
   const [walmartInitialized, setWalmartInitialized] = useState<string | null>(null);
+  const [offInitialized, setOffInitialized] = useState<string | null>(null);
 
   // Reset Walmart state when meal plan changes (e.g., regeneration)
   const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
@@ -231,6 +234,14 @@ export default function GroceryListPage() {
 
     init();
   }, [user, planFingerprint, walmartInitialized, mealPlan?.groceryList, fetchWalmartPrices]);
+
+  // Fetch Open Food Facts product data (images, brands, nutrition) — runs once per plan
+  useEffect(() => {
+    if (!mealPlan?.groceryList?.length || offInitialized === planFingerprint) return;
+    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+    fetchOffProducts(itemNames);
+    setOffInitialized(planFingerprint);
+  }, [planFingerprint, offInitialized, mealPlan?.groceryList, fetchOffProducts]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -317,13 +328,19 @@ export default function GroceryListPage() {
     return item.estimatedPrice || 0;
   };
 
-  // Get Walmart product image or fallback — only for Walmart
+  // Get product image: Walmart live > Open Food Facts > Unsplash fallback
   const getItemImage = (item: typeof groceryItems[0]) => {
     if (isWalmart(activeStore)) {
       const wp = walmartPrices[item.name.toLowerCase()];
       if (wp?.image) return wp.image;
     }
+    const off = offProducts[item.name.toLowerCase()];
+    if (off?.image) return off.image;
     return getProductImage(item.name);
+  };
+
+  const getOffBrand = (item: typeof groceryItems[0]) => {
+    return offProducts[item.name.toLowerCase()]?.brand || null;
   };
 
   const getWalmartInfo = (item: typeof groceryItems[0]) => {
