@@ -155,6 +155,28 @@ Deno.serve(async (req) => {
     const userState = (profile.state || "").toUpperCase().slice(0, 2);
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
+
+    // === BLS regional cost-of-living multiplier (overrides ZIP heuristic when available) ===
+    let blsMultiplier = 1.0;
+    let blsRegionLabel: string | null = null;
+    try {
+      const blsRes = await fetch(`${supabaseUrl}/functions/v1/bls-price-index`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}` },
+        body: JSON.stringify({ state: userState }),
+        signal: AbortSignal.timeout(7000),
+      });
+      if (blsRes.ok) {
+        const blsData = await blsRes.json();
+        if (blsData?.multiplier && !blsData.fallback) {
+          blsMultiplier = Number(blsData.multiplier);
+          blsRegionLabel = blsData.region;
+        }
+      }
+    } catch (err) {
+      console.warn("BLS fetch failed, using flat ZIP heuristic:", err);
+    }
+    const effectiveMultiplier = blsMultiplier !== 1.0 ? blsMultiplier : regionInfo.costMultiplier;
     // Real state grocery tax rate (decimal, e.g. 0.04 = 4%) — prefers DB, falls back to legacy region info
     const stateGroceryTaxRate = taxByState.has(userState)
       ? taxByState.get(userState)!
@@ -266,12 +288,12 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
     for (const [normalized, info] of Object.entries(ingredientAggregator)) {
       const found = [...existingGroceryMap.keys()].some(gn => normalized.includes(gn) || gn.includes(normalized));
       if (!found) {
-        const price = estimateFallbackPrice(normalized) * regionInfo.costMultiplier;
-        const roundedPrice = Math.round(price * 100) / 100;
-        const displayName = normalized.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-        const newItem: any = {
-          name: displayName, quantity: info.rawTexts[0] || "1", estimatedPrice: roundedPrice,
-          section: inferSection(normalized), brand: inferStoreBrand(stores.split(",")[0]?.trim() || ""),
+        const price = estimateFallbackPrice(normalized) * effectiveMultiplier;
+          const roundedPrice = Math.round(price * 100) / 100;
+          const displayName = normalized.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+          const newItem: any = {
+            name: displayName, quantity: info.rawTexts[0] || "1", estimatedPrice: roundedPrice,
+            section: inferSection(normalized), brand: inferStoreBrand(stores.split(",")[0]?.trim() || ""),
           productDescription: displayName, storePrices: {}, storeProducts: {},
         };
         for (const storeName of (profile.preferred_stores || []).slice(0, 4)) {
@@ -301,12 +323,12 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       let pricingSource = 'ai_estimate';
       let pricingConfidence = 'low';
 
-      // Layer 2: regional baseline (preferred)
+      // Layer 2: regional baseline (preferred) — apply BLS multiplier on top
       const ingredientId = findIngredientId(lowerName);
       if (ingredientId && userState) {
         const regional = regionalByKey.get(`${ingredientId}|${userState}`);
         if (regional) {
-          item.estimatedPrice = Math.round(regional.price * 100) / 100;
+          item.estimatedPrice = Math.round(regional.price * blsMultiplier * 100) / 100;
           pricingSource = 'regional_baseline';
           pricingConfidence = 'medium';
           item.pricingUnit = regional.unit;
@@ -317,7 +339,12 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       if (pricingSource === 'ai_estimate' && ingredientId) {
         const national = nationalByIngredient.get(ingredientId);
         if (national) {
-          item.estimatedPrice = Math.round(national.price * regionInfo.costMultiplier * 100) / 100;
+          item.estimatedPrice = Math.round(national.price * effectiveMultiplier * 100) / 100;
+          pricingSource = 'national_baseline';
+          pricingConfidence = 'medium';
+          item.pricingUnit = national.unit;
+        }
+      }
           pricingSource = 'national_baseline';
           pricingConfidence = 'medium';
           item.pricingUnit = national.unit;
@@ -329,7 +356,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
         const canonical = canonicalMap.get(lowerName) ||
           [...canonicalMap.entries()].find(([k]) => lowerName.includes(k) || k.includes(lowerName))?.[1];
         if (canonical) {
-          item.estimatedPrice = Math.round(canonical.price * regionInfo.costMultiplier * 100) / 100;
+          item.estimatedPrice = Math.round(canonical.price * effectiveMultiplier * 100) / 100;
           pricingSource = 'internal_estimate';
           pricingConfidence = 'medium';
         }
@@ -378,6 +405,11 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
     // Recalculate totals
     const recalcTotal = groceryList.reduce((sum: number, item: any) => sum + (item.estimatedPrice || 0), 0);
     mealPlan.totalEstimatedCost = Math.round(recalcTotal * 100) / 100;
+
+    // Persist regional adjustment metadata so UI can show "Prices adjusted for your region"
+    mealPlan.costOfLivingMultiplier = effectiveMultiplier;
+    if (blsRegionLabel) mealPlan.regionLabel = `${blsRegionLabel} (BLS)`;
+    else if (!mealPlan.regionLabel) mealPlan.regionLabel = `${cityInfo.city}, ${cityInfo.state}`;
 
     if (mealPlan.storeRecommendations) {
       for (const rec of mealPlan.storeRecommendations) {

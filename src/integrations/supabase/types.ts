@@ -125,6 +125,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bls_regional_cpi_cache: {
+        Row: {
+          cached_at: string
+          id: string
+          last_cpi_value: number | null
+          multiplier: number
+          national_avg_cpi: number | null
+          region: string
+          region_code: string
+        }
+        Insert: {
+          cached_at?: string
+          id?: string
+          last_cpi_value?: number | null
+          multiplier?: number
+          national_avg_cpi?: number | null
+          region: string
+          region_code: string
+        }
+        Update: {
+          cached_at?: string
+          id?: string
+          last_cpi_value?: number | null
+          multiplier?: number
+          national_avg_cpi?: number | null
+          region?: string
+          region_code?: string
+        }
+        Relationships: []
+      }
       canonical_product_aliases: {
         Row: {
           alias_id: string
