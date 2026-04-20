@@ -41,7 +41,7 @@ export function BottomNavBar() {
                   "h-[24px] w-[24px] transition-all text-foreground",
                 )}
                 strokeWidth={isActive ? 2.4 : 1.8}
-                fill={isActive ? "currentColor" : "none"}
+                fill="none"
               />
               <span className={cn("truncate", isActive ? "text-foreground font-bold" : "text-foreground/60")}>{tab.label}</span>
             </NavLink>

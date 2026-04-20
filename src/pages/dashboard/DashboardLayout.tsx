@@ -15,6 +15,7 @@ import logo from "@/assets/logo-transparent.png";
 export default function DashboardLayout() {
   const isMobile = useIsMobile();
   const [scrolled, setScrolled] = useState(false);
+  const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
 
   useEffect(() => {
     if (!isMobile) return;
@@ -25,6 +26,17 @@ export default function DashboardLayout() {
     return () => main.removeEventListener("scroll", handler);
   }, [isMobile]);
 
+  useEffect(() => {
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
   return (
     <LocationProvider>
     <MealPlanProvider>
@@ -33,6 +45,11 @@ export default function DashboardLayout() {
           {!isMobile && <DashboardSidebar />}
 
           <div className="flex-1 flex flex-col w-full min-w-0">
+            {isOffline && (
+              <div className="bg-destructive text-destructive-foreground text-xs text-center py-2 px-4">
+                You're offline — some features may not work until you reconnect.
+              </div>
+            )}
             <header
               className={cn(
                 "bg-card transition-shadow duration-200",

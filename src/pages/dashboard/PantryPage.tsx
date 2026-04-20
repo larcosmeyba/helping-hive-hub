@@ -98,22 +98,28 @@ function PantryStaplesSection() {
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
-      {open && (
-        <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground mb-2">
-            Long-shelf-life essentials to stock up on. Prices vary by location.
-          </p>
-          {PANTRY_STAPLES.map((item, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{item.name}</p>
-                <p className="text-[10px] text-muted-foreground">{item.category}</p>
+      <div
+        className={`grid transition-all duration-200 ease-in-out ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
+            <p className="text-xs text-muted-foreground mb-2">
+              Long-shelf-life essentials to stock up on. Prices vary by location.
+            </p>
+            {PANTRY_STAPLES.map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{item.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.category}</p>
+                </div>
+                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{item.shelf}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{item.shelf}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

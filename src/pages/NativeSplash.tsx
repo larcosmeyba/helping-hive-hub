@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo-transparent.png";
 
@@ -9,23 +8,13 @@ export default function NativeSplash() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [fadeOut, setFadeOut] = useState(false);
-  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  // Pull display name straight from the auth session metadata — no extra DB call
+  const displayName: string | null =
+    user?.user_metadata?.display_name?.split(" ")[0] ?? null;
 
   useEffect(() => {
     if (loading) return;
-
-    if (user) {
-      supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("user_id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.display_name) {
-            setDisplayName(data.display_name.split(" ")[0]);
-          }
-        });
-    }
 
     const holdTimer = setTimeout(() => setFadeOut(true), 2000);
     const navTimer = setTimeout(() => {

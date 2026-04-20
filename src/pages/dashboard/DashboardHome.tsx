@@ -46,26 +46,14 @@ function GroceryScoreRing({ score }: { score: number }) {
 }
 
 export default function DashboardHome() {
-  const { user } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const { mealPlan, generating, generate } = useMealPlan();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [selectedMeal, setSelectedMeal] = useState<MealPlanMeal | null>(null);
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user!.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
+  const profile = authProfile;
 
   // Redirect to onboarding if not completed (only on fresh fetch, not cache)
   useEffect(() => {

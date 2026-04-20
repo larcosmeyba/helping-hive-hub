@@ -2,10 +2,21 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ProfileLite {
+  user_id: string;
+  display_name: string | null;
+  zip_code: string | null;
+  weekly_budget: number | null;
+  household_size: number | null;
+  questionnaire_completed: boolean | null;
+  [key: string]: any;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profile: ProfileLite | null;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileLite | null>(null);
 
   useEffect(() => {
     let initialized = false;
@@ -39,6 +51,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch profile once per logged-in user — shared across the app to avoid duplicate calls
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setProfile(data as ProfileLite);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const signUp = async (email: string, password: string, displayName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -63,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
