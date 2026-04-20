@@ -562,6 +562,9 @@ export default function GroceryListPage() {
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       {walmartInfo?.title || displayProduct.productDescription}
                     </p>
+                    {!displayProduct.brand && getOffBrand(item) && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{getOffBrand(item)}</p>
+                    )}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {displayProduct.brand && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
