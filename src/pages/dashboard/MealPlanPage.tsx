@@ -57,7 +57,7 @@ export default function MealPlanPage() {
   };
 
   const getMeal = (dayIndex: number, mealIndex: number, original: MealPlanMeal) => {
-    return swappedMeals[`${dayIndex}-${mealIndex}`] || original;
+    return enrich(swappedMeals[`${dayIndex}-${mealIndex}`] || original);
   };
 
   const handleSwap = (dayIndex: number, mealIndex: number, newMeal: MealPlanMeal) => {
