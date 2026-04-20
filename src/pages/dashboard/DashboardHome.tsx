@@ -150,6 +150,13 @@ export default function DashboardHome() {
         ))}
       </motion.div>
 
+      {mealPlan?.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
+        <p className="text-[11px] md:text-xs text-muted-foreground flex items-center gap-1.5 -mt-1">
+          <Target className="w-3 h-3 text-primary" />
+          Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
+        </p>
+      )}
+
       {/* This Week's Meals */}
       {!mealPlan ? (
         <div className={cardClass + " p-6 md:p-12 text-center"} style={cardShadow}>
