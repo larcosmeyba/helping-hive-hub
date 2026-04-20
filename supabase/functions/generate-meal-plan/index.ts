@@ -345,11 +345,6 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
           item.pricingUnit = national.unit;
         }
       }
-          pricingSource = 'national_baseline';
-          pricingConfidence = 'medium';
-          item.pricingUnit = national.unit;
-        }
-      }
 
       // Legacy canonical fallback (only if no ingredient match at all)
       if (pricingSource === 'ai_estimate') {
