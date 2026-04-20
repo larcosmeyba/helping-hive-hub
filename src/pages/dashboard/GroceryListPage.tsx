@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
-import { useKrogerPrices } from "@/hooks/useKrogerPrices";
+import { useWalmartPrices } from "@/hooks/useWalmartPrices";
+import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
@@ -205,18 +206,17 @@ export default function GroceryListPage() {
   const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
   const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus } = useLocation();
-  const { prices: krogerPrices, loading: krogerLoading, storeName: krogerStoreName, findNearestStore, fetchPricesForItems } = useKrogerPrices();
-  const [krogerInitialized, setKrogerInitialized] = useState<string | null>(null);
+  const { prices: walmartPrices, loading: walmartLoading, fetchPrices: fetchWalmartPrices } = useWalmartPrices();
+  const [walmartInitialized, setWalmartInitialized] = useState<string | null>(null);
 
-  // Reset Kroger state when meal plan changes (e.g., regeneration)
+  // Reset Walmart state when meal plan changes (e.g., regeneration)
   const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
 
-  // Fetch user's ZIP and load Kroger prices for grocery items
+  // Fetch user's ZIP and load Walmart prices for grocery items
   useEffect(() => {
-    if (!user || !mealPlan?.groceryList?.length || krogerInitialized === planFingerprint) return;
+    if (!user || !mealPlan?.groceryList?.length || walmartInitialized === planFingerprint) return;
 
     const init = async () => {
-      // Get user ZIP
       const { data: profile } = await supabase
         .from("profiles")
         .select("zip_code")
@@ -224,18 +224,13 @@ export default function GroceryListPage() {
         .maybeSingle();
 
       const zip = profile?.zip_code || "45202";
-      const store = await findNearestStore(zip);
-      if (store) {
-        const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
-        await fetchPricesForItems(itemNames, store.locationId);
-      }
-      setKrogerInitialized(planFingerprint);
+      const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+      await fetchWalmartPrices(itemNames, zip);
+      setWalmartInitialized(planFingerprint);
     };
 
     init();
-  }, [user, planFingerprint, krogerInitialized]);
-
-  // Location is now handled globally by LocationContext
+  }, [user, planFingerprint, walmartInitialized, mealPlan?.groceryList, fetchWalmartPrices]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -256,24 +251,25 @@ export default function GroceryListPage() {
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
   const savings = mealPlan.savingsSummary as SavingsSummary | undefined;
 
-  // Compute live-priced count from Kroger prices
-  const livePricedCount = Object.keys(krogerPrices).length;
+  // Compute live-priced count from Walmart prices (only items with a real price)
+  const livePricedCount = Object.values(walmartPrices).filter((p) => p.price != null).length;
   const computedConfidence = pricingConf ? {
     ...pricingConf,
     exactPricedCount: livePricedCount,
     estimatedCount: pricingConf.totalItems - livePricedCount - (pricingConf.cachedPricedCount || 0),
-    confidencePercent: pricingConf.totalItems > 0 
+    confidencePercent: pricingConf.totalItems > 0
       ? Math.round(((livePricedCount + (pricingConf.cachedPricedCount || 0)) / pricingConf.totalItems) * 100)
       : 0,
   } : null;
 
+  const isWalmart = (storeName: string) => /walmart/i.test(storeName);
+
   // Compute per-store totals from actual item prices so top & bottom always match
   const getStoreTotalFromItems = (storeName: string) => {
     return groceryItems.reduce((sum, item) => {
-      const useKroger = isKrogerOwnedStore(storeName);
-      if (useKroger) {
-        const kp = krogerPrices[item.name.toLowerCase()];
-        if (kp) return sum + (kp.salePrice ?? kp.regularPrice);
+      if (isWalmart(storeName)) {
+        const wp = walmartPrices[item.name.toLowerCase()];
+        if (wp?.price != null) return sum + wp.price;
       }
       if (item.storePrices && item.storePrices[storeName]) {
         return sum + item.storePrices[storeName];
@@ -309,19 +305,11 @@ export default function GroceryListPage() {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
-  // Check if active store is Kroger-owned
-  const isKrogerOwnedStore = (storeName: string) => {
-    return /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter|mariano|pick.n.save|metro market|qfc/i.test(storeName);
-  };
-
-  // Get store-specific price for an item — prefer Kroger real-time price only for Kroger stores
+  // Get store-specific price for an item — prefer Walmart real-time price only for Walmart
   const getItemPrice = (item: typeof groceryItems[0]) => {
-    const useKroger = isKrogerOwnedStore(activeStore);
-    if (useKroger) {
-      const krogerPrice = krogerPrices[item.name.toLowerCase()];
-      if (krogerPrice) {
-        return krogerPrice.salePrice ?? krogerPrice.regularPrice;
-      }
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[item.name.toLowerCase()];
+      if (wp?.price != null) return wp.price;
     }
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
       return item.storePrices[activeStore];
@@ -329,18 +317,18 @@ export default function GroceryListPage() {
     return item.estimatedPrice || 0;
   };
 
-  // Get Kroger image or fallback — only use Kroger images for Kroger stores
+  // Get Walmart product image or fallback — only for Walmart
   const getItemImage = (item: typeof groceryItems[0]) => {
-    if (isKrogerOwnedStore(activeStore)) {
-      const krogerPrice = krogerPrices[item.name.toLowerCase()];
-      if (krogerPrice?.imageUrl) return krogerPrice.imageUrl;
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[item.name.toLowerCase()];
+      if (wp?.image) return wp.image;
     }
     return getProductImage(item.name);
   };
 
-  const getKrogerInfo = (item: typeof groceryItems[0]) => {
-    if (!isKrogerOwnedStore(activeStore)) return null;
-    return krogerPrices[item.name.toLowerCase()] || null;
+  const getWalmartInfo = (item: typeof groceryItems[0]) => {
+    if (!isWalmart(activeStore)) return null;
+    return walmartPrices[item.name.toLowerCase()] || null;
   };
 
   // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
@@ -352,18 +340,18 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
-      {/* Kroger live pricing banner */}
-      {krogerLoading && (
+      {/* Walmart live pricing banner */}
+      {walmartLoading && (
         <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-xl px-4 py-2.5 text-sm font-medium">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading live Kroger prices for your area...
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading live Walmart prices for your area...
         </div>
       )}
-      {krogerStoreName && !krogerLoading && Object.keys(krogerPrices).length > 0 && (
+      {!walmartLoading && livePricedCount > 0 && (
         <div className="flex items-center gap-2 bg-accent/10 text-accent-foreground rounded-xl px-4 py-2.5 text-sm">
-          <Store className="w-4 h-4 text-accent" />
-          <span>Live prices from <strong className="text-accent">{krogerStoreName}</strong></span>
+          <img src={walmartLogo} alt="Walmart" className="h-5 w-auto" loading="lazy" />
+          <span>Live prices from <strong className="text-accent">Walmart</strong></span>
           <span className="text-xs text-muted-foreground ml-auto">
-            {Object.values(krogerPrices).filter(p => p.isOnSale).length} items on sale
+            {livePricedCount} item{livePricedCount === 1 ? '' : 's'} priced
           </span>
         </div>
       )}
@@ -534,7 +522,8 @@ export default function GroceryListPage() {
               const price = getItemPrice(item);
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
-              const krogerInfo = getKrogerInfo(item);
+              const walmartInfo = getWalmartInfo(item);
+              const showLive = !!walmartInfo && walmartInfo.price != null;
               return (
                 <label
                   key={item.name}
@@ -544,7 +533,7 @@ export default function GroceryListPage() {
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center">
                     <img
                       src={getItemImage(item)}
-                      alt={krogerInfo?.description || displayProduct.productDescription}
+                      alt={walmartInfo?.title || displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
@@ -554,42 +543,34 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {krogerInfo?.description || displayProduct.productDescription}
+                      {walmartInfo?.title || displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {(krogerInfo?.brand || displayProduct.brand) && (
+                      {displayProduct.brand && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> {krogerInfo?.brand || displayProduct.brand}
+                          <Package className="w-2.5 h-2.5" /> {displayProduct.brand}
                         </span>
                       )}
-                      {krogerInfo?.isOnSale && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded">
-                          <Percent className="w-2.5 h-2.5" /> SALE
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground">{krogerInfo?.size || item.quantity}</span>
-                      {!krogerInfo && item.pricingSource === 'internal_estimate' && (
+                      <span className="text-xs text-muted-foreground">{item.quantity}</span>
+                      {!showLive && item.pricingSource === 'internal_estimate' && (
                         <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
                       )}
-                      {krogerInfo && (
+                      {showLive && (
                         <span className="text-[9px] text-accent/80 font-medium">live</span>
+                      )}
+                      {walmartInfo && walmartInfo.inStock === false && (
+                        <span className="text-[9px] text-destructive font-medium">out of stock</span>
                       )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    {krogerInfo?.isOnSale ? (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through block">${krogerInfo.regularPrice.toFixed(2)}</span>
-                        <span className="text-sm font-bold text-accent">${krogerInfo.salePrice!.toFixed(2)}</span>
-                      </>
+                    <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
+                    {showLive ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
+                        at <img src={walmartLogo} alt="Walmart" className="h-3 w-auto inline-block" loading="lazy" />
+                      </p>
                     ) : (
-                      <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    )}
-                    {krogerInfo && krogerStoreName && (
-                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
-                    )}
-                    {!krogerInfo && activeStore && (
-                      <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                      activeStore && <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
                     )}
                     <button
                       onClick={(e) => {

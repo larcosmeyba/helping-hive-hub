@@ -20,7 +20,7 @@ const navItems = [
   { title: "Recipes", url: "/admin/recipes", icon: BookOpen, permission: "manage_recipes" as const },
   { title: "Special Meals", url: "/admin/special-meals", icon: Sparkles, permission: "manage_special_meals" as const },
   { title: "Marketing Studio", url: "/admin/marketing", icon: Megaphone, permission: "manage_marketing" as const },
-  { title: "Kroger Sync", url: "/admin/kroger-sync", icon: ShoppingCart, permission: "manage_recipes" as const },
+  
   { title: "Feedback & Pricing", url: "/admin/feedback", icon: Flag, permission: "view_analytics" as const },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, permission: "view_analytics" as const },
   { title: "Admin Management", url: "/admin/admins", icon: ShieldCheck, permission: "invite_remove_admins" as const },
