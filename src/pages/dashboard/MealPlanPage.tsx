@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 import { getMealImage, PLACEHOLDER_IMAGE } from "@/utils/mealImages";
+import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
