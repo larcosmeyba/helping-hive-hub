@@ -170,7 +170,7 @@ export default function FridgeChefPage() {
         <Button
           onClick={generateRecipes}
           disabled={selectedItems.length === 0 || generating}
-          className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 text-base"
+          className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
         >
           {generating ? (
             <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Generating Recipes...</>

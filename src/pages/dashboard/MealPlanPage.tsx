@@ -184,11 +184,11 @@ export default function MealPlanPage() {
             {day.meals.map((originalMeal, mealIndex) => {
               const meal = getMeal(dayIndex, mealIndex, originalMeal);
               return (
-                <div key={`${day.day}-${mealIndex}`} className="snap-start shrink-0 w-[140px] md:w-auto md:shrink">
+                <div key={`${day.day}-${mealIndex}`} className="snap-start shrink-0 w-[155px] md:w-auto md:shrink">
                   {/* Entire card is clickable to open recipe */}
                   <button
                     onClick={() => setSelectedMeal(meal)}
-                    className="bg-card rounded-2xl border border-border shadow-card overflow-hidden w-[140px] h-[120px] md:w-full md:h-auto text-left hover:shadow-elevated transition-shadow group"
+                    className="bg-card rounded-2xl border border-border shadow-card overflow-hidden w-[155px] h-[120px] md:w-full md:h-auto text-left hover:shadow-elevated transition-shadow group"
                   >
                     <div className="relative h-[70px] md:h-24 overflow-hidden">
                       <img
@@ -202,15 +202,17 @@ export default function MealPlanPage() {
                         <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
                       </div>
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
-                        <p className="text-white text-[10px] md:text-sm font-semibold line-clamp-1 leading-tight">{meal.name}</p>
+                        <p className="text-white text-[9px] md:text-sm font-semibold line-clamp-2 leading-tight">{meal.name}</p>
                       </div>
                     </div>
                     <div className="p-1.5 md:p-3 flex items-center gap-2 text-[9px] md:text-xs text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Flame className="w-2.5 h-2.5 text-primary" />{meal.calories} cal</span>
-                      {meal.costPerServing != null && (
+                      {meal.costPerServing != null ? (
                         <span className="flex items-center gap-0.5 text-primary font-medium">
                           <DollarSign className="w-2 h-2" />{meal.costPerServing.toFixed(2)}/srv
                         </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </div>
                   </button>
