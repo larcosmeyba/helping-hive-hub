@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
-import { useKrogerPrices } from "@/hooks/useKrogerPrices";
+import { useWalmartPrices } from "@/hooks/useWalmartPrices";
+import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
