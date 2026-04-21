@@ -12,6 +12,8 @@ import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useWalmartPrices } from "@/hooks/useWalmartPrices";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
+import { useOpenPrices } from "@/hooks/useOpenPrices";
+import { useGoogleShoppingPrices } from "@/hooks/useGoogleShoppingPrices";
 import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
@@ -209,8 +211,13 @@ export default function GroceryListPage() {
   const { status: locationStatus } = useLocation();
   const { prices: walmartPrices, loading: walmartLoading, fetchPrices: fetchWalmartPrices } = useWalmartPrices();
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+  const { prices: openPrices, fetchPrices: fetchOpenPrices } = useOpenPrices();
+  const { prices: shoppingPrices, loading: shoppingLoading, fetchPrices: fetchShoppingPrices } = useGoogleShoppingPrices();
   const [walmartInitialized, setWalmartInitialized] = useState<string | null>(null);
   const [offInitialized, setOffInitialized] = useState<string | null>(null);
+  const [openPricesInitialized, setOpenPricesInitialized] = useState<string | null>(null);
+  const [shoppingInitialized, setShoppingInitialized] = useState<string | null>(null);
+  const [userZip, setUserZip] = useState<string>("");
 
   // Reset Walmart state when meal plan changes (e.g., regeneration)
   const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
@@ -227,6 +234,7 @@ export default function GroceryListPage() {
         .maybeSingle();
 
       const zip = profile?.zip_code || "45202";
+      setUserZip(zip);
       const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
       await fetchWalmartPrices(itemNames, zip);
       setWalmartInitialized(planFingerprint);
@@ -242,6 +250,22 @@ export default function GroceryListPage() {
     fetchOffProducts(itemNames);
     setOffInitialized(planFingerprint);
   }, [planFingerprint, offInitialized, mealPlan?.groceryList, fetchOffProducts]);
+
+  // Fetch Open Prices community data (free, no key) — runs once per plan
+  useEffect(() => {
+    if (!mealPlan?.groceryList?.length || openPricesInitialized === planFingerprint) return;
+    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+    fetchOpenPrices(itemNames);
+    setOpenPricesInitialized(planFingerprint);
+  }, [planFingerprint, openPricesInitialized, mealPlan?.groceryList, fetchOpenPrices]);
+
+  // Fetch Google Shopping aggregated prices (covers Walmart, Target, Kroger family, etc.)
+  useEffect(() => {
+    if (!mealPlan?.groceryList?.length || !userZip || shoppingInitialized === planFingerprint) return;
+    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+    fetchShoppingPrices(itemNames, userZip);
+    setShoppingInitialized(planFingerprint);
+  }, [planFingerprint, shoppingInitialized, mealPlan?.groceryList, userZip, fetchShoppingPrices]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
