@@ -340,17 +340,59 @@ export default function GroceryListPage() {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
-  // Get store-specific price for an item — prefer Walmart real-time price only for Walmart
-  const getItemPrice = (item: typeof groceryItems[0]) => {
-    if (isWalmart(activeStore)) {
-      const wp = walmartPrices[item.name.toLowerCase()];
-      if (wp?.price != null) return wp.price;
-    }
-    if (item.storePrices && activeStore && item.storePrices[activeStore]) {
-      return item.storePrices[activeStore];
-    }
-    return item.estimatedPrice || 0;
+  // Pricing chain (per item, in order):
+  //   1. Open Prices (community) — only if within ±40% of baseline (outlier guard)
+  //   2. Google Shopping (best of top-3) for the active store, else cheapest overall
+  //   3. Walmart direct price (only when active store is Walmart)
+  //   4. AI/regional storePrices for active store
+  //   5. Baseline estimatedPrice
+  type PriceInfo = {
+    price: number;
+    source: 'open_prices' | 'google_shopping' | 'walmart' | 'store_estimate' | 'estimate';
+    store?: string;
+    date?: string | null;
+    city?: string | null;
   };
+
+  const getItemPriceInfo = (item: typeof groceryItems[0]): PriceInfo => {
+    const key = item.name.toLowerCase();
+    const baseline = item.estimatedPrice || 0;
+
+    // Layer 1: Open Prices (community), with outlier guard vs baseline
+    const op = openPrices[key];
+    if (op?.price != null && baseline > 0) {
+      const ratio = op.price / baseline;
+      if (ratio >= 0.6 && ratio <= 1.4) {
+        return { price: op.price, source: 'open_prices', store: op.store ?? undefined, date: op.date, city: op.city };
+      }
+    }
+
+    // Layer 2: Google Shopping — prefer match for active store, else cheapest
+    const gs = shoppingPrices[key];
+    if (gs && gs.length) {
+      const storeMatch = activeStore
+        ? gs.find((r) => r.store && activeStore.toLowerCase().includes(r.store.toLowerCase().split(' ')[0]))
+        : null;
+      const pick = storeMatch || gs[0];
+      return { price: pick.price, source: 'google_shopping', store: pick.store };
+    }
+
+    // Layer 3: Walmart direct (only for Walmart store)
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[key];
+      if (wp?.price != null) return { price: wp.price, source: 'walmart', store: 'Walmart' };
+    }
+
+    // Layer 4: per-store AI/regional estimate
+    if (item.storePrices && activeStore && item.storePrices[activeStore]) {
+      return { price: item.storePrices[activeStore], source: 'store_estimate', store: activeStore };
+    }
+
+    // Layer 5: baseline estimate
+    return { price: baseline, source: 'estimate' };
+  };
+
+  const getItemPrice = (item: typeof groceryItems[0]) => getItemPriceInfo(item).price;
 
   // Get product image: Walmart live > Open Food Facts > Unsplash fallback
   const getItemImage = (item: typeof groceryItems[0]) => {
