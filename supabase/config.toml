@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.bls-price-index]
 verify_jwt = false
+
+[functions.open-prices]
+verify_jwt = false
+
+[functions.serpapi-google-shopping]
+verify_jwt = false
