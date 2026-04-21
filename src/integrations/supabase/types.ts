@@ -364,6 +364,30 @@ export type Database = {
         }
         Relationships: []
       }
+      google_shopping_cache: {
+        Row: {
+          cached_at: string
+          id: string
+          item_name: string
+          results: Json
+          zip_code: string
+        }
+        Insert: {
+          cached_at?: string
+          id?: string
+          item_name: string
+          results?: Json
+          zip_code: string
+        }
+        Update: {
+          cached_at?: string
+          id?: string
+          item_name?: string
+          results?: Json
+          zip_code?: string
+        }
+        Relationships: []
+      }
       grocery_cost_comparisons: {
         Row: {
           actual_grocery_cost: number
@@ -872,6 +896,42 @@ export type Database = {
           item_name?: string
           product_name?: string | null
           protein?: number | null
+        }
+        Relationships: []
+      }
+      open_prices_cache: {
+        Row: {
+          cached_at: string
+          city: string | null
+          currency: string | null
+          id: string
+          item_name: string
+          price: number | null
+          product_name: string | null
+          store: string | null
+          submitted_date: string | null
+        }
+        Insert: {
+          cached_at?: string
+          city?: string | null
+          currency?: string | null
+          id?: string
+          item_name: string
+          price?: number | null
+          product_name?: string | null
+          store?: string | null
+          submitted_date?: string | null
+        }
+        Update: {
+          cached_at?: string
+          city?: string | null
+          currency?: string | null
+          id?: string
+          item_name?: string
+          price?: number | null
+          product_name?: string | null
+          store?: string | null
+          submitted_date?: string | null
         }
         Relationships: []
       }
@@ -1439,6 +1499,24 @@ export type Database = {
           supports_live_inventory?: boolean
           supports_live_pricing?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      serpapi_usage: {
+        Row: {
+          call_count: number
+          updated_at: string
+          usage_date: string
+        }
+        Insert: {
+          call_count?: number
+          updated_at?: string
+          usage_date: string
+        }
+        Update: {
+          call_count?: number
+          updated_at?: string
+          usage_date?: string
         }
         Relationships: []
       }

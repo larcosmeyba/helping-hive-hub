@@ -12,6 +12,8 @@ import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useWalmartPrices } from "@/hooks/useWalmartPrices";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
+import { useOpenPrices } from "@/hooks/useOpenPrices";
+import { useGoogleShoppingPrices } from "@/hooks/useGoogleShoppingPrices";
 import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
@@ -209,8 +211,13 @@ export default function GroceryListPage() {
   const { status: locationStatus } = useLocation();
   const { prices: walmartPrices, loading: walmartLoading, fetchPrices: fetchWalmartPrices } = useWalmartPrices();
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+  const { prices: openPrices, fetchPrices: fetchOpenPrices } = useOpenPrices();
+  const { prices: shoppingPrices, loading: shoppingLoading, fetchPrices: fetchShoppingPrices } = useGoogleShoppingPrices();
   const [walmartInitialized, setWalmartInitialized] = useState<string | null>(null);
   const [offInitialized, setOffInitialized] = useState<string | null>(null);
+  const [openPricesInitialized, setOpenPricesInitialized] = useState<string | null>(null);
+  const [shoppingInitialized, setShoppingInitialized] = useState<string | null>(null);
+  const [userZip, setUserZip] = useState<string>("");
 
   // Reset Walmart state when meal plan changes (e.g., regeneration)
   const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
@@ -227,6 +234,7 @@ export default function GroceryListPage() {
         .maybeSingle();
 
       const zip = profile?.zip_code || "45202";
+      setUserZip(zip);
       const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
       await fetchWalmartPrices(itemNames, zip);
       setWalmartInitialized(planFingerprint);
@@ -242,6 +250,22 @@ export default function GroceryListPage() {
     fetchOffProducts(itemNames);
     setOffInitialized(planFingerprint);
   }, [planFingerprint, offInitialized, mealPlan?.groceryList, fetchOffProducts]);
+
+  // Fetch Open Prices community data (free, no key) — runs once per plan
+  useEffect(() => {
+    if (!mealPlan?.groceryList?.length || openPricesInitialized === planFingerprint) return;
+    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+    fetchOpenPrices(itemNames);
+    setOpenPricesInitialized(planFingerprint);
+  }, [planFingerprint, openPricesInitialized, mealPlan?.groceryList, fetchOpenPrices]);
+
+  // Fetch Google Shopping aggregated prices (covers Walmart, Target, Kroger family, etc.)
+  useEffect(() => {
+    if (!mealPlan?.groceryList?.length || !userZip || shoppingInitialized === planFingerprint) return;
+    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
+    fetchShoppingPrices(itemNames, userZip);
+    setShoppingInitialized(planFingerprint);
+  }, [planFingerprint, shoppingInitialized, mealPlan?.groceryList, userZip, fetchShoppingPrices]);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -316,17 +340,59 @@ export default function GroceryListPage() {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
-  // Get store-specific price for an item — prefer Walmart real-time price only for Walmart
-  const getItemPrice = (item: typeof groceryItems[0]) => {
-    if (isWalmart(activeStore)) {
-      const wp = walmartPrices[item.name.toLowerCase()];
-      if (wp?.price != null) return wp.price;
-    }
-    if (item.storePrices && activeStore && item.storePrices[activeStore]) {
-      return item.storePrices[activeStore];
-    }
-    return item.estimatedPrice || 0;
+  // Pricing chain (per item, in order):
+  //   1. Open Prices (community) — only if within ±40% of baseline (outlier guard)
+  //   2. Google Shopping (best of top-3) for the active store, else cheapest overall
+  //   3. Walmart direct price (only when active store is Walmart)
+  //   4. AI/regional storePrices for active store
+  //   5. Baseline estimatedPrice
+  type PriceInfo = {
+    price: number;
+    source: 'open_prices' | 'google_shopping' | 'walmart' | 'store_estimate' | 'estimate';
+    store?: string;
+    date?: string | null;
+    city?: string | null;
   };
+
+  const getItemPriceInfo = (item: typeof groceryItems[0]): PriceInfo => {
+    const key = item.name.toLowerCase();
+    const baseline = item.estimatedPrice || 0;
+
+    // Layer 1: Open Prices (community), with outlier guard vs baseline
+    const op = openPrices[key];
+    if (op?.price != null && baseline > 0) {
+      const ratio = op.price / baseline;
+      if (ratio >= 0.6 && ratio <= 1.4) {
+        return { price: op.price, source: 'open_prices', store: op.store ?? undefined, date: op.date, city: op.city };
+      }
+    }
+
+    // Layer 2: Google Shopping — prefer match for active store, else cheapest
+    const gs = shoppingPrices[key];
+    if (gs && gs.length) {
+      const storeMatch = activeStore
+        ? gs.find((r) => r.store && activeStore.toLowerCase().includes(r.store.toLowerCase().split(' ')[0]))
+        : null;
+      const pick = storeMatch || gs[0];
+      return { price: pick.price, source: 'google_shopping', store: pick.store };
+    }
+
+    // Layer 3: Walmart direct (only for Walmart store)
+    if (isWalmart(activeStore)) {
+      const wp = walmartPrices[key];
+      if (wp?.price != null) return { price: wp.price, source: 'walmart', store: 'Walmart' };
+    }
+
+    // Layer 4: per-store AI/regional estimate
+    if (item.storePrices && activeStore && item.storePrices[activeStore]) {
+      return { price: item.storePrices[activeStore], source: 'store_estimate', store: activeStore };
+    }
+
+    // Layer 5: baseline estimate
+    return { price: baseline, source: 'estimate' };
+  };
+
+  const getItemPrice = (item: typeof groceryItems[0]) => getItemPriceInfo(item).price;
 
   // Get product image: Walmart live > Open Food Facts > Unsplash fallback
   const getItemImage = (item: typeof groceryItems[0]) => {
@@ -361,6 +427,11 @@ export default function GroceryListPage() {
       {walmartLoading && (
         <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-xl px-4 py-2.5 text-sm font-medium">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading live Walmart prices for your area...
+        </div>
+      )}
+      {shoppingLoading && (
+        <div className="flex items-center gap-2 bg-muted/40 text-foreground rounded-xl px-4 py-2.5 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" /> Comparing prices across retailers...
         </div>
       )}
       {!walmartLoading && livePricedCount > 0 && (
@@ -536,11 +607,12 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item) => {
-              const price = getItemPrice(item);
+              const priceInfo = getItemPriceInfo(item);
+              const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               const walmartInfo = getWalmartInfo(item);
-              const showLive = !!walmartInfo && walmartInfo.price != null;
+              const showLive = priceInfo.source === 'walmart' || priceInfo.source === 'google_shopping';
               return (
                 <label
                   key={item.name}
@@ -585,12 +657,24 @@ export default function GroceryListPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    {showLive ? (
+                    {priceInfo.source === 'walmart' && (
                       <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
                         at <img src={walmartLogo} alt="Walmart" className="h-3 w-auto inline-block" loading="lazy" />
                       </p>
-                    ) : (
-                      activeStore && <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                    )}
+                    {priceInfo.source === 'google_shopping' && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">via {priceInfo.store || 'Google'}</p>
+                    )}
+                    {priceInfo.source === 'open_prices' && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">
+                        community{priceInfo.date ? ` · ${priceInfo.date.slice(5)}` : ''}
+                      </p>
+                    )}
+                    {priceInfo.source === 'store_estimate' && activeStore && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">est. at {activeStore}</p>
+                    )}
+                    {priceInfo.source === 'estimate' && (
+                      <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
                     )}
                     <button
                       onClick={(e) => {
@@ -791,6 +875,15 @@ export default function GroceryListPage() {
           if (el) (el as HTMLInputElement).focus();
         }} />
       )}
+
+      {/* Data attribution */}
+      <p className="text-[10px] text-muted-foreground/70 leading-relaxed text-center px-2 pt-2">
+        Pricing from Google Shopping,{" "}
+        <a href="https://prices.openfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground">
+          Open Food Facts Open Prices
+        </a>
+        , and the US Bureau of Labor Statistics. Product data from Open Food Facts. Community-submitted prices licensed under ODbL.
+      </p>
     </div>
   );
 }
