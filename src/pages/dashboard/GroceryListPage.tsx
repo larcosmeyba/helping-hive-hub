@@ -875,6 +875,15 @@ export default function GroceryListPage() {
           if (el) (el as HTMLInputElement).focus();
         }} />
       )}
+
+      {/* Data attribution */}
+      <p className="text-[10px] text-muted-foreground/70 leading-relaxed text-center px-2 pt-2">
+        Pricing from Google Shopping,{" "}
+        <a href="https://prices.openfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground">
+          Open Food Facts Open Prices
+        </a>
+        , and the US Bureau of Labor Statistics. Product data from Open Food Facts. Community-submitted prices licensed under ODbL.
+      </p>
     </div>
   );
 }
