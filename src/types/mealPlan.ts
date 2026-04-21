@@ -31,7 +31,7 @@ export interface GroceryItem {
   productDescription?: string;
   storePrices?: Record<string, number>;
   storeProducts?: Record<string, StoreSpecificProduct>;
-  pricingSource?: 'live' | 'cached' | 'internal_estimate' | 'ai_estimate';
+  pricingSource?: 'live' | 'cached' | 'internal_estimate' | 'ai_estimate' | 'open_prices' | 'google_shopping' | 'walmart' | 'regional' | 'national';
   pricingConfidence?: 'high' | 'medium' | 'low';
 }
 

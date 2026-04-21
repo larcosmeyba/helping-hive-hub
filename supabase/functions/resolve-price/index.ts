@@ -1,5 +1,11 @@
-// Three-layer price resolver: Kroger live → regional baseline → national baseline.
-// Returns the best available price for a given ingredient + user state/zip.
+// Pricing fallback chain (in order):
+//   1. Open Prices (Open Food Facts community-submitted) — caller can pass via open_price
+//   2. SerpApi Google Shopping — caller passes lowest result via shopping_price
+//   3. SerpApi Walmart direct — caller passes via retailer_price
+//   4. Regional baseline (BLS-adjusted via region table)
+//   5. National baseline
+// Note: Kroger is NOT a pricing source — Public-tier API has no live prices. Used only
+// for product metadata (images/UPC/store lookup).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -11,7 +17,9 @@ interface ResolveRequest {
   ingredient_id?: string;
   ingredient_name?: string;
   state?: string;
-  retailer_price?: number | null;
+  open_price?: number | null;       // Layer 1
+  shopping_price?: number | null;   // Layer 2 (Google Shopping lowest)
+  retailer_price?: number | null;   // Layer 3 (Walmart direct)
 }
 
 Deno.serve(async (req) => {
@@ -23,15 +31,21 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const body = (await req.json()) as ResolveRequest;
-    const { ingredient_id, ingredient_name, state, retailer_price } = body;
+    const { ingredient_id, ingredient_name, state, open_price, shopping_price, retailer_price } = body;
 
-    // Layer 1: retailer (Kroger) — caller provides if available
+    // Layer 1: Open Prices (community)
+    if (open_price != null && open_price > 0) {
+      return json({ price: Number(open_price), source: "open_prices", confidence: "medium" });
+    }
+
+    // Layer 2: Google Shopping aggregated
+    if (shopping_price != null && shopping_price > 0) {
+      return json({ price: Number(shopping_price), source: "google_shopping", confidence: "high" });
+    }
+
+    // Layer 3: Walmart direct
     if (retailer_price != null && retailer_price > 0) {
-      return json({
-        price: Number(retailer_price),
-        source: "retailer",
-        confidence: "high",
-      });
+      return json({ price: Number(retailer_price), source: "walmart", confidence: "high" });
     }
 
     // Resolve ingredient_id from name if needed
@@ -50,7 +64,7 @@ Deno.serve(async (req) => {
       return json({ price: null, source: "none", confidence: "low", reason: "ingredient_not_found" });
     }
 
-    // Layer 2: regional
+    // Layer 4: regional (BLS-adjusted baselines live in regional_food_prices)
     if (state) {
       const { data: regional } = await admin
         .from("regional_food_prices")
@@ -70,7 +84,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Layer 3: national fallback
+    // Layer 5: national fallback (consumer of resolve-price applies BLS multiplier on top)
     const { data: national } = await admin
       .from("national_food_prices")
       .select("national_avg_price, unit, last_updated")
