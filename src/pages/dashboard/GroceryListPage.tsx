@@ -429,6 +429,11 @@ export default function GroceryListPage() {
           <Loader2 className="w-4 h-4 animate-spin" /> Loading live Walmart prices for your area...
         </div>
       )}
+      {shoppingLoading && (
+        <div className="flex items-center gap-2 bg-muted/40 text-foreground rounded-xl px-4 py-2.5 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" /> Comparing prices across retailers...
+        </div>
+      )}
       {!walmartLoading && livePricedCount > 0 && (
         <div className="flex items-center gap-2 bg-accent/10 text-accent-foreground rounded-xl px-4 py-2.5 text-sm">
           <img src={walmartLogo} alt="Walmart" className="h-5 w-auto" loading="lazy" />
@@ -602,11 +607,12 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item) => {
-              const price = getItemPrice(item);
+              const priceInfo = getItemPriceInfo(item);
+              const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               const walmartInfo = getWalmartInfo(item);
-              const showLive = !!walmartInfo && walmartInfo.price != null;
+              const showLive = priceInfo.source === 'walmart' || priceInfo.source === 'google_shopping';
               return (
                 <label
                   key={item.name}
@@ -651,12 +657,24 @@ export default function GroceryListPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    {showLive ? (
+                    {priceInfo.source === 'walmart' && (
                       <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
                         at <img src={walmartLogo} alt="Walmart" className="h-3 w-auto inline-block" loading="lazy" />
                       </p>
-                    ) : (
-                      activeStore && <p className="text-[10px] text-muted-foreground">at {activeStore}</p>
+                    )}
+                    {priceInfo.source === 'google_shopping' && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">via {priceInfo.store || 'Google'}</p>
+                    )}
+                    {priceInfo.source === 'open_prices' && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">
+                        community{priceInfo.date ? ` · ${priceInfo.date.slice(5)}` : ''}
+                      </p>
+                    )}
+                    {priceInfo.source === 'store_estimate' && activeStore && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">est. at {activeStore}</p>
+                    )}
+                    {priceInfo.source === 'estimate' && (
+                      <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
                     )}
                     <button
                       onClick={(e) => {
