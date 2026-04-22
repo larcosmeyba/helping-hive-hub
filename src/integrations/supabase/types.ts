@@ -1033,6 +1033,7 @@ export type Database = {
           beta_user: boolean
           children_ages: string[] | null
           city: string | null
+          cooking_confidence: string | null
           cooking_style: string | null
           cooking_time_preference: string | null
           created_at: string
@@ -1041,7 +1042,9 @@ export type Database = {
           display_name: string | null
           eligibility_category: string | null
           email: string | null
+          food_assistance_status: string | null
           food_preferences: string[] | null
+          home_store: string | null
           household_size: number | null
           id: string
           infant_formula: boolean | null
@@ -1052,13 +1055,17 @@ export type Database = {
           meal_repetition: string | null
           membership_discount: number | null
           membership_tier: string | null
+          monthly_snap_amount: number | null
           onboarding_completed_at: string | null
           phone_number: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
           referral_source: string | null
+          show_snap_tracker: boolean
+          snap_deposit_day: number | null
           snap_status: boolean | null
           state: string | null
+          tier: string
           updated_at: string
           user_goals: string[] | null
           user_id: string
@@ -1076,6 +1083,7 @@ export type Database = {
           beta_user?: boolean
           children_ages?: string[] | null
           city?: string | null
+          cooking_confidence?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
@@ -1084,7 +1092,9 @@ export type Database = {
           display_name?: string | null
           eligibility_category?: string | null
           email?: string | null
+          food_assistance_status?: string | null
           food_preferences?: string[] | null
+          home_store?: string | null
           household_size?: number | null
           id?: string
           infant_formula?: boolean | null
@@ -1095,13 +1105,17 @@ export type Database = {
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
+          monthly_snap_amount?: number | null
           onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           referral_source?: string | null
+          show_snap_tracker?: boolean
+          snap_deposit_day?: number | null
           snap_status?: boolean | null
           state?: string | null
+          tier?: string
           updated_at?: string
           user_goals?: string[] | null
           user_id: string
@@ -1119,6 +1133,7 @@ export type Database = {
           beta_user?: boolean
           children_ages?: string[] | null
           city?: string | null
+          cooking_confidence?: string | null
           cooking_style?: string | null
           cooking_time_preference?: string | null
           created_at?: string
@@ -1127,7 +1142,9 @@ export type Database = {
           display_name?: string | null
           eligibility_category?: string | null
           email?: string | null
+          food_assistance_status?: string | null
           food_preferences?: string[] | null
+          home_store?: string | null
           household_size?: number | null
           id?: string
           infant_formula?: boolean | null
@@ -1138,13 +1155,17 @@ export type Database = {
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
+          monthly_snap_amount?: number | null
           onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           referral_source?: string | null
+          show_snap_tracker?: boolean
+          snap_deposit_day?: number | null
           snap_status?: boolean | null
           state?: string | null
+          tier?: string
           updated_at?: string
           user_goals?: string[] | null
           user_id?: string
