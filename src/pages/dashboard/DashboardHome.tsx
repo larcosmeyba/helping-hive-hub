@@ -68,7 +68,10 @@ export default function DashboardHome() {
   const estimatedCost = mealPlan?.totalEstimatedCost ?? 0;
   const pantrySavings = mealPlan?.pantrySavings ?? 0;
   const saved = budget - estimatedCost;
+  const monthlySavedRate = saved > 0 ? saved * 4 : 0;
   const costPerMeal = mealPlan?.costPerMeal ?? 0;
+  // First name only for greeting (Fix 2.2)
+  const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "there";
   // Budget Fit: how well the plan fits within the user's weekly budget (0-100)
   const budgetFit = mealPlan && budget > 0
     ? Math.max(0, Math.min(100, Math.round(((budget - Math.max(0, estimatedCost - pantrySavings)) / budget) * 100 + 50)))
