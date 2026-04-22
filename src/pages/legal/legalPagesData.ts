@@ -344,106 +344,165 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
     category: "legal",
     sections: [
       {
-        content: "Help the Hive respects your privacy. This Privacy Policy explains how we collect, use, disclose, and protect information when you use our platform."
+        content: `This Privacy Policy explains how Help the Hive collects, uses, and protects your personal information across our mobile application, website (helpthehive.com), and related services.`
       },
       {
         heading: "1. Information We Collect",
-        content: `We may collect:
-• Name
-• Email address
-• ZIP code
-• Household size
-• Dietary preferences
-• Allergy information
-• Pantry and grocery-related information
-• Device and browser information
-• Payment-related metadata
-• Uploaded verification documents
-• Communications with support
-• Usage analytics and interaction data`
-      },
-      {
-        heading: "2. How We Use Information",
-        content: `We may use information to:
-• Provide and operate the platform
-• Personalize meal planning and household recommendations
-• Improve platform performance and product design
-• Process eligibility verification
-• Provide customer support
-• Maintain platform safety and security
-• Prevent fraud and abuse
-• Process subscriptions and billing-related functions
-• Comply with legal obligations`
-      },
-      {
-        heading: "3. How We Share Information",
-        content: `We may share information with:
-• Service providers that help us operate the platform
-• Payment processors
-• Verification vendors
-• Analytics providers
-• Infrastructure and hosting providers
-• Legal authorities where required by law
-• Professional advisors as reasonably necessary
+        content: `**Information you provide directly:**
+• Account details: name, email address, password (hashed)
+• Household information: household size, ZIP code, dietary preferences
+• Budget information: weekly grocery budget, preferred store
+• Optional SNAP tracker: your monthly SNAP benefit amount (manually entered)
+• Pantry inventory: items you tell us are in your kitchen
+• Price corrections: prices you report seeing in stores
+• User-generated content: feedback, reviews, support messages
 
-We do not sell personal user data.`
-      },
-      {
-        heading: "4. Verification Documents",
-        content: "If you upload documents for eligibility verification, those materials may be processed to evaluate access to discounts, programs, or benefits. Such documents are handled using reasonable security controls and may be retained only as long as necessary for verification, fraud prevention, recordkeeping, or legal compliance."
-      },
-      {
-        heading: "5. Data Security",
-        content: "We use reasonable administrative, technical, and organizational measures to protect information. No security system is perfect, and we cannot guarantee absolute security."
-      },
-      {
-        heading: "6. Data Retention",
-        content: "We retain information for as long as necessary to provide services, comply with legal obligations, resolve disputes, enforce agreements, and prevent fraud."
-      },
-      {
-        heading: "7. Your Choices",
-        content: `Depending on your location and applicable law, you may have rights to:
-• Access certain personal information
-• Correct inaccurate information
-• Request deletion
-• Object to certain processing
-• Manage marketing preferences
+**Information collected automatically:**
+• Device information: device type, operating system, app version, device identifier (IDFA/AAID if permitted)
+• Usage data: features used, time spent, interactions
+• Approximate location: ZIP code level
+• Crash reports and diagnostics (anonymized)
 
-Requests may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
-      },
-      {
-        heading: "8. Children's Privacy",
-        content: "Help the Hive is not directed to children under 13, and we do not knowingly collect personal information from children under 13 without appropriate legal authorization. If we learn that we have collected personal information from a child under 13, we will take steps to delete that information as quickly as possible."
-      },
-      {
-        heading: "9. Account Deletion and Data Removal",
-        content: `You have the right to request deletion of your account and the personal data associated with it. You can do this by:
-• Using the account deletion option in the app settings
-• Contacting us at ${CONTACT_SUPPORT}
+**Information collected from third parties:**
+• Apple App Store / Google Play Store: subscription status, transaction confirmations
+• Retailer partners: order confirmations when you use "Order via [Partner]" features
 
-Upon receiving a valid deletion request, we will:
-• Delete or anonymize your personal data within 30 days
-• Confirm completion of the deletion
-• Retain only data required by law, for fraud prevention, or to resolve disputes
+**Information we do NOT collect:**
+• Your EBT card number, PIN, or account login
+• Your Social Security Number
+• Your bank account or credit card details (processed by Apple/Google)
+• Precise GPS location without your explicit permission
+• Biometric data`
+      },
+      {
+        heading: "2. How We Use Your Information",
+        content: `We use your information to:
+• Provide the Service
+• Personalize your experience
+• Process payments (via Apple/Google)
+• Communicate with you
+• Improve the Service
+• Prevent fraud and enforce our Terms
+• Comply with legal obligations
+• Conduct research and reporting (anonymized aggregate only)
 
-If you subscribed through the Apple App Store or Google Play Store, you must cancel your subscription through the respective store before requesting account deletion.`
+**We do NOT use your information to:**
+• Sell it to third parties
+• Share your SNAP status with anyone outside Help the Hive
+• Determine credit or lending decisions
+• Target you based on financial hardship`
       },
       {
-        heading: "10. California Privacy Rights (CCPA)",
-        content: `If you are a California resident, you have the right to:
-• Know what personal information we collect, use, and disclose
-• Request deletion of your personal information
-• Opt out of the sale of your personal information (we do not sell personal data)
-• Not be discriminated against for exercising your privacy rights
+        heading: "3. Apple App Tracking Transparency (ATT)",
+        content: `On iOS, Help the Hive complies with Apple's App Tracking Transparency framework. If we collect data to track you across apps or websites owned by other companies, we will:
+• Request your permission via the ATT prompt before any tracking begins
+• Explain why we're asking for permission
+• Function properly even if you decline tracking
 
-To exercise these rights, contact us at ${CONTACT_SUPPORT}.`
+**Help the Hive does not currently track users across other companies' apps or websites.** We collect data within our own app only. If this changes in the future, we will update this policy and show you the ATT prompt.`
       },
       {
-        heading: "11. International Use and Data Transfers",
-        content: "If the platform is accessed outside the United States, information may be processed in the United States or other jurisdictions where service providers operate. By using Help the Hive, you consent to the transfer and processing of your data in the United States."
+        heading: "4. How We Share Your Information",
+        content: `**Service providers:** Cloud hosting, analytics, customer support, email delivery. These providers are contractually required to protect your data.
+
+**Retailer partnerships:** When you tap "Order via Instacart" or similar, your grocery list is shared with that partner to populate your cart. We do NOT share your full user profile.
+
+**Aggregated/anonymized data:** May be shared with partners, investors, or grant funders. Cannot be linked to you personally.
+
+**Legal requirements:** If required by law, court order, or to protect rights/safety.
+
+**Business transfers:** If Help the Hive is acquired, your information may be transferred. We will notify you.
+
+**We do NOT sell your personal information.**`
       },
       {
-        heading: "12. App Store and Play Store Data Practices",
+        heading: "5. SNAP & Benefit Information — Special Protections",
+        content: `If you use our optional SNAP benefit tracker:
+• We store: monthly benefit amount, self-reported usage, deposit date
+• We do NOT store: EBT card numbers, PINs, SSN, or any state portal credentials
+• Encrypted storage, limited access, never shared without explicit consent`
+      },
+      {
+        heading: "6. Cookies and Similar Technologies (Web)",
+        content: `Our website (helpthehive.com) uses cookies and similar technologies to keep you logged in, remember your preferences, analyze usage, and improve performance.
+
+**Cookie categories we use:**
+• **Strictly necessary:** Required for the site to function
+• **Performance:** Help us understand how visitors use the site
+• **Functionality:** Remember your preferences
+• **Marketing:** Limited use; we do not sell cookie data
+
+You can control cookies through your browser settings. Blocking strictly necessary cookies may break site functionality.`
+      },
+      {
+        heading: "7. Data Security",
+        content: `Industry-standard security measures including:
+• Encryption in transit (TLS 1.3) and at rest (AES-256)
+• Access controls with principle of least privilege
+• Regular security audits
+• Secure cloud infrastructure with SOC 2 compliance
+• Breach notification within 72 hours as required by law`
+      },
+      {
+        heading: "8. Your Rights & Choices",
+        content: `**All users:**
+• Access: view your data within the app
+• Export: request a full data export from ${CONTACT_PRIVACY}
+• Correct: edit your profile in Settings
+• Delete: delete your account in Settings (completed within 30 days; backups within 90 days)
+• Opt out: turn off notifications, unsubscribe from emails, disable SNAP tracker
+
+**California residents (CCPA/CPRA):**
+• Right to know what personal information we collect
+• Right to delete
+• Right to correct
+• Right to opt out of sale or sharing (we don't sell, but this right is codified)
+• Right to limit use of sensitive personal information
+• Right to non-discrimination
+• Authorized agent: you may designate someone to make requests on your behalf
+
+**EU/UK residents (GDPR/UK GDPR):** All CCPA rights plus the right to data portability, restrict processing, object to processing, withdraw consent, and file a complaint with a supervisory authority.
+
+**Virginia, Colorado, Connecticut, Utah residents:** Rights similar to CCPA under state privacy laws.
+
+**To exercise any rights:** ${CONTACT_PRIVACY}`
+      },
+      {
+        heading: "9. Children's Privacy (COPPA)",
+        content: `Help the Hive is not directed to children under 13. We do not knowingly collect personal information from children under 13. For users 13–18, we recommend parental involvement.
+
+If we discover we have collected information from a child under 13, we delete it promptly. Parents can contact ${CONTACT_PRIVACY} with concerns.`
+      },
+      {
+        heading: "10. Data Retention",
+        content: `| Data Type | Retention Period |
+|---|---|
+| Account information | While account active + 30 days after deletion |
+| Meal plans and grocery lists | While account active + 30 days |
+| SNAP tracker data | Immediate deletion on opt-out |
+| Price corrections (anonymized) | Retained indefinitely |
+| Usage analytics (anonymized) | 24 months |
+| Payment records | 7 years (legal requirement) |
+| Support conversations | 2 years |`
+      },
+      {
+        heading: "11. International Users",
+        content: `Help the Hive is operated from the United States. Data is transferred to and processed in the US. For EU/UK users, we rely on Standard Contractual Clauses for international transfers.`
+      },
+      {
+        heading: "12. Third-Party Services",
+        content: `The Service integrates with third parties (Instacart, Walmart, Kroger, Apple, Google). Their privacy practices are governed by their own policies.`
+      },
+      {
+        heading: "13. Research & Grant Reporting",
+        content: `When we participate in research or grant reporting:
+• Only anonymized, aggregate data is shared
+• No individual user can be identified
+• Personal data is never sold or shared with funders
+• Direct user research requires explicit consent`
+      },
+      {
+        heading: "14. App Store and Play Store Data Practices",
         content: `When you use Help the Hive through the Apple App Store or Google Play Store:
 • Data collection and usage are governed by this Privacy Policy
 • Apple and Google may collect additional data per their own privacy policies
@@ -451,12 +510,16 @@ To exercise these rights, contact us at ${CONTACT_SUPPORT}.`
 • We do not share your personal data with Apple or Google beyond what is required for app functionality`
       },
       {
-        heading: "13. Changes to This Policy",
-        content: "We may update this Privacy Policy from time to time. Updates become effective when posted. We will notify you of material changes through the app or by email."
+        heading: "15. Account Deletion",
+        content: `You can delete your account in Settings or by contacting ${CONTACT_PRIVACY}. We will delete or anonymize your personal data within 30 days, and remove residual backups within 90 days. Some information may be retained as required by law, for fraud prevention, or to resolve disputes.`
       },
       {
-        heading: "14. Contact",
-        content: `For privacy questions:\n\n📧 [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
+        heading: "16. Changes to This Policy",
+        content: `We will update the "Last Updated" date, notify you of material changes, and give 30 days' notice before material changes take effect.`
+      },
+      {
+        heading: "17. Contact",
+        content: `**Privacy questions:** [${CONTACT_PRIVACY}](mailto:${CONTACT_PRIVACY})\n\n**Legal:** [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
       }
     ]
   },
