@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MacroBadges } from "@/components/dashboard/MacroBadges";
+
+const AUTOLOAD_FLAG = "hth_fridge_chef_autoload_dismissed";
 
 
 const COMMON_ITEMS = [
