@@ -124,12 +124,18 @@ export default function DashboardHome() {
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
-          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary" },
-          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
-          { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : "0"}`, icon: PiggyBank, color: "text-accent" },
-          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
-          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary" },
-          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent" },
+          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null },
+          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null },
+          {
+            label: "Saved",
+            value: `$${saved > 0 ? saved.toFixed(0) : "0"}`,
+            icon: PiggyBank,
+            color: "text-accent",
+            sub: saved > 0 ? `~$${monthlySavedRate.toFixed(0)}/mo` : null,
+          },
+          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary", sub: null },
+          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary", sub: null },
+          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent", sub: null },
         ].map((stat) => (
           <motion.div
             key={stat.label}
@@ -142,9 +148,33 @@ export default function DashboardHome() {
               <span className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
             </div>
             <p className="text-lg md:text-xl font-bold text-foreground">{stat.value}</p>
+            {stat.sub && (
+              <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{stat.sub}</p>
+            )}
           </motion.div>
         ))}
       </motion.div>
+
+      {/* Secondary Regenerate action (Fix 2.3 — demoted from top) */}
+      {mealPlan && (
+        <div className="flex justify-end -mt-1">
+          <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
+            <Button
+              onClick={generate}
+              disabled={generating}
+              variant="outline"
+              size="sm"
+              className="border-accent/40 text-accent hover:bg-accent/10 rounded-lg text-xs font-semibold"
+            >
+              {generating ? (
+                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Generating...</>
+              ) : (
+                <><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Regenerate Plan</>
+              )}
+            </Button>
+          </motion.div>
+        </div>
+      )}
 
       {mealPlan?.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
         <p className="text-[11px] md:text-xs text-muted-foreground flex items-center gap-1.5 -mt-1">
