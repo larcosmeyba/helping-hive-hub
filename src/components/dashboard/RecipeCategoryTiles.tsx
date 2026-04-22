@@ -6,17 +6,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 
+import budgetFriendlyImg from "@/assets/category-budget-friendly.jpg";
+import quickMealsImg from "@/assets/category-quick-meals.jpg";
+import slowCookerImg from "@/assets/category-slow-cooker.jpg";
+import pantryStaplesImg from "@/assets/category-pantry-staples.jpg";
+import highProteinImg from "@/assets/category-high-protein.jpg";
+import vegetarianImg from "@/assets/category-vegetarian.jpg";
+import familyFavoritesImg from "@/assets/category-family-favorites.jpg";
+import celebrationsImg from "@/assets/category-celebrations.jpg";
+
+// Brand-aligned category imagery (Fix 2.1) — replaces generic Unsplash photos
 const CATEGORY_IMAGES: Record<string, string> = {
-  "Budget Friendly": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400&h=300&fit=crop",
-  "Quick Meals": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
-  "Slow Cooker": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
-  "Pantry Staples": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop",
-  "High Protein": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
-  "Vegetarian": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
-  "Family Favorites": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
+  "Budget Friendly": budgetFriendlyImg,
+  "Quick Meals": quickMealsImg,
+  "Slow Cooker": slowCookerImg,
+  "Pantry Staples": pantryStaplesImg,
+  "High Protein": highProteinImg,
+  "Vegetarian": vegetarianImg,
+  "Family Favorites": familyFavoritesImg,
   // "Holiday" replaced with "Celebrations" (Fix 2.7) — warm home-style imagery, no alcohol
-  "Celebrations": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
-  "Special Occasions": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
+  "Celebrations": celebrationsImg,
+  "Special Occasions": celebrationsImg,
 };
 
 // Remap legacy "Holiday" category from DB to "Celebrations" for display
@@ -25,7 +35,7 @@ const CATEGORY_LABEL_REMAP: Record<string, string> = {
 };
 const displayLabel = (cat: string) => CATEGORY_LABEL_REMAP[cat] ?? cat;
 
-const DEFAULT_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+const DEFAULT_CATEGORY_IMAGE = budgetFriendlyImg;
 
 interface Recipe {
   id: string;
