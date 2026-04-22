@@ -30,20 +30,21 @@ export function BottomNavBar() {
               to={tab.to}
               end={tab.end}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] transition-colors min-h-[52px]",
+                "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] transition-colors min-h-[52px] rounded-xl mx-0.5",
                 isActive
-                  ? "text-foreground font-bold"
-                  : "text-foreground/60 font-medium"
+                  ? "text-primary font-bold bg-primary/10"
+                  : "text-foreground/60 font-medium hover:text-foreground/80"
               )}
             >
               <tab.icon
                 className={cn(
-                  "h-[24px] w-[24px] transition-all text-foreground",
+                  "h-[22px] w-[22px] transition-all",
+                  isActive ? "text-primary" : "text-foreground/70",
                 )}
                 strokeWidth={isActive ? 2.4 : 1.8}
                 fill="none"
               />
-              <span className={cn("truncate", isActive ? "text-foreground font-bold" : "text-foreground/60")}>{tab.label}</span>
+              <span className={cn("truncate", isActive ? "text-primary font-bold" : "text-foreground/60")}>{tab.label}</span>
             </NavLink>
           );
         })}
