@@ -9,10 +9,10 @@ import recipeBudgetBowl from "@/assets/recipe-budget-bowl.jpg";
 
 const recipes = [
   {
-    title: "$10 Family Dinner",
+    title: "$15 Family Dinner",
     time: "30 min",
     servings: "4",
-    cost: "$10",
+    cost: "$15",
     desc: "Hearty one-pot chicken and rice dinner.",
     image: recipeChickenRice,
     calories: 520,
@@ -41,10 +41,10 @@ const recipes = [
     ],
   },
   {
-    title: "$15 Stir Fry Night",
+    title: "$20 Stir Fry Night",
     time: "25 min",
     servings: "4",
-    cost: "$15",
+    cost: "$20",
     desc: "Colorful veggie stir fry with protein.",
     image: recipeStirFry,
     calories: 420,
@@ -78,7 +78,7 @@ const recipes = [
     title: "Pantry Pasta Dinner",
     time: "20 min",
     servings: "4",
-    cost: "$8",
+    cost: "$10",
     desc: "Made from common pantry staples.",
     image: recipePantryPasta,
     calories: 450,
@@ -109,7 +109,7 @@ const recipes = [
     title: "Healthy Budget Bowl",
     time: "35 min",
     servings: "4",
-    cost: "$12",
+    cost: "$15",
     desc: "Nutrient-packed grain bowl on a budget.",
     image: recipeBudgetBowl,
     calories: 480,

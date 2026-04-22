@@ -18,7 +18,7 @@ const steps = [
     icon: ShoppingCart,
     step: "03",
     title: "Shop smarter with your grocery list",
-    desc: "Receive a budget-optimized grocery list organized by store section, with real pricing data to keep you on track.",
+    desc: "Receive a budget-optimized grocery list organized by store section, with estimated pricing to keep you on budget.",
   },
 ];
 

@@ -1552,9 +1552,7 @@ export const footerColumns = [
     links: [
       { label: "Terms of Service", slug: "terms" },
       { label: "Privacy Policy", slug: "privacy" },
-      { label: "Data Collection Policy", slug: "data-collection" },
       { label: "Cookie Policy", slug: "cookies" },
-      { label: "Data Security Policy", slug: "data-security" },
       { label: "Refund & Subscription Policy", slug: "refunds" },
       { label: "Acceptable Use Policy", slug: "acceptable-use" },
       { label: "Arbitration & Dispute Resolution", slug: "arbitration" },
