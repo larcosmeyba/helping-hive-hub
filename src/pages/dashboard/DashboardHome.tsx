@@ -164,6 +164,10 @@ export default function DashboardHome() {
         </p>
       )}
 
+      {((profile as any)?.snap_status || (profile as any)?.food_assistance_status === "snap") && (
+        <SnapTracker />
+      )}
+
       {/* This Week's Meals */}
       {!mealPlan ? (
         <div className={cardClass + " p-6 md:p-12 text-center"} style={cardShadow}>
