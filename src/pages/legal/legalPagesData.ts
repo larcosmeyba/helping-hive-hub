@@ -1376,6 +1376,159 @@ Feature access may change over time as the platform evolves.
 All plan details shown at checkout or within account settings control over general descriptions on informational pages.`
       }
     ]
+  },
+  // ─── PLATFORM COMPLIANCE (NEW) ───
+  {
+    slug: "apple-app-store",
+    title: "Apple App Store Compliance",
+    lastUpdated: LAST_UPDATED,
+    category: "compliance",
+    sections: [
+      {
+        content: `This page summarizes how Help the Hive complies with Apple App Store guidelines, including App Privacy disclosures, in-app requirements, and the App Tracking Transparency (ATT) framework.`
+      },
+      {
+        heading: "App Privacy — Data Linked to You",
+        content: `**Contact info:** Email address, name — for App Functionality and Product Personalization.
+
+**User content:** Pantry inventory, price corrections, meal preferences — for App Functionality and Product Personalization.
+
+**Identifiers:** User ID — for App Functionality, Analytics, Product Personalization.
+
+**Usage data:** Product interactions and other usage data — for Analytics and Product Personalization.
+
+**Diagnostics:** Crash data and performance data — for App Functionality.
+
+**Financial info (only if SNAP tracker enabled):** SNAP benefit amount and self-reported usage — for App Functionality and Product Personalization.
+
+**Location:** Coarse location (ZIP code level) — for App Functionality and Product Personalization.
+
+**Health & fitness:** Dietary restrictions if provided — for App Functionality and Product Personalization.`
+      },
+      {
+        heading: "Data Used to Track You",
+        content: `**None.** Help the Hive does not currently track users across other companies' apps or websites.`
+      },
+      {
+        heading: "App Tracking Transparency",
+        content: `Because Help the Hive does not track across third-party apps or websites, no ATT prompt is shown. If we ever introduce cross-app tracking, we will request your permission via Apple's standard ATT prompt and the app will continue to work whether or not you allow tracking.`
+      },
+      {
+        heading: "In-App Requirements",
+        content: `• Account deletion is available in Settings → Delete Account
+• Links to Terms of Service and Privacy Policy are available in Settings
+• Subscription management opens your Apple ID subscription settings
+• A "Restore Purchases" button is provided for users switching devices`
+      },
+      {
+        heading: "App Review Notes",
+        content: `• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
+• Estimated Pricing is clearly labeled; users are informed actual in-store prices may vary.
+• Retailer partnerships (Instacart, Kroger) are optional affiliate integrations — no purchase data is processed by our servers.
+• The Free Forever tier for SNAP/WIC users is based on self-attestation; no documentary verification is required.`
+      },
+      {
+        heading: "Contact",
+        content: `For App Store compliance questions: [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
+      }
+    ]
+  },
+  {
+    slug: "google-play-store",
+    title: "Google Play Store Compliance",
+    lastUpdated: LAST_UPDATED,
+    category: "compliance",
+    sections: [
+      {
+        content: `This page summarizes how Help the Hive complies with Google Play policies, including the Data Safety section, content rating, and permission disclosures.`
+      },
+      {
+        heading: "Data Safety — Data Collected",
+        content: `**Personal info:** Name, email address, user IDs — collected, stored, not shared, required.
+
+**Location:** Approximate location — collected, stored, not shared, optional.
+
+**Financial info:** SNAP benefit amount — collected only if user opts in, stored, not shared, optional.
+
+**Health and fitness:** Dietary restrictions — collected only if provided, stored, not shared, optional.
+
+**App activity:** App interactions and in-app search history — collected, stored, not shared.
+
+**App info and performance:** Crash logs and diagnostics — collected, stored, not shared, required.
+
+**Device or other IDs:** Collected, stored, not shared, required.
+
+**Not collected:** Messages, photos/videos, audio, files, calendar, contacts, web browsing history.`
+      },
+      {
+        heading: "Security Practices",
+        content: `• Data is encrypted in transit (TLS 1.3)
+• Data is encrypted at rest (AES-256)
+• You can request that data be deleted from within the app or by contacting support`
+      },
+      {
+        heading: "Content Rating",
+        content: `Help the Hive is rated **Everyone (ESRB)** / **PEGI 3+**. The app contains no violence, sexual content, profanity, gambling, or drug references.`
+      },
+      {
+        heading: "Permissions Disclosure",
+        content: `**Notifications:** Help the Hive sends notifications to remind you about your weekly meal plan, SNAP deposit dates, and weekly deals at your store.
+
+**Location (coarse, optional):** We use your approximate location to find your nearest store and show local deals. You can decline and manually enter your ZIP code.`
+      },
+      {
+        heading: "Families Policy",
+        content: `Help the Hive is a meal planning app designed for adults managing household budgets. Content, features, and marketing are directed at adult users. While families benefit from the app, users under 13 are not the intended audience.`
+      },
+      {
+        heading: "Contact",
+        content: `For Play Store compliance questions: [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
+      }
+    ]
+  },
+  {
+    slug: "subscription-disclosures",
+    title: "Subscription Disclosures",
+    lastUpdated: LAST_UPDATED,
+    category: "compliance",
+    sections: [
+      {
+        content: `Help the Hive offers a Free Forever tier for SNAP/WIC families and an optional Premium subscription for other users. The disclosures below match what is shown at the Apple App Store and Google Play Store.`
+      },
+      {
+        heading: "Plans & Pricing",
+        content: `**Free Forever (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost. Self-attestation only — no credit card required.
+
+**Premium:**
+• Monthly: $4.99 per month
+• Annual: $39.99 per year`
+      },
+      {
+        heading: "Apple App Store — Subscription Terms",
+        content: `Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription.
+
+You can manage and cancel subscriptions by going to your Apple ID account settings after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.`
+      },
+      {
+        heading: "Google Play — Subscription Terms",
+        content: `Payment is charged to your Google Play account on confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period.
+
+You can manage subscriptions in your Google Play account settings.`
+      },
+      {
+        heading: "Refunds",
+        content: `Refunds are handled per Apple App Store or Google Play Store refund policies. Contact Apple or Google directly for billing inquiries related to in-app purchases.`
+      },
+      {
+        heading: "Free Trials",
+        content: `If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+      },
+      {
+        heading: "Links",
+        content: `• [Terms of Service](/legal/terms)
+• [Privacy Policy](/legal/privacy)`
+      }
+    ]
   }
 ];
 
