@@ -220,23 +220,38 @@ export default function AdminMembers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead className="w-10">
+                  <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+                </TableHead>
+                <TableHead>
+                  <button onClick={() => toggleSort("display_name")} className="flex items-center gap-1 hover:text-foreground">
+                    Name <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="hidden md:table-cell">Location</TableHead>
                 <TableHead className="hidden lg:table-cell">Household</TableHead>
                 <TableHead className="hidden lg:table-cell">Type</TableHead>
                 <TableHead className="hidden xl:table-cell">SNAP</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <button onClick={() => toggleSort("last_active")} className="flex items-center gap-1 hover:text-foreground">
+                    Last Active <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No members found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No members found</TableCell></TableRow>
               ) : filtered.map(member => (
                 <TableRow key={member.id} className="cursor-pointer" onClick={() => setSelectedMember(member)}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(member.id)} onCheckedChange={() => toggleSelectOne(member.id)} />
+                  </TableCell>
                   <TableCell className="font-medium">{member.display_name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{member.email || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{[member.city, member.state].filter(Boolean).join(", ") || "—"}</TableCell>
@@ -246,6 +261,9 @@ export default function AdminMembers() {
                     {(isOwner || permissions.view_snap_data) ? (
                       member.snap_status ? <Badge className="bg-accent text-accent-foreground text-xs">Yes</Badge> : <span className="text-muted-foreground text-xs">No</span>
                     ) : <span className="text-muted-foreground text-xs">Restricted</span>}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
+                    {member.last_active ? new Date(member.last_active).toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={member.account_status === "active" ? "default" : "destructive"} className="text-xs capitalize">{member.account_status || "active"}</Badge>
