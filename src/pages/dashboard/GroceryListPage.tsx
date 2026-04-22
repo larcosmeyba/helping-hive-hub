@@ -277,13 +277,19 @@ export default function GroceryListPage() {
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <ShoppingCart className="w-12 h-12 text-primary mx-auto mb-4" />
-        <h1 className="font-display text-2xl font-bold text-foreground mb-2">No Grocery List Yet</h1>
-        <p className="text-muted-foreground mb-6">Generate a meal plan first to get your grocery list</p>
-        <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90">
-          {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Meal Plan</>}
-        </Button>
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-gradient-to-b from-primary/5 to-transparent border border-primary/15 rounded-3xl p-8 md:p-12 text-center mt-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <ShoppingCart className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Your grocery list lives here</h1>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Generate a meal plan and we'll build a categorized, store-tailored grocery list with estimated prices.
+          </p>
+          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 px-6 rounded-xl">
+            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Meal Plan</>}
+          </Button>
+        </div>
       </div>
     );
   }
