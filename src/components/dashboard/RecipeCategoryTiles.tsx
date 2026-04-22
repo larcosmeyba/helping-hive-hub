@@ -152,7 +152,7 @@ export function RecipeCategoryTiles() {
       <Dialog open={!!selectedCategory} onOpenChange={() => setSelectedCategory(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">{selectedCategory}</DialogTitle>
+            <DialogTitle className="font-display text-xl">{selectedCategory ? displayLabel(selectedCategory) : ""}</DialogTitle>
           </DialogHeader>
           {recipesLoading ? (
             <div className="flex items-center justify-center py-12">
