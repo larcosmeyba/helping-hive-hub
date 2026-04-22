@@ -14,7 +14,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-honey-cream/60 leading-relaxed">
-              Affordable meal planning for real families. Smart grocery optimization powered by real data.
+              Budget meal planning for real families. Meals that fit your budget at the store you already shop at.
             </p>
           </div>
 

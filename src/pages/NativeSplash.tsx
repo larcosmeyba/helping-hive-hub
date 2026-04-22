@@ -45,7 +45,7 @@ export default function NativeSplash() {
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
 
-        {user && displayName && (
+        {user && displayName ? (
           <motion.p
             className="mt-7 text-xl font-normal"
             style={{ color: "#1A1A1A" }}
@@ -54,6 +54,16 @@ export default function NativeSplash() {
             transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
           >
             Welcome back, {displayName}
+          </motion.p>
+        ) : (
+          <motion.p
+            className="mt-7 text-base font-normal text-center px-8 max-w-xs"
+            style={{ color: "#1A1A1A" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
+          >
+            Meals that fit your budget.
           </motion.p>
         )}
       </div>

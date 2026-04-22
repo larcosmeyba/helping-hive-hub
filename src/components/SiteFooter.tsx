@@ -86,7 +86,7 @@ export function SiteFooter() {
           </div>
         </div>
         <p className="text-sm text-white/50 leading-relaxed max-w-lg ml-11 mb-3">
-          Helping households save money on groceries, simplify meal planning, and make smarter food budgeting decisions.
+          Budget meal planning for real families. Meals that fit your budget at the store you already shop at — free for SNAP & WIC households.
         </p>
         <div className="ml-11">
           <p className="text-xs text-white/40">

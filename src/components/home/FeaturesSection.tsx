@@ -48,10 +48,10 @@ export function FeaturesSection() {
             Features
           </span>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Built around how people actually eat
+            Built for real families and real budgets
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Not another recipe app. Help The Hive is a complete food planning system designed for real budgets and real households.
+            Meal planning, grocery lists, and Fridge Chef — all working together to stretch every grocery dollar at your store.
           </p>
         </motion.div>
 

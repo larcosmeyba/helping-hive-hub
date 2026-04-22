@@ -17,16 +17,16 @@ export function CTASection() {
           className="max-w-2xl mx-auto text-center"
         >
           <h2 className="font-display text-3xl md:text-5xl font-bold text-honey-cream mb-6 leading-tight">
-            Ready to plan smarter meals?
+            Plan a week of meals that fits your budget.
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            Join Help The Hive during our early access period — completely free.
-            Start planning meals, building grocery lists, and saving money today.
+            Free for everyone during beta. Free forever for families on SNAP, WIC,
+            or EBT. Pick your store, set your budget, and we'll handle the rest.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
               <Link to="/signup">
-                Get Early Access <ArrowRight className="w-4 h-4 ml-1" />
+                Start Free <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
             <Button
