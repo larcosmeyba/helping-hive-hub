@@ -30,7 +30,7 @@ const sections = [
       "Co-branded launch and onboarding support",
       "Free forever for SNAP & WIC households",
     ],
-    cta: { label: "Start a community pilot", email: "community@helpthehive.com" },
+    cta: { label: "Start a community pilot", email: "support@helpthehive.com" },
   },
   {
     icon: Sparkles,
@@ -43,7 +43,7 @@ const sections = [
       "Quarterly progress updates",
       "Mission-aligned restricted grant support",
     ],
-    cta: { label: "Request our impact deck", email: "grants@helpthehive.com" },
+    cta: { label: "Request our impact deck", email: "partnerships@helpthehive.com" },
   },
 ];
 
