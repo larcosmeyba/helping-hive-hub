@@ -608,7 +608,7 @@ export default function Questionnaire() {
               </p>
             </div>
             {foodAssistance === "snap_wic" && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
                 <Sparkles className="w-3.5 h-3.5" />
                 Free Forever — for SNAP & WIC families
               </div>
