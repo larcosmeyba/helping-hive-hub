@@ -19,26 +19,118 @@ export default function AdminMembers() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterActivity, setFilterActivity] = useState("all"); // all | active7 | inactive14
+  const [sortBy, setSortBy] = useState<"created_at" | "last_active" | "display_name">("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { permissions, isOwner } = useAdminRole();
+  const { toast } = useToast();
+
+  async function fetchMembers() {
+    setLoading(true);
+    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+    if (!error && data) setMembers(data);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function fetchMembers() {
-      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-      if (!error && data) setMembers(data);
-      setLoading(false);
-    }
     fetchMembers();
   }, []);
 
-  const filtered = members.filter(m => {
-    const matchesSearch = !search || (m.display_name || "").toLowerCase().includes(search.toLowerCase()) || (m.email || "").toLowerCase().includes(search.toLowerCase());
-    const matchesType = filterType === "all" || m.user_type === filterType;
-    const matchesStatus = filterStatus === "all" || m.account_status === filterStatus;
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  const filtered = useMemo(() => {
+    const now = Date.now();
+    const arr = members.filter((m) => {
+      const matchesSearch =
+        !search ||
+        (m.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (m.email || "").toLowerCase().includes(search.toLowerCase()) ||
+        (m.zip_code || "").includes(search);
+      const matchesType = filterType === "all" || m.user_type === filterType;
+      const matchesStatus = filterStatus === "all" || m.account_status === filterStatus;
+      let matchesActivity = true;
+      if (filterActivity !== "all") {
+        const last = m.last_active ? new Date(m.last_active).getTime() : 0;
+        const days = last ? (now - last) / 86400000 : Infinity;
+        if (filterActivity === "active7") matchesActivity = days <= 7;
+        if (filterActivity === "inactive14") matchesActivity = days > 14;
+      }
+      return matchesSearch && matchesType && matchesStatus && matchesActivity;
+    });
+    arr.sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortBy === "display_name") {
+        return ((a.display_name || "") > (b.display_name || "") ? 1 : -1) * dir;
+      }
+      const av = a[sortBy] ? new Date(a[sortBy]).getTime() : 0;
+      const bv = b[sortBy] ? new Date(b[sortBy]).getTime() : 0;
+      return (av - bv) * dir;
+    });
+    return arr;
+  }, [members, search, filterType, filterStatus, filterActivity, sortBy, sortDir]);
+
+  function toggleSort(key: typeof sortBy) {
+    if (sortBy === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+  }
+
+  const allSelected = filtered.length > 0 && filtered.every((m) => selectedIds.has(m.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleSelectAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((m) => m.id)));
+  }
+
+  function toggleSelectOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function bulkUpdateStatus(status: "active" | "disabled") {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("profiles").update({ account_status: status }).in("id", ids);
+    if (error) {
+      toast({ title: "Bulk update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setMembers((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, account_status: status } : m)));
+    setSelectedIds(new Set());
+    toast({
+      title: `${ids.length} member${ids.length === 1 ? "" : "s"} ${status === "active" ? "enabled" : "disabled"}`,
+    });
+  }
 
   const handleExport = () => {
+    const rows = someSelected ? filtered.filter((m) => selectedIds.has(m.id)) : filtered;
+    const csv = [
+      ["Name", "Email", "Phone", "City", "State", "ZIP", "Household Size", "Budget", "User Type", "SNAP", "Status", "Joined", "Last Active", "Food Preferences", "Dietary", "Allergies", "Cooking Style", "Kitchen Equipment", "Goals"],
+      ...rows.map((m) => [
+        m.display_name, m.email, m.phone_number, m.city, m.state, m.zip_code,
+        m.household_size, m.weekly_budget, m.user_type, m.snap_status ? "Yes" : "No",
+        m.account_status, new Date(m.created_at).toLocaleDateString(),
+        m.last_active ? new Date(m.last_active).toLocaleDateString() : "",
+        (m.food_preferences || []).join("; "), (m.dietary_preferences || []).join("; "),
+        (m.allergies || []).join("; "), m.cooking_style, (m.kitchen_equipment || []).join("; "),
+        (m.user_goals || []).join("; "),
+      ]),
+    ].map((row) => row.map((v) => `"${v ?? ""}"`).join(",")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
     const csv = [
       ["Name", "Email", "Phone", "City", "State", "ZIP", "Household Size", "Budget", "User Type", "SNAP", "Status", "Joined", "Food Preferences", "Dietary", "Allergies", "Cooking Style", "Kitchen Equipment", "Goals"],
       ...filtered.map(m => [
