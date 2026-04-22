@@ -252,8 +252,11 @@ export default function PantryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="max-w-4xl mx-auto space-y-4 animate-pulse">
+        <div className="h-8 w-40 bg-muted/60 rounded-lg" />
+        <div className="h-24 bg-muted/40 rounded-2xl" />
+        <div className="h-12 bg-muted/40 rounded-2xl" />
+        <div className="h-32 bg-muted/40 rounded-2xl" />
       </div>
     );
   }
