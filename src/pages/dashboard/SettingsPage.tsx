@@ -22,6 +22,8 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "@/contexts/LocationContext";
 import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
+import { Switch } from "@/components/ui/switch";
+import { useShowMacros } from "@/hooks/useShowMacros";
 
 const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
