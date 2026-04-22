@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap, Flame, ChefHat } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap, Flame, ChefHat, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -72,11 +72,33 @@ export default function DashboardHome() {
   const costPerMeal = mealPlan?.costPerMeal ?? 0;
   // First name only for greeting (Fix 2.2)
   const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "there";
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const todayDayName = now.toLocaleDateString(undefined, { weekday: "long" });
   // Budget Fit: how well the plan fits within the user's weekly budget (0-100)
   const budgetFit = mealPlan && budget > 0
     ? Math.max(0, Math.min(100, Math.round(((budget - Math.max(0, estimatedCost - pantrySavings)) / budget) * 100 + 50)))
     : 0;
   const isFreeForever = profile?.tier === "free_forever";
+
+  // Today's meals + "Up next" based on time of day
+  const todayPlan = useMemo(() => {
+    if (!mealPlan) return null;
+    return (
+      mealPlan.weeklyPlan.find((d) => d.day.toLowerCase() === todayDayName.toLowerCase()) ??
+      mealPlan.weeklyPlan[0]
+    );
+  }, [mealPlan, todayDayName]);
+
+  const upNextIndex = useMemo(() => {
+    if (!todayPlan) return -1;
+    // Heuristic: breakfast before 10, lunch before 15, otherwise dinner
+    const targetType = hour < 10 ? "breakfast" : hour < 15 ? "lunch" : "dinner";
+    const idx = todayPlan.meals.findIndex((m) => m.type?.toLowerCase().includes(targetType));
+    return idx >= 0 ? idx : 0;
+  }, [todayPlan, hour]);
 
   const { data: pantryItems } = useQuery({
     queryKey: ["pantry_count", user?.id],
@@ -101,8 +123,9 @@ export default function DashboardHome() {
       {/* Welcome */}
       <div className="space-y-3">
         <div>
-          <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
-            Welcome back, {firstName}
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{dateLabel}</p>
+          <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight mt-0.5">
+            {greeting}, {firstName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Meals that fit your budget. At the store you already shop at.</p>
           {isFreeForever && <div className="mt-2"><FreeForeverBadge /></div>}
@@ -116,6 +139,32 @@ export default function DashboardHome() {
         />
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <Button
+          onClick={generate}
+          disabled={generating}
+          className="h-12 rounded-xl bg-gradient-honey text-primary-foreground hover:opacity-90 text-xs font-semibold flex-col gap-0.5 shadow-soft"
+        >
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          <span>{mealPlan ? "Regenerate" : "Generate"}</span>
+        </Button>
+        <Link
+          to="/dashboard/grocery-list"
+          className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
+        >
+          <ShoppingCart className="w-4 h-4 text-primary" />
+          <span>Grocery</span>
+        </Link>
+        <Link
+          to="/dashboard/fridge-chef"
+          className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
+        >
+          <ChefHat className="w-4 h-4 text-primary" />
+          <span>Fridge Chef</span>
+        </Link>
+      </div>
+
       {/* Stats Grid — all 6 uniform */}
       <motion.div
         className={`grid gap-3 ${isMobile ? "grid-cols-3" : "grid-cols-6"}`}
@@ -124,57 +173,53 @@ export default function DashboardHome() {
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
-          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null },
-          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null },
+          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null, to: "/dashboard/budget-insights" as string | null },
+          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null, to: "/dashboard/grocery-list" },
           {
             label: "Saved",
             value: `$${saved > 0 ? saved.toFixed(0) : "0"}`,
             icon: PiggyBank,
             color: "text-accent",
             sub: saved > 0 ? `~$${monthlySavedRate.toFixed(0)}/mo` : null,
+            to: "/dashboard/budget-insights",
           },
-          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary", sub: null },
-          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary", sub: null },
-          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent", sub: null },
-        ].map((stat) => (
-          <motion.div
-            key={stat.label}
-            className={cardClass}
-            style={cardShadow}
-            variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
-          >
-            <div className="flex items-center gap-1 mb-1">
-              <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
-              <span className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
-            </div>
-            <p className="text-lg md:text-xl font-bold text-foreground">{stat.value}</p>
-            {stat.sub && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{stat.sub}</p>
-            )}
-          </motion.div>
-        ))}
+          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary", sub: null, to: "/dashboard/meal-plan" },
+          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary", sub: null, to: "/dashboard/budget-insights" },
+          { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent", sub: null, to: "/dashboard/pantry" },
+        ].map((stat) => {
+          const inner = (
+            <>
+              <div className="flex items-center gap-1 mb-1">
+                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                <span className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.label}</span>
+              </div>
+              <p className="text-lg md:text-xl font-bold text-foreground">{stat.value}</p>
+              {stat.sub && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{stat.sub}</p>
+              )}
+            </>
+          );
+          return (
+            <motion.div
+              key={stat.label}
+              variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+            >
+              {stat.to ? (
+                <Link
+                  to={stat.to}
+                  className={cardClass + " hover:border-primary/40 transition-colors block h-full"}
+                  style={cardShadow}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div className={cardClass + " h-full"} style={cardShadow}>{inner}</div>
+              )}
+            </motion.div>
+          );
+        })}
       </motion.div>
 
-      {/* Secondary Regenerate action (Fix 2.3 — demoted from top) */}
-      {mealPlan && (
-        <div className="flex justify-end -mt-1">
-          <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
-            <Button
-              onClick={generate}
-              disabled={generating}
-              variant="outline"
-              size="sm"
-              className="border-accent/40 text-accent hover:bg-accent/10 rounded-lg text-xs font-semibold"
-            >
-              {generating ? (
-                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Generating...</>
-              ) : (
-                <><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Regenerate Plan</>
-              )}
-            </Button>
-          </motion.div>
-        </div>
-      )}
 
       {mealPlan?.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
         <p className="text-[11px] md:text-xs text-muted-foreground flex items-center gap-1.5 -mt-1">
@@ -186,6 +231,33 @@ export default function DashboardHome() {
       {(profile?.snap_status || profile?.food_assistance_status === "snap") && (
         <SnapTracker />
       )}
+
+      {/* Today's Focus */}
+      {todayPlan && todayPlan.meals.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg md:text-xl font-semibold text-foreground flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" /> Today
+            </h2>
+            <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">Plan →</Link>
+          </div>
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
+            {todayPlan.meals.map((meal, i) => (
+              <div key={`today-${i}`} className="relative">
+                {i === upNextIndex && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-full shadow-soft whitespace-nowrap">
+                    UP NEXT
+                  </span>
+                )}
+                <div className={i === upNextIndex ? "ring-2 ring-primary rounded-xl" : ""}>
+                  <MealCard meal={meal} compact onClick={() => setSelectedMeal(meal)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* This Week's Meals */}
       {!mealPlan ? (
