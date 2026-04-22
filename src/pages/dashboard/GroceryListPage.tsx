@@ -367,37 +367,57 @@ export default function GroceryListPage() {
     const key = item.name.toLowerCase();
     const baseline = item.estimatedPrice || 0;
 
-    // Layer 1: Open Prices (community), with outlier guard vs baseline
+    // Outlier guard: accept candidate only if within tolerance of baseline.
+    // If baseline is unknown (0), accept the candidate.
+    const withinTolerance = (candidate: number, tolerance: number) => {
+      if (baseline <= 0) return true;
+      const ratio = candidate / baseline;
+      return ratio >= 1 - tolerance && ratio <= 1 + tolerance;
+    };
+
+    // Median resists single-serving / bulk-pack outliers better than min.
+    const median = (nums: number[]) => {
+      if (!nums.length) return 0;
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    };
+
+    // Layer 1: Open Prices (community) within 40 percent of baseline
     const op = openPrices[key];
-    if (op?.price != null && baseline > 0) {
-      const ratio = op.price / baseline;
-      if (ratio >= 0.6 && ratio <= 1.4) {
-        return { price: op.price, source: 'open_prices', store: op.store ?? undefined, date: op.date, city: op.city };
-      }
+    if (op?.price != null && withinTolerance(op.price, 0.4)) {
+      return { price: op.price, source: 'open_prices', store: op.store ?? undefined, date: op.date, city: op.city };
     }
 
-    // Layer 2: Google Shopping — prefer match for active store, else cheapest
+    // Layer 2: Google Shopping. Prefer active-store match, else median of top 3, within 50 percent.
     const gs = shoppingPrices[key];
     if (gs && gs.length) {
       const storeMatch = activeStore
         ? gs.find((r) => r.store && activeStore.toLowerCase().includes(r.store.toLowerCase().split(' ')[0]))
         : null;
-      const pick = storeMatch || gs[0];
-      return { price: pick.price, source: 'google_shopping', store: pick.store };
+      const candidate = storeMatch ? storeMatch.price : median(gs.slice(0, 3).map((r) => r.price));
+      if (candidate > 0 && withinTolerance(candidate, 0.5)) {
+        return { price: candidate, source: 'google_shopping', store: storeMatch?.store };
+      }
     }
 
-    // Layer 3: Walmart direct (only for Walmart store)
+    // Layer 3: Walmart direct (Walmart store only) within 50 percent of baseline.
     if (isWalmart(activeStore)) {
       const wp = walmartPrices[key];
-      if (wp?.price != null) return { price: wp.price, source: 'walmart', store: 'Walmart' };
+      if (wp?.price != null && withinTolerance(wp.price, 0.5)) {
+        return { price: wp.price, source: 'walmart', store: 'Walmart' };
+      }
     }
 
-    // Layer 4: per-store AI/regional estimate
+    // Layer 4: per-store AI/regional estimate within 50 percent of baseline.
     if (item.storePrices && activeStore && item.storePrices[activeStore]) {
-      return { price: item.storePrices[activeStore], source: 'store_estimate', store: activeStore };
+      const candidate = item.storePrices[activeStore];
+      if (withinTolerance(candidate, 0.5)) {
+        return { price: candidate, source: 'store_estimate', store: activeStore };
+      }
     }
 
-    // Layer 5: baseline estimate
+    // Layer 5: baseline estimate (always trusted).
     return { price: baseline, source: 'estimate' };
   };
 
