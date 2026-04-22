@@ -164,7 +164,7 @@ export default function AdminMembers() {
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Search by name, email, or ZIP..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-[160px]"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
@@ -185,9 +185,35 @@ export default function AdminMembers() {
                 <SelectItem value="disabled">Disabled</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={filterActivity} onValueChange={setFilterActivity}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any activity</SelectItem>
+                <SelectItem value="active7">Active in 7 days</SelectItem>
+                <SelectItem value="inactive14">Inactive 14+ days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <p className="text-xs text-muted-foreground mt-3">{filtered.length} of {members.length} shown</p>
         </CardContent>
       </Card>
+
+      {someSelected && (isOwner || permissions.edit_members) && (
+        <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-lg px-4 py-2">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("active")} className="gap-1">
+              <ShieldCheck className="h-3.5 w-3.5" /> Enable
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("disabled")} className="gap-1">
+              <ShieldOff className="h-3.5 w-3.5" /> Disable
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card className="bg-card border-border">
         <CardContent className="p-0">
