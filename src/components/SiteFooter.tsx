@@ -89,10 +89,36 @@ export function SiteFooter() {
           Budget meal planning for real families. Meals that fit your budget at the store you already shop at — free for SNAP & WIC households.
         </p>
         <div className="ml-11">
-          <p className="text-xs text-white/40">
-            Contact:{" "}
-            <a href="mailto:marcos@helpthehive.com" className="hover:text-white/70 transition-colors">
-              marcos@helpthehive.com
+          <p className="text-xs font-semibold text-white/60 mb-1.5">Contact</p>
+          <ul className="space-y-1 text-xs text-white/40">
+            <li>
+              General:{" "}
+              <a href="mailto:marcos@helpthehive.com" className="hover:text-white/80 transition-colors">
+                marcos@helpthehive.com
+              </a>
+            </li>
+            <li>
+              Partnerships:{" "}
+              <a href="mailto:partnerships@helpthehive.com" className="hover:text-white/80 transition-colors">
+                partnerships@helpthehive.com
+              </a>
+            </li>
+            <li>
+              Press:{" "}
+              <a href="mailto:press@helpthehive.com" className="hover:text-white/80 transition-colors">
+                press@helpthehive.com
+              </a>
+            </li>
+            <li>
+              Community orgs:{" "}
+              <a href="mailto:community@helpthehive.com" className="hover:text-white/80 transition-colors">
+                community@helpthehive.com
+              </a>
+            </li>
+          </ul>
+          <p className="text-xs text-white/40 mt-3">
+            <a href="/partners" className="hover:text-white/80 transition-colors underline underline-offset-2">
+              Partner with Help The Hive →
             </a>
           </p>
         </div>
