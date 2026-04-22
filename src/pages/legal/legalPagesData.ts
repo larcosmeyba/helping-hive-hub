@@ -294,7 +294,7 @@ We do not guarantee:
 **Governing law:** These Terms are governed by the laws of the State of California, without regard to conflict of law principles.`
       },
       {
-        heading: "15. Account Deletion",
+        heading: "17. Account Deletion",
         content: `You may request deletion of your account and associated personal data at any time by contacting us or using the account deletion option in your app settings.
 
 Upon deletion:
@@ -305,7 +305,7 @@ Upon deletion:
 Account deletion requests will be processed within 30 days of the request.`
       },
       {
-        heading: "16. End User License Agreement (EULA)",
+        heading: "18. End User License Agreement (EULA)",
         content: `This agreement serves as the End User License Agreement (EULA) for the Help the Hive mobile application distributed through the Apple App Store and Google Play Store.
 
 By downloading or using the Help the Hive app, you agree to the terms set forth in this document.
@@ -318,21 +318,21 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
 • Apple and Google have no obligation to provide maintenance or support for the app`
       },
       {
-        heading: "17. Third-Party App Store Terms",
+        heading: "19. Apple & Google Acknowledgment",
         content: `If you download or use Help the Hive through the Apple App Store or Google Play Store, the following applies:
 
 • These Terms are between you and Help the Hive, not Apple Inc. or Google LLC
 • Apple and Google are not responsible for the app, its content, or any claims related to its use
-• Apple and Google are third-party beneficiaries of these Terms and may enforce them
-• You must comply with any applicable third-party terms of agreement when using the app
+• Apple and Google have no obligation to provide maintenance or support for the app
+• Apple and Google are third-party beneficiaries of these Terms and may enforce them against you
 • In the event of any failure of the app to conform to any applicable warranty, you may notify Apple or Google for a refund of the purchase price (if any); to the maximum extent permitted by law, Apple and Google have no other warranty obligations with respect to the app`
       },
       {
-        heading: "18. Changes to These Terms",
-        content: "We may update these Terms from time to time. Continued use of the platform after changes become effective constitutes acceptance of the updated Terms."
+        heading: "20. Changes to These Terms",
+        content: `We may update these Terms. We will update the "Last Updated" date, notify you of material changes via in-app message or email, and give 30 days' notice before material changes take effect.`
       },
       {
-        heading: "19. Contact",
+        heading: "21. Contact",
         content: `Questions about these Terms may be sent to:\n\n📧 [${CONTACT_BUSINESS}](mailto:${CONTACT_BUSINESS})`
       }
     ]
