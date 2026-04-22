@@ -9,7 +9,13 @@ interface ProfileLite {
   weekly_budget: number | null;
   household_size: number | null;
   questionnaire_completed: boolean | null;
-  [key: string]: any;
+  home_store?: string | null;
+  tier?: string | null;
+  snap_status?: boolean | null;
+  food_assistance_status?: string | null;
+  monthly_snap_amount?: number | null;
+  snap_deposit_day?: number | null;
+  [key: string]: unknown;
 }
 
 interface AuthContextType {
