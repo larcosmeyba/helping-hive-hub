@@ -64,6 +64,7 @@ export default function SettingsPage() {
       setWeeklyBudget(Number(data.weekly_budget) ?? 75);
       setZipCode(data.zip_code ?? "");
       setSelectedStores((data.preferred_stores as string[]) ?? []);
+      setHomeStore(data.home_store ?? "");
       setAllergies((data.allergies as string[]) ?? []);
       setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
       setUserType(data.user_type ?? "general");
@@ -84,6 +85,7 @@ export default function SettingsPage() {
         weekly_budget: weeklyBudget,
         zip_code: zipCode,
         preferred_stores: selectedStores,
+        home_store: homeStore || null,
         allergies,
         dietary_preferences: dietaryPreferences,
         user_type: userType,
