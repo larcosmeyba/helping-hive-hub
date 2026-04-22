@@ -1,13 +1,37 @@
 import { motion } from "framer-motion";
-import { Users, GraduationCap, Briefcase, Leaf, Home, Shield } from "lucide-react";
+import { Users, GraduationCap, Leaf, Home, Heart } from "lucide-react";
 
 const audiences = [
-  { icon: Users, title: "Families", desc: "Feed your household nutritious meals without breaking the bank." },
-  { icon: GraduationCap, title: "Students", desc: "Eat well on a tight student budget with quick, simple meals." },
-  { icon: Briefcase, title: "Busy Households", desc: "Save time with pre-planned meals and organized grocery runs." },
-  { icon: Home, title: "Budget-Conscious Homes", desc: "Maximize every dollar with plans built around your real budget." },
-  { icon: Leaf, title: "Waste Reducers", desc: "Use what you have first and buy only what you need." },
-  { icon: Shield, title: "Service Members", desc: "Meal planning support for military families and first responders." },
+  {
+    icon: Heart,
+    title: "SNAP & WIC Families",
+    desc: "Help The Hive is free forever for households on food assistance. Stretch every benefit dollar further, plan meals your family will actually eat, and feel dignity at the grocery store.",
+    featured: true,
+  },
+  {
+    icon: Users,
+    title: "Families",
+    desc: "Feed your household nutritious meals without breaking the bank.",
+    featured: false,
+  },
+  {
+    icon: Home,
+    title: "Budget-Conscious Homes",
+    desc: "Maximize every dollar with plans built around your real budget.",
+    featured: false,
+  },
+  {
+    icon: GraduationCap,
+    title: "Students",
+    desc: "Eat well on a tight budget. Simple meals that work for dorms, shared apartments, and small kitchens.",
+    featured: false,
+  },
+  {
+    icon: Leaf,
+    title: "Waste Reducers",
+    desc: "Use what you have first. Shop only for what you actually need. Reduce waste, save money.",
+    featured: false,
+  },
 ];
 
 export function WhoWeHelpSection() {
@@ -39,9 +63,15 @@ export function WhoWeHelpSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="group p-6 rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all duration-300 border border-border hover:border-primary/20"
+              className={`group p-6 rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all duration-300 border ${
+                item.featured ? "border-primary/40 ring-1 ring-primary/20" : "border-border hover:border-primary/20"
+              }`}
             >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
+                  item.featured ? "bg-primary/15 group-hover:bg-primary/25" : "bg-primary/10 group-hover:bg-primary/15"
+                }`}
+              >
                 <item.icon className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{item.title}</h3>

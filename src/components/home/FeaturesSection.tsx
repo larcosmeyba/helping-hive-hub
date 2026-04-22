@@ -10,7 +10,7 @@ const features = [
   {
     icon: ShoppingCart,
     title: "Smart Grocery Lists",
-    desc: "Auto-generated grocery lists organized by store section with real pricing data to keep your trip fast and on budget.",
+    desc: "Auto-generated grocery lists organized by store section with estimated pricing to keep your trip fast and on budget.",
   },
   {
     icon: Refrigerator,
