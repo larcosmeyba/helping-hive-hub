@@ -14,9 +14,16 @@ const CATEGORY_IMAGES: Record<string, string> = {
   "High Protein": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
   "Vegetarian": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
   "Family Favorites": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
-  "Holiday": "https://images.unsplash.com/photo-1482275548304-a58859dc31b7?w=400&h=300&fit=crop",
-  "Special Occasions": "https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=400&h=300&fit=crop",
+  // "Holiday" replaced with "Celebrations" (Fix 2.7) — warm home-style imagery, no alcohol
+  "Celebrations": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
+  "Special Occasions": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
 };
+
+// Remap legacy "Holiday" category from DB to "Celebrations" for display
+const CATEGORY_LABEL_REMAP: Record<string, string> = {
+  Holiday: "Celebrations",
+};
+const displayLabel = (cat: string) => CATEGORY_LABEL_REMAP[cat] ?? cat;
 
 const DEFAULT_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
