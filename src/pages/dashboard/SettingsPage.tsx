@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [verificationStatus, setVerificationStatus] = useState("not_started");
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
+  const [showMacros, setShowMacros] = useShowMacros();
 
   useEffect(() => {
     if (!user) return;
