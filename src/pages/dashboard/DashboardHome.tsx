@@ -13,6 +13,7 @@ import { EditableProfileFields } from "@/components/dashboard/EditableProfileFie
 import { MealCard } from "@/components/dashboard/MealCard";
 import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
 import { FreeForeverBadge } from "@/components/dashboard/TierBadge";
+import { SnapTracker } from "@/components/dashboard/SnapTracker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
