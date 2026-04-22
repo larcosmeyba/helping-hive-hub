@@ -206,7 +206,13 @@ You are responsible for:
       },
       {
         heading: "5. Pricing, Availability, and Estimates",
-        content: `Help the Hive may display estimates, recommendations, and planning outputs based on available inputs. Grocery prices, inventory, promotions, taxes, and availability may vary by store, retailer, location, and time.
+        content: `Help the Hive provides two types of pricing information: **Verified Pricing** from direct retailer partnerships, and **Estimated Pricing** based on public data sources, user submissions, and algorithmic estimates. Estimated Pricing is clearly labeled within the app. Actual in-store prices may vary by store, retailer, location, date, and promotion.
+
+You acknowledge and agree that:
+• Help the Hive pricing is for planning purposes only
+• Actual prices depend on store, location, date, and promotions
+• We are not liable for differences between estimated and in-store prices
+• You should verify prices at the store before making purchase decisions
 
 We do not guarantee:
 • Pricing accuracy
