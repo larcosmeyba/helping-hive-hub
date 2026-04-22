@@ -102,7 +102,7 @@ export default function DashboardHome() {
       <div className="space-y-3">
         <div>
           <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
-            Welcome back, {profile?.display_name ?? "there"}
+            Welcome back, {firstName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Meals that fit your budget. At the store you already shop at.</p>
           {isFreeForever && <div className="mt-2"><FreeForeverBadge /></div>}
@@ -114,20 +114,6 @@ export default function DashboardHome() {
           householdSize={profile?.household_size ?? null}
           onUpdate={refreshProfile}
         />
-
-        <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
-          <Button
-            onClick={generate}
-            disabled={generating}
-            className="bg-gradient-honey text-primary-foreground hover:opacity-90 w-full md:w-auto h-14 md:h-10 text-sm md:text-sm font-semibold rounded-xl shadow-soft"
-          >
-            {generating ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
-            ) : (
-              <><Sparkles className="w-4 h-4 mr-2" /> {mealPlan ? "Regenerate Plan" : "Generate Plan"}</>
-            )}
-          </Button>
-        </motion.div>
       </div>
 
       {/* Stats Grid — all 6 uniform */}
