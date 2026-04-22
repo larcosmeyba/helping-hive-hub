@@ -293,18 +293,6 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Beta Access */}
-      <div className="flex items-center justify-between bg-primary/5 rounded-xl border border-primary/20 p-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Beta Access</p>
-            <p className="text-[11px] text-muted-foreground">All features are free during testing</p>
-          </div>
-        </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">Active</span>
-      </div>
-
       {/* Sign Out */}
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         <LogOut className="w-4 h-4 mr-2" /> Sign Out
