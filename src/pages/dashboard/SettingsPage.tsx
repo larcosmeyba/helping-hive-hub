@@ -25,7 +25,7 @@ import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls"
 import { Switch } from "@/components/ui/switch";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
-const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
+const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
 const USER_TYPE_OPTIONS = [
@@ -47,6 +47,7 @@ export default function SettingsPage() {
   const [weeklyBudget, setWeeklyBudget] = useState(75);
   const [zipCode, setZipCode] = useState("");
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
+  const [homeStore, setHomeStore] = useState<string>("");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [userType, setUserType] = useState("general");
