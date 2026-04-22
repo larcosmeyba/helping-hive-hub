@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { EditableProfileFields } from "@/components/dashboard/EditableProfileFields";
 import { MealCard } from "@/components/dashboard/MealCard";
 import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
+import { FreeForeverBadge } from "@/components/dashboard/TierBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
@@ -67,7 +68,11 @@ export default function DashboardHome() {
   const pantrySavings = mealPlan?.pantrySavings ?? 0;
   const saved = budget - estimatedCost;
   const costPerMeal = mealPlan?.costPerMeal ?? 0;
-  const groceryScore = mealPlan ? Math.min(99, Math.round(70 + (pantrySavings / budget) * 30)) : 0;
+  // Budget Fit: how well the plan fits within the user's weekly budget (0-100)
+  const budgetFit = mealPlan && budget > 0
+    ? Math.max(0, Math.min(100, Math.round(((budget - Math.max(0, estimatedCost - pantrySavings)) / budget) * 100 + 50)))
+    : 0;
+  const isFreeForever = (profile as any)?.tier === "free_forever";
 
   const { data: pantryItems } = useQuery({
     queryKey: ["pantry_count", user?.id],
@@ -95,7 +100,8 @@ export default function DashboardHome() {
           <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
             Welcome back, {profile?.display_name ?? "there"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Your weekly meal plan overview</p>
+          <p className="text-sm text-muted-foreground mt-1">Meals that fit your budget. At the store you already shop at.</p>
+          {isFreeForever && <div className="mt-2"><FreeForeverBadge /></div>}
         </div>
 
         <EditableProfileFields
@@ -132,7 +138,7 @@ export default function DashboardHome() {
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
           { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : "0"}`, icon: PiggyBank, color: "text-accent" },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
-          { label: "Grocery Score", value: mealPlan ? `${groceryScore}%` : "—", icon: Zap, color: "text-primary" },
+          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary" },
           { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent" },
         ].map((stat) => (
           <motion.div
