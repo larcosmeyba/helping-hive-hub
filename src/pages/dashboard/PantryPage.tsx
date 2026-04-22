@@ -448,10 +448,17 @@ export default function PantryPage() {
 
       {/* Tabs: In Stock / Out of Stock */}
       {items.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-8 text-center">
-          <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <h2 className="font-display text-lg font-semibold text-foreground mb-2">Pantry is Empty</h2>
-          <p className="text-sm text-muted-foreground mb-4">Use the quick add buttons above, or tap "Add Item" to get started.</p>
+        <div className="bg-gradient-to-b from-primary/5 to-transparent border border-primary/15 rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <Package className="w-7 h-7 text-primary" />
+          </div>
+          <h2 className="font-display text-lg font-semibold text-foreground mb-1">Your pantry is empty</h2>
+          <p className="text-sm text-muted-foreground mb-1 max-w-sm mx-auto">
+            Tap a Quick Add chip above, expand the Pantry Staples list, or add a custom item to start building your inventory.
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Tracking your pantry helps meal plans use what you already have first.
+          </p>
         </div>
       ) : (
         <Tabs defaultValue="in-stock">
