@@ -11,9 +11,10 @@ export interface LegalSection {
   content: string;
 }
 
-const LAST_UPDATED = "March 21, 2026";
-const CONTACT_BUSINESS = "marcos@helpthehive.com";
+const LAST_UPDATED = "April 21, 2026";
+const CONTACT_BUSINESS = "legal@helpthehive.com";
 const CONTACT_SUPPORT = "marcos@helpthehive.com";
+const CONTACT_PRIVACY = "privacy@helpthehive.com";
 
 export const legalPages: LegalPageData[] = [
   // ─── COMPANY ───
