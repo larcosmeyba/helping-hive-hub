@@ -1613,6 +1613,9 @@ export const footerColumns = [
       { label: "Export Compliance", slug: "export-compliance" },
       { label: "Third-Party Services Disclosure", slug: "third-party-services" },
       { label: "Government Program Disclaimer", slug: "government-disclaimer" },
+      { label: "Apple App Store Compliance", slug: "apple-app-store" },
+      { label: "Google Play Store Compliance", slug: "google-play-store" },
+      { label: "Subscription Disclosures", slug: "subscription-disclosures" },
     ]
   }
 ];
