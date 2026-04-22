@@ -216,11 +216,14 @@ export default function PantryPage() {
   const inStockItems = items.filter((i) => !(i as any).is_out_of_stock);
   const outOfStockItems = items.filter((i) => (i as any).is_out_of_stock);
   const lowStock = items.filter((i) => i.is_low_stock && !(i as any).is_out_of_stock);
-  const expiringSoon = items.filter((i) => {
-    if (!i.expiration_date) return false;
-    const diff = new Date(i.expiration_date).getTime() - Date.now();
-    return diff > 0 && diff < 3 * 24 * 60 * 60 * 1000;
-  });
+
+  const daysUntilExpiry = (dateStr: string) =>
+    Math.ceil((new Date(dateStr).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+
+  const expired = inStockItems.filter((i) => i.expiration_date && daysUntilExpiry(i.expiration_date) < 0);
+  const useToday = inStockItems.filter((i) => i.expiration_date && daysUntilExpiry(i.expiration_date) >= 0 && daysUntilExpiry(i.expiration_date) <= 1);
+  const expiringSoon = inStockItems.filter((i) => i.expiration_date && daysUntilExpiry(i.expiration_date) > 1 && daysUntilExpiry(i.expiration_date) <= 4);
+
 
   if (isLoading) {
     return (
@@ -269,9 +272,13 @@ export default function PantryPage() {
               {item.is_low_stock ? "Low" : "Mark Low"}
             </button>
           )}
-          {item.expiration_date && (
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">Exp: {item.expiration_date}</span>
-          )}
+          {item.expiration_date && (() => {
+            const days = daysUntilExpiry(item.expiration_date);
+            if (days < 0) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/15 text-destructive border border-destructive/30">Expired</span>;
+            if (days <= 1) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/30">Use today</span>;
+            if (days <= 4) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">{days}d left</span>;
+            return <span className="text-[10px] text-muted-foreground hidden sm:inline">Exp: {item.expiration_date}</span>;
+          })()}
           <Button
             variant="ghost"
             size="icon"
@@ -360,11 +367,27 @@ export default function PantryPage() {
       <PantryStaplesSection />
 
       {/* Alerts */}
-      {(lowStock.length > 0 || expiringSoon.length > 0) && (
+      {(lowStock.length > 0 || expiringSoon.length > 0 || useToday.length > 0 || expired.length > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {lowStock.length > 0 && (
+          {expired.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3">
+              <h3 className="font-semibold text-destructive flex items-center gap-2 text-sm mb-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" /> Expired ({expired.length})
+              </h3>
+              {expired.map((i) => <p key={i.id} className="text-xs text-foreground">{i.item_name} — {i.expiration_date}</p>)}
+            </div>
+          )}
+          {useToday.length > 0 && (
             <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3">
               <h3 className="font-semibold text-destructive flex items-center gap-2 text-sm mb-1.5">
+                <Clock className="w-3.5 h-3.5" /> Use Today ({useToday.length})
+              </h3>
+              {useToday.map((i) => <p key={i.id} className="text-xs text-foreground">{i.item_name} — {i.expiration_date}</p>)}
+            </div>
+          )}
+          {lowStock.length > 0 && (
+            <div className="bg-accent/5 border border-accent/20 rounded-xl p-3">
+              <h3 className="font-semibold text-accent flex items-center gap-2 text-sm mb-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" /> Low Stock ({lowStock.length})
               </h3>
               {lowStock.map((i) => <p key={i.id} className="text-xs text-foreground">{i.item_name} — {i.quantity}</p>)}
@@ -373,7 +396,7 @@ export default function PantryPage() {
           {expiringSoon.length > 0 && (
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
               <h3 className="font-semibold text-primary flex items-center gap-2 text-sm mb-1.5">
-                <Clock className="w-3.5 h-3.5" /> Expiring Soon ({expiringSoon.length})
+                <Clock className="w-3.5 h-3.5" /> Expiring This Week ({expiringSoon.length})
               </h3>
               {expiringSoon.map((i) => <p key={i.id} className="text-xs text-foreground">{i.item_name} — {i.expiration_date}</p>)}
             </div>
