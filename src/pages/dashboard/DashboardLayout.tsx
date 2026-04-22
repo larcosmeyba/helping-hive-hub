@@ -9,11 +9,13 @@ import { MealPlanProvider } from "@/contexts/MealPlanContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-transparent.png";
 
 export default function DashboardLayout() {
   const isMobile = useIsMobile();
+  usePushNotifications();
   const [scrolled, setScrolled] = useState(false);
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
 
