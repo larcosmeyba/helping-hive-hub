@@ -367,7 +367,7 @@ export default function GroceryListPage() {
     const key = item.name.toLowerCase();
     const baseline = item.estimatedPrice || 0;
 
-    // Layer 1: Open Prices (community), with outlier guard vs baseline
+    // Layer 1: Open Prices (community), with outlier guard vs baseline (40 percent)
     const op = openPrices[key];
     if (op?.price != null && baseline > 0) {
       const ratio = op.price / baseline;
