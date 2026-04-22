@@ -72,11 +72,33 @@ export default function DashboardHome() {
   const costPerMeal = mealPlan?.costPerMeal ?? 0;
   // First name only for greeting (Fix 2.2)
   const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "there";
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const todayDayName = now.toLocaleDateString(undefined, { weekday: "long" });
   // Budget Fit: how well the plan fits within the user's weekly budget (0-100)
   const budgetFit = mealPlan && budget > 0
     ? Math.max(0, Math.min(100, Math.round(((budget - Math.max(0, estimatedCost - pantrySavings)) / budget) * 100 + 50)))
     : 0;
   const isFreeForever = profile?.tier === "free_forever";
+
+  // Today's meals + "Up next" based on time of day
+  const todayPlan = useMemo(() => {
+    if (!mealPlan) return null;
+    return (
+      mealPlan.weeklyPlan.find((d) => d.day.toLowerCase() === todayDayName.toLowerCase()) ??
+      mealPlan.weeklyPlan[0]
+    );
+  }, [mealPlan, todayDayName]);
+
+  const upNextIndex = useMemo(() => {
+    if (!todayPlan) return -1;
+    // Heuristic: breakfast before 10, lunch before 15, otherwise dinner
+    const targetType = hour < 10 ? "breakfast" : hour < 15 ? "lunch" : "dinner";
+    const idx = todayPlan.meals.findIndex((m) => m.type?.toLowerCase().includes(targetType));
+    return idx >= 0 ? idx : 0;
+  }, [todayPlan, hour]);
 
   const { data: pantryItems } = useQuery({
     queryKey: ["pantry_count", user?.id],
