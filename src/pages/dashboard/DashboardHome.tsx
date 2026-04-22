@@ -13,6 +13,7 @@ import { EditableProfileFields } from "@/components/dashboard/EditableProfileFie
 import { MealCard } from "@/components/dashboard/MealCard";
 import { RecipeCategoryTiles } from "@/components/dashboard/RecipeCategoryTiles";
 import { FreeForeverBadge } from "@/components/dashboard/TierBadge";
+import { SnapTracker } from "@/components/dashboard/SnapTracker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
@@ -161,6 +162,10 @@ export default function DashboardHome() {
           <Target className="w-3 h-3 text-primary" />
           Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
         </p>
+      )}
+
+      {((profile as any)?.snap_status || (profile as any)?.food_assistance_status === "snap") && (
+        <SnapTracker />
       )}
 
       {/* This Week's Meals */}
