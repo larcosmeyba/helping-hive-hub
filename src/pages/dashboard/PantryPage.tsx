@@ -60,30 +60,39 @@ const QUICK_ADD_ITEMS = [
   { name: "Garlic", quantity: "1 head", category: "vegetables" },
 ];
 
-const PANTRY_STAPLES = [
-  { name: "Rice (10 lb bag)", category: "Grains", shelf: "6-12 months" },
-  { name: "Dried Pinto Beans (4 lb bag)", category: "Proteins", shelf: "1-2 years" },
-  { name: "Dried Black Beans (4 lb bag)", category: "Proteins", shelf: "1-2 years" },
-  { name: "Dried Lentils (2 lb bag)", category: "Proteins", shelf: "1-2 years" },
-  { name: "Oats (Large canister)", category: "Grains", shelf: "1-2 years" },
-  { name: "Flour (5 lb bag)", category: "Grains", shelf: "6-8 months" },
-  { name: "Pasta (2 lb box)", category: "Grains", shelf: "1-2 years" },
-  { name: "Canned Tomatoes (28 oz)", category: "Canned Goods", shelf: "1-2 years" },
-  { name: "Canned Tuna", category: "Proteins", shelf: "2-5 years" },
-  { name: "Peanut Butter (Large jar)", category: "Proteins", shelf: "6-9 months" },
-  { name: "Cooking Oil (48 oz)", category: "Pantry Staples", shelf: "1-2 years" },
-  { name: "Salt (26 oz)", category: "Pantry Staples", shelf: "Indefinite" },
-  { name: "Sugar (4 lb bag)", category: "Pantry Staples", shelf: "Indefinite" },
-  { name: "Dried Chickpeas (2 lb bag)", category: "Proteins", shelf: "1-2 years" },
-  { name: "Cornmeal (5 lb bag)", category: "Grains", shelf: "6-12 months" },
-  { name: "Canned Corn", category: "Canned Goods", shelf: "2-5 years" },
-  { name: "Canned Green Beans", category: "Canned Goods", shelf: "2-5 years" },
-  { name: "Powdered Milk", category: "Dairy", shelf: "1-2 years" },
-  { name: "Honey (Large bottle)", category: "Pantry Staples", shelf: "Indefinite" },
-  { name: "Soy Sauce", category: "Pantry Staples", shelf: "2-3 years" },
+// Long-shelf-life essentials. `cat` maps to internal pantry category keys for one-tap add.
+const PANTRY_STAPLES: { name: string; quantity: string; cat: typeof CATEGORIES[number]; category: string; shelf: string }[] = [
+  { name: "Rice", quantity: "10 lb bag", cat: "grains", category: "Grains", shelf: "6–12 months" },
+  { name: "Oats", quantity: "Large canister", cat: "grains", category: "Grains", shelf: "1–2 years" },
+  { name: "Pasta", quantity: "2 lb box", cat: "grains", category: "Grains", shelf: "1–2 years" },
+  { name: "Flour", quantity: "5 lb bag", cat: "grains", category: "Grains", shelf: "6–8 months" },
+  { name: "Cornmeal", quantity: "2 lb bag", cat: "grains", category: "Grains", shelf: "6–12 months" },
+  { name: "Dried Pinto Beans", quantity: "2 lb bag", cat: "proteins", category: "Proteins", shelf: "1–2 years" },
+  { name: "Dried Black Beans", quantity: "2 lb bag", cat: "proteins", category: "Proteins", shelf: "1–2 years" },
+  { name: "Dried Lentils", quantity: "2 lb bag", cat: "proteins", category: "Proteins", shelf: "1–2 years" },
+  { name: "Dried Chickpeas", quantity: "2 lb bag", cat: "proteins", category: "Proteins", shelf: "1–2 years" },
+  { name: "Canned Tuna", quantity: "5 oz can", cat: "canned_goods", category: "Canned Goods", shelf: "2–5 years" },
+  { name: "Peanut Butter", quantity: "Large jar", cat: "proteins", category: "Proteins", shelf: "6–9 months" },
+  { name: "Canned Tomatoes", quantity: "28 oz can", cat: "canned_goods", category: "Canned Goods", shelf: "1–2 years" },
+  { name: "Canned Corn", quantity: "15 oz can", cat: "canned_goods", category: "Canned Goods", shelf: "2–5 years" },
+  { name: "Canned Green Beans", quantity: "15 oz can", cat: "canned_goods", category: "Canned Goods", shelf: "2–5 years" },
+  { name: "Cooking Oil", quantity: "48 oz bottle", cat: "pantry_staples", category: "Pantry Staples", shelf: "1–2 years" },
+  { name: "Salt", quantity: "26 oz", cat: "pantry_staples", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Sugar", quantity: "4 lb bag", cat: "pantry_staples", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Honey", quantity: "Large bottle", cat: "pantry_staples", category: "Pantry Staples", shelf: "Indefinite" },
+  { name: "Soy Sauce", quantity: "10 oz bottle", cat: "pantry_staples", category: "Pantry Staples", shelf: "2–3 years" },
+  { name: "Powdered Milk", quantity: "1 box", cat: "dairy", category: "Dairy", shelf: "1–2 years" },
 ];
 
-function PantryStaplesSection() {
+function PantryStaplesSection({
+  existingNames,
+  onAdd,
+  isPending,
+}: {
+  existingNames: Set<string>;
+  onAdd: (item: { name: string; quantity: string; category: string }) => void;
+  isPending: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -106,17 +115,33 @@ function PantryStaplesSection() {
         <div className="overflow-hidden">
           <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
             <p className="text-xs text-muted-foreground mb-2">
-              Long-shelf-life essentials to stock up on. Prices vary by location.
+              Long-shelf-life essentials. Tap <Plus className="w-3 h-3 inline-block -mt-0.5" /> to add to your pantry.
             </p>
-            {PANTRY_STAPLES.map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{item.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.category}</p>
+            {PANTRY_STAPLES.map((item, i) => {
+              const already = existingNames.has(item.name.toLowerCase());
+              return (
+                <div key={i} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.category} · {item.quantity}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline">{item.shelf}</span>
+                  <button
+                    onClick={() => !already && onAdd({ name: item.name, quantity: item.quantity, category: item.cat })}
+                    disabled={already || isPending}
+                    className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-all ${
+                      already
+                        ? "bg-primary/10 text-primary border-primary/30 cursor-default"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-primary active:scale-95"
+                    }`}
+                    title={already ? "Already in pantry" : "Add to pantry"}
+                    aria-label={already ? `${item.name} already in pantry` : `Add ${item.name} to pantry`}
+                  >
+                    {already ? "✓" : <Plus className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
-                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{item.shelf}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -227,8 +252,11 @@ export default function PantryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="max-w-4xl mx-auto space-y-4 animate-pulse">
+        <div className="h-8 w-40 bg-muted/60 rounded-lg" />
+        <div className="h-24 bg-muted/40 rounded-2xl" />
+        <div className="h-12 bg-muted/40 rounded-2xl" />
+        <div className="h-32 bg-muted/40 rounded-2xl" />
       </div>
     );
   }
@@ -364,7 +392,11 @@ export default function PantryPage() {
       </div>
 
       {/* Pantry Staples Checklist */}
-      <PantryStaplesSection />
+      <PantryStaplesSection
+        existingNames={new Set(items.map((i) => i.item_name.toLowerCase()))}
+        onAdd={(item) => addMutation.mutate(item)}
+        isPending={addMutation.isPending}
+      />
 
       {/* Alerts */}
       {(lowStock.length > 0 || expiringSoon.length > 0 || useToday.length > 0 || expired.length > 0) && (
@@ -416,10 +448,17 @@ export default function PantryPage() {
 
       {/* Tabs: In Stock / Out of Stock */}
       {items.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border shadow-card p-8 text-center">
-          <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <h2 className="font-display text-lg font-semibold text-foreground mb-2">Pantry is Empty</h2>
-          <p className="text-sm text-muted-foreground mb-4">Use the quick add buttons above, or tap "Add Item" to get started.</p>
+        <div className="bg-gradient-to-b from-primary/5 to-transparent border border-primary/15 rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <Package className="w-7 h-7 text-primary" />
+          </div>
+          <h2 className="font-display text-lg font-semibold text-foreground mb-1">Your pantry is empty</h2>
+          <p className="text-sm text-muted-foreground mb-1 max-w-sm mx-auto">
+            Tap a Quick Add chip above, expand the Pantry Staples list, or add a custom item to start building your inventory.
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Tracking your pantry helps meal plans use what you already have first.
+          </p>
         </div>
       ) : (
         <Tabs defaultValue="in-stock">

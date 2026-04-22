@@ -188,6 +188,31 @@ export default function RecipesPage() {
                   </ul>
                 </div>
 
+                {/* Cost Breakdown (Fix 3.5) */}
+                <div className="bg-accent/5 border border-accent/20 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5 text-accent" /> Cost Breakdown
+                    </h4>
+                    <span className="text-[10px] text-muted-foreground italic">est.</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-card/60 rounded-lg p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">Total recipe</p>
+                      <p className="text-base font-bold text-foreground">${selectedRecipe.cost.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-card/60 rounded-lg p-2 text-center">
+                      <p className="text-[10px] text-muted-foreground">Per serving</p>
+                      <p className="text-base font-bold text-accent">
+                        ${(selectedRecipe.cost / selectedRecipe.servings).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Estimated using public price data, averaged across {selectedRecipe.ingredients.length} ingredient{selectedRecipe.ingredients.length === 1 ? "" : "s"}. Actual costs vary by store, brand, and pantry items you already own.
+                  </p>
+                </div>
+
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Instructions</h4>
                   <ol className="space-y-2">
