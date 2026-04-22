@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Flame, DollarSign, ChevronDown, ChevronUp, Refrigerator } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
 import { MacroBadges } from "./MacroBadges";
+import { useShowMacros } from "@/hooks/useShowMacros";
 
 // Use shared meal image lookup from MealPlanPage
 const MEAL_IMAGES: Record<string, string> = {
