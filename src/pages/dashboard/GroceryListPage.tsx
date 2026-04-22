@@ -433,52 +433,31 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
-      {/* Walmart live pricing banner */}
-      {walmartLoading && (
-        <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-xl px-4 py-2.5 text-sm font-medium">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading live Walmart prices for your area...
+      {/* Subtle store + items caption (replaces Live Prices banner) */}
+      {(walmartLoading || shoppingLoading) && (
+        <div className="flex items-center gap-2 bg-muted/40 text-muted-foreground rounded-xl px-4 py-2 text-xs">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating estimated prices…
         </div>
       )}
-      {shoppingLoading && (
-        <div className="flex items-center gap-2 bg-muted/40 text-foreground rounded-xl px-4 py-2.5 text-sm">
-          <Loader2 className="w-4 h-4 animate-spin" /> Comparing prices across retailers...
-        </div>
-      )}
-      {!walmartLoading && livePricedCount > 0 && (
-        <div className="flex items-center gap-2 bg-accent/10 text-accent-foreground rounded-xl px-4 py-2.5 text-sm">
-          <img src={walmartLogo} alt="Walmart" className="h-5 w-auto" loading="lazy" />
-          <span>Live prices from <strong className="text-accent">Walmart</strong></span>
-          <span className="text-xs text-muted-foreground ml-auto">
-            {livePricedCount} item{livePricedCount === 1 ? '' : 's'} priced
+      {!walmartLoading && activeStore && (
+        <div className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm" style={{ backgroundColor: "#F5F0E4" }}>
+          <Store className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-foreground/80">
+            Estimated prices for <strong className="text-foreground">{activeStore}</strong>
+            <span className="text-muted-foreground"> · {groceryItems.length} item{groceryItems.length === 1 ? '' : 's'}</span>
           </span>
         </div>
       )}
-      {/* Pricing Confidence Banner */}
-      {computedConfidence && computedConfidence.totalItems > 0 && (
-        <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-4 py-2.5 text-sm border border-border">
-          <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground">
-                {computedConfidence.confidencePercent > 0 
-                  ? `${computedConfidence.confidencePercent}% exact pricing`
-                  : 'Estimated pricing'}
-              </span>
-              {computedConfidence.estimatedCount > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  • {computedConfidence.estimatedCount} estimated item{computedConfidence.estimatedCount !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <div className="w-full bg-border rounded-full h-1.5 mt-1.5">
-              <div 
-                className="bg-primary h-1.5 rounded-full transition-all" 
-                style={{ width: `${Math.max(computedConfidence.confidencePercent, 5)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Pricing transparency note (replaces 98% accuracy claim) */}
+      <p className="text-[11px] text-muted-foreground px-1">
+        All prices are estimates from public data sources. Actual store prices may vary.{" "}
+        <button
+          onClick={() => setShowPricingInfo(true)}
+          className="underline hover:text-foreground transition-colors"
+        >
+          Learn more
+        </button>
+      </p>
       {/* Weekly Savings Banner */}
       {savings && savings.estimatedSavings > 0 && (
         <div className="bg-gradient-to-r from-accent/10 to-primary/10 rounded-2xl border border-accent/30 p-4 md:p-5">
@@ -543,82 +522,6 @@ export default function GroceryListPage() {
           </div>
           <p className="text-base md:text-lg font-bold text-primary shrink-0">${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
         </div>
-      )}
-
-      {/* Check other stores — collapsed comparison */}
-      {stores.length > 1 && (
-        <Collapsible open={showCompare} onOpenChange={setShowCompare}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-between h-10 rounded-xl text-sm">
-              <span className="flex items-center gap-2"><Store className="w-4 h-4" /> Check other stores</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showCompare ? "rotate-180" : ""}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            {(() => {
-              const storeCards = stores.slice(0, 6).map((s) => ({
-                ...s,
-                estimatedTotal: getStoreTotalFromItems(s.store),
-              }));
-              const cheapestIdx = storeCards.findIndex((s) =>
-                storeCards.every((o) => s.estimatedTotal <= o.estimatedTotal)
-              );
-              const highestTotal = Math.max(...storeCards.map((s) => s.estimatedTotal));
-              const sorted = [...storeCards];
-              if (cheapestIdx !== -1 && sorted.length >= 3) {
-                const [cheapest] = sorted.splice(cheapestIdx, 1);
-                sorted.splice(1, 0, cheapest);
-              } else if (cheapestIdx !== -1 && sorted.length === 2) {
-                const [cheapest] = sorted.splice(cheapestIdx, 1);
-                sorted.splice(1, 0, cheapest);
-              }
-              return (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mt-1">
-                  {sorted.map((store) => {
-                    const isActive = activeStore === store.store;
-                    const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
-                    const savings = isCheapest ? (highestTotal - store.estimatedTotal) : 0;
-                    return (
-                      <button
-                        key={store.store}
-                        onClick={() => setSelectedStore(store.store)}
-                        className={`relative text-left transition-all rounded-2xl border min-h-[108px] ${
-                          isActive
-                            ? isCheapest
-                              ? "p-3 md:p-5 border-2 border-accent bg-accent/10 shadow-lg ring-2 ring-accent/30"
-                              : "p-2.5 md:p-4 border-2 border-primary bg-primary/10 shadow-lg ring-2 ring-primary/30"
-                            : isCheapest
-                              ? "p-3 md:p-5 border-2 border-accent/50 bg-accent/5 shadow-md"
-                              : "p-2.5 md:p-4 border-border hover:border-primary/30"
-                        }`}
-                      >
-                        {isCheapest && (
-                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
-                            ★ BEST PRICE
-                          </span>
-                        )}
-                        {isActive && !isCheapest && (
-                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm whitespace-nowrap z-10">
-                            SELECTED
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1 mb-1">
-                          <Store className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                          <p className={`font-semibold text-foreground truncate ${isCheapest ? 'text-xs md:text-base' : 'text-[11px] md:text-sm'}`}>{store.store}</p>
-                        </div>
-                        <p className={`font-bold text-primary ${isCheapest ? 'text-lg md:text-2xl' : 'text-sm md:text-xl'}`}>${store.estimatedTotal?.toFixed(2)}</p>
-                        <p className="text-[9px] md:text-xs text-muted-foreground">Est. + tax</p>
-                        {isCheapest && savings > 0 && (
-                          <p className="text-[9px] md:text-xs text-accent font-semibold mt-1">Save ${savings.toFixed(2)}</p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </CollapsibleContent>
-        </Collapsible>
       )}
 
 
