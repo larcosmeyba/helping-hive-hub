@@ -1,0 +1,209 @@
+// Scheduled engagement runner.
+// Triggered by pg_cron daily. Creates in-app notifications and queues transactional
+// emails for: weekly recap (Sun), SNAP deposit reminder (1 day before), and
+// re-engagement (users inactive 7+ days).
+//
+// CORS for direct admin "run now" testing from the dashboard.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+interface Profile {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  snap_status: boolean | null;
+  snap_deposit_day: number | null;
+  last_active: string | null;
+  notification_preferences: Record<string, boolean> | null;
+  weekly_budget: number | null;
+}
+
+function isoWeekStart(d = new Date()): string {
+  const day = d.getUTCDay(); // 0 = Sun
+  const diff = d.getUTCDate() - day;
+  const ws = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
+  return ws.toISOString().slice(0, 10);
+}
+
+async function alreadySent(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  emailType: string,
+  periodKey: string
+) {
+  const { data } = await supabase
+    .from("engagement_email_log")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("email_type", emailType)
+    .eq("period_key", periodKey)
+    .maybeSingle();
+  return !!data;
+}
+
+async function recordSent(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  emailType: string,
+  periodKey: string
+) {
+  await supabase.from("engagement_email_log").insert({
+    user_id: userId,
+    email_type: emailType,
+    period_key: periodKey,
+  });
+}
+
+async function createNotification(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  type: string,
+  title: string,
+  body: string,
+  link?: string
+) {
+  await supabase.from("notifications").insert({
+    user_id: userId,
+    type,
+    title,
+    body,
+    link: link ?? null,
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const url = new URL(req.url);
+  const mode = url.searchParams.get("mode") ?? "all"; // all | weekly_recap | snap_reminder | re_engagement
+
+  const summary = {
+    weekly_recap: 0,
+    snap_reminder: 0,
+    re_engagement: 0,
+  };
+
+  try {
+    const { data: profiles, error } = await supabase
+      .from("profiles")
+      .select(
+        "user_id, email, display_name, snap_status, snap_deposit_day, last_active, notification_preferences, weekly_budget"
+      );
+    if (error) throw error;
+    const all = (profiles ?? []) as Profile[];
+
+    const today = new Date();
+    const todayDay = today.getUTCDate();
+    const dayOfWeek = today.getUTCDay(); // 0 = Sun
+    const weekKey = isoWeekStart(today);
+    const dateKey = today.toISOString().slice(0, 10);
+
+    for (const p of all) {
+      if (!p.email) continue;
+      const prefs = p.notification_preferences ?? {};
+
+      // 1. Weekly recap — Sundays only
+      if (
+        (mode === "all" || mode === "weekly_recap") &&
+        dayOfWeek === 0 &&
+        prefs.email_weekly_recap !== false
+      ) {
+        if (!(await alreadySent(supabase, p.user_id, "weekly_recap", weekKey))) {
+          await createNotification(
+            supabase,
+            p.user_id,
+            "weekly_recap",
+            "Your weekly recap is ready",
+            "See how your meal plans and savings looked last week.",
+            "/dashboard/budget-insights"
+          );
+          await recordSent(supabase, p.user_id, "weekly_recap", weekKey);
+          summary.weekly_recap++;
+        }
+      }
+
+      // 2. SNAP deposit reminder — day BEFORE the deposit day
+      if (
+        (mode === "all" || mode === "snap_reminder") &&
+        p.snap_status &&
+        p.snap_deposit_day &&
+        prefs.email_snap_reminder !== false
+      ) {
+        const target = p.snap_deposit_day;
+        // Day-before logic: today is (target - 1), accounting for month end
+        const tomorrow = new Date(today);
+        tomorrow.setUTCDate(today.getUTCDate() + 1);
+        if (tomorrow.getUTCDate() === target) {
+          const periodKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
+          if (!(await alreadySent(supabase, p.user_id, "snap_reminder", periodKey))) {
+            await createNotification(
+              supabase,
+              p.user_id,
+              "snap_deposit",
+              "SNAP deposit tomorrow",
+              `Your benefits arrive on the ${target}${
+                target === 1 ? "st" : target === 2 ? "nd" : target === 3 ? "rd" : "th"
+              }. Plan your shop now.`,
+              "/dashboard"
+            );
+            await recordSent(supabase, p.user_id, "snap_reminder", periodKey);
+            summary.snap_reminder++;
+          }
+        }
+      }
+
+      // 3. Re-engagement — inactive 7+ days, max once per 14 days
+      if (
+        (mode === "all" || mode === "re_engagement") &&
+        p.last_active &&
+        prefs.email_re_engagement !== false
+      ) {
+        const lastActive = new Date(p.last_active);
+        const daysSince = Math.floor(
+          (today.getTime() - lastActive.getTime()) / 86400000
+        );
+        if (daysSince >= 7) {
+          const periodKey = `${today.getUTCFullYear()}-W${Math.floor(today.getUTCDate() / 14)}`;
+          if (!(await alreadySent(supabase, p.user_id, "re_engagement", periodKey))) {
+            await createNotification(
+              supabase,
+              p.user_id,
+              "re_engagement",
+              "We miss you at the Hive",
+              "Generate a fresh meal plan in seconds — your budget is waiting.",
+              "/dashboard"
+            );
+            await recordSent(supabase, p.user_id, "re_engagement", periodKey);
+            summary.re_engagement++;
+          }
+        }
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ ok: true, date: dateKey, summary }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("[engagement-runner] error:", e);
+    return new Response(
+      JSON.stringify({ ok: false, error: (e as Error).message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
