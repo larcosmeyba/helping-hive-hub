@@ -4,7 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { BottomNavBar } from "@/components/dashboard/BottomNavBar";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
-import { BetaBadge } from "@/components/dashboard/BetaBadge";
+
 import { MealPlanProvider } from "@/contexts/MealPlanContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { User } from "lucide-react";
