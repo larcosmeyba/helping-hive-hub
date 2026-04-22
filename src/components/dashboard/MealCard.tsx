@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Flame, DollarSign, ChevronDown, ChevronUp, Refrigerator } from "lucide-react";
 import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
 import { MacroBadges } from "./MacroBadges";
+import { useShowMacros } from "@/hooks/useShowMacros";
 
 // Use shared meal image lookup from MealPlanPage
 const MEAL_IMAGES: Record<string, string> = {
@@ -96,6 +97,13 @@ interface Props {
 
 export function MealCard({ meal, compact, onClick }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [showMacros] = useShowMacros();
+
+  // Detect "leftover" / pantry-only meals (Fix 2.5: no more bare "—")
+  const isLeftover = /leftover/i.test(meal.name);
+  const hasPrice = meal.costPerServing != null && meal.costPerServing > 0;
+  const showPantryLabel = !hasPrice && isLeftover;
+  const showEstLabel = !hasPrice && !isLeftover;
 
   return (
     <motion.div
@@ -125,20 +133,33 @@ export function MealCard({ meal, compact, onClick }: Props) {
       </div>
 
       <div className={compact ? 'p-1 space-y-1' : 'p-3 space-y-2'}>
-        <div className={`flex items-center gap-2 text-muted-foreground ${compact ? 'text-[8px]' : 'text-sm'}`}>
+        <div className={`flex items-center gap-2 text-muted-foreground flex-wrap ${compact ? 'text-[8px]' : 'text-sm'}`}>
           <span className="flex items-center gap-0.5"><Flame className={`text-primary ${compact ? 'w-2 h-2' : 'w-3.5 h-3.5'}`} />{meal.calories}</span>
-          {!compact && meal.costPerServing != null && (
+          {hasPrice && (
             <span className="flex items-center gap-0.5 text-primary font-medium">
-              <DollarSign className={compact ? 'w-2 h-2' : 'w-3 h-3'} />${meal.costPerServing.toFixed(2)}/srv
+              <DollarSign className={compact ? 'w-2 h-2' : 'w-3 h-3'} />${meal.costPerServing!.toFixed(2)}{compact ? '' : '/srv'}
+            </span>
+          )}
+          {showPantryLabel && (
+            <span className={`inline-flex items-center gap-0.5 text-accent font-medium ${compact ? '' : ''}`}>
+              <Refrigerator className={compact ? 'w-2 h-2' : 'w-3 h-3'} />
+              {compact ? 'Pantry' : 'Pantry · No new cost'}
+            </span>
+          )}
+          {showEstLabel && (
+            <span className="inline-flex items-center gap-0.5 text-muted-foreground italic">
+              {compact ? 'Est.' : 'Est. pricing'}
             </span>
           )}
         </div>
-        <MacroBadges
-          protein={meal.protein}
-          carbs={meal.carbs}
-          fats={meal.fats}
-          size={compact ? "xs" : "sm"}
-        />
+        {showMacros && (
+          <MacroBadges
+            protein={meal.protein}
+            carbs={meal.carbs}
+            fats={meal.fats}
+            size={compact ? "xs" : "sm"}
+          />
+        )}
 
         {!compact && (
           <button

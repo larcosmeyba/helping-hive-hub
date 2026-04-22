@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Refrigerator, Sparkles, Loader2, Plus, X, ChefHat, Clock, DollarSign, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MacroBadges } from "@/components/dashboard/MacroBadges";
+
+const AUTOLOAD_FLAG = "hth_fridge_chef_autoload_dismissed";
 
 
 const COMMON_ITEMS = [
@@ -37,6 +39,7 @@ export default function FridgeChefPage() {
   const [generating, setGenerating] = useState(false);
   const [recipes, setRecipes] = useState<FridgeMeal[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<FridgeMeal | null>(null);
+  const [autoLoadedBanner, setAutoLoadedBanner] = useState(false);
 
   // Load pantry items to pre-select
   const { data: pantryItems } = useQuery({
@@ -51,6 +54,21 @@ export default function FridgeChefPage() {
     },
     enabled: !!user,
   });
+
+  // Fix 2.9: auto-load pantry on first visit, show dismissable banner
+  useEffect(() => {
+    if (!pantryItems || pantryItems.length === 0) return;
+    if (selectedItems.length > 0) return;
+    const dismissed = localStorage.getItem(AUTOLOAD_FLAG) === "1";
+    if (dismissed) return;
+    setSelectedItems(Array.from(new Set(pantryItems)));
+    setAutoLoadedBanner(true);
+  }, [pantryItems]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dismissBanner = () => {
+    localStorage.setItem(AUTOLOAD_FLAG, "1");
+    setAutoLoadedBanner(false);
+  };
 
   const toggle = (item: string) => {
     setSelectedItems((prev) =>
@@ -122,6 +140,22 @@ export default function FridgeChefPage() {
             )}
           </div>
         </div>
+
+        {autoLoadedBanner && pantryItems && pantryItems.length > 0 && (
+          <div className="flex items-start gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3 text-sm">
+            <Refrigerator className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="flex-1 text-foreground/80">
+              We loaded your pantry ({pantryItems.length} {pantryItems.length === 1 ? "item" : "items"}). Add more ingredients to find more recipes.
+            </p>
+            <button
+              onClick={dismissBanner}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Common Items */}
         <div className="flex flex-wrap gap-2">

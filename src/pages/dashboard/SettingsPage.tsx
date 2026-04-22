@@ -22,6 +22,8 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "@/contexts/LocationContext";
 import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
+import { Switch } from "@/components/ui/switch";
+import { useShowMacros } from "@/hooks/useShowMacros";
 
 const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
@@ -51,6 +53,7 @@ export default function SettingsPage() {
   const [verificationStatus, setVerificationStatus] = useState("not_started");
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
+  const [showMacros, setShowMacros] = useShowMacros();
 
   useEffect(() => {
     if (!user) return;
@@ -269,6 +272,27 @@ export default function SettingsPage() {
 
       {/* Privacy & Data Controls */}
       <PrivacyDataControls />
+
+      {/* Display Preferences (Fix 2.6) */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <Settings className="w-5 h-5 text-primary" /> Display Preferences
+        </h2>
+
+        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">Show macros on meal cards</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Protein, carbs, and fat pills on each meal. Turn off for a cleaner view.
+            </p>
+          </div>
+          <Switch
+            checked={showMacros}
+            onCheckedChange={setShowMacros}
+            aria-label="Show macros on meal cards"
+          />
+        </div>
+      </div>
 
       {/* Eligibility Verification */}
       <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
