@@ -231,17 +231,35 @@ We do not guarantee:
         content: "Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval."
       },
       {
-        heading: "8. Payments and Subscriptions",
-        content: `Paid features may be offered through monthly or annual subscriptions or other billing models. By purchasing a paid service, you agree to the pricing and billing terms shown at checkout.
+        heading: "7. Verification, Program Access, and SNAP/WIC Self-Attestation",
+        content: `Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval.
 
-**Auto-Renewal:** Subscriptions automatically renew at the end of each billing period unless you cancel before the renewal date. You will be charged the then-current subscription rate upon each renewal. You can manage or cancel your subscription at any time through your account settings or through the app store where you originally subscribed.
+**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, you unlock the "Free Forever" tier based on an honor system. We do not require documentary proof.
 
-**In-App Purchases:** If you subscribe or make purchases through the Apple App Store or Google Play Store, the respective store's payment terms apply. Billing is managed by the app store, and refund requests for in-app purchases must be directed to Apple or Google per their refund policies.
-
-**Free Trials:** If offered, free trials automatically convert to paid subscriptions at the end of the trial period unless canceled beforehand.`
+**SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
       {
-        heading: "9. Suspension and Termination",
+        heading: "8. Payments and Subscriptions",
+        content: `**Free tier (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost, forever.
+
+**Premium tier (non-SNAP users):** $4.99/month or $39.99/year.
+
+**Auto-Renewal Disclosure (required by Apple and Google):** Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription. You can manage and cancel subscriptions in your account settings on the App Store or Google Play after purchase. Any unused portion of a free trial period will be forfeited when you purchase a subscription.
+
+**Refunds:** Refunds are handled per Apple App Store or Google Play Store refund policies.
+
+**Free Trials:** If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+      },
+      {
+        heading: "9. Retailer & Third-Party Partnerships",
+        content: `The Service integrates with third-party services including Instacart, retailer apps (Walmart, Kroger, Aldi), recipe databases, and payment processors. You are subject to those services' terms and privacy policies. We may receive affiliate commissions when you complete transactions through partner links.`
+      },
+      {
+        heading: "10. No Medical Advice",
+        content: `Help the Hive provides general meal planning and nutritional information only. It is NOT medical advice. Consult a qualified healthcare provider for dietary recommendations or medical conditions. Nutritional information is estimated and may vary.`
+      },
+      {
+        heading: "11. Suspension and Termination",
         content: `We may suspend, restrict, or terminate access to the platform at our discretion for reasons including:
 • Suspected fraud
 • Violation of these Terms
@@ -250,24 +268,30 @@ We do not guarantee:
 • Legal or security concerns`
       },
       {
-        heading: "10. Intellectual Property",
-        content: "The platform, including its software, branding, systems, text, graphics, workflows, UI, and underlying methods, is owned by Help the Hive or its licensors and is protected by applicable intellectual property laws."
+        heading: "12. Intellectual Property",
+        content: `All Help the Hive content is owned by Help the Hive and protected by IP laws. "Help the Hive" and "Fridge Chef" are our trademarks. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes.`
       },
       {
-        heading: "11. Disclaimer of Warranties",
-        content: 'The platform is provided on an "as is" and "as available" basis. To the fullest extent permitted by law, Help the Hive disclaims warranties of any kind, express or implied.'
+        heading: "13. Disclaimer of Warranties",
+        content: 'THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND. We do not warrant that pricing is accurate, that recipes will meet your dietary needs, that the Service will be uninterrupted, or that results will meet your expectations.'
       },
       {
-        heading: "12. Limitation of Liability",
-        content: "To the fullest extent permitted by law, Help the Hive will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages, or for lost profits, lost data, lost savings, or business interruption."
+        heading: "14. Limitation of Liability",
+        content: `TO THE MAXIMUM EXTENT PERMITTED BY LAW, HELP THE HIVE SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. Our total aggregate liability shall not exceed the greater of $100 or the amount you paid us in the preceding 12 months.`
       },
       {
-        heading: "13. Indemnification",
-        content: "You agree to defend, indemnify, and hold harmless Help the Hive and its affiliates, officers, employees, and contractors from claims arising out of your use of the platform, your content, or your violation of these Terms."
+        heading: "15. Indemnification",
+        content: `You agree to defend, indemnify, and hold harmless Help the Hive from any claims arising from your violation of these Terms, your submitted content, your violation of third-party rights, or your misuse of the Service.`
       },
       {
-        heading: "14. Governing Law",
-        content: "These Terms are governed by the laws of the State of California, without regard to conflict of law principles, except where otherwise required by applicable law."
+        heading: "16. Dispute Resolution & Arbitration",
+        content: `**Informal resolution first.** Contact ${CONTACT_BUSINESS} and allow 60 days for informal resolution.
+
+**Binding arbitration.** Disputes will be resolved through binding arbitration administered by the American Arbitration Association (AAA) in Los Angeles, California, under AAA Consumer Arbitration Rules. You waive the right to a jury trial and to participate in class actions.
+
+**Exceptions.** You may bring claims in small claims court or seek injunctive relief for IP violations.
+
+**Governing law:** These Terms are governed by the laws of the State of California, without regard to conflict of law principles.`
       },
       {
         heading: "15. Account Deletion",
