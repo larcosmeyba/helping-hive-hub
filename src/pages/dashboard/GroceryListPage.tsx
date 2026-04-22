@@ -204,7 +204,7 @@ export default function GroceryListPage() {
   const homeStore = profile?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
-  const [showCompare, setShowCompare] = useState(false);
+  const [showPricingInfo, setShowPricingInfo] = useState(false);
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
