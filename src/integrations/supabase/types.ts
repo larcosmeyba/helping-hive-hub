@@ -1541,6 +1541,78 @@ export type Database = {
         }
         Relationships: []
       }
+      snap_benefit_tracking: {
+        Row: {
+          created_at: string
+          current_balance: number
+          deposit_day: number | null
+          id: string
+          month_start: string
+          monthly_allotment: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          deposit_day?: number | null
+          id?: string
+          month_start: string
+          monthly_allotment?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          deposit_day?: number | null
+          id?: string
+          month_start?: string
+          monthly_allotment?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      snap_purchase_log: {
+        Row: {
+          amount_spent: number
+          created_at: string
+          id: string
+          meal_plan_id: string | null
+          notes: string | null
+          paid_with_other: number
+          paid_with_snap: number
+          purchase_date: string
+          store_name: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_spent?: number
+          created_at?: string
+          id?: string
+          meal_plan_id?: string | null
+          notes?: string | null
+          paid_with_other?: number
+          paid_with_snap?: number
+          purchase_date?: string
+          store_name?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_spent?: number
+          created_at?: string
+          id?: string
+          meal_plan_id?: string | null
+          notes?: string | null
+          paid_with_other?: number
+          paid_with_snap?: number
+          purchase_date?: string
+          store_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       special_meal_collection_recipes: {
         Row: {
           collection_id: string
@@ -1916,6 +1988,54 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_outcomes: {
+        Row: {
+          actual_spend: number | null
+          adherence_score: number | null
+          budget_target: number | null
+          created_at: string
+          id: string
+          meals_cooked: number | null
+          meals_planned: number | null
+          outcome_score: number | null
+          savings_amount: number | null
+          updated_at: string
+          user_id: string
+          waste_reported: boolean | null
+          week_start: string
+        }
+        Insert: {
+          actual_spend?: number | null
+          adherence_score?: number | null
+          budget_target?: number | null
+          created_at?: string
+          id?: string
+          meals_cooked?: number | null
+          meals_planned?: number | null
+          outcome_score?: number | null
+          savings_amount?: number | null
+          updated_at?: string
+          user_id: string
+          waste_reported?: boolean | null
+          week_start: string
+        }
+        Update: {
+          actual_spend?: number | null
+          adherence_score?: number | null
+          budget_target?: number | null
+          created_at?: string
+          id?: string
+          meals_cooked?: number | null
+          meals_planned?: number | null
+          outcome_score?: number | null
+          savings_amount?: number | null
+          updated_at?: string
+          user_id?: string
+          waste_reported?: boolean | null
+          week_start?: string
         }
         Relationships: []
       }
