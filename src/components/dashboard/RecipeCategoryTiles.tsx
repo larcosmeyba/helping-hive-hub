@@ -123,15 +123,15 @@ export function RecipeCategoryTiles() {
               whileTap={{ scale: 0.97 }}
             >
               <img
-                src={CATEGORY_IMAGES[cat] || DEFAULT_CATEGORY_IMAGE}
-                alt={cat}
+                src={CATEGORY_IMAGES[displayLabel(cat)] || CATEGORY_IMAGES[cat] || DEFAULT_CATEGORY_IMAGE}
+                alt={displayLabel(cat)}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CATEGORY_IMAGE; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 inset-x-0 p-3">
-                <p className="text-white font-semibold text-sm leading-tight">{cat}</p>
+                <p className="text-white font-semibold text-sm leading-tight">{displayLabel(cat)}</p>
               </div>
             </motion.button>
           ))}
