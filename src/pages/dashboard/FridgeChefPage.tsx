@@ -141,6 +141,22 @@ export default function FridgeChefPage() {
           </div>
         </div>
 
+        {autoLoadedBanner && pantryItems && pantryItems.length > 0 && (
+          <div className="flex items-start gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3 text-sm">
+            <Refrigerator className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="flex-1 text-foreground/80">
+              We loaded your pantry ({pantryItems.length} {pantryItems.length === 1 ? "item" : "items"}). Add more ingredients to find more recipes.
+            </p>
+            <button
+              onClick={dismissBanner}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Common Items */}
         <div className="flex flex-wrap gap-2">
           {COMMON_ITEMS.map((item) => (
