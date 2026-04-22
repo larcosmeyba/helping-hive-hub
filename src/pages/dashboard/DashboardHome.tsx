@@ -232,6 +232,33 @@ export default function DashboardHome() {
         <SnapTracker />
       )}
 
+      {/* Today's Focus */}
+      {todayPlan && todayPlan.meals.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg md:text-xl font-semibold text-foreground flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" /> Today
+            </h2>
+            <Link to="/dashboard/meal-plan" className="text-sm text-primary hover:underline font-medium">Plan →</Link>
+          </div>
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
+            {todayPlan.meals.map((meal, i) => (
+              <div key={`today-${i}`} className="relative">
+                {i === upNextIndex && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-full shadow-soft whitespace-nowrap">
+                    UP NEXT
+                  </span>
+                )}
+                <div className={i === upNextIndex ? "ring-2 ring-primary rounded-xl" : ""}>
+                  <MealCard meal={meal} compact onClick={() => setSelectedMeal(meal)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+
       {/* This Week's Meals */}
       {!mealPlan ? (
         <div className={cardClass + " p-6 md:p-12 text-center"} style={cardShadow}>
