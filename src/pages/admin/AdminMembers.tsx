@@ -131,23 +131,7 @@ export default function AdminMembers() {
     a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
-    const csv = [
-      ["Name", "Email", "Phone", "City", "State", "ZIP", "Household Size", "Budget", "User Type", "SNAP", "Status", "Joined", "Food Preferences", "Dietary", "Allergies", "Cooking Style", "Kitchen Equipment", "Goals"],
-      ...filtered.map(m => [
-        m.display_name, m.email, m.phone_number, m.city, m.state, m.zip_code,
-        m.household_size, m.weekly_budget, m.user_type, m.snap_status ? "Yes" : "No",
-        m.account_status, new Date(m.created_at).toLocaleDateString(),
-        (m.food_preferences || []).join("; "), (m.dietary_preferences || []).join("; "),
-        (m.allergies || []).join("; "), m.cooking_style, (m.kitchen_equipment || []).join("; "),
-        (m.user_goals || []).join("; "),
-      ])
-    ].map(row => row.map(v => `"${v || ""}"`).join(",")).join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-  };
 
   const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div>
