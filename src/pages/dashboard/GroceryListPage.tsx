@@ -201,7 +201,7 @@ export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const homeStore = (profile as any)?.home_store ?? "";
+  const homeStore = profile?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showCompare, setShowCompare] = useState(false);
@@ -324,7 +324,8 @@ export default function GroceryListPage() {
 
   const toggle = (name: string) => {
     const next = new Set(checked);
-    next.has(name) ? next.delete(name) : next.add(name);
+    if (next.has(name)) next.delete(name);
+    else next.add(name);
     setChecked(next);
   };
 
