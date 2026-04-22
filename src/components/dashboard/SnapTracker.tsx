@@ -48,8 +48,8 @@ export function SnapTracker() {
       setDepositDay(data.deposit_day ? String(data.deposit_day) : "");
     } else {
       // Seed from profile if available
-      const seed = (profile as any)?.monthly_snap_amount ?? 0;
-      const day = (profile as any)?.snap_deposit_day ?? null;
+      const seed = profile?.monthly_snap_amount ?? 0;
+      const day = profile?.snap_deposit_day ?? null;
       setAllotment(seed ? String(seed) : "");
       setDepositDay(day ? String(day) : "");
     }

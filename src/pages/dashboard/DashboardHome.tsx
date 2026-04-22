@@ -73,7 +73,7 @@ export default function DashboardHome() {
   const budgetFit = mealPlan && budget > 0
     ? Math.max(0, Math.min(100, Math.round(((budget - Math.max(0, estimatedCost - pantrySavings)) / budget) * 100 + 50)))
     : 0;
-  const isFreeForever = (profile as any)?.tier === "free_forever";
+  const isFreeForever = profile?.tier === "free_forever";
 
   const { data: pantryItems } = useQuery({
     queryKey: ["pantry_count", user?.id],
@@ -164,7 +164,7 @@ export default function DashboardHome() {
         </p>
       )}
 
-      {((profile as any)?.snap_status || (profile as any)?.food_assistance_status === "snap") && (
+      {(profile?.snap_status || profile?.food_assistance_status === "snap") && (
         <SnapTracker />
       )}
 
