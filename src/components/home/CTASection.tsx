@@ -20,7 +20,7 @@ export function CTASection() {
             Plan a week of meals that fits your budget.
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            Free during beta. Free forever for SNAP & WIC families.
+            Free forever for SNAP &amp; WIC families.
           </p>
           <div className="flex flex-col items-center justify-center gap-3">
             <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
