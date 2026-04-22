@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank, ChevronDown, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Plus, AlertCircle, TrendingDown, PiggyBank, Home } from "lucide-react";
 import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,6 @@ import { useWalmartPrices } from "@/hooks/useWalmartPrices";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useOpenPrices } from "@/hooks/useOpenPrices";
 import { useGoogleShoppingPrices } from "@/hooks/useGoogleShoppingPrices";
-import walmartLogo from "@/assets/walmart-logo.png";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
@@ -564,21 +563,10 @@ export default function GroceryListPage() {
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       {walmartInfo?.title || displayProduct.productDescription}
                     </p>
-                    {!displayProduct.brand && getOffBrand(item) && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{getOffBrand(item)}</p>
-                    )}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {displayProduct.brand && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          <Package className="w-2.5 h-2.5" /> {displayProduct.brand}
-                        </span>
-                      )}
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
                       {!showLive && item.pricingSource === 'internal_estimate' && (
                         <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
-                      )}
-                      {showLive && (
-                        <span className="text-[9px] text-accent/80 font-medium">live</span>
                       )}
                       {walmartInfo && walmartInfo.inStock === false && (
                         <span className="text-[9px] text-destructive font-medium">out of stock</span>
@@ -793,7 +781,45 @@ export default function GroceryListPage() {
           )}
         </div>
       </div>
-      {/* Location permission is handled globally by LocationContext */}
+
+      {/* Change home store — escape hatch (not a comparison view) */}
+      <div className="text-center py-3">
+        <p className="text-xs text-muted-foreground mb-1">Shopping somewhere different this week?</p>
+        <Link
+          to="/dashboard/settings"
+          className="text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+        >
+          Change your home store
+        </Link>
+      </div>
+
+      {/* Pricing transparency modal */}
+      {showPricingInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowPricingInfo(false)}
+        >
+          <div
+            className="bg-card rounded-2xl border border-border shadow-elevated p-5 w-full max-w-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display text-base font-semibold text-foreground mb-3">
+              About our pricing
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              Prices shown are estimates based on public data, weekly circulars, and community submissions.
+              Actual in-store prices depend on location, sales, and timing. We recommend verifying prices before purchase.
+            </p>
+            <button
+              onClick={() => setShowPricingInfo(false)}
+              className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* Location denied fallback */}
       {locationStatus === "denied" && (
