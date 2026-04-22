@@ -11,7 +11,7 @@ export function HeroSection() {
       <div className="absolute inset-0">
         <img
           src={heroFamily}
-          alt="A family enjoying a home-cooked meal together"
+          alt="Real family planning a weekly grocery budget at home"
           className="w-full h-full object-cover"
           width={1920}
           height={960}
@@ -29,24 +29,24 @@ export function HeroSection() {
             transition={{ duration: 0.7 }}
           >
             <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-wider uppercase rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm">
-              Now in Early Access
+              Free for SNAP & WIC families
             </span>
 
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-honey-cream leading-[1.1] mb-6">
-              Affordable Meal Planning for{" "}
-              <span className="text-gradient-honey">Real Families</span>
+              Meals that fit your budget.{" "}
+              <span className="text-gradient-honey">At the store you already shop at.</span>
             </h1>
 
             <p className="text-lg md:text-xl text-honey-cream/70 mb-10 max-w-xl leading-relaxed">
-              Help The Hive creates personalized meal plans, smart grocery lists,
-              pantry-aware suggestions, and budget guidance — built for the way
-              real households actually eat and shop.
+              Budget meal planning for real families. We plan your week of meals,
+              build your grocery list, and help you cook with what's already in
+              your kitchen — at the store you already shop at.
             </p>
 
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
                 <Link to="/signup">
-                  Download Today <ArrowRight className="w-4 h-4 ml-1" />
+                  Start Free <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
               </Button>
             </div>
