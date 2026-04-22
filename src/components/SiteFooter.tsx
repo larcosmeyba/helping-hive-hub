@@ -110,9 +110,9 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
-              Community orgs:{" "}
-              <a href="mailto:community@helpthehive.com" className="hover:text-white/80 transition-colors">
-                community@helpthehive.com
+              Support:{" "}
+              <a href="mailto:support@helpthehive.com" className="hover:text-white/80 transition-colors">
+                support@helpthehive.com
               </a>
             </li>
           </ul>
