@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2, AlertTriangle } from "lucide-react";
+import { CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, ChevronDown, ChevronUp, X, Undo2, AlertTriangle, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,7 +34,12 @@ export default function MealPlanPage() {
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
   const [previousPlan, setPreviousPlan] = useState<GeneratedMealPlan | null>(null);
   const [showRestored, setShowRestored] = useState(false);
+  const [prioritizeSales, setPrioritizeSales] = useState(() => localStorage.getItem("prioritize_sales") === "true");
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+
+  useEffect(() => {
+    localStorage.setItem("prioritize_sales", String(prioritizeSales));
+  }, [prioritizeSales]);
 
   // Fetch Open Food Facts data for all meal names once per plan
   useEffect(() => {
@@ -160,6 +167,18 @@ export default function MealPlanPage() {
           </div>
         );
       })()}
+
+      {/* Prioritize sales toggle */}
+      <div className="flex items-center justify-between bg-accent/5 border border-accent/20 rounded-xl px-4 py-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <Tag className="w-4 h-4 text-accent shrink-0" />
+          <div className="min-w-0">
+            <Label htmlFor="prioritize-sales" className="text-sm font-semibold text-foreground cursor-pointer">Prioritize sales</Label>
+            <p className="text-[11px] text-muted-foreground">Bias next plan toward items on sale at your store</p>
+          </div>
+        </div>
+        <Switch id="prioritize-sales" checked={prioritizeSales} onCheckedChange={setPrioritizeSales} />
+      </div>
 
       {/* Regenerate + Restore buttons */}
       <div className="flex gap-2">
