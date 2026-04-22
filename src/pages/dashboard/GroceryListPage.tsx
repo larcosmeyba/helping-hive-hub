@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank, ChevronDown, Home } from "lucide-react";
 import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,10 +199,18 @@ function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
 
 export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const homeStore = (profile as any)?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [selectedStore, setSelectedStore] = useState("");
+  const [selectedStore, setSelectedStore] = useState(homeStore);
+  const [showCompare, setShowCompare] = useState(false);
+
+  // Sync selected store to home store when profile loads
+  useEffect(() => {
+    if (homeStore && !selectedStore) setSelectedStore(homeStore);
+  }, [homeStore, selectedStore]);
+
   const [extraItems, setExtraItems] = useState<{ name: string; price: number }[]>([]);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
