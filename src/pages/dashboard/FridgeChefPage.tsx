@@ -39,6 +39,7 @@ export default function FridgeChefPage() {
   const [generating, setGenerating] = useState(false);
   const [recipes, setRecipes] = useState<FridgeMeal[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<FridgeMeal | null>(null);
+  const [autoLoadedBanner, setAutoLoadedBanner] = useState(false);
 
   // Load pantry items to pre-select
   const { data: pantryItems } = useQuery({
