@@ -60,7 +60,6 @@ export default function DashboardLayout() {
               <div className="flex items-center justify-between px-4 h-10">
                 <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
                   <img src={logo} alt="Help The Hive" className="h-9 w-9" />
-                  <BetaBadge />
                 </Link>
 
                 <Link
