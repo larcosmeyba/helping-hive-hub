@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Package, Plus, Camera, AlertCircle, Percent, ShieldCheck, TrendingDown, DollarSign, PiggyBank, ChevronDown, Home } from "lucide-react";
 import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,10 +199,18 @@ function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
 
 export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const homeStore = (profile as any)?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [selectedStore, setSelectedStore] = useState("");
+  const [selectedStore, setSelectedStore] = useState(homeStore);
+  const [showCompare, setShowCompare] = useState(false);
+
+  // Sync selected store to home store when profile loads
+  useEffect(() => {
+    if (homeStore && !selectedStore) setSelectedStore(homeStore);
+  }, [homeStore, selectedStore]);
+
   const [extraItems, setExtraItems] = useState<{ name: string; price: number }[]>([]);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
@@ -521,38 +530,53 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Store Comparison — horizontal scroll */}
-      {stores.length > 0 && (
-        <div>
-          <div className="flex items-center gap-1.5 mb-2 md:mb-3">
-            <Store className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-            <h2 className="font-display text-sm md:text-lg font-semibold text-foreground">Compare Stores</h2>
+      {/* Home Store Pill — single store focus */}
+      {activeStore && (
+        <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-2xl px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Home className="w-4 h-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Shopping at</p>
+              <p className="text-sm md:text-base font-bold text-foreground truncate">{activeStore}</p>
+            </div>
           </div>
-          {(() => {
-            const storeCards = stores.slice(0, 6).map((s) => ({
-              ...s,
-              estimatedTotal: getStoreTotalFromItems(s.store),
-            }));
-            const cheapestIdx = storeCards.findIndex((s) =>
-              storeCards.every((o) => s.estimatedTotal <= o.estimatedTotal)
-            );
-            const highestTotal = Math.max(...storeCards.map((s) => s.estimatedTotal));
-            // Reorder: put cheapest in the middle
-            const sorted = [...storeCards];
-            if (cheapestIdx !== -1 && sorted.length >= 3) {
-              const [cheapest] = sorted.splice(cheapestIdx, 1);
-              sorted.splice(1, 0, cheapest);
-            } else if (cheapestIdx !== -1 && sorted.length === 2) {
-              const [cheapest] = sorted.splice(cheapestIdx, 1);
-              sorted.splice(1, 0, cheapest);
-            }
-            return (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mt-1">
-                {sorted.map((store) => {
-                  const isActive = activeStore === store.store;
-                  const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
-                  const savings = isCheapest ? (highestTotal - store.estimatedTotal) : 0;
-                    const isKrogerStore = /kroger|ralph|fred meyer|food4less|fry|smith|king soopers|dillons|harris teeter/i.test(store.store);
+          <p className="text-base md:text-lg font-bold text-primary shrink-0">${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
+        </div>
+      )}
+
+      {/* Check other stores — collapsed comparison */}
+      {stores.length > 1 && (
+        <Collapsible open={showCompare} onOpenChange={setShowCompare}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full justify-between h-10 rounded-xl text-sm">
+              <span className="flex items-center gap-2"><Store className="w-4 h-4" /> Check other stores</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showCompare ? "rotate-180" : ""}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            {(() => {
+              const storeCards = stores.slice(0, 6).map((s) => ({
+                ...s,
+                estimatedTotal: getStoreTotalFromItems(s.store),
+              }));
+              const cheapestIdx = storeCards.findIndex((s) =>
+                storeCards.every((o) => s.estimatedTotal <= o.estimatedTotal)
+              );
+              const highestTotal = Math.max(...storeCards.map((s) => s.estimatedTotal));
+              const sorted = [...storeCards];
+              if (cheapestIdx !== -1 && sorted.length >= 3) {
+                const [cheapest] = sorted.splice(cheapestIdx, 1);
+                sorted.splice(1, 0, cheapest);
+              } else if (cheapestIdx !== -1 && sorted.length === 2) {
+                const [cheapest] = sorted.splice(cheapestIdx, 1);
+                sorted.splice(1, 0, cheapest);
+              }
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mt-1">
+                  {sorted.map((store) => {
+                    const isActive = activeStore === store.store;
+                    const isCheapest = storeCards.every((s) => store.estimatedTotal <= s.estimatedTotal);
+                    const savings = isCheapest ? (highestTotal - store.estimatedTotal) : 0;
                     return (
                       <button
                         key={store.store}
@@ -587,13 +611,15 @@ export default function GroceryListPage() {
                           <p className="text-[9px] md:text-xs text-accent font-semibold mt-1">Save ${savings.toFixed(2)}</p>
                         )}
                       </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </CollapsibleContent>
+        </Collapsible>
       )}
+
 
       {/* Grocery Items by Section */}
       {sections.map((section) => (
