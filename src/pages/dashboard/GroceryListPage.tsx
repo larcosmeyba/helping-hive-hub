@@ -587,24 +587,21 @@ export default function GroceryListPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    {priceInfo.source === 'walmart' && (
-                      <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
-                        at <img src={walmartLogo} alt="Walmart" className="h-3 w-auto inline-block" loading="lazy" />
-                      </p>
-                    )}
-                    {priceInfo.source === 'google_shopping' && (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">via {priceInfo.store || 'Google'}</p>
-                    )}
                     {priceInfo.source === 'open_prices' && (
                       <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">
                         community{priceInfo.date ? ` · ${priceInfo.date.slice(5)}` : ''}
                       </p>
                     )}
-                    {priceInfo.source === 'store_estimate' && activeStore && (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">est. at {activeStore}</p>
+                    {priceInfo.source === 'walmart' && isWalmart(activeStore) && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">from {activeStore}</p>
+                    )}
+                    {(priceInfo.source === 'google_shopping' ||
+                      (priceInfo.source === 'walmart' && !isWalmart(activeStore)) ||
+                      priceInfo.source === 'store_estimate') && (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">estimated</p>
                     )}
                     {priceInfo.source === 'estimate' && (
-                      <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
+                      <p className="text-[10px] text-muted-foreground/70 italic">from public data</p>
                     )}
                     <button
                       onClick={(e) => {
