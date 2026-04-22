@@ -84,7 +84,15 @@ const PANTRY_STAPLES: { name: string; quantity: string; cat: typeof CATEGORIES[n
   { name: "Powdered Milk", quantity: "1 box", cat: "dairy", category: "Dairy", shelf: "1–2 years" },
 ];
 
-function PantryStaplesSection() {
+function PantryStaplesSection({
+  existingNames,
+  onAdd,
+  isPending,
+}: {
+  existingNames: Set<string>;
+  onAdd: (item: { name: string; quantity: string; category: string }) => void;
+  isPending: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -107,17 +115,33 @@ function PantryStaplesSection() {
         <div className="overflow-hidden">
           <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
             <p className="text-xs text-muted-foreground mb-2">
-              Long-shelf-life essentials to stock up on. Prices vary by location.
+              Long-shelf-life essentials. Tap <Plus className="w-3 h-3 inline-block -mt-0.5" /> to add to your pantry.
             </p>
-            {PANTRY_STAPLES.map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{item.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.category}</p>
+            {PANTRY_STAPLES.map((item, i) => {
+              const already = existingNames.has(item.name.toLowerCase());
+              return (
+                <div key={i} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.category} · {item.quantity}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline">{item.shelf}</span>
+                  <button
+                    onClick={() => !already && onAdd({ name: item.name, quantity: item.quantity, category: item.cat })}
+                    disabled={already || isPending}
+                    className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-all ${
+                      already
+                        ? "bg-primary/10 text-primary border-primary/30 cursor-default"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-primary active:scale-95"
+                    }`}
+                    title={already ? "Already in pantry" : "Add to pantry"}
+                    aria-label={already ? `${item.name} already in pantry` : `Add ${item.name} to pantry`}
+                  >
+                    {already ? "✓" : <Plus className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
-                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{item.shelf}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
