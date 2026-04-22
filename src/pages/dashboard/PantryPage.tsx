@@ -389,7 +389,11 @@ export default function PantryPage() {
       </div>
 
       {/* Pantry Staples Checklist */}
-      <PantryStaplesSection />
+      <PantryStaplesSection
+        existingNames={new Set(items.map((i) => i.item_name.toLowerCase()))}
+        onAdd={(item) => addMutation.mutate(item)}
+        isPending={addMutation.isPending}
+      />
 
       {/* Alerts */}
       {(lowStock.length > 0 || expiringSoon.length > 0 || useToday.length > 0 || expired.length > 0) && (
