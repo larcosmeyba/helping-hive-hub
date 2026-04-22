@@ -337,6 +337,30 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_email_log: {
+        Row: {
+          email_type: string
+          id: string
+          period_key: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email_type: string
+          id?: string
+          period_key: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email_type?: string
+          id?: string
+          period_key?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       food_waste_logs: {
         Row: {
           created_at: string
@@ -860,6 +884,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       open_food_facts_cache: {
         Row: {
           brand: string | null
@@ -1050,12 +1110,14 @@ export type Database = {
           infant_formula: boolean | null
           kitchen_equipment: string[] | null
           last_active: string | null
+          last_engagement_email_at: string | null
           latitude: number | null
           longitude: number | null
           meal_repetition: string | null
           membership_discount: number | null
           membership_tier: string | null
           monthly_snap_amount: number | null
+          notification_preferences: Json
           onboarding_completed_at: string | null
           phone_number: string | null
           preferred_stores: string[] | null
@@ -1100,12 +1162,14 @@ export type Database = {
           infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
           last_active?: string | null
+          last_engagement_email_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
           monthly_snap_amount?: number | null
+          notification_preferences?: Json
           onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
@@ -1150,12 +1214,14 @@ export type Database = {
           infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
           last_active?: string | null
+          last_engagement_email_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meal_repetition?: string | null
           membership_discount?: number | null
           membership_tier?: string | null
           monthly_snap_amount?: number | null
+          notification_preferences?: Json
           onboarding_completed_at?: string | null
           phone_number?: string | null
           preferred_stores?: string[] | null
@@ -1240,6 +1306,36 @@ export type Database = {
             referencedColumns: ["store_id"]
           },
         ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          id: string
+          last_active_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          last_active_at?: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          last_active_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       recipe_ingredients: {
         Row: {
