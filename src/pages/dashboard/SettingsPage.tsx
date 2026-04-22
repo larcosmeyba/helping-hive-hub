@@ -280,7 +280,7 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium text-foreground">Verification Status</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Verification is coming soon. During beta, no proof is required.
+              Verification is coming soon. No proof is required at this time.
             </p>
           </div>
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
