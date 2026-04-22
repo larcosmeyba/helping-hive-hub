@@ -123,8 +123,9 @@ export default function DashboardHome() {
       {/* Welcome */}
       <div className="space-y-3">
         <div>
-          <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight">
-            Welcome back, {firstName}
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{dateLabel}</p>
+          <h1 className="font-display text-xl md:text-3xl font-bold text-foreground leading-tight mt-0.5">
+            {greeting}, {firstName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Meals that fit your budget. At the store you already shop at.</p>
           {isFreeForever && <div className="mt-2"><FreeForeverBadge /></div>}
@@ -136,6 +137,32 @@ export default function DashboardHome() {
           householdSize={profile?.household_size ?? null}
           onUpdate={refreshProfile}
         />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <Button
+          onClick={generate}
+          disabled={generating}
+          className="h-12 rounded-xl bg-gradient-honey text-primary-foreground hover:opacity-90 text-xs font-semibold flex-col gap-0.5 shadow-soft"
+        >
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          <span>{mealPlan ? "Regenerate" : "Generate"}</span>
+        </Button>
+        <Link
+          to="/dashboard/grocery-list"
+          className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
+        >
+          <ShoppingCart className="w-4 h-4 text-primary" />
+          <span>Grocery</span>
+        </Link>
+        <Link
+          to="/dashboard/fridge-chef"
+          className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
+        >
+          <ChefHat className="w-4 h-4 text-primary" />
+          <span>Fridge Chef</span>
+        </Link>
       </div>
 
       {/* Stats Grid — all 6 uniform */}
