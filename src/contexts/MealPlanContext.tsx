@@ -136,6 +136,14 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       setGenerationStage("done");
       toast({ title: "Meal plan generated!", description: "Your personalized weekly plan is ready." });
       loadHistory();
+      // In-app notification
+      supabase.from("notifications").insert({
+        user_id: user.id,
+        type: "meal_plan_ready",
+        title: "Your weekly meal plan is ready",
+        body: "Tap to view your meals and grocery list.",
+        link: "/dashboard/meal-plan",
+      }).then(() => {});
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
     } finally {
