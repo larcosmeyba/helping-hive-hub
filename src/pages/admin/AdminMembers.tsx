@@ -27,16 +27,36 @@ export default function AdminMembers() {
   const { permissions, isOwner } = useAdminRole();
   const { toast } = useToast();
 
+  // H4: Only fetch sensitive PII columns when the caller has the relevant permission.
+  // The base list query stays minimal; detail dialogs fetch additional fields on demand.
+  const canSeeSnap = isOwner || permissions.view_snap_data;
+  const canSeeFullPII = isOwner || permissions.edit_members;
+
   async function fetchMembers() {
     setLoading(true);
-    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    if (!error && data) setMembers(data);
+    const baseCols = [
+      "id", "user_id", "display_name", "email", "city", "state", "zip_code",
+      "household_size", "weekly_budget", "user_type", "account_status",
+      "created_at", "last_active", "questionnaire_completed",
+      "cooking_style", "cooking_time_preference", "meal_repetition",
+      "preferred_stores", "kitchen_equipment", "user_goals",
+      "food_preferences", "dietary_preferences",
+      "tier", "membership_tier", "verification_status", "verification_badge",
+    ];
+    if (canSeeSnap) baseCols.push("snap_status", "snap_deposit_day", "monthly_snap_amount", "food_assistance_status");
+    if (canSeeFullPII) baseCols.push("phone_number", "allergies");
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(baseCols.join(","))
+      .order("created_at", { ascending: false });
+    if (!error && data) setMembers(data as any[]);
     setLoading(false);
   }
 
   useEffect(() => {
     fetchMembers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSeeSnap, canSeeFullPII]);
 
   const filtered = useMemo(() => {
     const now = Date.now();

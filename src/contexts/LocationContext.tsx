@@ -17,33 +17,21 @@ interface LocationContextType {
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-const STORAGE_KEY = "hth_location_coords";
 const ASKED_KEY = "hth_location_asked";
-
-function loadStoredCoords(): LocationCoords | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number") return parsed;
-  } catch {}
-  return null;
-}
+// Legacy key removed for security (H2). We clear it on mount to scrub stored coordinates.
+const LEGACY_COORDS_KEY = "hth_location_coords";
 
 export function LocationProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<"granted" | "denied" | "prompt" | "unknown">("unknown");
-  const [coords, setCoords] = useState<LocationCoords | null>(loadStoredCoords);
+  // H2: coords live only in memory for the session. They are NOT persisted.
+  const [coords, setCoords] = useState<LocationCoords | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Check permission status on mount
   useEffect(() => {
-    (async () => {
-      // If we already have stored coords, treat as granted
-      if (loadStoredCoords()) {
-        setStatus("granted");
-        return;
-      }
+    // Scrub any plaintext coords saved by older versions
+    try { localStorage.removeItem(LEGACY_COORDS_KEY); } catch {}
 
+    (async () => {
       if (!navigator.geolocation) {
         setStatus("denied");
         return;
@@ -71,10 +59,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const c = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-          setCoords(c);
+          // Only kept in memory — never persisted.
+          setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
           setStatus("granted");
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
           localStorage.setItem(ASKED_KEY, "true");
           resolve(pos);
         },

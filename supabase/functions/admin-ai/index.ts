@@ -38,15 +38,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify admin role
-    const { data: role } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!role) {
-      return new Response(JSON.stringify({ error: "Not an admin" }), {
+    // Verify owner/admin role (NOT moderator/content_manager)
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden — admin only" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
