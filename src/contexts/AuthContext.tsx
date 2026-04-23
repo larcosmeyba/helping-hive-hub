@@ -66,14 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     let cancelled = false;
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled && data) setProfile(data as ProfileLite);
-      });
+    // L3: retry with exponential backoff on transient failures so a single
+    // network hiccup doesn't leave the user with a null profile for the session.
+    const fetchProfile = async () => {
+      const delays = [0, 500, 1500, 4000];
+      for (let i = 0; i < delays.length; i++) {
+        if (cancelled) return;
+        if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        if (!error && data) {
+          setProfile(data as ProfileLite);
+          return;
+        }
+        if (!error) return; // no row, no point retrying
+      }
+    };
+    fetchProfile();
     return () => {
       cancelled = true;
     };
