@@ -2247,6 +2247,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      has_admin_permission: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
