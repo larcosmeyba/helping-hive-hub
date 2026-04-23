@@ -3,18 +3,14 @@
 // emails for: weekly recap (Sun), SNAP deposit reminder (1 day before), and
 // re-engagement (users inactive 7+ days).
 //
-// CORS for direct admin "run now" testing from the dashboard.
+// Authorization: only the service role (cron) or an owner/admin user may invoke.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 interface Profile {
   user_id: string;
@@ -28,7 +24,7 @@ interface Profile {
 }
 
 function isoWeekStart(d = new Date()): string {
-  const day = d.getUTCDay(); // 0 = Sun
+  const day = d.getUTCDay();
   const diff = d.getUTCDate() - day;
   const ws = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
   return ws.toISOString().slice(0, 10);
@@ -80,20 +76,59 @@ async function createNotification(
   });
 }
 
+function isServiceRoleToken(token: string): boolean {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return false;
+    const payload = parts[1]
+      .replaceAll("-", "+")
+      .replaceAll("_", "/")
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    const claims = JSON.parse(atob(payload));
+    return claims?.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  const pf = handlePreflight(req);
+  if (pf) return pf;
+  const cors = buildCorsHeaders(req);
+
+  // ---- Authz: service role OR owner/admin ----
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+      status: 401, headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+  const token = authHeader.slice("Bearer ".length).trim();
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+  if (!isServiceRoleToken(token)) {
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData } = await userClient.auth.getUser(token);
+    const caller = userData?.user;
+    if (!caller) {
+      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+        status: 401, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: caller.id });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ ok: false, error: "Forbidden" }), {
+        status: 403, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
   }
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const url = new URL(req.url);
-  const mode = url.searchParams.get("mode") ?? "all"; // all | weekly_recap | snap_reminder | re_engagement
+  const mode = url.searchParams.get("mode") ?? "all";
 
-  const summary = {
-    weekly_recap: 0,
-    snap_reminder: 0,
-    re_engagement: 0,
-  };
+  const summary = { weekly_recap: 0, snap_reminder: 0, re_engagement: 0 };
 
   try {
     const { data: profiles, error } = await supabase
@@ -105,8 +140,7 @@ Deno.serve(async (req) => {
     const all = (profiles ?? []) as Profile[];
 
     const today = new Date();
-    const todayDay = today.getUTCDate();
-    const dayOfWeek = today.getUTCDay(); // 0 = Sun
+    const dayOfWeek = today.getUTCDay();
     const weekKey = isoWeekStart(today);
     const dateKey = today.toISOString().slice(0, 10);
 
@@ -114,7 +148,6 @@ Deno.serve(async (req) => {
       if (!p.email) continue;
       const prefs = p.notification_preferences ?? {};
 
-      // 1. Weekly recap — Sundays only
       if (
         (mode === "all" || mode === "weekly_recap") &&
         dayOfWeek === 0 &&
@@ -122,9 +155,7 @@ Deno.serve(async (req) => {
       ) {
         if (!(await alreadySent(supabase, p.user_id, "weekly_recap", weekKey))) {
           await createNotification(
-            supabase,
-            p.user_id,
-            "weekly_recap",
+            supabase, p.user_id, "weekly_recap",
             "Your weekly recap is ready",
             "See how your meal plans and savings looked last week.",
             "/dashboard/budget-insights"
@@ -134,7 +165,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 2. SNAP deposit reminder — day BEFORE the deposit day
       if (
         (mode === "all" || mode === "snap_reminder") &&
         p.snap_status &&
@@ -142,16 +172,13 @@ Deno.serve(async (req) => {
         prefs.email_snap_reminder !== false
       ) {
         const target = p.snap_deposit_day;
-        // Day-before logic: today is (target - 1), accounting for month end
         const tomorrow = new Date(today);
         tomorrow.setUTCDate(today.getUTCDate() + 1);
         if (tomorrow.getUTCDate() === target) {
           const periodKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
           if (!(await alreadySent(supabase, p.user_id, "snap_reminder", periodKey))) {
             await createNotification(
-              supabase,
-              p.user_id,
-              "snap_deposit",
+              supabase, p.user_id, "snap_deposit",
               "SNAP deposit tomorrow",
               `Your benefits arrive on the ${target}${
                 target === 1 ? "st" : target === 2 ? "nd" : target === 3 ? "rd" : "th"
@@ -164,23 +191,18 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 3. Re-engagement — inactive 7+ days, max once per 14 days
       if (
         (mode === "all" || mode === "re_engagement") &&
         p.last_active &&
         prefs.email_re_engagement !== false
       ) {
         const lastActive = new Date(p.last_active);
-        const daysSince = Math.floor(
-          (today.getTime() - lastActive.getTime()) / 86400000
-        );
+        const daysSince = Math.floor((today.getTime() - lastActive.getTime()) / 86400000);
         if (daysSince >= 7) {
           const periodKey = `${today.getUTCFullYear()}-W${Math.floor(today.getUTCDate() / 14)}`;
           if (!(await alreadySent(supabase, p.user_id, "re_engagement", periodKey))) {
             await createNotification(
-              supabase,
-              p.user_id,
-              "re_engagement",
+              supabase, p.user_id, "re_engagement",
               "We miss you at the Hive",
               "Generate a fresh meal plan in seconds — your budget is waiting.",
               "/dashboard"
@@ -194,16 +216,13 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ ok: true, date: dateKey, summary }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("[engagement-runner] error:", e);
     return new Response(
       JSON.stringify({ ok: false, error: (e as Error).message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });
