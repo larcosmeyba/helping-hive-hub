@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, Download, Brain, BarChart3, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -27,6 +29,7 @@ export function PrivacyDataControls() {
   const [dataOptIn, setDataOptIn] = useState(true);
   const [analyticsOptIn, setAnalyticsOptIn] = useState(true);
   const [busy, setBusy] = useState<"export" | "delete" | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -79,9 +82,15 @@ export function PrivacyDataControls() {
 
   const handleDelete = async () => {
     if (!user) return;
+    if (!deletePassword) {
+      toast({ title: "Password required", description: "Please enter your password to confirm.", variant: "destructive" });
+      return;
+    }
     setBusy("delete");
     try {
-      const { error } = await supabase.functions.invoke("delete-account");
+      const { error } = await supabase.functions.invoke("delete-account", {
+        body: { password: deletePassword },
+      });
       if (error) throw error;
       toast({ title: "Account deleted", description: "All your data has been permanently removed." });
       await signOut();
@@ -153,11 +162,23 @@ export function PrivacyDataControls() {
               An anonymized audit record (date only) is retained for legal compliance.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="delete-password">Confirm with your password</Label>
+            <Input
+              id="delete-password"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Your current password"
+              autoComplete="current-password"
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletePassword("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}
+              disabled={!deletePassword || busy === "delete"}
             >
               {busy === "delete" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Yes, delete everything now
