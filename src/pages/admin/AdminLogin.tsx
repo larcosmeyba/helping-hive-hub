@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getRedirectUrl } from "@/lib/appUrl";
 
 export default function AdminLogin() {
   const { user, signIn, loading: authLoading } = useAuth();
@@ -53,7 +54,7 @@ export default function AdminLogin() {
     setForgotSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getRedirectUrl("/reset-password"),
       });
       if (error) throw error;
       setForgotSent(true);

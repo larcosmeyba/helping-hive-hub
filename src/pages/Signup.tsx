@@ -18,8 +18,8 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+    if (password.length < 10) {
+      toast({ title: "Error", description: "Password must be at least 10 characters", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -60,7 +60,7 @@ export default function Signup() {
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" minLength={6} />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="At least 10 characters" minLength={10} />
             </div>
             <Button type="submit" className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90" disabled={loading}>
               {loading ? "Creating Account..." : "Get Started"}

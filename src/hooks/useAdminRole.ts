@@ -107,7 +107,8 @@ export function useAdminRole() {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch admin role:", err);
+        if (import.meta.env.DEV) console.error("Failed to fetch admin role:", err);
+        else console.error("Failed to fetch admin role");
         setRole(null);
         setPermissions(NO_PERMISSIONS);
       } finally {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getAppUrl } from "@/lib/appUrl";
 
 interface ProfileLite {
   user_id: string;
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { display_name: displayName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: getAppUrl(),
       },
     });
     if (error) throw error;
