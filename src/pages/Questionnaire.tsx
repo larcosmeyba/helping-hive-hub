@@ -46,7 +46,9 @@ const PANTRY_STAPLES = [
 
 const STORAGE_KEY = "hth_onboarding_progress";
 
-function loadProgress(): Record<string, unknown> {
+// localStorage is now an OFFLINE FALLBACK only. The source of truth for
+// in-progress onboarding is profiles.questionnaire_progress (JSONB).
+function loadLocalProgress(): Record<string, unknown> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -55,7 +57,7 @@ function loadProgress(): Record<string, unknown> {
   }
 }
 
-function saveProgress(data: Record<string, unknown>) {
+function saveLocalProgress(data: Record<string, unknown>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {}
@@ -74,25 +76,54 @@ function defaultBudget(size: number): number {
 }
 
 export default function Questionnaire() {
-  const saved = loadProgress();
-  const [step, setStep] = useState<number>((saved.step as number) || 1);
+  // Seed from local fallback immediately so the form is interactive on first
+  // paint; the DB load below will overwrite this if a server copy exists.
+  const localSeed = loadLocalProgress();
+  const [step, setStep] = useState<number>((localSeed.step as number) || 1);
+  const [hydrated, setHydrated] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load progress from DB (preferred) and short-circuit to dashboard if the
+  // questionnaire has already been completed.
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     supabase
       .from("profiles")
-      .select("questionnaire_completed")
+      .select("questionnaire_completed, questionnaire_progress")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data?.questionnaire_completed) {
           clearProgress();
           navigate("/dashboard", { replace: true });
+          return;
         }
+        const dbProgress = (data?.questionnaire_progress ?? null) as
+          | Record<string, unknown>
+          | null;
+        if (dbProgress && typeof dbProgress === "object") {
+          // DB is the source of truth — apply server progress to all fields.
+          if (typeof dbProgress.step === "number") setStep(dbProgress.step);
+          if (typeof dbProgress.foodAssistance === "string") setFoodAssistance(dbProgress.foodAssistance);
+          if (typeof dbProgress.householdSize === "number") setHouseholdSize(dbProgress.householdSize);
+          if (typeof dbProgress.hasYoungKids === "boolean") setHasYoungKids(dbProgress.hasYoungKids);
+          if (typeof dbProgress.weeklyBudget === "number") setWeeklyBudget(dbProgress.weeklyBudget);
+          if (typeof dbProgress.budgetTouched === "boolean") setBudgetTouched(dbProgress.budgetTouched);
+          if (typeof dbProgress.homeStore === "string") setHomeStore(dbProgress.homeStore);
+          if (typeof dbProgress.zipCode === "string") setZipCode(dbProgress.zipCode);
+          if (Array.isArray(dbProgress.dietaryPrefs)) setDietaryPrefs(dbProgress.dietaryPrefs as string[]);
+          if (typeof dbProgress.cookingConfidence === "string") setCookingConfidence(dbProgress.cookingConfidence);
+          if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
+        }
+        setHydrated(true);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [user, navigate]);
 
   // Form state
