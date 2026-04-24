@@ -4,6 +4,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { BottomNavBar } from "@/components/dashboard/BottomNavBar";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { PushPermissionModal } from "@/components/dashboard/PushPermissionModal";
+import { HealthDisclaimerSheet } from "@/components/dashboard/HealthDisclaimerSheet";
 
 import { MealPlanProvider } from "@/contexts/MealPlanContext";
 import { LocationProvider } from "@/contexts/LocationContext";
@@ -15,7 +17,7 @@ import logo from "@/assets/logo-transparent.png";
 
 export default function DashboardLayout() {
   const isMobile = useIsMobile();
-  usePushNotifications();
+  const { showPrimer, onPrimerContinue, onPrimerDismiss } = usePushNotifications();
   const [scrolled, setScrolled] = useState(false);
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
 
@@ -93,6 +95,12 @@ export default function DashboardLayout() {
               <BottomNavBar />
             </>
           )}
+          <PushPermissionModal
+            open={showPrimer}
+            onContinue={onPrimerContinue}
+            onDismiss={onPrimerDismiss}
+          />
+          <HealthDisclaimerSheet />
         </div>
       </SidebarProvider>
     </MealPlanProvider>
