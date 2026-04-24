@@ -103,4 +103,10 @@ export function usePushNotifications() {
       cleanup?.();
     };
   }, [user]);
+
+  return {
+    showPrimer: needsPrimer,
+    onPrimerContinue: handlePrimerContinue,
+    onPrimerDismiss: handlePrimerDismiss,
+  };
 }
