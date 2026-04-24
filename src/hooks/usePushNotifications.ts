@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+
+const PRIMER_KEY = "hth_push_primer_seen";
 
 /**
  * Registers the device for push notifications on iOS/Android via Capacitor.
@@ -15,6 +17,22 @@ import { useAuth } from "@/contexts/AuthContext";
  */
 export function usePushNotifications() {
   const { user } = useAuth();
+  const [needsPrimer, setNeedsPrimer] = useState(false);
+  const [primerResolver, setPrimerResolver] = useState<((v: boolean) => void) | null>(null);
+
+  const handlePrimerContinue = useCallback(() => {
+    try { localStorage.setItem(PRIMER_KEY, "1"); } catch { /* ignore */ }
+    setNeedsPrimer(false);
+    primerResolver?.(true);
+    setPrimerResolver(null);
+  }, [primerResolver]);
+
+  const handlePrimerDismiss = useCallback(() => {
+    try { localStorage.setItem(PRIMER_KEY, "1"); } catch { /* ignore */ }
+    setNeedsPrimer(false);
+    primerResolver?.(false);
+    setPrimerResolver(null);
+  }, [primerResolver]);
 
   useEffect(() => {
     if (!user) return;
@@ -28,7 +46,20 @@ export function usePushNotifications() {
 
         const perm = await PushNotifications.checkPermissions();
         let granted = perm.receive === "granted";
-        if (!granted) {
+
+        if (!granted && perm.receive !== "denied") {
+          // Show pre-permission primer first (only if user hasn't seen it)
+          let primerSeen = false;
+          try { primerSeen = !!localStorage.getItem(PRIMER_KEY); } catch { /* ignore */ }
+
+          if (!primerSeen) {
+            const proceed = await new Promise<boolean>((resolve) => {
+              setPrimerResolver(() => resolve);
+              setNeedsPrimer(true);
+            });
+            if (!proceed) return;
+          }
+
           const req = await PushNotifications.requestPermissions();
           granted = req.receive === "granted";
         }
