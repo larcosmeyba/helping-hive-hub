@@ -13,28 +13,30 @@ export default function SupportPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState(user?.email ?? "");
+  // Email is shown read-only for the user's confirmation, but never sent to the server.
+  // The server pulls the email from auth.users via the create_support_ticket RPC.
+  const displayEmail = user?.email ?? "";
   const [message, setMessage] = useState("");
   const [ticketType, setTicketType] = useState("help");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !name || !email || !message) return;
+    if (!user || !name || !message) return;
     setLoading(true);
     try {
-      const { error } = await supabase.from("support_tickets").insert({
-        user_id: user.id,
-        name,
-        email,
-        message,
-        ticket_type: ticketType,
+      // Server-side RPC: only user_id (from auth.uid()) and the message fields are trusted.
+      const { error } = await supabase.rpc("create_support_ticket", {
+        _name: name,
+        _message: message,
+        _ticket_type: ticketType,
       });
       if (error) throw error;
       toast({ title: "Ticket Submitted", description: "We'll get back to you soon!" });
       setName(""); setMessage("");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -68,7 +70,17 @@ export default function SupportPage() {
           </div>
           <div>
             <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
+            <Input
+              type="email"
+              value={displayEmail}
+              readOnly
+              disabled
+              className="mt-1 bg-muted/50"
+              aria-describedby="email-help"
+            />
+            <p id="email-help" className="text-xs text-muted-foreground mt-1">
+              We'll reply to your account email.
+            </p>
           </div>
           <div>
             <Label>Message</Label>
