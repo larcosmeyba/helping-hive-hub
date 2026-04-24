@@ -109,11 +109,17 @@ export function SnapTracker() {
       toast({ title: "Could not log purchase", description: logError.message, variant: "destructive" });
       return;
     }
-    const newBalance = Math.max(0, Number(tracking.current_balance) - amt);
-    await supabase
-      .from("snap_benefit_tracking")
-      .update({ current_balance: newBalance })
-      .eq("id", tracking.id);
+    // Atomic server-side decrement — avoids the read-modify-write race where
+    // two simultaneous purchases could each subtract from the same starting
+    // balance. The RPC enforces auth.uid() = user_id internally.
+    const { error: deductError } = await supabase.rpc("deduct_snap_balance", {
+      _tracking_id: tracking.id,
+      _amount: amt,
+    });
+    if (deductError) {
+      toast({ title: "Could not update balance", description: deductError.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Purchase logged", description: `$${amt.toFixed(2)} deducted from SNAP balance` });
     setPurchaseAmount("");
     setPurchaseStore("");

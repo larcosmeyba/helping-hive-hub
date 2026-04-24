@@ -27,8 +27,20 @@ export default function Signup() {
       await signUp(email, password, displayName);
       toast({ title: "Account created!", description: "Please check your email to verify your account." });
       navigate("/questionnaire");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (err) {
+      // Map known errors to safe strings; never surface raw provider messages
+      // (avoids leaking account-exists hints, weak-password specifics, etc.).
+      if (import.meta.env.DEV) console.error("Signup failed:", err);
+      const raw = err instanceof Error ? err.message.toLowerCase() : "";
+      let description = "We couldn't create your account. Please try again.";
+      if (raw.includes("already") || raw.includes("registered") || raw.includes("exists")) {
+        description = "If this email is available, your account will be created. Check your inbox to confirm.";
+      } else if (raw.includes("password")) {
+        description = "Please choose a stronger password (at least 10 characters).";
+      } else if (raw.includes("email")) {
+        description = "Please enter a valid email address.";
+      }
+      toast({ title: "Sign up failed", description, variant: "destructive" });
     } finally {
       setLoading(false);
     }

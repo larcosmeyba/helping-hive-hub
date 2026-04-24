@@ -1146,6 +1146,7 @@ export type Database = {
           phone_number: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
+          questionnaire_progress: Json | null
           referral_source: string | null
           show_snap_tracker: boolean
           snap_deposit_day: number | null
@@ -1198,6 +1199,7 @@ export type Database = {
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          questionnaire_progress?: Json | null
           referral_source?: string | null
           show_snap_tracker?: boolean
           snap_deposit_day?: number | null
@@ -1250,6 +1252,7 @@ export type Database = {
           phone_number?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
+          questionnaire_progress?: Json | null
           referral_source?: string | null
           show_snap_tracker?: boolean
           snap_deposit_day?: number | null
@@ -2263,6 +2266,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_support_ticket: {
+        Args: { _message: string; _name: string; _ticket_type: string }
+        Returns: string
+      }
+      deduct_snap_balance: {
+        Args: { _amount: number; _tracking_id: string }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

@@ -46,7 +46,9 @@ const PANTRY_STAPLES = [
 
 const STORAGE_KEY = "hth_onboarding_progress";
 
-function loadProgress(): Record<string, unknown> {
+// localStorage is now an OFFLINE FALLBACK only. The source of truth for
+// in-progress onboarding is profiles.questionnaire_progress (JSONB).
+function loadLocalProgress(): Record<string, unknown> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -55,7 +57,7 @@ function loadProgress(): Record<string, unknown> {
   }
 }
 
-function saveProgress(data: Record<string, unknown>) {
+function saveLocalProgress(data: Record<string, unknown>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {}
@@ -74,38 +76,68 @@ function defaultBudget(size: number): number {
 }
 
 export default function Questionnaire() {
-  const saved = loadProgress();
-  const [step, setStep] = useState<number>((saved.step as number) || 1);
+  // Seed from local fallback immediately so the form is interactive on first
+  // paint; the DB load below will overwrite this if a server copy exists.
+  const localSeed = loadLocalProgress();
+  const [step, setStep] = useState<number>((localSeed.step as number) || 1);
+  const [hydrated, setHydrated] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load progress from DB (preferred) and short-circuit to dashboard if the
+  // questionnaire has already been completed.
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     supabase
       .from("profiles")
-      .select("questionnaire_completed")
+      .select("questionnaire_completed, questionnaire_progress")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data?.questionnaire_completed) {
           clearProgress();
           navigate("/dashboard", { replace: true });
+          return;
         }
+        const dbProgress = (data?.questionnaire_progress ?? null) as
+          | Record<string, unknown>
+          | null;
+        if (dbProgress && typeof dbProgress === "object") {
+          // DB is the source of truth — apply server progress to all fields.
+          if (typeof dbProgress.step === "number") setStep(dbProgress.step);
+          if (typeof dbProgress.foodAssistance === "string") setFoodAssistance(dbProgress.foodAssistance);
+          if (typeof dbProgress.householdSize === "number") setHouseholdSize(dbProgress.householdSize);
+          if (typeof dbProgress.hasYoungKids === "boolean") setHasYoungKids(dbProgress.hasYoungKids);
+          if (typeof dbProgress.weeklyBudget === "number") setWeeklyBudget(dbProgress.weeklyBudget);
+          if (typeof dbProgress.budgetTouched === "boolean") setBudgetTouched(dbProgress.budgetTouched);
+          if (typeof dbProgress.homeStore === "string") setHomeStore(dbProgress.homeStore);
+          if (typeof dbProgress.zipCode === "string") setZipCode(dbProgress.zipCode);
+          if (Array.isArray(dbProgress.dietaryPrefs)) setDietaryPrefs(dbProgress.dietaryPrefs as string[]);
+          if (typeof dbProgress.cookingConfidence === "string") setCookingConfidence(dbProgress.cookingConfidence);
+          if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
+        }
+        setHydrated(true);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [user, navigate]);
 
-  // Form state
-  const [foodAssistance, setFoodAssistance] = useState<string>((saved.foodAssistance as string) || "");
-  const [householdSize, setHouseholdSize] = useState<number>((saved.householdSize as number) ?? 2);
-  const [hasYoungKids, setHasYoungKids] = useState<boolean>((saved.hasYoungKids as boolean) ?? false);
-  const [weeklyBudget, setWeeklyBudget] = useState<number>((saved.weeklyBudget as number) || defaultBudget(2));
-  const [budgetTouched, setBudgetTouched] = useState<boolean>((saved.budgetTouched as boolean) ?? false);
-  const [homeStore, setHomeStore] = useState<string>((saved.homeStore as string) || "");
-  const [zipCode, setZipCode] = useState<string>((saved.zipCode as string) || "");
-  const [dietaryPrefs, setDietaryPrefs] = useState<string[]>((saved.dietaryPrefs as string[]) || []);
-  const [cookingConfidence, setCookingConfidence] = useState<string>((saved.cookingConfidence as string) || "");
-  const [pantryStarter, setPantryStarter] = useState<string[]>((saved.pantryStarter as string[]) || []);
+  // Form state — initial values come from the local fallback. The DB load
+  // effect above replaces these once the server copy arrives.
+  const [foodAssistance, setFoodAssistance] = useState<string>((localSeed.foodAssistance as string) || "");
+  const [householdSize, setHouseholdSize] = useState<number>((localSeed.householdSize as number) ?? 2);
+  const [hasYoungKids, setHasYoungKids] = useState<boolean>((localSeed.hasYoungKids as boolean) ?? false);
+  const [weeklyBudget, setWeeklyBudget] = useState<number>((localSeed.weeklyBudget as number) || defaultBudget(2));
+  const [budgetTouched, setBudgetTouched] = useState<boolean>((localSeed.budgetTouched as boolean) ?? false);
+  const [homeStore, setHomeStore] = useState<string>((localSeed.homeStore as string) || "");
+  const [zipCode, setZipCode] = useState<string>((localSeed.zipCode as string) || "");
+  const [dietaryPrefs, setDietaryPrefs] = useState<string[]>((localSeed.dietaryPrefs as string[]) || []);
+  const [cookingConfidence, setCookingConfidence] = useState<string>((localSeed.cookingConfidence as string) || "");
+  const [pantryStarter, setPantryStarter] = useState<string[]>((localSeed.pantryStarter as string[]) || []);
   const [loading, setLoading] = useState(false);
 
   // Auto-adjust budget when household size changes (only if user hasn't manually set it)
@@ -121,12 +153,30 @@ export default function Questionnaire() {
 
   useEffect(() => { trackEvent("onboarding_started"); }, []);
 
+  // Persist progress to BOTH local fallback (for offline reloads) and the
+  // server (source of truth). The DB write is debounced and only fires once
+  // we've finished hydrating from the server, to avoid clobbering server state
+  // with the local seed on the first render.
   useEffect(() => {
-    saveProgress({
+    const progress = {
       step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched,
       homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter,
-    });
-  }, [step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
+    };
+    saveLocalProgress(progress);
+    if (!user || !hydrated) return;
+    const t = setTimeout(() => {
+      supabase
+        .from("profiles")
+        .update({ questionnaire_progress: progress })
+        .eq("user_id", user.id)
+        .then(({ error }) => {
+          if (error && import.meta.env.DEV) {
+            console.error("Failed to persist onboarding progress to DB", error);
+          }
+        });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [user, hydrated, step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
 
   const togglePantryItem = (item: string) => {
     setPantryStarter((prev) => prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]);
