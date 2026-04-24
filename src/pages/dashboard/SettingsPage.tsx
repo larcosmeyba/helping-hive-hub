@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, ShieldCheck, Sparkles, Trash2, Bell } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +55,11 @@ export default function SettingsPage() {
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
   const [showMacros, setShowMacros] = useShowMacros();
+  const [notifPrefs, setNotifPrefs] = useState({
+    meal_plan_reminders: true,
+    snap_deposit_alerts: true,
+    new_features: true,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -69,8 +74,28 @@ export default function SettingsPage() {
       setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
       setUserType(data.user_type ?? "general");
       setVerificationStatus(data.verification_status ?? "not_started");
+      const prefs = (data.notification_preferences as Record<string, boolean> | null) ?? {};
+      setNotifPrefs({
+        meal_plan_reminders: prefs.meal_plan_reminders ?? true,
+        snap_deposit_alerts: prefs.snap_deposit_alerts ?? true,
+        new_features: prefs.new_features ?? true,
+      });
     });
   }, [user]);
+
+  const updateNotifPref = async (key: keyof typeof notifPrefs, value: boolean) => {
+    if (!user) return;
+    const next = { ...notifPrefs, [key]: value };
+    setNotifPrefs(next);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ notification_preferences: next })
+      .eq("user_id", user.id);
+    if (error) {
+      setNotifPrefs(notifPrefs);
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+    }
+  };
 
   const toggle = (arr: string[], setArr: (v: string[]) => void, item: string) => {
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
