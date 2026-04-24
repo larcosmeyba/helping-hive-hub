@@ -7,12 +7,11 @@
     <meta name="description" content="Meals that fit your budget. At the store you already shop at. Free forever for SNAP & WIC families." />
     <meta name="author" content="Help The Hive" />
     <meta name="theme-color" content="#1B4332" />
-    <!-- Content Security Policy. connect-src includes Supabase + OpenStreetMap
-         (Nominatim is used for reverse-geocoding ZIP lookup in onboarding).
-         Adjust if new third-party APIs are added. style-src allows
-         'unsafe-inline' because Tailwind/CSS-in-JS injects style tags at
-         runtime. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.supabase.in https://nominatim.openstreetmap.org; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
+    <!-- Content Security Policy. connect-src: Supabase + Nominatim (ZIP lookup)
+         + OpenFoodFacts. img-src is restricted to known asset hosts: Supabase
+         storage, Kroger CDN, OpenFoodFacts, Unsplash (recipe fallbacks). Add
+         new image hosts here when integrating new providers. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.supabase.in https://nominatim.openstreetmap.org https://world.openfoodfacts.org; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://www.kroger.com https://*.kroger.com https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://helpthehive.com; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
     <link rel="canonical" href="https://helpthehive.com/" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
