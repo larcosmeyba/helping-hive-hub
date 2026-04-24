@@ -19,14 +19,14 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Always show the same generic confirmation regardless of outcome to
+      // avoid leaking whether an account exists for the entered email.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: getRedirectUrl("/reset-password"),
       });
-      if (error) throw error;
-      setSent(true);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      if (error && import.meta.env.DEV) console.error("resetPasswordForEmail failed:", error);
     } finally {
+      setSent(true);
       setLoading(false);
     }
   };
@@ -54,7 +54,7 @@ export default function ForgotPassword() {
                 <Mail className="h-8 w-8 text-primary" />
               </div>
               <p className="text-muted-foreground text-sm">
-                We've sent a password reset link to <strong className="text-foreground">{email}</strong>. Please check your email and click the link to reset your password.
+                If an account exists for <strong className="text-foreground">{email}</strong>, a reset link has been sent. Please check your email.
               </p>
               <Button
                 variant="outline"

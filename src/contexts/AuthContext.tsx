@@ -112,6 +112,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    // Clear all user-scoped client state so a subsequent user on the same
+    // device cannot see the previous user's cached data.
+    setProfile(null);
+    setUser(null);
+    setSession(null);
+    // localStorage keys cleared on sign-out:
+    //   - hive_meal_plan          (cached weekly meal plan from MealPlanContext)
+    //   - hth_onboarding_progress (questionnaire progress, also stored in DB)
+    //   - hth_location_asked      (location prompt flag from LocationContext)
+    //   - hth_location_coords     (legacy plaintext coords, defensive cleanup)
+    //   - hth_show_macros         (per-user macro display preference)
+    try {
+      localStorage.removeItem("hive_meal_plan");
+      localStorage.removeItem("hth_onboarding_progress");
+      localStorage.removeItem("hth_location_asked");
+      localStorage.removeItem("hth_location_coords");
+      localStorage.removeItem("hth_show_macros");
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.)
+    }
   };
 
   return (

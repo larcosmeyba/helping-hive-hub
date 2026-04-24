@@ -21,8 +21,15 @@ export default function Login() {
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (err) {
+      // Never surface raw Supabase error messages — they can leak account
+      // existence and other details. Map all sign-in failures to one string.
+      if (import.meta.env.DEV) console.error("Login failed:", err);
+      toast({
+        title: "Sign in failed",
+        description: "Invalid email or password.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
