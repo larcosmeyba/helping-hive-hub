@@ -96,7 +96,7 @@ export function MealPlanSection() {
                 {plan.note && (
                   <div className="text-[11px] text-primary font-medium mb-3">{plan.note}</div>
                 )}
-                <Button variant="heroOutline" size="sm" asChild>
+                <Button variant="heroOutline" size="lg" className="w-full h-12 text-base" asChild>
                   <Link to={`/sample-plan/${plan.slug}`}>View Plan</Link>
                 </Button>
               </div>
