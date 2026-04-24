@@ -331,6 +331,35 @@ export default function SettingsPage() {
       {/* Privacy & Data Controls */}
       <PrivacyDataControls />
 
+      {/* Notification Preferences */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <Bell className="w-5 h-5 text-primary" /> Notification Preferences
+        </h2>
+        <p className="text-[11px] text-muted-foreground -mt-2">
+          Choose which categories of push notifications you want to receive. You can also manage system-level permission in your device settings.
+        </p>
+
+        {[
+          { key: "meal_plan_reminders" as const, label: "Meal plan reminders", desc: "Weekly plan generated, prep reminders" },
+          { key: "snap_deposit_alerts" as const, label: "SNAP deposit alerts", desc: "Reminders around your benefit deposit day" },
+          { key: "new_features" as const, label: "New features", desc: "Occasional updates about new app features" },
+        ].map((item) => (
+          <div key={item.key} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{item.label}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
+            </div>
+            <Switch
+              checked={notifPrefs[item.key]}
+              onCheckedChange={(v) => updateNotifPref(item.key, v)}
+              aria-label={item.label}
+            />
+          </div>
+        ))}
+      </div>
+
+
       {/* Display Preferences (Fix 2.6) */}
       <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
         <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
