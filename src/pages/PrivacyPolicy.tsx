@@ -56,17 +56,15 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-display font-semibold text-foreground mb-3">Data Retention</h2>
               <p className="mb-3">Help The Hive retains user data only as long as necessary to provide the services within the app.</p>
               <p className="mb-3">Account information, meal plans, grocery lists, and preferences remain stored while the user account is active.</p>
-              <p>If a user deletes their account or requests deletion, personal data will be permanently removed from our systems within 30 days unless retention is required for legal or financial obligations.</p>
+              <p>When you request account deletion, your account and data are permanently removed immediately. This cannot be undone.</p>
             </section>
 
             <section>
               <h2 className="text-xl font-display font-semibold text-foreground mb-3">Data Deletion</h2>
-              <p className="mb-3">Users may request deletion of their personal data at any time.</p>
-              <p className="mb-3">
-                Users may delete their account directly inside the app settings or request deletion by contacting:{" "}
+              <p className="mb-3">Users may delete their account at any time directly inside the app settings, or by contacting:{" "}
                 <a href="mailto:support@helpthehive.com" className="text-primary hover:underline">support@helpthehive.com</a>
               </p>
-              <p>Once a deletion request is received, Help The Hive will permanently delete associated personal data within 30 days.</p>
+              <p>When you request account deletion, your personal data is permanently removed immediately. An anonymized audit record (date only) is retained for legal compliance.</p>
             </section>
 
             <section>

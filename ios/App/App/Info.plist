@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Help the Hive uses your camera to scan pantry and fridge items and upload food photos for meal planning.</string>
+	<string>Help the Hive uses your camera to scan pantry and fridge items. Photos are sent to our servers only for food recognition and are not stored.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Help the Hive uses your photo library so you can upload food photos to scan pantry and fridge items for meal planning.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

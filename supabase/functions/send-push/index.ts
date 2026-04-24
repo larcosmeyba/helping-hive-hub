@@ -17,6 +17,13 @@ interface PushPayload {
   body: string;
   link?: string;
   data?: Record<string, string>;
+  /**
+   * Notification category — used to honor per-user opt-outs in
+   * profiles.notification_preferences. Allowed values:
+   *   "meal_plan_reminders" | "snap_deposit_alerts" | "new_features"
+   * Omit for system / transactional pushes that bypass category filtering.
+   */
+  category?: "meal_plan_reminders" | "snap_deposit_alerts" | "new_features";
 }
 
 async function sendFcm(token: string, payload: PushPayload) {
@@ -111,6 +118,23 @@ Deno.serve(async (req) => {
             { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
           );
         }
+      }
+    }
+
+    // Honor per-user notification category opt-outs (Apple Guideline 5.2)
+    if (payload.category) {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("notification_preferences")
+        .eq("user_id", payload.user_id)
+        .maybeSingle();
+      const prefs = (profile?.notification_preferences ?? {}) as Record<string, boolean>;
+      // Default to enabled when key is missing
+      if (prefs[payload.category] === false) {
+        return new Response(
+          JSON.stringify({ ok: true, sent: 0, skipped: "category_opt_out" }),
+          { headers: { ...cors, "Content-Type": "application/json" } }
+        );
       }
     }
 
