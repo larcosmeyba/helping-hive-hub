@@ -25,7 +25,7 @@ export function CTASection() {
           <div className="flex flex-col items-center justify-center gap-3">
             <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
               <Link to="/signup">
-                Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
+                Join Today <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
             <Button
