@@ -98,24 +98,28 @@ Deno.serve(async (req) => {
     )
   }
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // verify_jwt=true (config.toml) already validates the JWT signature.
-  // We then confirm the caller is the service role — only the cron worker /
-  // scheduled trigger should be invoking this function.
+  // Authz: accept either CRON_SECRET shared header (preferred for cron) OR a
+  // service-role JWT. Only the cron worker / scheduled trigger should invoke.
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
-  const isServiceRole = await isServiceRoleCaller(supabase, authHeader)
-  if (!isServiceRole) {
-    return new Response(
-      JSON.stringify({ error: 'Forbidden' }),
-      { status: 403, headers: { 'Content-Type': 'application/json' } }
-    )
+  const CRON_SECRET = Deno.env.get('CRON_SECRET')
+  const cronHeader = req.headers.get('x-cron-secret')
+  const isCronCall = !!CRON_SECRET && !!cronHeader && cronHeader === CRON_SECRET
+
+  if (!isCronCall) {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    const isServiceRole = await isServiceRoleCaller(supabase, authHeader)
+    if (!isServiceRole) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
   }
 
   // 1. Check rate-limit cooldown and read queue config
