@@ -126,17 +126,18 @@ export default function Questionnaire() {
     };
   }, [user, navigate]);
 
-  // Form state
-  const [foodAssistance, setFoodAssistance] = useState<string>((saved.foodAssistance as string) || "");
-  const [householdSize, setHouseholdSize] = useState<number>((saved.householdSize as number) ?? 2);
-  const [hasYoungKids, setHasYoungKids] = useState<boolean>((saved.hasYoungKids as boolean) ?? false);
-  const [weeklyBudget, setWeeklyBudget] = useState<number>((saved.weeklyBudget as number) || defaultBudget(2));
-  const [budgetTouched, setBudgetTouched] = useState<boolean>((saved.budgetTouched as boolean) ?? false);
-  const [homeStore, setHomeStore] = useState<string>((saved.homeStore as string) || "");
-  const [zipCode, setZipCode] = useState<string>((saved.zipCode as string) || "");
-  const [dietaryPrefs, setDietaryPrefs] = useState<string[]>((saved.dietaryPrefs as string[]) || []);
-  const [cookingConfidence, setCookingConfidence] = useState<string>((saved.cookingConfidence as string) || "");
-  const [pantryStarter, setPantryStarter] = useState<string[]>((saved.pantryStarter as string[]) || []);
+  // Form state — initial values come from the local fallback. The DB load
+  // effect above replaces these once the server copy arrives.
+  const [foodAssistance, setFoodAssistance] = useState<string>((localSeed.foodAssistance as string) || "");
+  const [householdSize, setHouseholdSize] = useState<number>((localSeed.householdSize as number) ?? 2);
+  const [hasYoungKids, setHasYoungKids] = useState<boolean>((localSeed.hasYoungKids as boolean) ?? false);
+  const [weeklyBudget, setWeeklyBudget] = useState<number>((localSeed.weeklyBudget as number) || defaultBudget(2));
+  const [budgetTouched, setBudgetTouched] = useState<boolean>((localSeed.budgetTouched as boolean) ?? false);
+  const [homeStore, setHomeStore] = useState<string>((localSeed.homeStore as string) || "");
+  const [zipCode, setZipCode] = useState<string>((localSeed.zipCode as string) || "");
+  const [dietaryPrefs, setDietaryPrefs] = useState<string[]>((localSeed.dietaryPrefs as string[]) || []);
+  const [cookingConfidence, setCookingConfidence] = useState<string>((localSeed.cookingConfidence as string) || "");
+  const [pantryStarter, setPantryStarter] = useState<string[]>((localSeed.pantryStarter as string[]) || []);
   const [loading, setLoading] = useState(false);
 
   // Auto-adjust budget when household size changes (only if user hasn't manually set it)
@@ -152,12 +153,30 @@ export default function Questionnaire() {
 
   useEffect(() => { trackEvent("onboarding_started"); }, []);
 
+  // Persist progress to BOTH local fallback (for offline reloads) and the
+  // server (source of truth). The DB write is debounced and only fires once
+  // we've finished hydrating from the server, to avoid clobbering server state
+  // with the local seed on the first render.
   useEffect(() => {
-    saveProgress({
+    const progress = {
       step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched,
       homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter,
-    });
-  }, [step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
+    };
+    saveLocalProgress(progress);
+    if (!user || !hydrated) return;
+    const t = setTimeout(() => {
+      supabase
+        .from("profiles")
+        .update({ questionnaire_progress: progress })
+        .eq("user_id", user.id)
+        .then(({ error }) => {
+          if (error && import.meta.env.DEV) {
+            console.error("Failed to persist onboarding progress to DB", error);
+          }
+        });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [user, hydrated, step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
 
   const togglePantryItem = (item: string) => {
     setPantryStarter((prev) => prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]);
