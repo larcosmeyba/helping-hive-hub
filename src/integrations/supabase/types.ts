@@ -125,6 +125,30 @@ export type Database = {
         }
         Relationships: []
       }
+      api_rate_limits: {
+        Row: {
+          call_count: number
+          endpoint: string
+          hour_bucket: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          call_count?: number
+          endpoint: string
+          hour_bucket: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          call_count?: number
+          endpoint?: string
+          hour_bucket?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bls_regional_cpi_cache: {
         Row: {
           cached_at: string
@@ -2257,6 +2281,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_rate_limit: {
+        Args: { _endpoint: string; _max_per_hour: number; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          limit_per_hour: number
+        }[]
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
