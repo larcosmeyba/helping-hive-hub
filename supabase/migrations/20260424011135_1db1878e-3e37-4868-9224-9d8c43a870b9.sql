@@ -1,0 +1,1 @@
+UPDATE public.recipes SET image_url = 'https://ndbqbhghjsjkpgcvkvtq.supabase.co/storage/v1/object/public/recipe-images/imported/' || id::text || '.jpg' WHERE id IN ('1b51fc9a-1587-4742-84ae-602bfe01db32','7fe6c621-905c-4f49-8c59-e7c36f840cfc');
