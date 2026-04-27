@@ -401,6 +401,34 @@ export default function AdminMembers() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bulk action confirmation — guards against misclick on select-all → disable */}
+      <AlertDialog open={pendingBulkStatus !== null} onOpenChange={(o) => !o && setPendingBulkStatus(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingBulkStatus === "disabled" ? "Disable" : "Enable"} {selectedIds.size} member{selectedIds.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingBulkStatus === "disabled"
+                ? `This will deactivate ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}. Affected users will lose access until re-enabled. This action will be recorded in the audit log.`
+                : `This will reactivate ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}. Affected users will regain access immediately. This action will be recorded in the audit log.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const status = pendingBulkStatus;
+                setPendingBulkStatus(null);
+                if (status) await bulkUpdateStatus(status);
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
