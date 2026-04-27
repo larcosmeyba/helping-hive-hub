@@ -172,12 +172,21 @@ jobs:
           echo "--- App target signing settings ---"
           grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER|DEVELOPMENT_TEAM|PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj | sort -u
 
+      - name: Clear Swift Package Manager caches
+        run: |
+          rm -rf ~/Library/Caches/org.swift.swiftpm
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          rm -rf ios/App/.swiftpm
+          rm -rf ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+          echo "SPM caches cleared"
+
       - name: Build iOS archive
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd ios/App
           xcodebuild -project App.xcodeproj \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             -scheme App \
             -destination 'generic/platform=iOS' \
             -sdk iphoneos \
