@@ -284,6 +284,7 @@ export type Database = {
           recipient_email: string
           status: string
           template_name: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -294,6 +295,7 @@ export type Database = {
           recipient_email: string
           status: string
           template_name: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -304,6 +306,7 @@ export type Database = {
           recipient_email?: string
           status?: string
           template_name?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2312,6 +2315,7 @@ export type Database = {
         }
         Returns: number
       }
+      purge_old_email_send_log: { Args: never; Returns: undefined }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
