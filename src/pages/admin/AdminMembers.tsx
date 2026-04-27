@@ -28,6 +28,7 @@ export default function AdminMembers() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [pendingBulkStatus, setPendingBulkStatus] = useState<"active" | "disabled" | null>(null);
   const { permissions, isOwner } = useAdminRole();
   const { toast } = useToast();
 
