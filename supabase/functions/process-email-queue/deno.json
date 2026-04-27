@@ -1,4 +1,5 @@
 {
+  "//": "Workaround: JSR's @supabase/functions-js types reference npm:openai for EdgeRuntime typing. Declaring it here lets Deno resolve the type chain. NOT a runtime dependency.",
   "nodeModulesDir": "auto",
   "imports": {
     "openai": "npm:openai@^4.52.5"
