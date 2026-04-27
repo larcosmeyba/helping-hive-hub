@@ -85,6 +85,17 @@ async function moveToDlq(
   }
 }
 
+// Constant-time string compare to prevent timing attacks on shared secrets.
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder()
+  const ab = enc.encode(a)
+  const bb = enc.encode(b)
+  if (ab.length !== bb.length) return false
+  let diff = 0
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i]
+  return diff === 0
+}
+
 Deno.serve(async (req) => {
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -103,7 +114,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
   const CRON_SECRET = Deno.env.get('CRON_SECRET')
   const cronHeader = req.headers.get('x-cron-secret')
-  const isCronCall = !!CRON_SECRET && !!cronHeader && cronHeader === CRON_SECRET
+  const isCronCall = !!CRON_SECRET && !!cronHeader && timingSafeEqual(cronHeader, CRON_SECRET)
 
   if (!isCronCall) {
     const authHeader = req.headers.get('Authorization')

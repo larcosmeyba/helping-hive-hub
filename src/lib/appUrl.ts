@@ -22,9 +22,10 @@ const PRIMARY_URL = "https://helpthehive.com";
 export function getAppUrl(): string {
   if (typeof window === "undefined") return PRIMARY_URL;
   const origin = window.location.origin;
-  // Allow lovable preview subdomains in addition to the explicit list.
-  const isLovableSubdomain = /^https:\/\/[a-z0-9-]+\.lovable\.app$/i.test(origin);
-  if (ALLOWED_ORIGINS.includes(origin) || isLovableSubdomain) return origin;
+  // Strict allowlist only — no wildcard *.lovable.app match. Any new preview
+  // origin must be added explicitly to ALLOWED_ORIGINS to prevent phishing
+  // pages on attacker-controlled lovable.app subdomains from passing CORS/redirect checks.
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
   return PRIMARY_URL;
 }
 
