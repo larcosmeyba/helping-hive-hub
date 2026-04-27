@@ -31,8 +31,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY");
-    if (!SERPAPI_KEY) return json({ error: "SERPAPI_KEY not configured" }, 500);
+    const SERPAPI_KEY_RAW = Deno.env.get("SERPAPI_KEY");
+    if (!SERPAPI_KEY_RAW) return json({ error: "SERPAPI_KEY not configured" }, 500);
+    const SERPAPI_KEY: string = SERPAPI_KEY_RAW;
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

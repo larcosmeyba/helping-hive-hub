@@ -1,5 +1,5 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -38,7 +38,7 @@ function getRetryAfterSeconds(error: unknown): number {
 // (see usage in the handler). This helper kept only as a defensive fallback
 // for the very narrow case where getUser() is unavailable.
 async function isServiceRoleCaller(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   authHeader: string
 ): Promise<boolean> {
   // Service-role JWT will resolve to no user via getUser(), so we treat it
@@ -61,7 +61,7 @@ async function isServiceRoleCaller(
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -176,12 +176,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: { message?: { message_id?: unknown } }) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
               ? msg.message.message_id
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: string | null): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
