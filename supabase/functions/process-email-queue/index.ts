@@ -38,7 +38,7 @@ function getRetryAfterSeconds(error: unknown): number {
 // (see usage in the handler). This helper kept only as a defensive fallback
 // for the very narrow case where getUser() is unavailable.
 async function isServiceRoleCaller(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   authHeader: string
 ): Promise<boolean> {
   // Service-role JWT will resolve to no user via getUser(), so we treat it
@@ -61,7 +61,7 @@ async function isServiceRoleCaller(
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
