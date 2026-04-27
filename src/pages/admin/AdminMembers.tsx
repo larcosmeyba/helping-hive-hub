@@ -235,10 +235,10 @@ export default function AdminMembers() {
         <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-lg px-4 py-2">
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("active")} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => setPendingBulkStatus("active")} className="gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> Enable
             </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("disabled")} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => setPendingBulkStatus("disabled")} className="gap-1">
               <ShieldOff className="h-3.5 w-3.5" /> Disable
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
