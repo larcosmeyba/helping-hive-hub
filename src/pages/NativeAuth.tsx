@@ -126,7 +126,7 @@ export default function NativeAuth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                minLength={6}
+                minLength={10}
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
             </div>

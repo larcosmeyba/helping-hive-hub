@@ -34,7 +34,7 @@ function isoWeekStart(d = new Date()): string {
 }
 
 async function alreadySent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   userId: string,
   emailType: string,
   periodKey: string
@@ -50,7 +50,7 @@ async function alreadySent(
 }
 
 async function recordSent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   userId: string,
   emailType: string,
   periodKey: string
@@ -63,7 +63,7 @@ async function recordSent(
 }
 
 async function createNotification(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   userId: string,
   type: string,
   title: string,
