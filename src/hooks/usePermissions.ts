@@ -75,9 +75,23 @@ export function useCameraPermission() {
         return false;
       }
     }
-    // Web: permission is requested when getUserMedia is called
-    setStatus("granted");
-    return true;
+    // Web: actually trigger the browser permission prompt by requesting a
+    // camera stream. Without this call, the browser only prompts when something
+    // later opens the camera, so any UI that reads `status` would be stale.
+    // We immediately stop the resulting tracks — we only wanted the prompt.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("denied");
+      return false;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setStatus("granted");
+      return true;
+    } catch {
+      setStatus("denied");
+      return false;
+    }
   }, []);
 
   return { status, showPrompt, setShowPrompt, requestCamera, checkStatus };
