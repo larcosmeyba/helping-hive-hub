@@ -67,6 +67,28 @@ Deno.serve(async (req) => {
 
     const { action, query, fdcId, limit = 10, save = false } = await req.json();
 
+    // Auth-gate any write path (save=true) to admins only. Read-only search/get
+    // remains open so the meal engine and admins can verify nutrition without auth.
+    const isWrite = action === "get" && save === true;
+    if (isWrite) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claims, error: claimErr } = await userClient.auth.getClaims(token);
+      if (claimErr || !claims?.claims?.sub) return json({ error: "Unauthorized" }, 401);
+
+      const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+      const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: claims.claims.sub });
+      if (!isAdmin) return json({ error: "Forbidden — admin role required for write" }, 403);
+    }
+
     if (action === "search") {
       if (!query) return json({ error: "query required" }, 400);
       const url = `${USDA_BASE}/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=${limit}&dataType=Foundation,SR%20Legacy,Survey%20%28FNDDS%29`;
