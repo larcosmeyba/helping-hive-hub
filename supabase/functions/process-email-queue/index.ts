@@ -43,30 +43,9 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-// M5: hand-rolled JWT parsing replaced with supabase.auth.getUser() + role check
-// (see usage in the handler). This helper kept only as a defensive fallback
-// for the very narrow case where getUser() is unavailable.
-async function isServiceRoleCaller(
-  supabase: any,
-  authHeader: string
-): Promise<boolean> {
-  // Service-role JWT will resolve to no user via getUser(), so we treat it
-  // specially via the role claim. We trust verify_jwt=true (config.toml) to
-  // ensure the JWT signature is valid before this code runs.
-  try {
-    const token = authHeader.slice('Bearer '.length).trim()
-    const parts = token.split('.')
-    if (parts.length < 2) return false
-    const payload = parts[1]
-      .replaceAll('-', '+')
-      .replaceAll('_', '/')
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
-    const claims = JSON.parse(atob(payload)) as Record<string, unknown>
-    return claims?.role === 'service_role'
-  } catch {
-    return false
-  }
-}
+// (Hand-rolled JWT base64 decode removed — it bypassed signature verification.
+// Authz now relies on supabase.auth.getUser() and fails closed if no user is
+// resolved. Service-role calls go through the CRON_SECRET path instead.)
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
