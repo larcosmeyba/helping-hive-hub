@@ -80,12 +80,12 @@ Deno.serve(async (req) => {
         global: { headers: { Authorization: authHeader } },
       });
       const token = authHeader.replace("Bearer ", "");
-      const { data: claims, error: claimErr } = await userClient.auth.getClaims(token);
-      if (claimErr || !claims?.claims?.sub) return json({ error: "Unauthorized" }, 401);
+      const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+      if (userErr || !userData?.user?.id) return json({ error: "Unauthorized" }, 401);
 
       const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-      const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: claims.claims.sub });
+      const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: userData.user.id });
       if (!isAdmin) return json({ error: "Forbidden — admin role required for write" }, 403);
     }
 
