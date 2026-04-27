@@ -104,8 +104,12 @@ Deno.serve(async (req) => {
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
-    const isServiceRole = await isServiceRoleCaller(supabase, authHeader)
-    if (!isServiceRole) {
+    // Fail closed: only callers with a valid Supabase JWT (verified by
+    // getUser via the auth server) may invoke this function outside cron.
+    // Service-role callers should use the CRON_SECRET header path.
+    const token = authHeader.slice('Bearer '.length).trim()
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token)
+    if (userErr || !userData?.user) {
       return new Response(
         JSON.stringify({ error: 'Forbidden' }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }
