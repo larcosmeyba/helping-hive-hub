@@ -29,8 +29,8 @@ export default function NativeAuth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === "signup" && password.length < 6) {
-      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+    if (mode === "signup" && password.length < 10) {
+      toast({ title: "Error", description: "Password must be at least 10 characters", variant: "destructive" });
       return;
     }
     setLoading(true);

@@ -33,9 +33,9 @@ function getAllowedOrigins(): string[] {
 export function buildCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin") ?? "";
   const allowed = getAllowedOrigins();
-  // Lovable preview subdomains follow the pattern *.lovable.app — allow them all.
-  const isLovableSubdomain = /^https:\/\/[a-z0-9-]+\.lovable\.app$/i.test(origin);
-  const allow = allowed.includes(origin) || isLovableSubdomain;
+  // Strict allowlist only — no wildcard *.lovable.app match. Any new preview
+  // origin must be added explicitly via ALLOWED_ORIGINS env or DEFAULT_ALLOWED.
+  const allow = allowed.includes(origin);
   return {
     "Access-Control-Allow-Origin": allow ? origin : allowed[0],
     "Access-Control-Allow-Headers": ALLOW_HEADERS,
