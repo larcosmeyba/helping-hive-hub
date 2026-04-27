@@ -10,6 +10,10 @@ import { Search, Download, Filter, ChevronRight, ArrowUpDown, ShieldOff, ShieldC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +28,7 @@ export default function AdminMembers() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [pendingBulkStatus, setPendingBulkStatus] = useState<"active" | "disabled" | null>(null);
   const { permissions, isOwner } = useAdminRole();
   const { toast } = useToast();
 
@@ -123,6 +128,14 @@ export default function AdminMembers() {
       return;
     }
     setMembers((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, account_status: status } : m)));
+    // Audit trail — record the bulk action with affected count and IDs.
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("activity_logs").insert({
+      user_id: user?.id ?? null,
+      action: status === "disabled" ? "members.bulk_disable" : "members.bulk_enable",
+      entity_type: "profile",
+      details: { count: ids.length, profile_ids: ids },
+    });
     setSelectedIds(new Set());
     toast({
       title: `${ids.length} member${ids.length === 1 ? "" : "s"} ${status === "active" ? "enabled" : "disabled"}`,
@@ -222,10 +235,10 @@ export default function AdminMembers() {
         <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-lg px-4 py-2">
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("active")} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => setPendingBulkStatus("active")} className="gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> Enable
             </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus("disabled")} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => setPendingBulkStatus("disabled")} className="gap-1">
               <ShieldOff className="h-3.5 w-3.5" /> Disable
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
@@ -388,6 +401,34 @@ export default function AdminMembers() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bulk action confirmation — guards against misclick on select-all → disable */}
+      <AlertDialog open={pendingBulkStatus !== null} onOpenChange={(o) => !o && setPendingBulkStatus(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingBulkStatus === "disabled" ? "Disable" : "Enable"} {selectedIds.size} member{selectedIds.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingBulkStatus === "disabled"
+                ? `This will deactivate ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}. Affected users will lose access until re-enabled. This action will be recorded in the audit log.`
+                : `This will reactivate ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}. Affected users will regain access immediately. This action will be recorded in the audit log.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const status = pendingBulkStatus;
+                setPendingBulkStatus(null);
+                if (status) await bulkUpdateStatus(status);
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

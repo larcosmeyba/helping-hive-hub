@@ -1,5 +1,14 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { timingSafeEqual } from '../_shared/timing-safe-equal.ts'
+
+// Resolve user_id from queued payload. The auth-email hook payload nests
+// the user object (payload.user.id), while transactional callers may set
+// payload.user_id directly. Accept either shape so email_send_log gets a
+// proper FK to auth.users for both flows.
+function resolveUserId(payload: any): string | null {
+  return payload?.user_id ?? payload?.user?.id ?? null
+}
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -34,30 +43,9 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-// M5: hand-rolled JWT parsing replaced with supabase.auth.getUser() + role check
-// (see usage in the handler). This helper kept only as a defensive fallback
-// for the very narrow case where getUser() is unavailable.
-async function isServiceRoleCaller(
-  supabase: any,
-  authHeader: string
-): Promise<boolean> {
-  // Service-role JWT will resolve to no user via getUser(), so we treat it
-  // specially via the role claim. We trust verify_jwt=true (config.toml) to
-  // ensure the JWT signature is valid before this code runs.
-  try {
-    const token = authHeader.slice('Bearer '.length).trim()
-    const parts = token.split('.')
-    if (parts.length < 2) return false
-    const payload = parts[1]
-      .replaceAll('-', '+')
-      .replaceAll('_', '/')
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
-    const claims = JSON.parse(atob(payload)) as Record<string, unknown>
-    return claims?.role === 'service_role'
-  } catch {
-    return false
-  }
-}
+// (Hand-rolled JWT base64 decode removed — it bypassed signature verification.
+// Authz now relies on supabase.auth.getUser() and fails closed if no user is
+// resolved. Service-role calls go through the CRON_SECRET path instead.)
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
@@ -71,7 +59,7 @@ async function moveToDlq(
     message_id: payload.message_id,
     template_name: (payload.label || queue) as string,
     recipient_email: payload.to,
-    user_id: (payload.user_id ?? null) as string | null,
+    user_id: resolveUserId(payload),
     status: 'dlq',
     error_message: reason,
   })
@@ -86,16 +74,7 @@ async function moveToDlq(
   }
 }
 
-// Constant-time string compare to prevent timing attacks on shared secrets.
-function timingSafeEqual(a: string, b: string): boolean {
-  const enc = new TextEncoder()
-  const ab = enc.encode(a)
-  const bb = enc.encode(b)
-  if (ab.length !== bb.length) return false
-  let diff = 0
-  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i]
-  return diff === 0
-}
+// timingSafeEqual is imported from ../_shared/timing-safe-equal.ts
 
 Deno.serve(async (req) => {
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
@@ -125,8 +104,12 @@ Deno.serve(async (req) => {
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
-    const isServiceRole = await isServiceRoleCaller(supabase, authHeader)
-    if (!isServiceRole) {
+    // Fail closed: only callers with a valid Supabase JWT (verified by
+    // getUser via the auth server) may invoke this function outside cron.
+    // Service-role callers should use the CRON_SECRET header path.
+    const token = authHeader.slice('Bearer '.length).trim()
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token)
+    if (userErr || !userData?.user) {
       return new Response(
         JSON.stringify({ error: 'Forbidden' }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }
@@ -296,7 +279,7 @@ Deno.serve(async (req) => {
           message_id: payload.message_id,
           template_name: payload.label || queue,
           recipient_email: payload.to,
-          user_id: payload.user_id ?? null,
+          user_id: resolveUserId(payload),
           status: 'sent',
         })
 
@@ -324,7 +307,7 @@ Deno.serve(async (req) => {
             message_id: payload.message_id,
             template_name: payload.label || queue,
             recipient_email: payload.to,
-            user_id: payload.user_id ?? null,
+            user_id: resolveUserId(payload),
             status: 'rate_limited',
             error_message: errorMsg.slice(0, 1000),
           })
@@ -362,7 +345,7 @@ Deno.serve(async (req) => {
           message_id: payload.message_id,
           template_name: payload.label || queue,
           recipient_email: payload.to,
-          user_id: payload.user_id ?? null,
+          user_id: resolveUserId(payload),
           status: 'failed',
           error_message: errorMsg.slice(0, 1000),
         })
