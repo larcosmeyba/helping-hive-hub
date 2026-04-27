@@ -8,6 +8,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
 
 type AnySupabaseClient = SupabaseClient<any, "public", any>;
 
@@ -104,16 +105,8 @@ Deno.serve(async (req) => {
   const CRON_SECRET = Deno.env.get("CRON_SECRET");
   const cronHeader = req.headers.get("x-cron-secret");
   // Constant-time compare to avoid timing-attack inference on the shared secret.
-  const isCronCall = (() => {
-    if (!CRON_SECRET || !cronHeader) return false;
-    const enc = new TextEncoder();
-    const a = enc.encode(cronHeader);
-    const b = enc.encode(CRON_SECRET);
-    if (a.length !== b.length) return false;
-    let diff = 0;
-    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-    return diff === 0;
-  })();
+  const isCronCall =
+    !!CRON_SECRET && !!cronHeader && timingSafeEqual(cronHeader, CRON_SECRET);
 
   if (!isCronCall) {
     const authHeader = req.headers.get("Authorization");
