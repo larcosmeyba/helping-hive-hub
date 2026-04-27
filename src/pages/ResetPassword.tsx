@@ -28,6 +28,15 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isRecovery) {
+      toast({
+        title: "Recovery link required",
+        description:
+          "Open this page from the password-reset email link. For security, passwords can only be changed through a fresh recovery link.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (password.length < 10) {
       toast({ title: "Error", description: "Password must be at least 10 characters", variant: "destructive" });
       return;
@@ -103,10 +112,16 @@ export default function ResetPassword() {
                   minLength={10}
                 />
               </div>
+              {!isRecovery && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Waiting for a valid recovery link… If nothing happens, request a new
+                  password-reset email and open it in this browser.
+                </p>
+              )}
               <Button
                 type="submit"
                 className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90"
-                disabled={loading}
+                disabled={loading || !isRecovery}
               >
                 {loading ? "Updating..." : "Update Password"}
               </Button>
