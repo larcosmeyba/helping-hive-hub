@@ -10,6 +10,10 @@ import { Search, Download, Filter, ChevronRight, ArrowUpDown, ShieldOff, ShieldC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -123,6 +127,14 @@ export default function AdminMembers() {
       return;
     }
     setMembers((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, account_status: status } : m)));
+    // Audit trail — record the bulk action with affected count and IDs.
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("activity_logs").insert({
+      user_id: user?.id ?? null,
+      action: status === "disabled" ? "members.bulk_disable" : "members.bulk_enable",
+      entity_type: "profile",
+      details: { count: ids.length, profile_ids: ids },
+    });
     setSelectedIds(new Set());
     toast({
       title: `${ids.length} member${ids.length === 1 ? "" : "s"} ${status === "active" ? "enabled" : "disabled"}`,
