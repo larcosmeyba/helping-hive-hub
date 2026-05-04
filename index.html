@@ -11,7 +11,7 @@
          + OpenFoodFacts. img-src is restricted to known asset hosts: Supabase
          storage, Kroger CDN, OpenFoodFacts, Unsplash (recipe fallbacks). Add
          new image hosts here when integrating new providers. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.supabase.in https://nominatim.openstreetmap.org https://world.openfoodfacts.org; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://www.kroger.com https://*.kroger.com https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://helpthehive.com; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://nominatim.openstreetmap.org https://world.openfoodfacts.org; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://www.kroger.com https://*.kroger.com https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://helpthehive.com; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
     <link rel="canonical" href="https://helpthehive.com/" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
