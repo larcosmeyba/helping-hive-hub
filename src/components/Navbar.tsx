@@ -37,9 +37,11 @@ export function Navbar() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Login</Link>
           </Button>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/signup">Sign Up</Link>
-          </Button>
+          <WaitlistDialog
+            source="navbar"
+            trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
+          />
+
         </div>
 
         {/* Mobile toggle */}
