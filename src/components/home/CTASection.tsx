@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { WaitlistDialog } from "@/components/WaitlistDialog";
 
 export function CTASection() {
   return (
@@ -17,17 +18,20 @@ export function CTASection() {
           className="max-w-2xl mx-auto text-center"
         >
           <h2 className="font-display text-3xl md:text-5xl font-bold text-honey-cream mb-6 leading-tight">
-            Plan a week of meals that fits your budget.
+            Be first in line when we launch.
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            Free forever for SNAP &amp; WIC families.
+            We're polishing the final details. Join the waitlist and we'll email you the moment Help The Hive opens — free forever for SNAP &amp; WIC families.
           </p>
           <div className="flex flex-col items-center justify-center gap-3">
-            <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
-              <Link to="/signup">
-                Join Today <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </Button>
+            <WaitlistDialog
+              source="cta-section"
+              trigger={
+                <Button variant="hero" size="lg" className="text-base px-8 h-12">
+                  Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              }
+            />
             <Button
               variant="outline"
               size="lg"

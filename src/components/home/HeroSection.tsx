@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import heroFamily from "@/assets/hero-family.jpg";
+import { WaitlistDialog } from "@/components/WaitlistDialog";
 
 export function HeroSection() {
   return (
@@ -55,11 +56,14 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-col items-start gap-3">
-              <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
-                <Link to="/signup">
-                  Join Today <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
+              <WaitlistDialog
+                source="hero"
+                trigger={
+                  <Button variant="hero" size="lg" className="text-base px-8 h-12">
+                    Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                }
+              />
               <Button
                 variant="outline"
                 size="lg"

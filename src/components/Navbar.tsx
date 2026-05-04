@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
+import { WaitlistDialog } from "@/components/WaitlistDialog";
 
 const navLinks: { label: string; to: string }[] = [];
 
@@ -36,9 +37,11 @@ export function Navbar() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Login</Link>
           </Button>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/signup">Sign Up</Link>
-          </Button>
+          <WaitlistDialog
+            source="navbar"
+            trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
+          />
+
         </div>
 
         {/* Mobile toggle */}
@@ -67,9 +70,11 @@ export function Navbar() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Login</Link>
             </Button>
-            <Button variant="hero" size="sm" asChild>
-              <Link to="/signup">Sign Up</Link>
-            </Button>
+            <WaitlistDialog
+              source="navbar-mobile"
+              trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
+            />
+
           </div>
         </div>
       )}
