@@ -56,11 +56,14 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-col items-start gap-3">
-              <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
-                <Link to="/signup">
-                  Join Today <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
+              <WaitlistDialog
+                source="hero"
+                trigger={
+                  <Button variant="hero" size="lg" className="text-base px-8 h-12">
+                    Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                }
+              />
               <Button
                 variant="outline"
                 size="lg"
