@@ -2231,6 +2231,33 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          referral_source: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          referral_source?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          referral_source?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       walmart_price_cache: {
         Row: {
           cached_at: string
