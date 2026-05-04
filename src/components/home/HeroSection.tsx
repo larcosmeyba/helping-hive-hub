@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import heroFamily from "@/assets/hero-family.jpg";
+import { WaitlistDialog } from "@/components/WaitlistDialog";
 
 export function HeroSection() {
   return (
