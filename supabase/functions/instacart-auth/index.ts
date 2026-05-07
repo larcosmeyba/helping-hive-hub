@@ -28,7 +28,7 @@ async function mintToken(env: "sandbox" | "production") {
   const base = env === "production" ? PROD_BASE : SANDBOX_BASE;
   const basic = btoa(`${clientId}:${clientSecret}`);
 
-  const res = await fetch(`${base}/v1/oauth/token`, {
+  const res = await fetch(`${base}/v2/oauth/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${basic}`,
