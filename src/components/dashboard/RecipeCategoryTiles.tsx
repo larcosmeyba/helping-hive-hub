@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 
 import budgetFriendlyImg from "@/assets/category-budget-friendly.jpg";
 import quickMealsImg from "@/assets/category-quick-meals.jpg";
@@ -284,6 +285,20 @@ export function RecipeCategoryTiles() {
                         </li>
                       ))}
                     </ul>
+                    <SendToInstacartButton
+                      title={selectedRecipe.title}
+                      linkType="recipe"
+                      imageUrl={selectedRecipe.image_url || undefined}
+                      lineItems={parseJsonArray(selectedRecipe.ingredients).map<InstacartLineItem>((ing) => ({
+                        name: String(ing).replace(/^[\d./\s]+\w*\s+/, "").trim() || String(ing),
+                        display_text: String(ing),
+                        quantity: 1,
+                        unit: "each",
+                      }))}
+                      instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
+                      className="w-full mt-3 bg-gradient-honey text-primary-foreground hover:opacity-90 h-11 rounded-xl font-semibold"
+                      label="Get ingredients on Instacart"
+                    />
                   </div>
                 )}
                 {parseJsonArray(selectedRecipe.instructions).length > 0 && (
