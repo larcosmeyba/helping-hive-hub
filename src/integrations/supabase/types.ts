@@ -742,6 +742,72 @@ export type Database = {
         }
         Relationships: []
       }
+      instacart_access_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          environment: string
+          expires_at: string
+          id: string
+          scope: string | null
+          token_type: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          environment: string
+          expires_at: string
+          id?: string
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      instacart_home_store: {
+        Row: {
+          created_at: string
+          id: string
+          postal_code: string | null
+          retailer_key: string
+          retailer_logo_url: string | null
+          retailer_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          postal_code?: string | null
+          retailer_key: string
+          retailer_logo_url?: string | null
+          retailer_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          postal_code?: string | null
+          retailer_key?: string
+          retailer_logo_url?: string | null
+          retailer_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       marketing_campaigns: {
         Row: {
           caption: string | null
