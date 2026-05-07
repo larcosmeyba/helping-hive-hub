@@ -219,11 +219,11 @@ export default function BudgetInsightsPage() {
             <p className="text-xs text-muted-foreground mt-1">{saved > 0 ? "Under budget — great job!" : "On target with your budget"}</p>
           </div>
           <div className="bg-muted rounded-xl p-4 border border-border">
-            <p className="font-semibold text-foreground text-sm">Smart Store Selection</p>
+            <p className="font-semibold text-foreground text-sm">Your Home Store</p>
             <p className="text-xs text-muted-foreground mt-1">
               {mealPlan?.storeRecommendations?.length ? (
-                <>Shopping at <span className="text-primary font-medium">{mealPlan.storeRecommendations[0].store}</span> saves you the most</>
-              ) : "Generate a meal plan to see store comparisons"}
+                <>Shopping at <span className="text-primary font-medium">{mealPlan.storeRecommendations[0].store}</span> this week</>
+              ) : "Generate a meal plan to set your home store"}
             </p>
           </div>
           <div className="bg-muted rounded-xl p-4 border border-border">
