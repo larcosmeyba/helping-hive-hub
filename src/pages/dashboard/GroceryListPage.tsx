@@ -320,13 +320,8 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
-      {/* Subtle store + items caption (replaces Live Prices banner) */}
-      {(walmartLoading || shoppingLoading) && (
-        <div className="flex items-center gap-2 bg-muted/40 text-muted-foreground rounded-xl px-4 py-2 text-xs">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating estimated prices…
-        </div>
-      )}
-      {!walmartLoading && activeStore && (
+      {/* Subtle store + items caption */}
+      {activeStore && (
         <div className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm" style={{ backgroundColor: "#F5F0E4" }}>
           <Store className="w-4 h-4 text-muted-foreground shrink-0" />
           <span className="text-foreground/80">
@@ -428,8 +423,6 @@ export default function GroceryListPage() {
               const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
-              const walmartInfo = getWalmartInfo(item);
-              const showLive = priceInfo.source === 'walmart' || priceInfo.source === 'google_shopping';
               return (
                 <label
                   key={item.name}
@@ -439,7 +432,7 @@ export default function GroceryListPage() {
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center">
                     <img
                       src={getItemImage(item)}
-                      alt={walmartInfo?.title || displayProduct.productDescription}
+                      alt={displayProduct.productDescription}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
@@ -449,36 +442,18 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {walmartInfo?.title || displayProduct.productDescription}
+                      {displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
-                      {!showLive && item.pricingSource === 'internal_estimate' && (
+                      {item.pricingSource === 'internal_estimate' && (
                         <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
-                      )}
-                      {walmartInfo && walmartInfo.inStock === false && (
-                        <span className="text-[9px] text-destructive font-medium">out of stock</span>
                       )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    {priceInfo.source === 'open_prices' && (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">
-                        community{priceInfo.date ? ` · ${priceInfo.date.slice(5)}` : ''}
-                      </p>
-                    )}
-                    {priceInfo.source === 'walmart' && isWalmart(activeStore) && (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">from {activeStore}</p>
-                    )}
-                    {(priceInfo.source === 'google_shopping' ||
-                      (priceInfo.source === 'walmart' && !isWalmart(activeStore)) ||
-                      priceInfo.source === 'store_estimate') && (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[110px]">estimated</p>
-                    )}
-                    {priceInfo.source === 'estimate' && (
-                      <p className="text-[10px] text-muted-foreground/70 italic">from public data</p>
-                    )}
+                    <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
