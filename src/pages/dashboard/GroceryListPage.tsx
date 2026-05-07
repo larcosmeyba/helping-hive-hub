@@ -409,8 +409,7 @@ export default function GroceryListPage() {
         label="Send to Instacart"
       />
 
-      <div className="hidden">
-      </div>
+
 
       {/* Home Store Pill — single store focus */}
       {activeStore && (
