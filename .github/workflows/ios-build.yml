@@ -130,8 +130,8 @@ jobs:
                   'PROVISIONING_PROFILE_SPECIFIER': f'"{profile}"',
                   '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]"': f'"{profile}"',
                   'PRODUCT_BUNDLE_IDENTIFIER': 'com.helpthehive',
-                  'MARKETING_VERSION': '1.12',
-                  'CURRENT_PROJECT_VERSION': '30',
+                  'MARKETING_VERSION': '1.13',
+                  'CURRENT_PROJECT_VERSION': '31',
                   'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
               }
               for k, v in settings.items():
