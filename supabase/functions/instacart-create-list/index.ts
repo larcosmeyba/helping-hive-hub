@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const payload: Record<string, unknown> = {
       title: body.title,
       link_type: body.link_type ?? "shopping_list",
-      expires_in: body.expires_in ?? 60 * 60 * 24 * 30,
+      expires_in: body.expires_in ?? 30,
       line_items: body.line_items,
     };
     if (body.image_url) payload.image_url = body.image_url;
