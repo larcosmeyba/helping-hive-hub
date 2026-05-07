@@ -12,6 +12,7 @@ import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/ty
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
+import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   walmart: "Great Value",
@@ -391,6 +392,24 @@ export default function GroceryListPage() {
           </Button>
         </div>
       </div>
+
+      {/* Send to Instacart — full-width CTA */}
+      <SendToInstacartButton
+        title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+        linkType="shopping_list"
+        lineItems={[
+          ...groceryItems.map<InstacartLineItem>((i) => ({
+            name: i.name,
+            quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
+            unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
+          })),
+          ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
+        ]}
+        className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 rounded-xl font-semibold shadow-sm"
+        label="Send to Instacart"
+      />
+
+
 
       {/* Home Store Pill — single store focus */}
       {activeStore && (
