@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.grocery_cost_comparisons CASCADE;
