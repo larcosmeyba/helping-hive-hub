@@ -235,7 +235,7 @@ export default function GroceryListPage() {
           user_id: user.id,
           action: "instacart_return",
           entity_type: "grocery_list",
-          entity_id: mealPlan?.id ?? null,
+          entity_id: null,
           details: {},
         }).then(() => {});
       }
