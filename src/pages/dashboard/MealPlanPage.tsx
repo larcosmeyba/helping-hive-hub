@@ -414,11 +414,10 @@ export default function MealPlanPage() {
 
               {!cookingMode && (
                 <div className="rounded-xl overflow-hidden -mx-2 -mt-2 mb-3">
-                  <img
-                    src={getMealImage(selectedMeal.name)}
-                    alt={selectedMeal.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
+                  <MealImage
+                    meal={selectedMeal}
+                    className="w-full h-48"
+                    imgClassName="w-full h-48 object-cover"
                   />
                 </div>
               )}
