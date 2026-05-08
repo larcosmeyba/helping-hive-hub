@@ -3,6 +3,7 @@ import { Store, HeartHandshake, Sparkles, ArrowRight, Mail } from "lucide-react"
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+import { SEOHead } from "@/components/SEOHead";
 import { useEffect } from "react";
 
 const sections = [

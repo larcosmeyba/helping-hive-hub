@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, DollarSign, Users, Clock, ShoppingCart, Utensi
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
   "feed-a-family-50": { primary: "Aldi", secondary: "Trader Joe's" },
@@ -297,6 +298,11 @@ export default function SampleMealPlan() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={`${plan.title} — Sample Meal Plan | Help The Hive`}
+        description={`${plan.desc.slice(0, 150)}`}
+        canonical={`https://helpthehive.com/sample-plan/${slug}`}
+      />
       <Navbar />
       <main className="flex-1">
         {/* Hero Banner */}
