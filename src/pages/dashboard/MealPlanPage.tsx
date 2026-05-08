@@ -349,12 +349,10 @@ export default function MealPlanPage() {
                       </div>
                     )}
                     <div className="relative h-[70px] md:h-24 overflow-hidden">
-                      <img
-                        src={getMealImage(meal.name)}
-                        alt={meal.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
+                      <MealImage
+                        meal={meal}
+                        className="w-full h-full"
+                        imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-1 left-1">
                         <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
