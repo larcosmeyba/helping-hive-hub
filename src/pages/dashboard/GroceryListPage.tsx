@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Plus, AlertCircle, TrendingDown, PiggyBank, Home } from "lucide-react";
-import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Plus, TrendingDown, PiggyBank, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
