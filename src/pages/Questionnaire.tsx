@@ -367,7 +367,7 @@ export default function Questionnaire() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-6 leading-relaxed text-center">
-            Families receiving food assistance get Help The Hive free forever. We verify through a simple honor system — no documents needed.
+            Help The Hive is 100% free for everyone — forever. We ask so we can tailor your plan and connect you with extra resources if you qualify. Honor system, no documents.
           </p>
         </QuestionnaireStep>
       )}
