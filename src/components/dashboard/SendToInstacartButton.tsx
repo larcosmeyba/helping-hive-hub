@@ -34,8 +34,13 @@ export function SendToInstacartButton({
   size = "default",
   variant = "default",
   label = "Send to Instacart",
-  partnerLinkbackUrl = "https://helpthehive.com",
+  partnerLinkbackUrl,
 }: Props) {
+  const linkback =
+    partnerLinkbackUrl ??
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/grocery?from=instacart`
+      : "https://helpthehive.com/dashboard/grocery?from=instacart");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -54,7 +59,7 @@ export function SendToInstacartButton({
           line_items: lineItems,
           instructions,
           landing_page_configuration: {
-            partner_linkback_url: partnerLinkbackUrl,
+            partner_linkback_url: linkback,
             enable_pantry_items: true,
           },
         },
