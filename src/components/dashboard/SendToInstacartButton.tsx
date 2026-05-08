@@ -34,7 +34,13 @@ export function SendToInstacartButton({
   size = "default",
   variant = "default",
   label = "Send to Instacart",
-  partnerLinkbackUrl = "https://helpthehive.com",
+  partnerLinkbackUrl,
+}: Props) {
+  const linkback =
+    partnerLinkbackUrl ??
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/grocery?from=instacart`
+      : "https://helpthehive.com/dashboard/grocery?from=instacart");
 }: Props) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
