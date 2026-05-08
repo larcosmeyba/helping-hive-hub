@@ -1522,7 +1522,7 @@ export const footerColumns = [
       { label: "Terms of Service", slug: "terms" },
       { label: "Privacy Policy", slug: "privacy" },
       { label: "Cookie Policy", slug: "cookies" },
-      { label: "Refund & Subscription Policy", slug: "refunds" },
+      { label: "Refund & Pricing Policy", slug: "refunds" },
       { label: "Acceptable Use Policy", slug: "acceptable-use" },
       { label: "Arbitration & Dispute Resolution", slug: "arbitration" },
     ]
@@ -1582,7 +1582,7 @@ export const footerColumns = [
       { label: "Government Program Disclaimer", slug: "government-disclaimer" },
       { label: "Apple App Store Compliance", slug: "apple-app-store" },
       { label: "Google Play Store Compliance", slug: "google-play-store" },
-      { label: "Subscription Disclosures", slug: "subscription-disclosures" },
+      { label: "Pricing Disclosures", slug: "subscription-disclosures" },
     ]
   }
 ];
