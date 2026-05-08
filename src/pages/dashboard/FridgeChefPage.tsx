@@ -312,7 +312,7 @@ export default function FridgeChefPage() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>
                   <ul className="space-y-1">
-                    {selectedRecipe.ingredients.map((ing, i) => (
+                    {(selectedRecipe.ingredients ?? []).map((ing, i) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" /> {ing}
                       </li>
@@ -322,7 +322,7 @@ export default function FridgeChefPage() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Instructions</h4>
                   <ol className="space-y-2">
-                    {selectedRecipe.instructions.map((step, i) => (
+                    {(selectedRecipe.instructions ?? []).map((step, i) => (
                       <li key={i} className="text-sm text-muted-foreground flex gap-3">
                         <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
                         <span>{step}</span>

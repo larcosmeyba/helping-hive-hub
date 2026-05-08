@@ -173,7 +173,7 @@ export default function DashboardHome() {
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
-          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null, to: "/dashboard/budget-insights" as string | null },
+          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null, to: "/dashboard/budget" as string | null },
           { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null, to: "/dashboard/grocery-list" },
           {
             label: "Saved",
@@ -181,10 +181,10 @@ export default function DashboardHome() {
             icon: PiggyBank,
             color: "text-accent",
             sub: saved > 0 ? `~$${monthlySavedRate.toFixed(0)}/mo` : null,
-            to: "/dashboard/budget-insights",
+            to: "/dashboard/budget",
           },
           { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary", sub: null, to: "/dashboard/meal-plan" },
-          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary", sub: null, to: "/dashboard/budget-insights" },
+          { label: "Budget Fit", value: mealPlan ? `${budgetFit}%` : "—", icon: Zap, color: "text-primary", sub: null, to: "/dashboard/budget" },
           { label: "Pantry Items", value: `${pantryItems ?? 0}`, icon: Refrigerator, color: "text-accent", sub: null, to: "/dashboard/pantry" },
         ].map((stat) => {
           const inner = (
@@ -343,7 +343,7 @@ export default function DashboardHome() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>
                   <ul className="space-y-1">
-                    {selectedMeal.ingredients.map((ing, i) => (
+                    {(selectedMeal.ingredients ?? []).map((ing, i) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" /> {ing}
                       </li>
@@ -353,7 +353,7 @@ export default function DashboardHome() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Instructions</h4>
                   <ol className="space-y-2">
-                    {selectedMeal.instructions.map((step, i) => (
+                    {(selectedMeal.instructions ?? []).map((step, i) => (
                       <li key={i} className="text-sm text-muted-foreground flex gap-3">
                         <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
                         <span>{step}</span>
