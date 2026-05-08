@@ -188,13 +188,15 @@ export default function PantryPage() {
       if (error) throw error;
       return itemName;
     },
-    onSuccess: (itemName) => {
+    onSuccess: (itemName, params) => {
       queryClient.invalidateQueries({ queryKey: ["pantry_items"] });
-      if (!itemName) {
+      // Only reset the manual-add form when the user typed values themselves
+      // (i.e. the mutation was called without `params`, e.g. via Quick Add).
+      if (!params) {
         setNewName(""); setNewQty(""); setNewCat(""); setNewExp("");
         setAddOpen(false);
       }
-      toast({ title: "Added!", description: `${itemName || newName} added to pantry.` });
+      toast({ title: "Added!", description: `${itemName} added to pantry.` });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });

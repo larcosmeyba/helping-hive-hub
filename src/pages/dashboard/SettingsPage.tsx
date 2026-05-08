@@ -66,7 +66,7 @@ export default function SettingsPage() {
     supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
       if (!data) return;
       setHouseholdSize(data.household_size ?? 2);
-      setWeeklyBudget(Number(data.weekly_budget) ?? 75);
+      setWeeklyBudget(data.weekly_budget != null ? Number(data.weekly_budget) : 75);
       setZipCode(data.zip_code ?? "");
       setSelectedStores((data.preferred_stores as string[]) ?? []);
       setHomeStore(data.home_store ?? "");
