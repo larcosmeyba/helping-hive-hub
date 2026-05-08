@@ -1411,15 +1411,15 @@ All plan details shown at checkout or within account settings control over gener
         heading: "In-App Requirements",
         content: `• Account deletion is available in Settings → Delete Account
 • Links to Terms of Service and Privacy Policy are available in Settings
-• Subscription management opens your Apple ID subscription settings
-• A "Restore Purchases" button is provided for users switching devices`
+• No in-app purchases or subscriptions — the app is 100% free for everyone`
       },
       {
         heading: "App Review Notes",
-        content: `• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
+        content: `• Help the Hive is 100% free for all users with no subscriptions, no paywalls, and no in-app purchases.
+• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
 • Estimated Pricing is clearly labeled; users are informed actual in-store prices may vary.
 • Retailer integration via Instacart is an optional affiliate handoff — no purchase data is processed by our servers.
-• The Free Forever tier for SNAP/WIC users is based on self-attestation; no documentary verification is required.`
+• Self-reported eligibility (SNAP, WIC, military, teacher) is used only for personalization and resource matching, not for gating access.`
       },
       {
         heading: "Contact",
