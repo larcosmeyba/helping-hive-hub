@@ -9,7 +9,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
-import { getMealImage, PLACEHOLDER_IMAGE } from "@/utils/mealImages";
+import { MealImage } from "@/components/dashboard/MealImage";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
