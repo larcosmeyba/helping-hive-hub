@@ -106,19 +106,6 @@ export default function MealPlanPage() {
     setSubstituteOpen(null);
   };
 
-  const handleShuffleDay = (dayIndex: number) => {
-    if (!mealPlan) return;
-    const day = mealPlan.weeklyPlan[dayIndex];
-    const updates: Record<string, MealPlanMeal> = {};
-    day.meals.forEach((m, mealIndex) => {
-      const pool = SUBSTITUTE_MEALS[m.type] || SUBSTITUTE_MEALS.dinner;
-      const random = pool[Math.floor(Math.random() * pool.length)];
-      updates[`${dayIndex}-${mealIndex}`] = random;
-    });
-    setSwappedMeals((prev) => ({ ...prev, ...updates }));
-    toast({ title: `${day.day} shuffled`, description: "Meals replaced from alternates." });
-  };
-
   const toggleCooked = (key: string) => {
     setCookedMeals((prev) => {
       const next = new Set(prev);
