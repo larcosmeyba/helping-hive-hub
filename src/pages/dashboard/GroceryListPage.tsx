@@ -470,20 +470,6 @@ export default function GroceryListPage() {
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
                     <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setPriceCorrection({ itemName: item.name, currentPrice: price });
-                        setCorrectedPrice("");
-                      }}
-                      className="text-[9px] text-muted-foreground hover:text-primary active:scale-95 transition-colors mt-0.5 block"
-                    >
-                      Wrong price?
-                    </button>
-                    <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                      <ReportIssueButton entityType="grocery_item" entityName={item.name} compact />
-                    </span>
                   </div>
                 </label>
               );
