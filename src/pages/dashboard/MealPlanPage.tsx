@@ -315,7 +315,7 @@ export default function MealPlanPage() {
         );
       })()}
 
-
+      <AnimatePresence>
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
         <motion.div
           key={day.day}
