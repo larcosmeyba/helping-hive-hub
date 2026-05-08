@@ -5,7 +5,7 @@ const audiences = [
   {
     icon: Heart,
     title: "SNAP & WIC Families",
-    desc: "Help The Hive is free forever for households on food assistance. Stretch every benefit dollar further, plan meals your family will actually eat, and feel dignity at the grocery store.",
+    desc: "Help The Hive is free for households on food assistance. Stretch every benefit dollar further, plan meals your family will actually eat, and feel dignity at the grocery store.",
     featured: true,
   },
   {

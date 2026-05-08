@@ -21,7 +21,7 @@ export function CTASection() {
             Be first in line when we launch.
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            We're polishing the final details. Join the waitlist and we'll email you the moment Help The Hive opens — free forever for SNAP &amp; WIC families.
+            We're polishing the final details. Join the waitlist and we'll email you the moment Help The Hive opens — free for SNAP &amp; WIC families.
           </p>
           <div className="flex flex-col items-center justify-center gap-3">
             <WaitlistDialog
