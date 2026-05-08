@@ -222,6 +222,31 @@ export default function GroceryListPage() {
     setOffInitialized(planFingerprint);
   }, [planFingerprint, offInitialized, mealPlan?.groceryList, fetchOffProducts]);
 
+  // Instacart return-flow handler — detect ?from=instacart and welcome user back
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "instacart") {
+      toast({
+        title: "Welcome back from Instacart",
+        description: "Your cart is ready in your Instacart account.",
+      });
+      if (user) {
+        supabase.from("activity_logs").insert({
+          user_id: user.id,
+          action: "instacart_return",
+          entity_type: "grocery_list",
+          entity_id: mealPlan?.id ?? null,
+          details: {},
+        }).then(() => {});
+      }
+      // Clean the URL so the toast doesn't fire again on remount
+      const url = new URL(window.location.href);
+      url.searchParams.delete("from");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
       <div className="max-w-4xl mx-auto px-4">
