@@ -34,10 +34,10 @@ function getDefaultStoreBrand(storeName: string): string | undefined {
   return undefined;
 }
 
-// Comprehensive product image map — covers all common grocery categories
-const PRODUCT_IMAGES: Record<string, string> = {
-  // Proteins
-  chicken: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=80&h=80&fit=crop",
+// Image policy: no keyword-matched stock photos. We render the
+// <GroceryItemImage> component, which uses the real product image if Open
+// Food Facts returned one and otherwise falls back to a flat icon tile.
+const _UNUSED = {
   turkey: "https://images.unsplash.com/photo-1574672280600-4accfa404c94?w=80&h=80&fit=crop",
   beef: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=80&h=80&fit=crop",
   "ground beef": "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=80&h=80&fit=crop",
