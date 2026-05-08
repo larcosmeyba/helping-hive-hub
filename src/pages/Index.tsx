@@ -10,7 +10,7 @@ import { MealPlanSection } from "@/components/home/MealPlanSection";
 import { RecipeShowcase } from "@/components/home/RecipeShowcase";
 import { WhyDifferentSection } from "@/components/home/WhyDifferentSection";
 import { TrustSection } from "@/components/home/TrustSection";
-import { FounderSection } from "@/components/home/FounderSection";
+
 import { CTASection } from "@/components/home/CTASection";
 
 const Index = () => {
@@ -33,7 +33,7 @@ const Index = () => {
         <RecipeShowcase />
         <WhyDifferentSection />
         <TrustSection />
-        <FounderSection />
+        
         <CTASection />
       </main>
       <SiteFooter />
