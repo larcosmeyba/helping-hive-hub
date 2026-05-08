@@ -12,6 +12,7 @@ import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 import { getMealImage, PLACEHOLDER_IMAGE } from "@/utils/mealImages";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useToast } from "@/hooks/use-toast";
+import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
@@ -45,10 +46,10 @@ export default function MealPlanPage() {
   const [substituteOpen, setSubstituteOpen] = useState<{ dayIndex: number; mealIndex: number } | null>(null);
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
   const [previousPlan, setPreviousPlan] = useState<GeneratedMealPlan | null>(null);
-  const [prioritizeSales, setPrioritizeSales] = useState(() => localStorage.getItem("prioritize_sales") === "true");
+  const [prioritizeSales, setPrioritizeSales] = useState(() => safeGetItem("prioritize_sales") === "true");
   const [cookedMeals, setCookedMeals] = useState<Set<string>>(() => {
     try {
-      const raw = localStorage.getItem("cooked_meals");
+      const raw = safeGetItem("cooked_meals");
       return raw ? new Set(JSON.parse(raw)) : new Set();
     } catch { return new Set(); }
   });
@@ -59,11 +60,11 @@ export default function MealPlanPage() {
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
 
   useEffect(() => {
-    localStorage.setItem("prioritize_sales", String(prioritizeSales));
+    safeSetItem("prioritize_sales", String(prioritizeSales));
   }, [prioritizeSales]);
 
   useEffect(() => {
-    localStorage.setItem("cooked_meals", JSON.stringify([...cookedMeals]));
+    safeSetItem("cooked_meals", JSON.stringify([...cookedMeals]));
   }, [cookedMeals]);
 
   useEffect(() => {
