@@ -70,7 +70,9 @@ export default function Partnerships() {
   const selectedType = watch("type");
 
   const onSubmit = async (data: FormData) => {
+    const id = crypto.randomUUID();
     const { error } = await supabase.from("partnership_requests").insert({
+      id,
       request_type: data.type,
       name: data.name,
       email: data.email,
@@ -84,6 +86,27 @@ export default function Partnerships() {
         description: "Please try again or email us directly at marcos@helpthehive.com",
       });
       return;
+    }
+
+    // Best-effort notification — do not block on failure
+    try {
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "partnership-request-notification",
+          recipientEmail: "marcos@helpthehive.com",
+          idempotencyKey: `partnership-request-${id}`,
+          templateData: {
+            request_type: data.type,
+            name: data.name,
+            email: data.email,
+            organization: data.organization,
+            website: data.website || null,
+            message: data.message,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn("[partnership] notification failed (non-blocking)", e);
     }
 
     setSubmitted(true);
