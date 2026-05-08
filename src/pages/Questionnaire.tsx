@@ -272,7 +272,7 @@ export default function Questionnaire() {
 
       clearProgress();
       toast({
-        title: tier === "free_forever" ? "You're in — free forever 💚" : "You're in!",
+        title: tier === "free_forever" ? "You're in — free 💚" : "You're in!",
         description: "Welcome to Help The Hive.",
       });
       navigate("/dashboard");
@@ -662,8 +662,8 @@ export default function Questionnaire() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
               <Sparkles className="w-3.5 h-3.5" />
               {foodAssistance === "snap_wic"
-                ? "Free Forever — built for SNAP & WIC families"
-                : "Free Forever — for everyone"}
+                ? "Free — built for SNAP & WIC families"
+                : "Free — for everyone"}
             </div>
           </div>
         </QuestionnaireStep>

@@ -31,7 +31,7 @@ export function FounderSection() {
               between a full fridge and a paid rent check. Today's budget meal planning
               tools are either expensive, clinical, or not actually free. Help The Hive is
               the product he wishes his family had: smarter grocery planning, built around
-              real budgets, at the store you already shop at — and free forever for SNAP
+              real budgets, at the store you already shop at — and free for SNAP
               and WIC households. Every American family deserves dignity at the grocery store.
             </p>
           </div>

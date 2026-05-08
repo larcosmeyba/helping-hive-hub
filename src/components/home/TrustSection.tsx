@@ -14,7 +14,7 @@ const trustItems = [
   },
   {
     icon: Gift,
-    title: "Free Forever for SNAP Families",
+    title: "Free for SNAP Families",
     desc: "If your household receives SNAP or WIC benefits, Help The Hive is free. No trial, no credit card, no catch.",
   },
   {
@@ -47,7 +47,7 @@ export function TrustSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {trustItems.map((item, i) => {
-            const isSnap = item.title === "Free Forever for SNAP Families";
+            const isSnap = item.title === "Free for SNAP Families";
             return (
               <motion.div
                 key={i}

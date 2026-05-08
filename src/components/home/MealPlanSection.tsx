@@ -32,10 +32,10 @@ const plans = [
     desc: "Optimized for SNAP benefits with maximum nutritional value.",
     budget: "$65 / week grocery budget",
     store: "Aldi / WinCo",
-    tag: "Free Forever",
+    tag: "Free",
     slug: "snap-friendly-meals",
     image: mealSnapFriendly,
-    note: "Free forever for eligible households",
+    note: "Free for eligible households",
   },
 ];
 

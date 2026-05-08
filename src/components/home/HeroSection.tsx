@@ -56,7 +56,7 @@ export function HeroSection() {
               We plan your week, build your grocery list, and help you shop — all from your kitchen, in under 5 minutes.
             </p>
             <p className="text-sm md:text-base text-honey-cream/60 mb-10 max-w-xl">
-              Built for SNAP, WIC, military, and teacher families — and anyone planning meals on a budget. Free forever.
+              Built for SNAP, WIC, military, and teacher families — and anyone planning meals on a budget. Free.
             </p>
 
             <div className="flex flex-col items-start gap-3">
