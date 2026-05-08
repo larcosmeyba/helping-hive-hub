@@ -249,7 +249,7 @@ const SAMPLE_PLANS: Record<string, {
     tips: [
       "SNAP benefits can be used at most grocery stores and farmers markets",
       "Buy dried beans instead of canned — 3x more food per dollar",
-      "Whole chickens are usually the cheapest protein per pound",
+      "Whole chickens are often the most affordable protein per pound",
       "Plan meals around weekly store sales to stretch your budget further",
     ],
   },
@@ -449,18 +449,28 @@ export default function SampleMealPlan() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 text-center">
+        <section className="py-16">
           <div className="container mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Ready to Get Your Personalized Plan?
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="rounded-2xl bg-secondary/60 border border-border p-8 md:p-10 max-w-3xl mx-auto text-center"
+            >
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Like what you see?
               </h2>
-              <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-                Sign up to get a custom AI-generated meal plan tailored to your budget, household size, and dietary needs.
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Sign up free to get plans tailored to your household — and check out via Instacart with one tap.
               </p>
-              <Button size="lg" className="bg-gradient-honey text-primary-foreground hover:opacity-90" asChild>
-                <Link to="/signup">Get Started Free</Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button size="lg" className="bg-gradient-honey text-primary-foreground hover:opacity-90" asChild>
+                  <Link to="/signup">Get Started Free</Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link to="/#meal-plan-examples">See another sample plan</Link>
+                </Button>
+              </div>
             </motion.div>
           </div>
         </section>
