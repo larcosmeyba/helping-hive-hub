@@ -294,7 +294,7 @@ We do not charge for the app, do not collect payment information, and do not off
 Upon deletion:
 • Your account will be deactivated and personal data will be scheduled for deletion
 • Some information may be retained as required by law, for fraud prevention, or to resolve disputes
-• Active subscriptions should be canceled through your app store before requesting account deletion
+• Help the Hive does not charge users — there are no subscriptions to cancel
 
 Account deletion requests will be processed within 30 days of the request.`
       },
@@ -358,7 +358,7 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
 • Crash reports and diagnostics (anonymized)
 
 **Information collected from third parties:**
-• Apple App Store / Google Play Store: subscription status, transaction confirmations
+• Apple App Store / Google Play Store: app install confirmations only (we have no subscriptions)
 • Retailer partners: order confirmations when you use "Order via [Partner]" features
 
 **Information we do NOT collect:**
@@ -500,7 +500,7 @@ If we discover we have collected information from a child under 13, we delete it
         content: `When you use Help the Hive through the Apple App Store or Google Play Store:
 • Data collection and usage are governed by this Privacy Policy
 • Apple and Google may collect additional data per their own privacy policies
-• In-app purchase and subscription data is processed by the respective app store
+• Help the Hive contains no in-app purchases or subscriptions
 • We do not share your personal data with Apple or Google beyond what is required for app functionality`
       },
       {
