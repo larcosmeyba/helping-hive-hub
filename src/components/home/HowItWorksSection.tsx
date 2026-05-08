@@ -1,24 +1,30 @@
 import { motion } from "framer-motion";
-import { UserPlus, CalendarDays, ShoppingCart } from "lucide-react";
+import { ClipboardList, CalendarDays, ShoppingBasket, Truck } from "lucide-react";
 
-const steps = [
+const STEPS = [
   {
-    icon: UserPlus,
-    step: "01",
-    title: "Tell us about your household",
-    desc: "Enter your household size, weekly grocery budget, dietary preferences, and food allergies. We use this to personalize everything.",
+    n: "01",
+    icon: ClipboardList,
+    title: "Tell us your budget",
+    desc: "Set your weekly grocery target and pick the store you shop at.",
   },
   {
+    n: "02",
     icon: CalendarDays,
-    step: "02",
-    title: "Get a personalized meal plan",
-    desc: "Our engine generates a full weekly meal plan tailored to your budget, preferences, and what you already have in your pantry.",
+    title: "Get your weekly plan",
+    desc: "We build a week of meals tailored to your household and budget.",
   },
   {
-    icon: ShoppingCart,
-    step: "03",
-    title: "Shop smarter with your grocery list",
-    desc: "Receive a budget-optimized grocery list organized by store section, with estimated pricing to keep you on budget.",
+    n: "03",
+    icon: ShoppingBasket,
+    title: "Review your grocery list",
+    desc: "Edit items, mark pantry staples, and confirm what you need.",
+  },
+  {
+    n: "04",
+    icon: Truck,
+    title: "Check out via Instacart",
+    desc: "One tap sends your full cart to Instacart for delivery or pickup.",
   },
 ];
 
@@ -30,46 +36,46 @@ export function HowItWorksSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-14"
         >
           <span className="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider uppercase rounded-full bg-primary/10 text-primary">
             How It Works
           </span>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Three steps to smarter meals
+            From budget to checkout in four steps
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             No complicated setup. Just practical meal planning that saves you time and money.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {steps.map((item, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-5 max-w-6xl mx-auto">
+          {STEPS.map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.12 }}
-              className="relative text-center p-8 rounded-2xl bg-card border border-border shadow-card"
+              transition={{ delay: i * 0.1 }}
+              className="relative text-center p-6 rounded-2xl bg-card border border-border shadow-card"
             >
-              {/* Step number */}
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-xs font-bold tracking-wider uppercase rounded-full bg-primary text-primary-foreground">
-                Step {item.step}
+                Step {item.n}
               </span>
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5 mt-2">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 mt-2">
                 <item.icon className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-3">{item.title}</h3>
+              <h3 className="font-display text-base md:text-lg font-semibold text-foreground mb-2">
+                {item.title}
+              </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-
-              {/* Connector arrow (hidden on last item and mobile) */}
-              {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-[2px] bg-border" />
-              )}
             </motion.div>
           ))}
         </div>
+
+        <p className="text-center text-xs md:text-sm text-muted-foreground mt-8 max-w-2xl mx-auto">
+          Powered by Instacart for checkout — your delivery, your store, your schedule.
+        </p>
       </div>
     </section>
   );

@@ -52,10 +52,11 @@ export function HeroSection() {
               <span className="text-gradient-honey">At the store you already shop at.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-honey-cream/70 mb-10 max-w-xl leading-relaxed">
-              Budget meal planning for real families. We plan your week of meals,
-              build your grocery list, and help you cook with what's already in
-              your kitchen — at the store you already shop at.
+            <p className="text-lg md:text-xl text-honey-cream/85 mb-2 max-w-xl leading-relaxed">
+              We plan your week, build your grocery list, and help you shop — all from your kitchen, in under 5 minutes.
+            </p>
+            <p className="text-sm md:text-base text-honey-cream/60 mb-10 max-w-xl">
+              Free forever for SNAP &amp; WIC families.
             </p>
 
             <div className="flex flex-col items-start gap-3">
