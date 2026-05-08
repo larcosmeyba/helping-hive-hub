@@ -66,7 +66,7 @@ export default function SettingsPage() {
     supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
       if (!data) return;
       setHouseholdSize(data.household_size ?? 2);
-      setWeeklyBudget(Number(data.weekly_budget) ?? 75);
+      setWeeklyBudget(data.weekly_budget != null ? Number(data.weekly_budget) : 75);
       setZipCode(data.zip_code ?? "");
       setSelectedStores((data.preferred_stores as string[]) ?? []);
       setHomeStore(data.home_store ?? "");
@@ -316,7 +316,17 @@ export default function SettingsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open("app-settings:", "_blank")}
+            onClick={async () => {
+              try {
+                const { Capacitor } = await import("@capacitor/core");
+                if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+                  // iOS WKWebView honors the app-settings: scheme via location change.
+                  window.location.href = "app-settings:";
+                  return;
+                }
+              } catch { /* fall through */ }
+              window.open("app-settings:", "_blank");
+            }}
             className="w-full text-sm gap-2"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Open Device Settings
