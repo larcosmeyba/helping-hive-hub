@@ -68,13 +68,18 @@ export default function MealPlanPage() {
     safeSetItem("cooked_meals", JSON.stringify([...cookedMeals]));
   }, [cookedMeals]);
 
+  // Fetch Open Food Facts metadata once per plan, not on every render.
+  const offFingerprint = mealPlan?.weeklyPlan
+    ?.flatMap((d) => d.meals.map((m) => m.name))
+    .sort()
+    .join("|") ?? "";
+  const [offInitialized, setOffInitialized] = useState<string | null>(null);
   useEffect(() => {
-    if (!mealPlan?.weeklyPlan?.length) return;
-    const names = Array.from(
-      new Set(mealPlan.weeklyPlan.flatMap((d) => d.meals.map((m) => m.name)))
-    );
+    if (!offFingerprint || offInitialized === offFingerprint) return;
+    const names = Array.from(new Set(offFingerprint.split("|").filter(Boolean)));
     if (names.length) fetchOffProducts(names);
-  }, [mealPlan, fetchOffProducts]);
+    setOffInitialized(offFingerprint);
+  }, [offFingerprint, offInitialized, fetchOffProducts]);
 
   // Reset modal state when meal changes
   useEffect(() => {
