@@ -25,7 +25,7 @@ interface CreateListBody {
   title: string;
   image_url?: string;
   link_type?: "shopping_list" | "recipe";
-  expires_in?: number; // seconds; defaults to 30 days
+  expires_in?: number; // days (Instacart IDP convention, range 1-365); defaults to 30 days
   instructions?: string[];
   line_items: LineItem[];
   landing_page_configuration?: {

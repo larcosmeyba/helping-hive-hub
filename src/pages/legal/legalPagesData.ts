@@ -252,7 +252,7 @@ We do not guarantee:
       },
       {
         heading: "9. Retailer & Third-Party Partnerships",
-        content: `The Service integrates with third-party services including Instacart, retailer apps (Walmart, Kroger, Aldi), recipe databases, and payment processors. You are subject to those services' terms and privacy policies. We may receive affiliate commissions when you complete transactions through partner links.`
+        content: `The Service integrates with third-party services including Instacart, recipe databases, and payment processors. You are subject to those services' terms and privacy policies. We may receive affiliate commissions when you complete transactions through partner links.`
       },
       {
         heading: "10. No Medical Advice",
@@ -491,7 +491,7 @@ If we discover we have collected information from a child under 13, we delete it
       },
       {
         heading: "12. Third-Party Services",
-        content: `The Service integrates with third parties (Instacart, Walmart, Kroger, Apple, Google). Their privacy practices are governed by their own policies.`
+        content: `The Service integrates with third parties (Instacart, Apple, Google). Their privacy practices are governed by their own policies.`
       },
       {
         heading: "13. Research & Grant Reporting",
@@ -1424,7 +1424,7 @@ All plan details shown at checkout or within account settings control over gener
         heading: "App Review Notes",
         content: `• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
 • Estimated Pricing is clearly labeled; users are informed actual in-store prices may vary.
-• Retailer partnerships (Instacart, Kroger) are optional affiliate integrations — no purchase data is processed by our servers.
+• Retailer integration via Instacart is an optional affiliate handoff — no purchase data is processed by our servers.
 • The Free Forever tier for SNAP/WIC users is based on self-attestation; no documentary verification is required.`
       },
       {

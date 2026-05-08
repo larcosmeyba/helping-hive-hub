@@ -236,7 +236,7 @@ export function SnapTracker() {
                   <Input
                     value={purchaseStore}
                     onChange={(e) => setPurchaseStore(e.target.value)}
-                    placeholder="e.g. Walmart"
+                    placeholder="e.g. Aldi"
                     className="mt-1"
                   />
                 </div>

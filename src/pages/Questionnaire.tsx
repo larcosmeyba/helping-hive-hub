@@ -23,9 +23,9 @@ const FOOD_ASSISTANCE_OPTIONS = [
 ];
 
 const HOME_STORE_OPTIONS = [
-  "Walmart", "Kroger", "Aldi", "Trader Joe's", "Whole Foods",
-  "Target", "Safeway / Albertsons", "H-E-B", "Publix", "Costco",
-  "Sam's Club", "Other",
+  "Aldi", "Trader Joe's", "Whole Foods", "Target",
+  "Safeway / Albertsons", "H-E-B", "Publix", "Costco",
+  "Sam's Club", "Sprouts", "Other",
 ];
 
 const DIETARY_OPTIONS = [

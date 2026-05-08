@@ -25,7 +25,7 @@ import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls"
 import { Switch } from "@/components/ui/switch";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
-const STORE_OPTIONS = ["Walmart", "Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Kroger", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
+const STORE_OPTIONS = ["Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
 const USER_TYPE_OPTIONS = [
