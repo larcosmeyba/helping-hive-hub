@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import heroFamily from "@/assets/hero-family.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
+
+// Hero image lives in public/ for a stable URL so it can be preloaded from
+// index.html. Vite still serves it efficiently and avoids hash invalidation.
+const heroFamily = "/hero-family.jpg";
 
 export function HeroSection() {
   return (
