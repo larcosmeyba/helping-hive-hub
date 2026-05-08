@@ -288,7 +288,34 @@ export default function MealPlanPage() {
         )}
       </div>
 
-      <AnimatePresence>
+      {/* Send entire week to Instacart */}
+      {(() => {
+        const seen = new Set<string>();
+        const lineItems: InstacartLineItem[] = [];
+        mealPlan.weeklyPlan.forEach((day, di) =>
+          day.meals.forEach((m, mi) => {
+            const meal = getMeal(di, mi, m);
+            (meal.ingredients || []).forEach((ing) => {
+              const key = String(ing).toLowerCase().trim();
+              if (key && !seen.has(key)) {
+                seen.add(key);
+                lineItems.push({ name: String(ing), quantity: 1, unit: "each" });
+              }
+            });
+          })
+        );
+        return (
+          <SendToInstacartButton
+            title="Help The Hive Weekly Meal Plan"
+            linkType="shopping_list"
+            lineItems={lineItems}
+            className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 rounded-xl font-semibold shadow-sm"
+            label="Send week to Instacart"
+          />
+        );
+      })()}
+
+
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
         <motion.div
           key={day.day}
