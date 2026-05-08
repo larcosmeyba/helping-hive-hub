@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flag, ImageOff, DollarSign, PackageX, Loader2, Check } from "lucide-react";
+import { Flag, ImageOff, PackageX, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
