@@ -44,7 +44,7 @@ export function HeroSection() {
               className="inline-block px-5 py-3 mb-5 text-xs font-extrabold tracking-[0.15em] uppercase rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm"
               style={{ boxShadow: "0 4px 12px rgba(232, 168, 32, 0.25)" }}
             >
-              Free for SNAP & WIC families
+              Free for everyone · Built for SNAP & WIC families
             </span>
 
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-honey-cream leading-[1.1] mb-4">
@@ -56,7 +56,7 @@ export function HeroSection() {
               We plan your week, build your grocery list, and help you shop — all from your kitchen, in under 5 minutes.
             </p>
             <p className="text-sm md:text-base text-honey-cream/60 mb-10 max-w-xl">
-              Free forever for SNAP &amp; WIC families.
+              Built for SNAP, WIC, military, and teacher families — and anyone planning meals on a budget. Free forever.
             </p>
 
             <div className="flex flex-col items-start gap-3">

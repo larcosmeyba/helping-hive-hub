@@ -16,9 +16,9 @@ import { motion } from "framer-motion";
 const TOTAL_STEPS = 10;
 
 const FOOD_ASSISTANCE_OPTIONS = [
-  { value: "snap_wic", label: "🟢 Yes — we receive SNAP, WIC, or EBT", helper: "Free forever for your household" },
-  { value: "tight_budget", label: "🟡 No, but we're on a tight budget", helper: "" },
-  { value: "none", label: "⚪ No", helper: "" },
+  { value: "snap_wic", label: "🟢 Yes — we receive SNAP, WIC, or EBT", helper: "We built Help The Hive for you" },
+  { value: "tight_budget", label: "🟡 No, but we're on a tight budget", helper: "Welcome — same free plan, same features" },
+  { value: "none", label: "⚪ No — just here to plan smarter meals", helper: "Welcome — same free plan, same features" },
 ];
 
 const HOME_STORE_OPTIONS = [
@@ -367,7 +367,7 @@ export default function Questionnaire() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-6 leading-relaxed text-center">
-            Families receiving food assistance get Help The Hive free forever. We verify through a simple honor system — no documents needed.
+            Help The Hive is 100% free for everyone — forever. We ask so we can tailor your plan and connect you with extra resources if you qualify. Honor system, no documents.
           </p>
         </QuestionnaireStep>
       )}
@@ -659,12 +659,12 @@ export default function Questionnaire() {
                 {pantryStarter.length > 0 && <>, using what's already in your kitchen</>}.
               </p>
             </div>
-            {foodAssistance === "snap_wic" && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                Free Forever — for SNAP & WIC families
-              </div>
-            )}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+              <Sparkles className="w-3.5 h-3.5" />
+              {foodAssistance === "snap_wic"
+                ? "Free Forever — built for SNAP & WIC families"
+                : "Free Forever — for everyone"}
+            </div>
           </div>
         </QuestionnaireStep>
       )}
