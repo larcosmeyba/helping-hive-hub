@@ -8,6 +8,7 @@
     "generate-sitemap": "tsx scripts/generate-sitemap.ts",
     "build": "tsx scripts/generate-sitemap.ts && vite build",
     "build:dev": "tsx scripts/generate-sitemap.ts && vite build --mode development",
+    "build:analyze": "ANALYZE=true tsx scripts/generate-sitemap.ts && ANALYZE=true vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
