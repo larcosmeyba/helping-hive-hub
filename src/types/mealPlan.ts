@@ -10,6 +10,8 @@ export interface MealPlanMeal {
   cookTimeMinutes: number;
   ingredients: string[];
   instructions: string[];
+  imageUrl?: string;
+  imageVerified?: boolean;
 }
 
 export interface MealPlanDay {

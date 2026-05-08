@@ -9,7 +9,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
-import { getMealImage, PLACEHOLDER_IMAGE } from "@/utils/mealImages";
+import { MealImage } from "@/components/dashboard/MealImage";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
@@ -349,12 +349,10 @@ export default function MealPlanPage() {
                       </div>
                     )}
                     <div className="relative h-[70px] md:h-24 overflow-hidden">
-                      <img
-                        src={getMealImage(meal.name)}
-                        alt={meal.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
+                      <MealImage
+                        meal={meal}
+                        className="w-full h-full"
+                        imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-1 left-1">
                         <span className="bg-primary/90 text-primary-foreground text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase">{meal.type}</span>
@@ -416,11 +414,10 @@ export default function MealPlanPage() {
 
               {!cookingMode && (
                 <div className="rounded-xl overflow-hidden -mx-2 -mt-2 mb-3">
-                  <img
-                    src={getMealImage(selectedMeal.name)}
-                    alt={selectedMeal.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
+                  <MealImage
+                    meal={selectedMeal}
+                    className="w-full h-48"
+                    imgClassName="w-full h-48 object-cover"
                   />
                 </div>
               )}
