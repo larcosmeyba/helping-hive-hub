@@ -495,17 +495,7 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
 
     const mealItemsInsert = mealItems.length > 0 ? supabase.from("meal_plan_items").insert(mealItems) : Promise.resolve();
 
-    const savingsInsert = mealPlan.savingsSummary ? supabase.from("grocery_cost_comparisons").insert({
-      user_id: user.id, meal_plan_id: mealPlanId, zip_code: zipCode || null,
-      selected_store: mealPlan.storeRecommendations?.[0]?.store || null,
-      actual_grocery_cost: mealPlan.savingsSummary.actualGroceryCost,
-      regional_average_cost: mealPlan.savingsSummary.regionalAverageCost,
-      estimated_savings: mealPlan.savingsSummary.estimatedSavings,
-      confidence_score: mealPlan.savingsSummary.confidenceScore,
-      store_comparisons: mealPlan.storeRecommendations || [],
-    }) : Promise.resolve();
-
-    const [glResult] = await Promise.all([groceryListInsert, mealItemsInsert, savingsInsert]);
+    const [glResult] = await Promise.all([groceryListInsert, mealItemsInsert]);
 
     if (glResult?.data?.id) {
       const groceryItems = (mealPlan.groceryList || []).map((item: any) => ({

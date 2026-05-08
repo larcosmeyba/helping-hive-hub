@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       "meal_plans", "meal_plan_items",
       "grocery_lists", "grocery_list_items",
       "pantry_items", "food_waste_logs",
-      "grocery_cost_comparisons",
+      
       "support_tickets", "user_feedback",
       "verification_documents",
     ] as const;

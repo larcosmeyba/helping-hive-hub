@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Plus, AlertCircle, TrendingDown, PiggyBank, Home } from "lucide-react";
-import { ReportIssueButton } from "@/components/dashboard/ReportIssueButton";
+import { ShoppingCart, Printer, Download, Store, Sparkles, Loader2, MapPin, Tag, Plus, TrendingDown, PiggyBank, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealPlan } from "@/contexts/MealPlanContext";
@@ -209,8 +208,6 @@ export default function GroceryListPage() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
-  const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
-  const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus } = useLocation();
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
   const [offInitialized, setOffInitialized] = useState<string | null>(null);
@@ -470,20 +467,6 @@ export default function GroceryListPage() {
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
                     <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setPriceCorrection({ itemName: item.name, currentPrice: price });
-                        setCorrectedPrice("");
-                      }}
-                      className="text-[9px] text-muted-foreground hover:text-primary active:scale-95 transition-colors mt-0.5 block"
-                    >
-                      Wrong price?
-                    </button>
-                    <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                      <ReportIssueButton entityType="grocery_item" entityName={item.name} compact />
-                    </span>
                   </div>
                 </label>
               );
@@ -557,71 +540,6 @@ export default function GroceryListPage() {
           </div>
         )}
       </div>
-
-      {/* Price Correction Modal */}
-      {priceCorrection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setPriceCorrection(null)}>
-          <div className="bg-card rounded-2xl border border-border shadow-elevated p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-3">
-              <AlertCircle className="w-5 h-5 text-primary" />
-              <h3 className="font-display text-base font-semibold text-foreground">Correct Price</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              <strong>{priceCorrection.itemName}</strong><br />
-              Current: ${priceCorrection.currentPrice.toFixed(2)} at {activeStore}
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Enter new price</label>
-                <input
-                  type="number"
-                  placeholder="$0.00"
-                  value={correctedPrice}
-                  onChange={(e) => setCorrectedPrice(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm"
-                  step="0.01"
-                  min="0"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPriceCorrection(null)}
-                  className="flex-1 h-11 rounded-xl border border-border text-sm text-muted-foreground font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!correctedPrice || !user) return;
-                    try {
-                      await supabase.from("activity_logs").insert({
-                        user_id: user.id,
-                        action: "price_correction",
-                        entity_type: "grocery_item",
-                        entity_id: priceCorrection.itemName,
-                        details: {
-                          item: priceCorrection.itemName,
-                          store: activeStore,
-                          old_price: priceCorrection.currentPrice,
-                          new_price: parseFloat(correctedPrice),
-                        },
-                      });
-                      toast({ title: "Price reported!", description: "Thank you for helping improve our pricing data." });
-                      setPriceCorrection(null);
-                    } catch {
-                      toast({ title: "Error", description: "Failed to submit correction", variant: "destructive" });
-                    }
-                  }}
-                  className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Totals */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">

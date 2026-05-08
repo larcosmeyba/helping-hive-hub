@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flag, ImageOff, DollarSign, PackageX, Loader2, Check } from "lucide-react";
+import { Flag, ImageOff, PackageX, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-type FeedbackType = "wrong_image" | "wrong_price" | "wrong_product";
+type FeedbackType = "wrong_image" | "wrong_product";
 
 interface ReportIssueButtonProps {
   entityType: "meal" | "grocery_item";
@@ -64,10 +64,8 @@ export function ReportIssueButton({ entityType, entityName, entityId, compact }:
     entityType === "meal"
       ? [
           { type: "wrong_image", label: "Wrong image", icon: ImageOff },
-          { type: "wrong_price", label: "Wrong price", icon: DollarSign },
         ]
       : [
-          { type: "wrong_price", label: "Wrong price", icon: DollarSign },
           { type: "wrong_product", label: "Wrong product match", icon: PackageX },
         ];
 

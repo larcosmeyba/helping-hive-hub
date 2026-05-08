@@ -106,19 +106,6 @@ export default function MealPlanPage() {
     setSubstituteOpen(null);
   };
 
-  const handleShuffleDay = (dayIndex: number) => {
-    if (!mealPlan) return;
-    const day = mealPlan.weeklyPlan[dayIndex];
-    const updates: Record<string, MealPlanMeal> = {};
-    day.meals.forEach((m, mealIndex) => {
-      const pool = SUBSTITUTE_MEALS[m.type] || SUBSTITUTE_MEALS.dinner;
-      const random = pool[Math.floor(Math.random() * pool.length)];
-      updates[`${dayIndex}-${mealIndex}`] = random;
-    });
-    setSwappedMeals((prev) => ({ ...prev, ...updates }));
-    toast({ title: `${day.day} shuffled`, description: "Meals replaced from alternates." });
-  };
-
   const toggleCooked = (key: string) => {
     setCookedMeals((prev) => {
       const next = new Set(prev);
@@ -313,14 +300,6 @@ export default function MealPlanPage() {
             <h2 className="font-display text-sm md:text-lg font-semibold text-foreground flex items-center gap-1.5">
               <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs md:text-sm font-bold">{day.day}</span>
             </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleShuffleDay(dayIndex)}
-              className="text-xs text-muted-foreground hover:text-primary h-7 px-2"
-            >
-              <Shuffle className="w-3 h-3 mr-1" /> Shuffle day
-            </Button>
           </div>
           <div
             className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 px-1 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0"
