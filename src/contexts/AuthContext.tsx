@@ -48,13 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (initialized) setLoading(false);
     });
 
-    // THEN check existing session — this completes auth bootstrap
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      initialized = true;
-      setLoading(false);
-    });
+    // THEN check existing session — this completes auth bootstrap.
+    // Always release the loading lock, even if the network call rejects
+    // (cold-start with no connectivity), otherwise <ProtectedRoute>
+    // would spin forever.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((err) => {
+        console.warn("[Auth] getSession failed:", err);
+      })
+      .finally(() => {
+        initialized = true;
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
