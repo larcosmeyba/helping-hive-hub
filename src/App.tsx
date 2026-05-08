@@ -25,6 +25,8 @@ const SampleMealPlan = lazy(() => import("./pages/SampleMealPlan.tsx"));
 const LegalPage = lazy(() => import("./pages/legal/LegalPage.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
 const Partners = lazy(() => import("./pages/Partners.tsx"));
+const Partnerships = lazy(() => import("./pages/Partnerships.tsx"));
+const Press = lazy(() => import("./pages/Press.tsx"));
 const NativeAuth = lazy(() => import("./pages/NativeAuth.tsx"));
 const NativeSplash = lazy(() => import("./pages/NativeSplash.tsx"));
 
@@ -86,6 +88,8 @@ const App = () => {
 
                   <Route path="/sample-plan/:slug" element={<SampleMealPlan />} />
                   <Route path="/partners" element={<Partners />} />
+                  <Route path="/partnerships" element={<Partnerships />} />
+                  <Route path="/press" element={<Press />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/page/:slug" element={<LegalPage />} />
                   <Route path="/login" element={native ? <Navigate to="/auth" replace /> : <Login />} />

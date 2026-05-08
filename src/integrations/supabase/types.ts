@@ -1077,6 +1077,48 @@ export type Database = {
         }
         Relationships: []
       }
+      partnership_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          organization: string
+          request_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          organization: string
+          request_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          organization?: string
+          request_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       product_price_history: {
         Row: {
           freshness_status: string | null
