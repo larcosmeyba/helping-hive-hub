@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Login() {
   const [email, setEmail] = useState("");

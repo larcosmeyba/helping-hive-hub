@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getRedirectUrl } from "@/lib/appUrl";
 import logo from "@/assets/logo-transparent.png";
+import { SEOHead } from "@/components/SEOHead";
 import { ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPassword() {

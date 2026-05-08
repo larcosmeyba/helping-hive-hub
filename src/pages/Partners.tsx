@@ -62,6 +62,11 @@ export default function Partners() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="Partner with Help The Hive — Reach SNAP & WIC Families"
+        description="Help The Hive partners with retailers, food banks, and community organizations to make budget meal planning accessible to every family."
+        canonical="https://helpthehive.com/partners"
+      />
       <Navbar />
 
       <main id="main-content" className="flex-1">

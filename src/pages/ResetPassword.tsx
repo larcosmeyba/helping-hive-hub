@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-transparent.png";
+import { SEOHead } from "@/components/SEOHead";
 import { CheckCircle } from "lucide-react";
 
 export default function ResetPassword() {
