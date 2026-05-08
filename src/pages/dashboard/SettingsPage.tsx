@@ -316,7 +316,22 @@ export default function SettingsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open("app-settings:", "_blank")}
+            onClick={async () => {
+              try {
+                const { Capacitor } = await import("@capacitor/core");
+                if (Capacitor.isNativePlatform()) {
+                  const { App } = await import("@capacitor/app");
+                  // iOS: app-settings: deep-link. Android: package settings via plugin.
+                  if (Capacitor.getPlatform() === "ios") {
+                    await App.openUrl({ url: "app-settings:" });
+                  } else {
+                    await App.openUrl({ url: "package:" + (await App.getInfo()).id });
+                  }
+                  return;
+                }
+              } catch { /* fall through to web behavior */ }
+              window.open("app-settings:", "_blank");
+            }}
             className="w-full text-sm gap-2"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Open Device Settings
