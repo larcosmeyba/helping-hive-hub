@@ -33,7 +33,6 @@ const Index = () => {
         <RecipeShowcase />
         <WhyDifferentSection />
         <TrustSection />
-        <TestimonialsSection />
         <FounderSection />
         <CTASection />
       </main>
