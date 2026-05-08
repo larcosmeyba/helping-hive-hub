@@ -319,17 +319,12 @@ export default function SettingsPage() {
             onClick={async () => {
               try {
                 const { Capacitor } = await import("@capacitor/core");
-                if (Capacitor.isNativePlatform()) {
-                  const { App } = await import("@capacitor/app");
-                  // iOS: app-settings: deep-link. Android: package settings via plugin.
-                  if (Capacitor.getPlatform() === "ios") {
-                    await App.openUrl({ url: "app-settings:" });
-                  } else {
-                    await App.openUrl({ url: "package:" + (await App.getInfo()).id });
-                  }
+                if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+                  // iOS WKWebView honors the app-settings: scheme via location change.
+                  window.location.href = "app-settings:";
                   return;
                 }
-              } catch { /* fall through to web behavior */ }
+              } catch { /* fall through */ }
               window.open("app-settings:", "_blank");
             }}
             className="w-full text-sm gap-2"
