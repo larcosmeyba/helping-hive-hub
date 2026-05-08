@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-transparent.png";
+import { SEOHead } from "@/components/SEOHead";
 import { CheckCircle } from "lucide-react";
 
 export default function ResetPassword() {
@@ -60,6 +61,11 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <SEOHead
+        title="Set New Password — Help The Hive"
+        description="Set a new password for your Help The Hive account."
+        noindex
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">

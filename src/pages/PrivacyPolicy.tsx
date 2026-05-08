@@ -1,10 +1,16 @@
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Separator } from "@/components/ui/separator";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="Privacy Policy | Help The Hive"
+        description="How Help The Hive collects, uses, and protects your data. Last updated April 2026."
+        canonical="https://helpthehive.com/privacy"
+      />
       <Navbar />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8 md:py-16 max-w-3xl">

@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { getPageBySlug } from "./legalPagesData";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEOHead } from "@/components/SEOHead";
 import { ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -50,8 +51,17 @@ export default function LegalPage() {
 
   const showJumpLinks = jumpLinks.length > 5;
 
+  // Build a short description from the first non-empty content block
+  const firstContent = page.sections.find((s) => s.content)?.content ?? "";
+  const description = firstContent.replace(/\s+/g, " ").slice(0, 155).trim() || `${page.title} — Help The Hive`;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={`${page.title} | Help The Hive`}
+        description={description}
+        canonical={`https://helpthehive.com/page/${page.slug}`}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8 md:py-16 max-w-3xl">

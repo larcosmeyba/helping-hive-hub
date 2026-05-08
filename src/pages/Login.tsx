@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -37,6 +38,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <SEOHead
+        title="Sign In — Help The Hive"
+        description="Sign in to your Help The Hive account to access your weekly meal plan and grocery list."
+        canonical="https://helpthehive.com/login"
+        noindex
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
