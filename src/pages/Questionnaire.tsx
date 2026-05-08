@@ -659,12 +659,12 @@ export default function Questionnaire() {
                 {pantryStarter.length > 0 && <>, using what's already in your kitchen</>}.
               </p>
             </div>
-            {foodAssistance === "snap_wic" && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                Free Forever — for SNAP & WIC families
-              </div>
-            )}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+              <Sparkles className="w-3.5 h-3.5" />
+              {foodAssistance === "snap_wic"
+                ? "Free Forever — built for SNAP & WIC families"
+                : "Free Forever — for everyone"}
+            </div>
           </div>
         </QuestionnaireStep>
       )}
