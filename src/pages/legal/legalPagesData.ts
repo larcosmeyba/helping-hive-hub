@@ -239,16 +239,10 @@ We do not guarantee:
 **SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
       {
-        heading: "8. Payments and Subscriptions",
-        content: `**Free tier (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost, forever.
+        heading: "8. Pricing",
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Fridge Chef, budget insights, and Instacart checkout handoff — are available at no cost to every user.
 
-**Premium tier (non-SNAP users):** $4.99/month or $39.99/year.
-
-**Auto-Renewal Disclosure (required by Apple and Google):** Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription. You can manage and cancel subscriptions in your account settings on the App Store or Google Play after purchase. Any unused portion of a free trial period will be forfeited when you purchase a subscription.
-
-**Refunds:** Refunds are handled per Apple App Store or Google Play Store refund policies.
-
-**Free Trials:** If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+We do not charge for the app, do not collect payment information, and do not offer in-app purchases. Help the Hive is funded through optional Instacart affiliate commissions, sponsored brand placements, institutional licensing, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
       {
         heading: "9. Retailer & Third-Party Partnerships",
