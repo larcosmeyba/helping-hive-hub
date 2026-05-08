@@ -64,10 +64,8 @@ export function ReportIssueButton({ entityType, entityName, entityId, compact }:
     entityType === "meal"
       ? [
           { type: "wrong_image", label: "Wrong image", icon: ImageOff },
-          { type: "wrong_price", label: "Wrong price", icon: DollarSign },
         ]
       : [
-          { type: "wrong_price", label: "Wrong price", icon: DollarSign },
           { type: "wrong_product", label: "Wrong product match", icon: PackageX },
         ];
 
