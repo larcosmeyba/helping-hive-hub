@@ -297,7 +297,7 @@ export function RecipeCategoryTiles() {
                       }))}
                       instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
                       className="w-full mt-3 bg-gradient-honey text-primary-foreground hover:opacity-90 h-11 rounded-xl font-semibold"
-                      label="Get ingredients on Instacart"
+                      label="Send to Instacart"
                     />
                   </div>
                 )}

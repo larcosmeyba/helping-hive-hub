@@ -405,7 +405,7 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
         heading: "4. How We Share Your Information",
         content: `**Service providers:** Cloud hosting, analytics, customer support, email delivery. These providers are contractually required to protect your data.
 
-**Retailer partnerships:** When you tap "Order via Instacart" or similar, your grocery list is shared with that partner to populate your cart. We do NOT share your full user profile.
+**Retailer partnerships:** When you tap "Send to Instacart" or similar, your grocery list is shared with that partner to populate your cart. We do NOT share your full user profile.
 
 **Aggregated/anonymized data:** May be shared with partners, investors, or grant funders. Cannot be linked to you personally.
 
