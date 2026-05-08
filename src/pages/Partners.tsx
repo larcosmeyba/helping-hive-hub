@@ -29,7 +29,7 @@ const sections = [
       "White-label access for your community",
       "Aggregated outcome reporting (anonymized)",
       "Co-branded launch and onboarding support",
-      "Free forever for SNAP & WIC households",
+      "Free for SNAP & WIC households",
     ],
     cta: { label: "Start a community pilot", email: "support@helpthehive.com" },
   },

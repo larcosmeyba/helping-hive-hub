@@ -35,7 +35,7 @@ const plans = [
     tag: "Free",
     slug: "snap-friendly-meals",
     image: mealSnapFriendly,
-    note: "Free forever for eligible households",
+    note: "Free for eligible households",
   },
 ];
 
