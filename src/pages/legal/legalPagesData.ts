@@ -234,21 +234,15 @@ We do not guarantee:
         heading: "7. Verification, Program Access, and SNAP/WIC Self-Attestation",
         content: `Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval.
 
-**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, you unlock the "Free Forever" tier based on an honor system. We do not require documentary proof.
+**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, we use that to tailor your experience and connect you with resources. Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier.
 
 **SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
       {
-        heading: "8. Payments and Subscriptions",
-        content: `**Free tier (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost, forever.
+        heading: "8. Pricing",
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Fridge Chef, budget insights, and Instacart checkout handoff — are available at no cost to every user.
 
-**Premium tier (non-SNAP users):** $4.99/month or $39.99/year.
-
-**Auto-Renewal Disclosure (required by Apple and Google):** Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription. You can manage and cancel subscriptions in your account settings on the App Store or Google Play after purchase. Any unused portion of a free trial period will be forfeited when you purchase a subscription.
-
-**Refunds:** Refunds are handled per Apple App Store or Google Play Store refund policies.
-
-**Free Trials:** If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+We do not charge for the app, do not collect payment information, and do not offer in-app purchases. Help the Hive is funded through optional Instacart affiliate commissions, sponsored brand placements, institutional licensing, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
       {
         heading: "9. Retailer & Third-Party Partnerships",
@@ -300,7 +294,7 @@ We do not guarantee:
 Upon deletion:
 • Your account will be deactivated and personal data will be scheduled for deletion
 • Some information may be retained as required by law, for fraud prevention, or to resolve disputes
-• Active subscriptions should be canceled through your app store before requesting account deletion
+• Help the Hive does not charge users — there are no subscriptions to cancel
 
 Account deletion requests will be processed within 30 days of the request.`
       },
@@ -364,7 +358,7 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
 • Crash reports and diagnostics (anonymized)
 
 **Information collected from third parties:**
-• Apple App Store / Google Play Store: subscription status, transaction confirmations
+• Apple App Store / Google Play Store: app install confirmations only (we have no subscriptions)
 • Retailer partners: order confirmations when you use "Order via [Partner]" features
 
 **Information we do NOT collect:**
@@ -506,7 +500,7 @@ If we discover we have collected information from a child under 13, we delete it
         content: `When you use Help the Hive through the Apple App Store or Google Play Store:
 • Data collection and usage are governed by this Privacy Policy
 • Apple and Google may collect additional data per their own privacy policies
-• In-app purchase and subscription data is processed by the respective app store
+• Help the Hive contains no in-app purchases or subscriptions
 • We do not share your personal data with Apple or Google beyond what is required for app functionality`
       },
       {
@@ -625,47 +619,28 @@ Users can manage cookies through browser settings, but disabling certain cookies
   },
   {
     slug: "refunds",
-    title: "Refund & Subscription Policy",
+    title: "Refund & Pricing Policy",
     lastUpdated: LAST_UPDATED,
     category: "legal",
     sections: [
       {
-        content: "Certain Help the Hive features may require paid access."
+        content: "Help the Hive is 100% free for all users. There are no subscriptions, no in-app purchases, and no paid tiers."
       },
       {
-        heading: "Billing",
-        content: `Paid plans may be billed:
-• Monthly
-• Annually
-• Under promotional terms shown at checkout`
-      },
-      {
-        heading: "Renewals",
-        content: "Unless otherwise stated, subscriptions may renew automatically at the end of the billing cycle unless canceled before renewal."
-      },
-      {
-        heading: "Cancellation",
-        content: "Users may cancel subscriptions through account settings or other account management methods provided by the platform.\n\nCancellation will typically stop future renewals but will not retroactively cancel charges already processed for the current billing period, except where required by law."
+        heading: "Pricing",
+        content: "Every feature of Help the Hive is available at no cost to all users. We do not collect payment information."
       },
       {
         heading: "Refunds",
-        content: `Refunds are generally not provided for:
-• Partial billing periods
-• Unused time
-• Failure to cancel before renewal
-
-However, refunds may be issued:
-• Where required by law
-• To resolve billing errors
-• In limited cases at our discretion`
+        content: "Because we do not charge users for the app, there is nothing to refund. If you are charged in error by Apple or Google, please contact them directly through their respective billing support channels."
       },
       {
-        heading: "Price Changes",
-        content: "We may update subscription prices from time to time. Material changes will apply prospectively."
+        heading: "Third-Party Charges",
+        content: "If you use the optional Instacart checkout handoff, any charges for groceries, delivery, or service fees are billed by Instacart and are subject to Instacart's terms and refund policies. Help the Hive does not process those payments."
       },
       {
-        heading: "Billing Questions",
-        content: `Billing questions may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
+        heading: "Questions",
+        content: `Questions about our pricing model may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
       }
     ]
   },
@@ -1417,15 +1392,15 @@ All plan details shown at checkout or within account settings control over gener
         heading: "In-App Requirements",
         content: `• Account deletion is available in Settings → Delete Account
 • Links to Terms of Service and Privacy Policy are available in Settings
-• Subscription management opens your Apple ID subscription settings
-• A "Restore Purchases" button is provided for users switching devices`
+• No in-app purchases or subscriptions — the app is 100% free for everyone`
       },
       {
         heading: "App Review Notes",
-        content: `• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
+        content: `• Help the Hive is 100% free for all users with no subscriptions, no paywalls, and no in-app purchases.
+• SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
 • Estimated Pricing is clearly labeled; users are informed actual in-store prices may vary.
 • Retailer integration via Instacart is an optional affiliate handoff — no purchase data is processed by our servers.
-• The Free Forever tier for SNAP/WIC users is based on self-attestation; no documentary verification is required.`
+• Self-reported eligibility (SNAP, WIC, military, teacher) is used only for personalization and resource matching, not for gating access.`
       },
       {
         heading: "Contact",
@@ -1488,40 +1463,34 @@ All plan details shown at checkout or within account settings control over gener
   },
   {
     slug: "subscription-disclosures",
-    title: "Subscription Disclosures",
+    title: "Pricing Disclosures",
     lastUpdated: LAST_UPDATED,
     category: "compliance",
     sections: [
       {
-        content: `Help the Hive offers a Free Forever tier for SNAP/WIC families and an optional Premium subscription for other users. The disclosures below match what is shown at the Apple App Store and Google Play Store.`
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no in-app purchases.** This page exists to clearly disclose our pricing model in line with Apple App Store and Google Play Store requirements.`
       },
       {
-        heading: "Plans & Pricing",
-        content: `**Free Forever (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost. Self-attestation only — no credit card required.
-
-**Premium:**
-• Monthly: $4.99 per month
-• Annual: $39.99 per year`
+        heading: "Pricing",
+        content: `• **All users:** $0 — every feature, forever.
+• **No subscription tiers, no premium upgrades, no paid add-ons.**
+• **No payment information is collected** by Help the Hive.`
       },
       {
-        heading: "Apple App Store — Subscription Terms",
-        content: `Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription.
-
-You can manage and cancel subscriptions by going to your Apple ID account settings after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.`
+        heading: "How We're Funded",
+        content: `Help the Hive is funded through optional Instacart affiliate commissions when users choose to check out via Instacart, sponsored brand placements (clearly labeled), institutional licensing partnerships, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
       {
-        heading: "Google Play — Subscription Terms",
-        content: `Payment is charged to your Google Play account on confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period.
-
-You can manage subscriptions in your Google Play account settings.`
+        heading: "Apple App Store",
+        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
+      },
+      {
+        heading: "Google Play",
+        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
       },
       {
         heading: "Refunds",
-        content: `Refunds are handled per Apple App Store or Google Play Store refund policies. Contact Apple or Google directly for billing inquiries related to in-app purchases.`
-      },
-      {
-        heading: "Free Trials",
-        content: `If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+        content: `Because Help the Hive does not charge users, there is nothing to refund.`
       },
       {
         heading: "Links",
@@ -1553,7 +1522,7 @@ export const footerColumns = [
       { label: "Terms of Service", slug: "terms" },
       { label: "Privacy Policy", slug: "privacy" },
       { label: "Cookie Policy", slug: "cookies" },
-      { label: "Refund & Subscription Policy", slug: "refunds" },
+      { label: "Refund & Pricing Policy", slug: "refunds" },
       { label: "Acceptable Use Policy", slug: "acceptable-use" },
       { label: "Arbitration & Dispute Resolution", slug: "arbitration" },
     ]
@@ -1613,7 +1582,7 @@ export const footerColumns = [
       { label: "Government Program Disclaimer", slug: "government-disclaimer" },
       { label: "Apple App Store Compliance", slug: "apple-app-store" },
       { label: "Google Play Store Compliance", slug: "google-play-store" },
-      { label: "Subscription Disclosures", slug: "subscription-disclosures" },
+      { label: "Pricing Disclosures", slug: "subscription-disclosures" },
     ]
   }
 ];
