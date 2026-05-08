@@ -6,10 +6,10 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
-  "feed-a-family-50": { primary: "Walmart", secondary: "Aldi" },
-  "more-variety-75": { primary: "Kroger", secondary: "Safeway" },
-  "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
-  "snap-friendly-meals": { primary: "Walmart", secondary: "WinCo" },
+  "feed-a-family-50": { primary: "Aldi", secondary: "Trader Joe's" },
+  "more-variety-75": { primary: "Sprouts", secondary: "Safeway" },
+  "college-eats-35": { primary: "Aldi", secondary: "Trader Joe's" },
+  "snap-friendly-meals": { primary: "Aldi", secondary: "WinCo" },
 };
 
 const SAMPLE_PLANS: Record<string, {
@@ -316,7 +316,7 @@ export default function SampleMealPlan() {
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
                   <ShoppingCart className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Shop at: {PLAN_STORES[slug!]?.primary ?? "Walmart"}</span>
+                  <span className="text-sm font-medium">Shop at: {PLAN_STORES[slug!]?.primary ?? "Your Instacart store"}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
                   <DollarSign className="w-4 h-4 text-primary" />

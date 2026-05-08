@@ -15,11 +15,8 @@ import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
-  walmart: "Great Value",
   target: "Good & Gather",
   aldi: "Simply Nature",
-  kroger: "Kroger",
-  ralph: "Kroger",
   safeway: "Signature Select",
   vons: "Signature Select",
   albertsons: "Signature Select",
@@ -333,7 +330,7 @@ export default function GroceryListPage() {
       )}
       {/* Pricing transparency note (replaces 98% accuracy claim) */}
       <p className="text-[11px] text-muted-foreground px-1">
-        All prices are estimates from public data sources. Actual store prices may vary.{" "}
+        Estimated for planning. Final prices shown at Instacart checkout.{" "}
         <button
           onClick={() => setShowPricingInfo(true)}
           className="underline hover:text-foreground transition-colors"
@@ -689,8 +686,8 @@ export default function GroceryListPage() {
               About our pricing
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Prices shown are estimates based on public data, weekly circulars, and community submissions.
-              Actual in-store prices depend on location, sales, and timing. We recommend verifying prices before purchase.
+              Prices shown are internal estimates for meal-planning purposes only.
+              Final prices, availability, and substitutions are confirmed at Instacart checkout.
             </p>
             <button
               onClick={() => setShowPricingInfo(false)}
@@ -713,7 +710,7 @@ export default function GroceryListPage() {
 
       {/* Data attribution */}
       <p className="text-[10px] text-muted-foreground/70 leading-relaxed text-center px-2 pt-2">
-        Prices are internal estimates based on the US Bureau of Labor Statistics and historical regional averages. Product images and metadata from Open Food Facts.
+        Estimates for planning only. Final prices shown at Instacart checkout. Product images and metadata from Open Food Facts.
       </p>
     </div>
   );
