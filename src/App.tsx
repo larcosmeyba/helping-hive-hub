@@ -27,6 +27,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
 const Partners = lazy(() => import("./pages/Partners.tsx"));
 const Partnerships = lazy(() => import("./pages/Partnerships.tsx"));
 const Press = lazy(() => import("./pages/Press.tsx"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const NativeAuth = lazy(() => import("./pages/NativeAuth.tsx"));
 const NativeSplash = lazy(() => import("./pages/NativeSplash.tsx"));
 
@@ -90,6 +91,7 @@ const App = () => {
                   <Route path="/partners" element={<Partners />} />
                   <Route path="/partnerships" element={<Partnerships />} />
                   <Route path="/press" element={<Press />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/page/:slug" element={<LegalPage />} />
                   <Route path="/login" element={native ? <Navigate to="/auth" replace /> : <Login />} />
