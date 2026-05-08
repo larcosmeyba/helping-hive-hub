@@ -208,8 +208,6 @@ export default function GroceryListPage() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
-  const [priceCorrection, setPriceCorrection] = useState<{ itemName: string; currentPrice: number } | null>(null);
-  const [correctedPrice, setCorrectedPrice] = useState("");
   const { status: locationStatus } = useLocation();
   const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
   const [offInitialized, setOffInitialized] = useState<string | null>(null);
