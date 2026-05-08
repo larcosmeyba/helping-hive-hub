@@ -3,6 +3,7 @@ import { Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent } from "@/lib/analytics";
 
 export interface InstacartLineItem {
   name: string;
@@ -50,6 +51,7 @@ export function SendToInstacartButton({
       return;
     }
     setLoading(true);
+    void trackEvent("instacart_send_clicked", { itemCount: lineItems.length, linkType });
     try {
       const { data, error } = await supabase.functions.invoke("instacart-create-list", {
         body: {
@@ -67,10 +69,19 @@ export function SendToInstacartButton({
       if (error) throw error;
       const url = (data as { products_link_url?: string })?.products_link_url;
       if (!url) throw new Error("No link returned from Instacart");
+      void trackEvent("instacart_send_success", { itemCount: lineItems.length });
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to create Instacart link";
-      toast({ title: "Couldn't send to Instacart", description: msg, variant: "destructive" });
+      const raw = err instanceof Error ? err.message : "Failed to create Instacart link";
+      const notConfigured = /INSTACART_API_KEY not configured|not configured/i.test(raw);
+      void trackEvent("instacart_send_error", { reason: notConfigured ? "not_configured" : "api_error" });
+      toast({
+        title: notConfigured ? "Instacart checkout coming soon" : "Couldn't send to Instacart",
+        description: notConfigured
+          ? "We're finalizing our Instacart partnership. Your list is saved — you'll be able to send it in one tap very soon."
+          : raw,
+        variant: notConfigured ? "default" : "destructive",
+      });
     } finally {
       setLoading(false);
     }
