@@ -59,7 +59,7 @@ export function SendToInstacartButton({
           line_items: lineItems,
           instructions,
           landing_page_configuration: {
-            partner_linkback_url: partnerLinkbackUrl,
+            partner_linkback_url: linkback,
             enable_pantry_items: true,
           },
         },
