@@ -91,6 +91,7 @@ const App = () => {
                   <Route path="/partners" element={<Partners />} />
                   <Route path="/partnerships" element={<Partnerships />} />
                   <Route path="/press" element={<Press />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/page/:slug" element={<LegalPage />} />
                   <Route path="/login" element={native ? <Navigate to="/auth" replace /> : <Login />} />
