@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
-import { Geolocation } from "@capacitor/geolocation";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 
@@ -190,6 +189,9 @@ export default function Questionnaire() {
     setLocationStatus("requesting");
     try {
       const isNative = Capacitor.isNativePlatform();
+      // Dynamic import keeps the Capacitor Geolocation plugin out of the
+      // web bundle until the user actually triggers location permission.
+      const { Geolocation } = await import("@capacitor/geolocation");
       if (isNative) {
         const perm = await Geolocation.requestPermissions();
         if (perm.location !== "granted") { setLocationStatus("denied"); return; }
