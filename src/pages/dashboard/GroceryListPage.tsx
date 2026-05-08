@@ -197,11 +197,12 @@ export default function GroceryListPage() {
     return { price: item.estimatedPrice || 0, source: 'estimate' };
   };
 
-  // Get product image: Open Food Facts > internal fallback (no retailer image scraping)
-  const getItemImage = (item: typeof groceryItems[0]) => {
+  // Product image: Open Food Facts only — no keyword-matched stock photos.
+  // Returns null when no verified image is available; the GroceryItemImage
+  // component falls back to a flat icon tile.
+  const getItemImage = (item: typeof groceryItems[0]): string | null => {
     const off = offProducts[item.name.toLowerCase()];
-    if (off?.image) return off.image;
-    return getProductImage(item.name);
+    return off?.image ?? null;
   };
 
   // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
