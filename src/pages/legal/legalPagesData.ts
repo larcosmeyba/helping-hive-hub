@@ -619,47 +619,28 @@ Users can manage cookies through browser settings, but disabling certain cookies
   },
   {
     slug: "refunds",
-    title: "Refund & Subscription Policy",
+    title: "Refund & Pricing Policy",
     lastUpdated: LAST_UPDATED,
     category: "legal",
     sections: [
       {
-        content: "Certain Help the Hive features may require paid access."
+        content: "Help the Hive is 100% free for all users. There are no subscriptions, no in-app purchases, and no paid tiers."
       },
       {
-        heading: "Billing",
-        content: `Paid plans may be billed:
-• Monthly
-• Annually
-• Under promotional terms shown at checkout`
-      },
-      {
-        heading: "Renewals",
-        content: "Unless otherwise stated, subscriptions may renew automatically at the end of the billing cycle unless canceled before renewal."
-      },
-      {
-        heading: "Cancellation",
-        content: "Users may cancel subscriptions through account settings or other account management methods provided by the platform.\n\nCancellation will typically stop future renewals but will not retroactively cancel charges already processed for the current billing period, except where required by law."
+        heading: "Pricing",
+        content: "Every feature of Help the Hive is available at no cost to all users. We do not collect payment information."
       },
       {
         heading: "Refunds",
-        content: `Refunds are generally not provided for:
-• Partial billing periods
-• Unused time
-• Failure to cancel before renewal
-
-However, refunds may be issued:
-• Where required by law
-• To resolve billing errors
-• In limited cases at our discretion`
+        content: "Because we do not charge users for the app, there is nothing to refund. If you are charged in error by Apple or Google, please contact them directly through their respective billing support channels."
       },
       {
-        heading: "Price Changes",
-        content: "We may update subscription prices from time to time. Material changes will apply prospectively."
+        heading: "Third-Party Charges",
+        content: "If you use the optional Instacart checkout handoff, any charges for groceries, delivery, or service fees are billed by Instacart and are subject to Instacart's terms and refund policies. Help the Hive does not process those payments."
       },
       {
-        heading: "Billing Questions",
-        content: `Billing questions may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
+        heading: "Questions",
+        content: `Questions about our pricing model may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
       }
     ]
   },
