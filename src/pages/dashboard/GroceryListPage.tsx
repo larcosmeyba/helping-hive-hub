@@ -12,6 +12,7 @@ import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
+import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
