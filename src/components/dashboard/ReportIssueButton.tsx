@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-type FeedbackType = "wrong_image" | "wrong_price" | "wrong_product";
+type FeedbackType = "wrong_image" | "wrong_product";
 
 interface ReportIssueButtonProps {
   entityType: "meal" | "grocery_item";
