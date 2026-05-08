@@ -41,7 +41,6 @@ export function SendToInstacartButton({
     (typeof window !== "undefined"
       ? `${window.location.origin}/dashboard/grocery?from=instacart`
       : "https://helpthehive.com/dashboard/grocery?from=instacart");
-}: Props) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
