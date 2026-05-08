@@ -341,16 +341,8 @@ export default function GroceryListPage() {
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 cursor-pointer transition-colors"
                 >
                   <Checkbox checked={isChecked} onCheckedChange={() => toggle(item.name)} />
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center">
-                    <img
-                      src={getItemImage(item)}
-                      alt={displayProduct.productDescription}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMG;
-                      }}
-                    />
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
+                    <GroceryItemImage src={getItemImage(item)} alt={displayProduct.productDescription} className="w-full h-full" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
