@@ -234,7 +234,7 @@ We do not guarantee:
         heading: "7. Verification, Program Access, and SNAP/WIC Self-Attestation",
         content: `Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval.
 
-**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, you unlock the "Free Forever" tier based on an honor system. We do not require documentary proof.
+**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, we use that to tailor your experience and connect you with resources. Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier.
 
 **SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
