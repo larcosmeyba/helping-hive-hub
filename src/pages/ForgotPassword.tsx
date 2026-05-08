@@ -34,6 +34,11 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <SEOHead
+        title="Reset Password — Help The Hive"
+        description="Reset your Help The Hive password."
+        noindex
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">

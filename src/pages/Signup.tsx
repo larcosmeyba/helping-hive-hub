@@ -49,6 +49,11 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <SEOHead
+        title="Get Started Free — Help The Hive"
+        description="Create your free Help The Hive account. Free forever for SNAP & WIC families."
+        canonical="https://helpthehive.com/signup"
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
