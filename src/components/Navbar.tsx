@@ -35,7 +35,7 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Login</Link>
+            <Link to="/login">Sign In</Link>
           </Button>
           <WaitlistDialog
             source="navbar"
@@ -68,7 +68,7 @@ export function Navbar() {
           ))}
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/login">Login</Link>
+              <Link to="/login">Sign In</Link>
             </Button>
             <WaitlistDialog
               source="navbar-mobile"

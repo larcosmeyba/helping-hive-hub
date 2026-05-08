@@ -52,6 +52,19 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         honey: {
+          // Spec-aligned honey palette. 500/600 are exact brand hex values;
+          // surrounding shades use HSL ramps tuned to the same hue family.
+          50: "hsl(43 100% 96%)",   // honey cream background per spec
+          100: "hsl(43 92% 90%)",
+          200: "hsl(43 90% 82%)",
+          300: "hsl(43 88% 72%)",
+          400: "hsl(40 90% 60%)",
+          500: "#F2B233",            // primary honey yellow
+          600: "#F2A900",            // secondary honey yellow (deeper)
+          700: "hsl(35 95% 38%)",
+          800: "hsl(30 90% 30%)",
+          900: "hsl(25 88% 22%)",
+          // Legacy semantic aliases (still referenced by older components)
           gold: "hsl(var(--honey-gold))",
           cream: "hsl(var(--honey-cream))",
         },

@@ -87,7 +87,7 @@ export default function NativeAuth() {
                   : "text-muted-foreground"
               }`}
             >
-              Create Account
+              Get Started Free
             </button>
           </div>
 

@@ -21,8 +21,8 @@ export function Footer() {
           <div>
             <h4 className="font-display font-semibold mb-4 text-honey-gold">Get Started</h4>
             <ul className="space-y-2 text-sm text-honey-cream/60">
-              <li><Link to="/signup" className="hover:text-honey-cream transition-colors">Sign Up Free</Link></li>
-              <li><Link to="/login" className="hover:text-honey-cream transition-colors">Login</Link></li>
+              <li><Link to="/signup" className="hover:text-honey-cream transition-colors">Get Started Free</Link></li>
+              <li><Link to="/login" className="hover:text-honey-cream transition-colors">Sign In</Link></li>
             </ul>
           </div>
 
