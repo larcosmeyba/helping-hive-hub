@@ -300,7 +300,25 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       }
     }
 
-    // === Enrich pricing using 3-LAYER hierarchy ===
+    // === BASELINE PANTRY FILTER + DEDUPE ===
+    // Items every kitchen has — never put on a shopping list. Also dedupe by
+    // normalized name in case the AI emitted the same item multiple times.
+    const BASELINE_PANTRY = [
+      "salt", "pepper", "black pepper", "water", "ice",
+    ];
+    const seenNames = new Set<string>();
+    mealPlan.groceryList = (mealPlan.groceryList || []).filter((item: any) => {
+      const norm = String(item?.name || "").toLowerCase().replace(/[^a-z ]/g, "").trim();
+      if (!norm) return false;
+      // Drop pure baseline pantry items (exact match or "salt and pepper" etc.)
+      if (BASELINE_PANTRY.some((p) => norm === p || norm === `${p}s`)) return false;
+      if (/^(salt|black pepper|ground pepper)( and (pepper|salt))?$/.test(norm)) return false;
+      // Dedupe
+      if (seenNames.has(norm)) return false;
+      seenNames.add(norm);
+      return true;
+    });
+
     // Layer 1 (retailer/Kroger live) — applied client-side via useKrogerPrices on the grocery page
     // Layer 2 (regional baseline) and Layer 3 (national baseline) — applied here, override AI estimates
     function findIngredientId(name: string): string | null {
