@@ -1482,40 +1482,34 @@ All plan details shown at checkout or within account settings control over gener
   },
   {
     slug: "subscription-disclosures",
-    title: "Subscription Disclosures",
+    title: "Pricing Disclosures",
     lastUpdated: LAST_UPDATED,
     category: "compliance",
     sections: [
       {
-        content: `Help the Hive offers a Free Forever tier for SNAP/WIC families and an optional Premium subscription for other users. The disclosures below match what is shown at the Apple App Store and Google Play Store.`
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no in-app purchases.** This page exists to clearly disclose our pricing model in line with Apple App Store and Google Play Store requirements.`
       },
       {
-        heading: "Plans & Pricing",
-        content: `**Free Forever (SNAP/WIC families):** Unlimited access to all core Help the Hive features at no cost. Self-attestation only — no credit card required.
-
-**Premium:**
-• Monthly: $4.99 per month
-• Annual: $39.99 per year`
+        heading: "Pricing",
+        content: `• **All users:** $0 — every feature, forever.
+• **No subscription tiers, no premium upgrades, no paid add-ons.**
+• **No payment information is collected** by Help the Hive.`
       },
       {
-        heading: "Apple App Store — Subscription Terms",
-        content: `Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the rate of the selected subscription.
-
-You can manage and cancel subscriptions by going to your Apple ID account settings after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.`
+        heading: "How We're Funded",
+        content: `Help the Hive is funded through optional Instacart affiliate commissions when users choose to check out via Instacart, sponsored brand placements (clearly labeled), institutional licensing partnerships, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
       {
-        heading: "Google Play — Subscription Terms",
-        content: `Payment is charged to your Google Play account on confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period.
-
-You can manage subscriptions in your Google Play account settings.`
+        heading: "Apple App Store",
+        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
+      },
+      {
+        heading: "Google Play",
+        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
       },
       {
         heading: "Refunds",
-        content: `Refunds are handled per Apple App Store or Google Play Store refund policies. Contact Apple or Google directly for billing inquiries related to in-app purchases.`
-      },
-      {
-        heading: "Free Trials",
-        content: `If a free trial is offered, it converts to a paid subscription at the end of the trial period unless canceled at least 24 hours before the trial ends.`
+        content: `Because Help the Hive does not charge users, there is nothing to refund.`
       },
       {
         heading: "Links",
