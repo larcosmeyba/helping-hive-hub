@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, Target, PiggyBank, Zap, Flame, ChefHat, Clock } from "lucide-react";
+import { CalendarDays, DollarSign, ShoppingCart, Loader2, Sparkles, Refrigerator, PiggyBank, Zap, Flame, ChefHat, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -135,20 +135,14 @@ export default function DashboardHome() {
           zipCode={profile?.zip_code ?? null}
           weeklyBudget={profile?.weekly_budget ?? null}
           householdSize={profile?.household_size ?? null}
+          regionLabel={mealPlan?.regionLabel ?? null}
           onUpdate={refreshProfile}
+          onValueChanged={() => { if (!generating) generate(); }}
         />
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          onClick={generate}
-          disabled={generating}
-          className="h-12 rounded-xl bg-gradient-honey text-primary-foreground hover:opacity-90 text-xs font-semibold flex-col gap-0.5 shadow-soft"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          <span>{mealPlan ? "Regenerate" : "Generate"}</span>
-        </Button>
+      <div className="grid grid-cols-2 gap-2">
         <Link
           to="/dashboard/grocery-list"
           className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
@@ -165,16 +159,15 @@ export default function DashboardHome() {
         </Link>
       </div>
 
-      {/* Stats Grid — all 6 uniform */}
+      {/* Stats Grid */}
       <motion.div
-        className={`grid gap-3 ${isMobile ? "grid-cols-3" : "grid-cols-6"}`}
+        className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-5"}`}
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
-          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null, to: "/dashboard/budget" as string | null },
-          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null, to: "/dashboard/grocery-list" },
+          { label: "Store Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null as string | null, to: "/dashboard/grocery-list" as string | null },
           {
             label: "Saved",
             value: `$${saved > 0 ? saved.toFixed(0) : "0"}`,
@@ -220,13 +213,6 @@ export default function DashboardHome() {
         })}
       </motion.div>
 
-
-      {mealPlan?.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
-        <p className="text-[11px] md:text-xs text-muted-foreground flex items-center gap-1.5 -mt-1">
-          <Target className="w-3 h-3 text-primary" />
-          Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
-        </p>
-      )}
 
       {(profile?.snap_status || profile?.food_assistance_status === "snap") && (
         <SnapTracker />

@@ -10,10 +10,12 @@ interface Props {
   zipCode: string | null;
   weeklyBudget: number | null;
   householdSize: number | null;
+  regionLabel?: string | null;
   onUpdate: () => void;
+  onValueChanged?: () => void;
 }
 
-export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, onUpdate }: Props) {
+export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, regionLabel, onUpdate, onValueChanged }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [editingField, setEditingField] = useState<"zip" | "budget" | "household" | null>(null);
@@ -31,12 +33,18 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, on
         : field === "budget"
         ? { weekly_budget: budgetValue }
         : { household_size: householdValue };
+      const prev = field === "zip" ? zipCode : field === "budget" ? weeklyBudget : householdSize;
+      const next = field === "zip" ? zipValue : field === "budget" ? budgetValue : householdValue;
+      const changed = String(prev ?? "") !== String(next ?? "");
       const { error } = await supabase.from("profiles").update(update).eq("user_id", user.id);
       if (error) throw error;
       const labels: Record<string, string> = { zip: "ZIP code", budget: "Weekly budget", household: "Household size" };
-      toast({ title: "Updated!", description: `${labels[field]} saved.` });
+      toast({ title: "Saved", description: `${labels[field]} updated` });
+      // Blur active input so iOS un-zooms
+      (document.activeElement as HTMLElement | null)?.blur?.();
       setEditingField(null);
       onUpdate();
+      if (changed) onValueChanged?.();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -44,95 +52,104 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, on
     }
   };
 
+  // text-base (16px) prevents iOS Safari auto-zoom on focus
+  const inputClass = "w-16 h-8 text-base md:w-20 md:h-8 md:text-sm";
+
   return (
-    <div className="flex flex-wrap gap-2 md:gap-2">
+    <div className="flex flex-wrap gap-2">
       {/* ZIP Code */}
-      <div className="flex items-center gap-1.5 bg-card rounded-xl border border-border px-3 py-2 md:px-4 md:py-2.5 shadow-card">
-        <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
-        {editingField === "zip" ? (
-          <>
-            <Input
-              value={zipValue}
-              onChange={(e) => setZipValue(e.target.value)}
-              maxLength={5}
-              className="w-14 h-7 text-sm md:w-20 md:h-8 md:text-sm"
-              autoFocus
-            />
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => save("zip")} disabled={saving}>
-              <Check className="w-3.5 h-3.5 text-accent" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingField(null)}>
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <span className="text-sm md:text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
-            <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-1">
-              <Pencil className="w-3 h-3 md:w-3.5 md:h-3.5 text-muted-foreground hover:text-primary transition-colors" />
-            </button>
-          </>
+      <div className="flex flex-col bg-card rounded-xl border border-border px-3 py-1.5 shadow-card">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+          {editingField === "zip" ? (
+            <>
+              <Input
+                value={zipValue}
+                onChange={(e) => setZipValue(e.target.value)}
+                maxLength={5}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className={inputClass}
+                autoFocus
+                onBlur={() => save("zip")}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+              />
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingField(null)}>
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-medium text-foreground">{zipCode || "Set ZIP"}</span>
+              <button onClick={() => { setZipValue(zipCode ?? ""); setEditingField("zip"); }} className="ml-1">
+                <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
+              </button>
+            </>
+          )}
+        </div>
+        {regionLabel && editingField !== "zip" && (
+          <span className="text-[10px] text-muted-foreground mt-0.5 ml-5 leading-tight truncate max-w-[140px]">{regionLabel}</span>
         )}
       </div>
 
       {/* Weekly Budget */}
-      <div className="flex items-center gap-1.5 bg-card rounded-xl border border-border px-3 py-2 md:px-4 md:py-2.5 shadow-card">
-        <DollarSign className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent shrink-0" />
+      <div className="flex items-center gap-1.5 bg-card rounded-xl border border-border px-3 py-2 shadow-card">
+        <DollarSign className="w-3.5 h-3.5 text-accent shrink-0" />
         {editingField === "budget" ? (
           <>
             <span className="text-sm text-foreground">$</span>
             <Input
               type="number"
+              inputMode="numeric"
               value={budgetValue}
               onChange={(e) => setBudgetValue(Number(e.target.value))}
               min={10}
               max={500}
-              className="w-14 h-7 text-sm md:w-20 md:h-8 md:text-sm"
+              className={inputClass}
               autoFocus
+              onBlur={() => save("budget")}
+              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             />
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => save("budget")} disabled={saving}>
-              <Check className="w-3.5 h-3.5 text-accent" />
-            </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingField(null)}>
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </Button>
           </>
         ) : (
           <>
-            <span className="text-sm md:text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
+            <span className="text-sm font-medium text-foreground">${weeklyBudget ?? 75}/wk</span>
             <button onClick={() => { setBudgetValue(weeklyBudget ?? 75); setEditingField("budget"); }} className="ml-1">
-              <Pencil className="w-3 h-3 md:w-3.5 md:h-3.5 text-muted-foreground hover:text-primary transition-colors" />
+              <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
           </>
         )}
       </div>
 
       {/* Household Size */}
-      <div className="flex items-center gap-1.5 bg-card rounded-xl border border-border px-3 py-2 md:px-4 md:py-2.5 shadow-card">
-        <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
+      <div className="flex items-center gap-1.5 bg-card rounded-xl border border-border px-3 py-2 shadow-card">
+        <Users className="w-3.5 h-3.5 text-primary shrink-0" />
         {editingField === "household" ? (
           <>
             <Input
               type="number"
+              inputMode="numeric"
               value={householdValue}
               onChange={(e) => setHouseholdValue(Number(e.target.value))}
               min={1}
               max={20}
-              className="w-14 h-7 text-sm md:w-20 md:h-8 md:text-sm"
+              className={inputClass}
               autoFocus
+              onBlur={() => save("household")}
+              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             />
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => save("household")} disabled={saving}>
-              <Check className="w-3.5 h-3.5 text-accent" />
-            </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingField(null)}>
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </Button>
           </>
         ) : (
           <>
-            <span className="text-sm md:text-sm font-medium text-foreground">{householdSize ?? 1} {(householdSize ?? 1) === 1 ? "person" : "people"}</span>
+            <span className="text-sm font-medium text-foreground">{householdSize ?? 1} {(householdSize ?? 1) === 1 ? "person" : "people"}</span>
             <button onClick={() => { setHouseholdValue(householdSize ?? 1); setEditingField("household"); }} className="ml-1">
-              <Pencil className="w-3 h-3 md:w-3.5 md:h-3.5 text-muted-foreground hover:text-primary transition-colors" />
+              <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
             </button>
           </>
         )}
