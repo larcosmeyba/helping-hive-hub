@@ -5,7 +5,10 @@ import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 
-const navLinks: { label: string; to: string }[] = [];
+const navLinks: { label: string; to: string }[] = [
+  { label: "About", to: "/about" },
+  { label: "Partnerships", to: "/partnerships" },
+];
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
