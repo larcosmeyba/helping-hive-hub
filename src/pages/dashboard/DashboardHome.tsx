@@ -135,20 +135,14 @@ export default function DashboardHome() {
           zipCode={profile?.zip_code ?? null}
           weeklyBudget={profile?.weekly_budget ?? null}
           householdSize={profile?.household_size ?? null}
+          regionLabel={mealPlan?.regionLabel ?? null}
           onUpdate={refreshProfile}
+          onValueChanged={() => { if (!generating) generate(); }}
         />
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          onClick={generate}
-          disabled={generating}
-          className="h-12 rounded-xl bg-gradient-honey text-primary-foreground hover:opacity-90 text-xs font-semibold flex-col gap-0.5 shadow-soft"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          <span>{mealPlan ? "Regenerate" : "Generate"}</span>
-        </Button>
+      <div className="grid grid-cols-2 gap-2">
         <Link
           to="/dashboard/grocery-list"
           className="h-12 rounded-xl bg-card border border-border hover:bg-muted/40 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 text-foreground transition-colors"
