@@ -6,25 +6,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
+import imgBudgetFriendly from "@/assets/category-budget-friendly.jpg";
+import imgQuickMeals from "@/assets/category-quick-meals.jpg";
+import imgSlowCooker from "@/assets/category-slow-cooker.jpg";
+import imgPantryStaples from "@/assets/category-pantry-staples.jpg";
+import imgHighProtein from "@/assets/category-high-protein.jpg";
+import imgVegetarian from "@/assets/category-vegetarian.jpg";
+import imgFamilyFavorites from "@/assets/category-family-favorites.jpg";
+import imgCelebrations from "@/assets/category-celebrations.jpg";
 
-// Real (non-AI) food photography from Unsplash. Each category has a
-// distinct, relevant photo — no reuse, no AI-generated assets.
+// Curated stock food photography bundled with the app. Uses the user-provided
+// category images in src/assets — no AI-generated photos, no remote URLs.
+// Until Instacart provides per-store imagery, related categories share the
+// closest matching photo.
 const CATEGORY_IMAGES: Record<string, string> = {
-  "Budget Friendly": "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600&q=70", // rice & beans
-  "Quick Meals": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=70", // stir fry
-  "Slow Cooker": "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=70", // beef stew
-  "Pantry Staples": "https://images.unsplash.com/photo-1604335398980-ededfb43ec05?auto=format&fit=crop&w=600&q=70", // grain jars
-  "High Protein": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=70", // grilled chicken
-  "Vegetarian": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=70", // veg bowl
-  "Family Favorites": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=600&q=70", // pasta
-  "Celebrations": "https://images.unsplash.com/photo-1574484184081-afea8a62f9c6?auto=format&fit=crop&w=600&q=70", // roast spread
-  "Special Occasions": "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=70", // plated dinner
-  "5-Ingredient": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=600&q=70", // simple plate
-  "Gluten Free": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=70", // fresh salad
-  "Low Carb": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=70", // salmon & veg
-  "Smoothie": "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=600&q=70", // smoothie glass
-  "Vegan": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=70", // buddha bowl
-  "Holiday": "https://images.unsplash.com/photo-1574484184081-afea8a62f9c6?auto=format&fit=crop&w=600&q=70",
+  "Budget Friendly": imgBudgetFriendly,
+  "Quick Meals": imgQuickMeals,
+  "Slow Cooker": imgSlowCooker,
+  "Pantry Staples": imgPantryStaples,
+  "High Protein": imgHighProtein,
+  "Vegetarian": imgVegetarian,
+  "Vegan": imgVegetarian,
+  "Family Favorites": imgFamilyFavorites,
+  "Celebrations": imgCelebrations,
+  "Special Occasions": imgCelebrations,
+  "Holiday": imgCelebrations,
+  "5-Ingredient": imgQuickMeals,
+  "Gluten Free": imgVegetarian,
+  "Low Carb": imgHighProtein,
+  "Smoothie": imgVegetarian,
 };
 
 // Remap legacy "Holiday" category from DB to "Celebrations" for display
