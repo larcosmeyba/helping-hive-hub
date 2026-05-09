@@ -26,6 +26,7 @@ const LegalPage = lazy(() => import("./pages/legal/LegalPage.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
 const Partners = lazy(() => import("./pages/Partners.tsx"));
 const Partnerships = lazy(() => import("./pages/Partnerships.tsx"));
+const About = lazy(() => import("./pages/About.tsx"));
 const Press = lazy(() => import("./pages/Press.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const NativeAuth = lazy(() => import("./pages/NativeAuth.tsx"));
