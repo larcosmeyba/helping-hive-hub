@@ -87,7 +87,7 @@ export function RecipeCategoryTiles() {
         .eq("is_public", true);
       if (error) throw error;
       const unique = [...new Set((data || []).map((r) => r.category).filter(Boolean))] as string[];
-      return unique.sort();
+      return unique.filter((c) => !HIDDEN_CATEGORIES.has(c)).sort();
     },
   });
 
