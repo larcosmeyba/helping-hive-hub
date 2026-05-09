@@ -159,16 +159,15 @@ export default function DashboardHome() {
         </Link>
       </div>
 
-      {/* Stats Grid — all 6 uniform */}
+      {/* Stats Grid */}
       <motion.div
-        className={`grid gap-3 ${isMobile ? "grid-cols-3" : "grid-cols-6"}`}
+        className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-5"}`}
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         {[
-          { label: "Budget", value: `$${budget}`, icon: Target, color: "text-primary", sub: null as string | null, to: "/dashboard/budget" as string | null },
-          { label: "Est. Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null, to: "/dashboard/grocery-list" },
+          { label: "Store Cost", value: `$${estimatedCost.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", sub: null as string | null, to: "/dashboard/grocery-list" as string | null },
           {
             label: "Saved",
             value: `$${saved > 0 ? saved.toFixed(0) : "0"}`,
@@ -214,13 +213,6 @@ export default function DashboardHome() {
         })}
       </motion.div>
 
-
-      {mealPlan?.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
-        <p className="text-[11px] md:text-xs text-muted-foreground flex items-center gap-1.5 -mt-1">
-          <Target className="w-3 h-3 text-primary" />
-          Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
-        </p>
-      )}
 
       {(profile?.snap_status || profile?.food_assistance_status === "snap") && (
         <SnapTracker />
