@@ -7,27 +7,24 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 
-import budgetFriendlyImg from "@/assets/category-budget-friendly.jpg";
-import quickMealsImg from "@/assets/category-quick-meals.jpg";
-import slowCookerImg from "@/assets/category-slow-cooker.jpg";
-import pantryStaplesImg from "@/assets/category-pantry-staples.jpg";
-import highProteinImg from "@/assets/category-high-protein.jpg";
-import vegetarianImg from "@/assets/category-vegetarian.jpg";
-import familyFavoritesImg from "@/assets/category-family-favorites.jpg";
-import celebrationsImg from "@/assets/category-celebrations.jpg";
-
-// Brand-aligned category imagery (Fix 2.1) — replaces generic Unsplash photos
+// Real (non-AI) food photography from Unsplash. Each category has a
+// distinct, relevant photo — no reuse, no AI-generated assets.
 const CATEGORY_IMAGES: Record<string, string> = {
-  "Budget Friendly": budgetFriendlyImg,
-  "Quick Meals": quickMealsImg,
-  "Slow Cooker": slowCookerImg,
-  "Pantry Staples": pantryStaplesImg,
-  "High Protein": highProteinImg,
-  "Vegetarian": vegetarianImg,
-  "Family Favorites": familyFavoritesImg,
-  // "Holiday" replaced with "Celebrations" (Fix 2.7) — warm home-style imagery, no alcohol
-  "Celebrations": celebrationsImg,
-  "Special Occasions": celebrationsImg,
+  "Budget Friendly": "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600&q=70", // rice & beans
+  "Quick Meals": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=70", // stir fry
+  "Slow Cooker": "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=70", // beef stew
+  "Pantry Staples": "https://images.unsplash.com/photo-1604335398980-ededfb43ec05?auto=format&fit=crop&w=600&q=70", // grain jars
+  "High Protein": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=70", // grilled chicken
+  "Vegetarian": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=70", // veg bowl
+  "Family Favorites": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=600&q=70", // pasta
+  "Celebrations": "https://images.unsplash.com/photo-1574484184081-afea8a62f9c6?auto=format&fit=crop&w=600&q=70", // roast spread
+  "Special Occasions": "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=70", // plated dinner
+  "5-Ingredient": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=600&q=70", // simple plate
+  "Gluten Free": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=70", // fresh salad
+  "Low Carb": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=70", // salmon & veg
+  "Smoothie": "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=600&q=70", // smoothie glass
+  "Vegan": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=70", // buddha bowl
+  "Holiday": "https://images.unsplash.com/photo-1574484184081-afea8a62f9c6?auto=format&fit=crop&w=600&q=70",
 };
 
 // Remap legacy "Holiday" category from DB to "Celebrations" for display
@@ -36,7 +33,7 @@ const CATEGORY_LABEL_REMAP: Record<string, string> = {
 };
 const displayLabel = (cat: string) => CATEGORY_LABEL_REMAP[cat] ?? cat;
 
-const DEFAULT_CATEGORY_IMAGE = budgetFriendlyImg;
+const DEFAULT_CATEGORY_IMAGE = CATEGORY_IMAGES["Family Favorites"];
 
 interface Recipe {
   id: string;
