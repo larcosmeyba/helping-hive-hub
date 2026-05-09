@@ -524,6 +524,64 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       if (groceryItems.length > 0) await supabase.from("grocery_list_items").insert(groceryItems);
     }
 
+    // === Attach real recipe photos by fuzzy-matching meal names to the
+    // 325-recipe library. No keyword stock photos, no AI imagery — only
+    // photographs from recipes already in the database. ===
+    try {
+      const { data: recipePhotos } = await supabase
+        .from("recipes")
+        .select("title, image_url")
+        .not("image_url", "is", null);
+
+      const STOPWORDS = new Set([
+        "with","and","the","a","an","of","in","on","for","to","or","leftover",
+        "easy","quick","homemade","style","recipe","fresh","classic","simple",
+      ]);
+      const tokenize = (s: string) =>
+        new Set(
+          s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
+            .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+        );
+
+      const photoIndex = (recipePhotos || []).map((r: any) => ({
+        title: r.title as string,
+        url: r.image_url as string,
+        tokens: tokenize(r.title || ""),
+      }));
+
+      const matchPhoto = (mealName: string): string | null => {
+        const mTokens = tokenize(mealName);
+        if (mTokens.size === 0) return null;
+        let best: { url: string; score: number } | null = null;
+        for (const r of photoIndex) {
+          if (r.tokens.size === 0) continue;
+          let inter = 0;
+          for (const t of mTokens) if (r.tokens.has(t)) inter++;
+          const union = mTokens.size + r.tokens.size - inter;
+          const jaccard = union ? inter / union : 0;
+          // Require at least 2 shared meaningful tokens AND decent overlap
+          if (inter >= 2 && jaccard > (best?.score ?? 0)) {
+            best = { url: r.url, score: jaccard };
+          }
+        }
+        return best && best.score >= 0.34 ? best.url : null;
+      };
+
+      for (const day of mealPlan.weeklyPlan || []) {
+        for (const meal of day.meals || []) {
+          if (!meal.imageUrl) {
+            const url = matchPhoto(meal.name || "");
+            if (url) {
+              meal.imageUrl = url;
+              meal.imageVerified = true;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Photo matching skipped:", err);
+    }
+
     return new Response(JSON.stringify(mealPlan), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
