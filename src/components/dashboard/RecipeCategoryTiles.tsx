@@ -19,23 +19,32 @@ import imgCelebrations from "@/assets/category-celebrations.jpg";
 // category images in src/assets — no AI-generated photos, no remote URLs.
 // Until Instacart provides per-store imagery, related categories share the
 // closest matching photo.
+// Real recipe photos pulled from the recipe-images storage bucket so each
+// category tile shows an actual dish from that category — not AI imagery.
+const SUPABASE_RECIPE_IMG = "https://ndbqbhghjsjkpgcvkvtq.supabase.co/storage/v1/object/public/recipe-images/imported";
+const imgSmoothie = `${SUPABASE_RECIPE_IMG}/d839cb14-0178-4a6e-8985-d4f5f6109d6b.jpg`; // The Power Breaky Smoothie
+const imgVegetarianReal = `${SUPABASE_RECIPE_IMG}/5dbc1099-ca38-4f40-8b3b-55892cc534c8.jpg`; // Salad Bowl
+const imgLowCarb = `${SUPABASE_RECIPE_IMG}/519bee07-6189-410f-8774-4d502e4bb849.jpg`; // Crushed Cucumber Salad With Salmon
+
 const CATEGORY_IMAGES: Record<string, string> = {
   "Budget Friendly": imgBudgetFriendly,
   "Quick Meals": imgQuickMeals,
   "Slow Cooker": imgSlowCooker,
   "Pantry Staples": imgPantryStaples,
   "High Protein": imgHighProtein,
-  "Vegetarian": imgVegetarian,
-  "Vegan": imgVegetarian,
+  "Vegetarian": imgVegetarianReal,
+  "Vegan": imgVegetarianReal,
   "Family Favorites": imgFamilyFavorites,
   "Celebrations": imgCelebrations,
-  "Special Occasions": imgCelebrations,
   "Holiday": imgCelebrations,
   "5-Ingredient": imgQuickMeals,
-  "Gluten Free": imgVegetarian,
-  "Low Carb": imgHighProtein,
-  "Smoothie": imgVegetarian,
+  "Gluten Free": imgVegetarianReal,
+  "Low Carb": imgLowCarb,
+  "Smoothie": imgSmoothie,
 };
+
+// Categories that should never appear as a tile (merged into another or retired).
+const HIDDEN_CATEGORIES = new Set(["Special Occasions"]);
 
 // Remap legacy "Holiday" category from DB to "Celebrations" for display
 const CATEGORY_LABEL_REMAP: Record<string, string> = {
