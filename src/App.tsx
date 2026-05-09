@@ -91,6 +91,7 @@ const App = () => {
                   <Route path="/sample-plan/:slug" element={<SampleMealPlan />} />
                   <Route path="/partners" element={<Partners />} />
                   <Route path="/partnerships" element={<Partnerships />} />
+                  <Route path="/about" element={<About />} />
                   <Route path="/press" element={<Press />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
