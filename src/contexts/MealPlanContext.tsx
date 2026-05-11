@@ -143,7 +143,9 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         title: "Your weekly meal plan is ready",
         body: "Tap to view your meals and grocery list.",
         link: "/dashboard/meal-plan",
-      }).then(() => {});
+      }).then(({ error: notifErr }) => {
+        if (notifErr) console.warn("[MealPlan] notification insert failed", notifErr);
+      });
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
     } finally {
