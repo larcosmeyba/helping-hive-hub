@@ -65,7 +65,10 @@ Deno.serve(async (req) => {
     const USDA_API_KEY = Deno.env.get("USDA_API_KEY");
     if (!USDA_API_KEY) return json({ error: "USDA_API_KEY not configured" }, 500);
 
-    const { action, query, fdcId, limit = 10, save = false } = await req.json();
+    const body = await req.json();
+    const { action, query, fdcId, save = false } = body;
+    // Clamp limit to a safe range to prevent runaway calls.
+    const limit = Math.min(Math.max(Number(body.limit ?? 10) || 10, 1), 50);
 
     // Auth-gate any write path (save=true) to admins only. Read-only search/get
     // remains open so the meal engine and admins can verify nutrition without auth.
