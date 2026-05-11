@@ -109,9 +109,14 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
-          /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" <<'PY'
+          # Derive marketing version from package.json (strip pre-release suffix).
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          MARKETING_VERSION=${PKG_VERSION%%-*}
+          # Build number stays monotonic per release; keep hardcoded for now.
+          BUILD_NUMBER=33
+          /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PY'
           import re, sys
-          path, team, profile = sys.argv[1], sys.argv[2], sys.argv[3]
+          path, team, profile, marketing_version, build_number = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
           with open(path, 'r') as f:
               src = f.read()
 
@@ -130,8 +135,8 @@ jobs:
                   'PROVISIONING_PROFILE_SPECIFIER': f'"{profile}"',
                   '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]"': f'"{profile}"',
                   'PRODUCT_BUNDLE_IDENTIFIER': 'com.helpthehive',
-                  'MARKETING_VERSION': '1.14',
-                  'CURRENT_PROJECT_VERSION': '33',
+                  'MARKETING_VERSION': marketing_version,
+                  'CURRENT_PROJECT_VERSION': build_number,
                   'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
               }
               for k, v in settings.items():

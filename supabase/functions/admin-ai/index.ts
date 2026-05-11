@@ -101,6 +101,7 @@ You must respond with ONLY valid JSON, no markdown, no explanation:
       ],
       temperature: 0.8,
     }),
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!aiResponse.ok) {
@@ -174,6 +175,7 @@ You must respond with ONLY valid JSON, no markdown:
       ],
       temperature: 0.9,
     }),
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!aiResponse.ok) {

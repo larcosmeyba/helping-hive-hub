@@ -119,6 +119,10 @@ export default function Questionnaire() {
           if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
         }
         setHydrated(true);
+      })
+      .then(undefined, (e) => {
+        console.warn("[Questionnaire] profile load failed", e);
+        if (!cancelled) setHydrated(true);
       });
     return () => {
       cancelled = true;

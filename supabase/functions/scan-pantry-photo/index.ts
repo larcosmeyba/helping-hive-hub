@@ -159,6 +159,7 @@ Rules:
         ],
         temperature: 0.3,
       }),
+      signal: AbortSignal.timeout(60000),
     });
 
     if (!aiResponse.ok) {
