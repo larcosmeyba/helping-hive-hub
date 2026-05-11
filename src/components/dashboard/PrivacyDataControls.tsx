@@ -47,10 +47,12 @@ export function PrivacyDataControls() {
   const updateToggle = async (field: "data_usage_opt_in" | "analytics_opt_in", value: boolean) => {
     if (!user) return;
     const prev = field === "data_usage_opt_in" ? dataOptIn : analyticsOptIn;
-    field === "data_usage_opt_in" ? setDataOptIn(value) : setAnalyticsOptIn(value);
+    if (field === "data_usage_opt_in") setDataOptIn(value);
+    else setAnalyticsOptIn(value);
     const { error } = await supabase.from("profiles").update({ [field]: value }).eq("user_id", user.id);
     if (error) {
-      field === "data_usage_opt_in" ? setDataOptIn(prev) : setAnalyticsOptIn(prev);
+      if (field === "data_usage_opt_in") setDataOptIn(prev);
+      else setAnalyticsOptIn(prev);
       toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
     } else {
       toast({ title: value ? "Enabled" : "Opted out", description: "Your preference has been saved." });
