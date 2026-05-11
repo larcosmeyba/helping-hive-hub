@@ -95,10 +95,7 @@ Deno.serve(async (req) => {
     )
 
   if (suppressError) {
-    console.error('Failed to upsert suppressed email', {
-      error: suppressError,
-      email_redacted: normalizedEmail[0] + '***@' + normalizedEmail.split('@')[1],
-    })
+    console.error('Failed to upsert suppressed email', { error: suppressError })
     return jsonResponse({ error: 'Failed to write suppression' }, 500)
   }
 
