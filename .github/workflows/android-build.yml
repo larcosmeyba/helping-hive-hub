@@ -43,10 +43,19 @@ jobs:
             echo "Android platform already exists"
           fi
 
+      - name: Derive version from package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          # Strip pre-release suffix for Android versionName (e.g. 1.0.0-beta.3 -> 1.0.0)
+          VERSION_NAME=${VERSION%%-*}
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "Derived VERSION_NAME=$VERSION_NAME (from $VERSION)"
+
       - name: Bump versionCode and versionName
         run: |
-          sed -i 's/versionCode [0-9]*/versionCode 17/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "1.16"/' android/app/build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode 17/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
           echo "Updated version info:"
           grep -E 'versionCode|versionName' android/app/build.gradle
 
@@ -55,41 +64,36 @@ jobs:
 
       - name: Setup Android signing
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           echo -n "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/keystore.jks"
           echo "KEYSTORE_PATH=$RUNNER_TEMP/keystore.jks" >> "$GITHUB_ENV"
+
+      - name: Fail if signing secrets missing
+        run: |
+          if [ -z "$KEYSTORE_PATH" ] || [ ! -f "$KEYSTORE_PATH" ]; then
+            echo "::error::Android keystore secrets are not configured. Refusing to build an unsigned release."
+            echo "Required secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD"
+            exit 1
+          fi
 
       - name: Build Release APK
         working-directory: android
         run: |
           chmod +x gradlew
-          if [ -f "$KEYSTORE_PATH" ]; then
-            ./gradlew assembleRelease \
-              -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
-              -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-              -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
-              -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
-          else
-            ./gradlew assembleRelease
-          fi
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
       - name: Build Release AAB (for Play Store)
         working-directory: android
         run: |
-          if [ -f "$KEYSTORE_PATH" ]; then
-            ./gradlew bundleRelease \
-              -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
-              -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-              -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
-              -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
-          else
-            ./gradlew bundleRelease
-          fi
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
