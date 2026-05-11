@@ -35,8 +35,20 @@ Deno.serve(async (req) => {
     }
 
     const { ingredients } = await req.json();
-    if (!ingredients?.length) {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
       return new Response(JSON.stringify({ error: "No ingredients provided" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Cap input size to prevent runaway token costs.
+    const safeIngredients = ingredients
+      .slice(0, 50)
+      // eslint-disable-next-line no-control-regex
+      .map((v) => String(v ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 80))
+      .filter(Boolean);
+    if (safeIngredients.length === 0) {
+      return new Response(JSON.stringify({ error: "Ingredients are empty or invalid" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
