@@ -139,13 +139,25 @@ Deno.serve(async (req) => {
       taxByState.set(t.state, Number(t.grocery_tax_rate));
     }
 
+    // Sanitize user-supplied free-text fields to mitigate prompt injection:
+    // strip control chars and cap length before interpolating into the prompt.
+    const sanitize = (v: unknown, max = 200) =>
+      String(v ?? "")
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\u0000-\u001F\u007F]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, max);
+    const sanitizeList = (arr: unknown, max = 20, perItem = 60) =>
+      (Array.isArray(arr) ? arr : []).slice(0, max).map((v) => sanitize(v, perItem)).filter(Boolean);
+
     const budget = profile.weekly_budget || 75;
     const householdSize = profile.household_size || 2;
-    const allergies = (profile.allergies || []).join(", ") || "none";
-    const dietPrefs = (profile.dietary_preferences || []).join(", ") || "no restrictions";
-    const cookTimePref = profile.cooking_time_preference || "medium";
-    const stores = (profile.preferred_stores || []).join(", ") || "any store";
-    const foodPrefs = (profile.food_preferences || []).join(", ") || "no preference";
+    const allergies = sanitizeList(profile.allergies).join(", ") || "none";
+    const dietPrefs = sanitizeList(profile.dietary_preferences).join(", ") || "no restrictions";
+    const cookTimePref = sanitize(profile.cooking_time_preference, 30) || "medium";
+    const stores = sanitizeList(profile.preferred_stores).join(", ") || "any store";
+    const foodPrefs = sanitizeList(profile.food_preferences).join(", ") || "no preference";
     const zipCode = profile.zip_code || "";
     const userState = (profile.state || "").toUpperCase().slice(0, 2);
     const regionInfo = getRegionInfo(zipCode);
