@@ -270,7 +270,11 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       mealPlan = JSON.parse(jsonStr);
     } catch {
-      console.error("Failed to parse AI response:", content.substring(0, 500));
+      if (Deno.env.get("DEBUG_AI_RESPONSE") === "1") {
+        console.error("Failed to parse AI response (DEBUG):", content.substring(0, 500));
+      } else {
+        console.error("Failed to parse AI response (length:", content.length, ")");
+      }
       return new Response(JSON.stringify({ error: "Failed to parse meal plan. Please try again." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

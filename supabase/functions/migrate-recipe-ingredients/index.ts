@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
     let totalLines = 0;
     let matched = 0;
-    let unmatched: { recipe: string; line: string }[] = [];
+    const unmatched: { recipe: string; line: string }[] = [];
     const rowsToInsert: any[] = [];
 
     for (const recipe of recipes ?? []) {
