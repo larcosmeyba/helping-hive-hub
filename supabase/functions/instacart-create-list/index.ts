@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       console.error("Instacart IDP error:", res.status, text);
       return new Response(
-        JSON.stringify({ error: "Instacart API error", status: res.status, details: text }),
+        JSON.stringify({ error: "Instacart API error", status: res.status }),
         { status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
