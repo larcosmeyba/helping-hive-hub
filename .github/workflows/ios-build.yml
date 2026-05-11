@@ -174,8 +174,10 @@ jobs:
 
       - name: Clear Swift Package Manager caches
         run: |
-          rm -rf ~/Library/Caches/org.swift.swiftpm
-          rm -rf ~/Library/Developer/Xcode/DerivedData
+          rm -rf "$HOME/Library/Caches/org.swift.swiftpm"
+          rm -rf "$HOME/Library/org.swift.swiftpm"
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData"
+          rm -rf "$RUNNER_TEMP/SourcePackages"
           rm -rf ios/App/.swiftpm
           rm -rf ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
           echo "SPM caches cleared"
