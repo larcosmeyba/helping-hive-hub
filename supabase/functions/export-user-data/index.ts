@@ -1,14 +1,18 @@
 // Returns a JSON export of everything we store about the requesting user.
 // Authenticated; only ever returns the caller's own data.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pf = handlePreflight(req);
+  if (pf) return pf;
+  const corsHeaders = buildCorsHeaders(req);
+
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -28,7 +32,6 @@ Deno.serve(async (req) => {
       "meal_plans", "meal_plan_items",
       "grocery_lists", "grocery_list_items",
       "pantry_items", "food_waste_logs",
-      
       "support_tickets", "user_feedback",
       "verification_documents",
     ] as const;
@@ -54,10 +57,3 @@ Deno.serve(async (req) => {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
