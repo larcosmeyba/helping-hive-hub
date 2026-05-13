@@ -120,11 +120,8 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   const generate = useCallback(async () => {
     if (!user) return;
     setGenerating(true);
-    setGenerationStage("preparing");
+    setGenerationStage("generating");
     try {
-      // Brief delay so "preparing" is visible
-      await new Promise(r => setTimeout(r, 300));
-      setGenerationStage("generating");
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
         body: {},
