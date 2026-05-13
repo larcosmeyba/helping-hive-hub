@@ -13,6 +13,7 @@ import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedB
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
+import groceryFruits from "@/assets/grocery-fruits.jpg";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -62,6 +63,12 @@ function getStoreSpecificProduct(item: GroceryItem, activeStore: string) {
     productDescription: item.productDescription || item.name,
     brand: item.brand,
   };
+}
+
+function getGroceryFallbackImage(item: GroceryItem) {
+  const text = `${item.name} ${item.section}`.toLowerCase();
+  if (/fruit|apple|banana|orange|berry|grape|kiwi|pineapple|avocado|lemon|lime/.test(text)) return groceryFruits;
+  return null;
 }
 
 export default function GroceryListPage() {
@@ -203,7 +210,7 @@ export default function GroceryListPage() {
   // component falls back to a flat icon tile.
   const getItemImage = (item: typeof groceryItems[0]): string | null => {
     const off = offProducts[item.name.toLowerCase()];
-    return off?.image ?? null;
+    return off?.image ?? getGroceryFallbackImage(item);
   };
 
   // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
