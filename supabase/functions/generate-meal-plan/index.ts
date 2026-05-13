@@ -56,10 +56,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace("Bearer ", "");
 
@@ -578,6 +574,149 @@ function getStoreMultiplier(storeName: string): number {
   if (lower.includes("publix") || lower.includes("heb")) return 1.05;
   if (lower.includes("costco") || lower.includes("sam")) return 0.85;
   return 1.0;
+}
+
+type RecipeSeed = {
+  title: string;
+  category: string;
+  ingredients: string[];
+  instructions: string[];
+  cost: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  cookTime: number;
+  imageUrl: string;
+  tags: string[];
+};
+
+function buildRecipeBasedMealPlan({
+  recipePool,
+  budget,
+  householdSize,
+  preferredStores,
+  allergies,
+  dietaryPreferences,
+  foodPreferences,
+  cookTimePreference,
+  regionLabel,
+  multiplier,
+}: {
+  recipePool: RecipeSeed[];
+  budget: number;
+  householdSize: number;
+  preferredStores: string[];
+  allergies: string[];
+  dietaryPreferences: string[];
+  foodPreferences: string[];
+  cookTimePreference: string;
+  regionLabel: string;
+  multiplier: number;
+}) {
+  const mealTypes: Array<{ day: string; type: "breakfast" | "lunch" | "dinner" }> = [];
+  for (const day of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]) {
+    mealTypes.push({ day, type: "breakfast" }, { day, type: "lunch" }, { day, type: "dinner" });
+  }
+
+  const allergyTerms = allergies.map((value) => value.toLowerCase());
+  const prefTerms = [...dietaryPreferences, ...foodPreferences].map((value) => value.toLowerCase());
+  const maxCookTime = cookTimePreference === "quick" ? 20 : cookTimePreference === "medium" ? 35 : 300;
+
+  const inferMealType = (recipe: RecipeSeed): "breakfast" | "lunch" | "dinner" => {
+    const haystack = `${recipe.title} ${recipe.category} ${recipe.tags.join(" ")}`.toLowerCase();
+    if (/smoothie|pancake|oat|breakfast|egg|yogurt/.test(haystack)) return "breakfast";
+    if (/sandwich|salad|wrap|bowl|soup/.test(haystack)) return "lunch";
+    return "dinner";
+  };
+
+  const safeRecipes = recipePool.filter((recipe) => {
+    const text = `${recipe.title} ${recipe.ingredients.join(" ")} ${recipe.tags.join(" ")}`.toLowerCase();
+    if (recipe.cookTime > maxCookTime) return false;
+    if (allergyTerms.some((term) => term && text.includes(term))) return false;
+    if (prefTerms.includes("vegetarian") && /(chicken|beef|pork|salmon|shrimp|tuna|cod|turkey)/.test(text)) return false;
+    if (prefTerms.includes("vegan") && /(chicken|beef|pork|salmon|shrimp|tuna|cod|turkey|egg|cheese|yogurt|milk|butter|cream)/.test(text)) return false;
+    return true;
+  });
+
+  const fallbackRecipes = safeRecipes.length ? safeRecipes : recipePool;
+  const mealsByType = {
+    breakfast: fallbackRecipes.filter((recipe) => inferMealType(recipe) === "breakfast"),
+    lunch: fallbackRecipes.filter((recipe) => inferMealType(recipe) === "lunch"),
+    dinner: fallbackRecipes.filter((recipe) => inferMealType(recipe) === "dinner"),
+  };
+
+  const selected = mealTypes.map(({ day, type }, index) => {
+    const pool = mealsByType[type].length ? mealsByType[type] : fallbackRecipes;
+    const recipe = pool[index % pool.length];
+    return {
+      day,
+      meal: {
+        type,
+        name: recipe.title,
+        calories: recipe.calories,
+        protein: recipe.protein,
+        carbs: recipe.carbs,
+        fats: recipe.fats,
+        estimatedCost: Math.round(recipe.cost * multiplier * 100) / 100,
+        costPerServing: Math.round(((recipe.cost * multiplier) / Math.max(householdSize, 1)) * 100) / 100,
+        cookTimeMinutes: recipe.cookTime,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        imageUrl: recipe.imageUrl,
+        imageVerified: true,
+      },
+    };
+  });
+
+  const weeklyPlan = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => ({
+    day,
+    meals: selected.filter((entry) => entry.day === day).map((entry) => entry.meal),
+  }));
+
+  const groceryMap = new Map<string, { name: string; quantity: string; section: string; estimatedPrice: number }>();
+  for (const entry of selected) {
+    for (const ingredient of entry.meal.ingredients) {
+      const cleanName = ingredient.replace(/^\d+[\/\d\s.]*\s*(cups?|tbsp|tsp|lb|lbs|oz|cloves?|cans?|heads?|bags?|pkgs?)?\s*/i, "").replace(/^[^a-zA-Z]+/, "").trim();
+      const key = cleanName.toLowerCase();
+      if (!key) continue;
+      const current = groceryMap.get(key);
+      if (current) continue;
+      groceryMap.set(key, {
+        name: cleanName.split(" ").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" "),
+        quantity: ingredient,
+        section: inferSection(cleanName),
+        estimatedPrice: Math.max(1, Math.round(estimateFallbackPrice(cleanName) * multiplier * 100) / 100),
+      });
+    }
+  }
+
+  const groceryList = Array.from(groceryMap.values()).map((item) => {
+    const storePrices: Record<string, number> = {};
+    const storeProducts: Record<string, { brand: string; productDescription: string }> = {};
+    for (const store of preferredStores.slice(0, 4)) {
+      const brand = inferStoreBrand(store);
+      storePrices[store] = Math.round(item.estimatedPrice * getStoreMultiplier(store) * 100) / 100;
+      storeProducts[store] = { brand, productDescription: `${brand} ${item.name}`.trim() };
+    }
+    return { ...item, brand: inferStoreBrand(preferredStores[0] || ""), productDescription: item.name, storePrices, storeProducts };
+  });
+
+  const totalEstimatedCost = Math.round(groceryList.reduce((sum, item) => sum + item.estimatedPrice, 0) * 100) / 100;
+  return {
+    weeklyPlan,
+    groceryList,
+    storeRecommendations: (preferredStores.length ? preferredStores : ["Walmart", "Target", "Kroger"]).slice(0, 3).map((store) => ({
+      store,
+      estimatedTotal: Math.round(groceryList.reduce((sum, item) => sum + (item.storePrices?.[store] ?? item.estimatedPrice), 0) * 100) / 100,
+    })),
+    totalEstimatedCost: Math.min(totalEstimatedCost, budget),
+    pantrySavings: 0,
+    costPerMeal: Math.round((totalEstimatedCost / 18) * 100) / 100,
+    taxEstimate: 0,
+    regionLabel,
+    costOfLivingMultiplier: multiplier,
+  };
 }
 
 function getNextMonday(): string {
