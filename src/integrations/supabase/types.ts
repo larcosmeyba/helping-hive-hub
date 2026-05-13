@@ -1577,6 +1577,116 @@ export type Database = {
           },
         ]
       }
+      resource_categories: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          slug: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          slug: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          about: string | null
+          address: string | null
+          category_slug: string
+          city: string | null
+          created_at: string
+          eligibility: string | null
+          hours: Json | null
+          id: string
+          image_url: string | null
+          is_national: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone: string | null
+          state: string | null
+          tags: string[] | null
+          updated_at: string
+          verified: boolean
+          website: string | null
+          what_to_bring: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          about?: string | null
+          address?: string | null
+          category_slug: string
+          city?: string | null
+          created_at?: string
+          eligibility?: string | null
+          hours?: Json | null
+          id?: string
+          image_url?: string | null
+          is_national?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          state?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+          what_to_bring?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          about?: string | null
+          address?: string | null
+          category_slug?: string
+          city?: string | null
+          created_at?: string
+          eligibility?: string | null
+          hours?: Json | null
+          id?: string
+          image_url?: string | null
+          is_national?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          state?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+          what_to_bring?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_category_slug_fkey"
+            columns: ["category_slug"]
+            isOneToOne: false
+            referencedRelation: "resource_categories"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       retailer_products: {
         Row: {
           active_status: string
@@ -1706,6 +1816,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_resources: {
+        Row: {
+          created_at: string
+          id: string
+          resource_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resource_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resource_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       serpapi_usage: {
         Row: {
