@@ -582,39 +582,64 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
         tokens: tokenize(r.title || ""),
       }));
 
-      const matchPhoto = (mealName: string, ingredients: string[] = []): string | null => {
-        // Combine meal name + ingredient names for richer matching signal
+      // Primary food keywords used for guaranteed category fallback. Order
+      // matters — first match wins, so put the most distinctive proteins
+      // and dishes before generic carbs.
+      const CATEGORY_KEYWORDS = [
+        "salmon","tuna","shrimp","cod","tilapia","fish",
+        "chicken","turkey","beef","pork","bacon","sausage","ham","steak",
+        "tofu","tempeh","lentil","chickpea","bean",
+        "egg","omelet","frittata","pancake","waffle","oat","oatmeal","granola","yogurt","smoothie","cereal","toast","bagel",
+        "taco","burrito","quesadilla","enchilada","fajita","nacho","tortilla",
+        "pizza","pasta","spaghetti","lasagna","mac","macaroni","noodle","ramen",
+        "rice","quinoa","couscous","barley",
+        "soup","stew","chili","curry","stir fry","stirfry","fried rice",
+        "salad","sandwich","wrap","burger","slider","meatball","meatloaf",
+        "casserole","skillet","sheet pan","one pot","pot roast","pulled","bbq",
+      ];
+
+      const matchPhoto = (mealName: string, ingredients: string[] = []): { url: string; verified: boolean } | null => {
         const combined = [mealName, ...ingredients].join(" ");
         const mTokens = tokenize(combined);
         const nameTokens = tokenize(mealName);
-        if (mTokens.size === 0) return null;
+
+        // Pass 1: best fuzzy match by token overlap (very permissive — any
+        // shared meaningful token qualifies, best score wins).
         let best: { url: string; score: number } | null = null;
         for (const r of photoIndex) {
           if (r.tokens.size === 0) continue;
           let inter = 0;
           for (const t of r.tokens) if (mTokens.has(t)) inter++;
           if (inter === 0) continue;
-          // Score = how much of the recipe title is covered by the meal context
-          const coverage = inter / r.tokens.size;
-          // Bonus if any name token (not just ingredient) overlaps
           let nameOverlap = 0;
           for (const t of r.tokens) if (nameTokens.has(t)) nameOverlap++;
-          const score = coverage + nameOverlap * 0.15;
-          if (score > (best?.score ?? 0)) {
-            best = { url: r.url, score };
+          const coverage = inter / r.tokens.size;
+          const score = coverage + nameOverlap * 0.25 + inter * 0.05;
+          if (score > (best?.score ?? 0)) best = { url: r.url, score };
+        }
+        if (best) return { url: best.url, verified: true };
+
+        // Pass 2: category fallback — pick any recipe whose title contains
+        // the first primary food keyword found in the meal name + ingredients.
+        const lowerCombined = combined.toLowerCase();
+        for (const kw of CATEGORY_KEYWORDS) {
+          if (lowerCombined.includes(kw)) {
+            const hit = (recipePhotos || []).find((r: any) =>
+              (r.title || "").toLowerCase().includes(kw)
+            );
+            if (hit?.image_url) return { url: hit.image_url, verified: false };
           }
         }
-        // Accept if recipe title is at least ~40% covered, OR a name token matched
-        return best && best.score >= 0.4 ? best.url : null;
+        return null;
       };
 
       for (const day of mealPlan.weeklyPlan || []) {
         for (const meal of day.meals || []) {
           if (!meal.imageUrl) {
-            const url = matchPhoto(meal.name || "", meal.ingredients || []);
-            if (url) {
-              meal.imageUrl = url;
-              meal.imageVerified = true;
+            const match = matchPhoto(meal.name || "", meal.ingredients || []);
+            if (match) {
+              meal.imageUrl = match.url;
+              meal.imageVerified = match.verified;
             }
           }
         }
