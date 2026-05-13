@@ -1,0 +1,27 @@
+# Help The Hive
+
+> Budget meal planning for real families. Free forever for SNAP, WIC, military, and teacher families — and anyone planning meals on a budget. We plan your week, build your grocery list, and help you shop in under 5 minutes.
+
+Help The Hive turns your weekly grocery budget and the store you already shop at into a 6-day batch-cooking meal plan with an organized shopping list. Users can send the list directly to Instacart. The platform is 100% free — no subscriptions, no premium tiers — funded by Instacart affiliate revenue, sponsored brands, and grants.
+
+## Pages
+
+- [Home](/): Overview, sample plans, and how it works.
+- [About](/about): Mission, founder story, and who we help.
+- [Partners](/partners): Brand and grocery partner program.
+- [Partnerships](/partnerships): Nonprofit, community, and B2B partnerships.
+- [Press](/press): Press kit and media contact.
+- [Sign up](/signup): Create a free account.
+- [Log in](/login): Member login.
+
+## Sample meal plans
+
+- [Feed a family on $50/week](/sample-plan/feed-a-family-50)
+- [More variety on $75/week](/sample-plan/more-variety-75)
+- [College eats on $35/week](/sample-plan/college-eats-35)
+- [SNAP-friendly meals](/sample-plan/snap-friendly-meals)
+
+## Optional
+
+- [Privacy Policy](/privacy): How we handle user data.
+- [Unsubscribe](/unsubscribe): Manage email preferences.
