@@ -46,7 +46,7 @@ export default function ResourceHubHome() {
           <div className="flex items-center gap-2 text-sm">
             <MapPin className="w-4 h-4 text-primary" />
             <span className="font-semibold text-foreground">{profile.zip_code}</span>
-            {profile.city && <span className="text-muted-foreground">— {profile.city}, {profile.state}</span>}
+            {profile.city ? <span className="text-muted-foreground">— {String(profile.city)}, {String(profile.state ?? "")}</span> : null}
           </div>
           <Link to="/dashboard/settings" className="text-xs font-semibold text-primary hover:underline">Change</Link>
         </div>
