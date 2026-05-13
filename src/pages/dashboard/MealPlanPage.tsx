@@ -10,6 +10,7 @@ import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 import { MealImage } from "@/components/dashboard/MealImage";
+import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
@@ -57,6 +58,8 @@ export default function MealPlanPage() {
   const [cookingMode, setCookingMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
+  const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+
   useEffect(() => {
     safeSetItem("prioritize_sales", String(prioritizeSales));
   }, [prioritizeSales]);
@@ -64,6 +67,19 @@ export default function MealPlanPage() {
   useEffect(() => {
     safeSetItem("cooked_meals", JSON.stringify([...cookedMeals]));
   }, [cookedMeals]);
+
+  // Fetch Open Food Facts metadata once per plan, not on every render.
+  const offFingerprint = mealPlan?.weeklyPlan
+    ?.flatMap((d) => d.meals.map((m) => m.name))
+    .sort()
+    .join("|") ?? "";
+  const [offInitialized, setOffInitialized] = useState<string | null>(null);
+  useEffect(() => {
+    if (!offFingerprint || offInitialized === offFingerprint) return;
+    const names = Array.from(new Set(offFingerprint.split("|").filter(Boolean)));
+    if (names.length) fetchOffProducts(names);
+    setOffInitialized(offFingerprint);
+  }, [offFingerprint, offInitialized, fetchOffProducts]);
 
   // Reset modal state when meal changes
   useEffect(() => {
@@ -76,7 +92,15 @@ export default function MealPlanPage() {
   }, [selectedMeal]);
 
   const enrich = (meal: MealPlanMeal): MealPlanMeal => {
-    return meal;
+    const off = offProducts[meal.name.toLowerCase()];
+    if (!off) return meal;
+    return {
+      ...meal,
+      calories: off.calories != null ? Math.round(off.calories) : meal.calories,
+      protein: off.protein != null ? Math.round(off.protein) : meal.protein,
+      carbs: off.carbs != null ? Math.round(off.carbs) : meal.carbs,
+      fats: off.fat != null ? Math.round(off.fat) : meal.fats,
+    };
   };
 
   const getMeal = (dayIndex: number, mealIndex: number, original: MealPlanMeal) => {
