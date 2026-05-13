@@ -70,21 +70,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ===== PARALLEL DB READS — fetch everything at once =====
-    const [profileRes, pantryRes, canonicalRes, aliasRes, cachedPriceRes, ingredientsRes, nationalPricesRes, regionalPricesRes, taxRulesRes, recipesRes] = await Promise.all([
+    // ===== PARALLEL DB READS — only what's actually used downstream =====
+    const [profileRes, pantryRes, ingredientsRes, nationalPricesRes, regionalPricesRes, taxRulesRes, recipesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
       supabase.from("pantry_items").select("item_name, quantity, category").eq("user_id", user.id),
-      supabase.from("canonical_products").select("canonical_product_id, canonical_name, default_price, default_unit, category"),
-      supabase.from("canonical_product_aliases").select("alias_text, canonical_product_id"),
-      supabase.from("store_product_prices")
-        .select("retailer_product_id, base_price, sale_price, freshness_status, retailer_id, last_verified_at")
-        .gte("last_verified_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-      supabase.from("ingredients").select("ingredient_id, ingredient_name, category"),
+      supabase.from("ingredients").select("ingredient_id, ingredient_name"),
       supabase.from("national_food_prices").select("ingredient_id, national_avg_price, unit"),
       supabase.from("regional_food_prices").select("ingredient_id, region, average_price, unit"),
       supabase.from("state_tax_rules").select("state, grocery_tax_rate"),
       supabase.from("recipes").select("title, category, ingredients, instructions, cost_estimate, calories, protein_g, carbs_g, fats_g, cook_time_minutes, image_url, tags").eq("is_public", true).not("image_url", "is", null),
     ]);
+    // legacy maps kept as empty stubs so downstream pricing code stays unchanged
+    const canonicalRes = { data: [] as any[] };
+    const cachedPriceRes = { data: [] as any[] };
+    const aliasRes = { data: [] as any[] };
 
     const profile = profileRes.data;
     if (profileRes.error || !profile) {
@@ -160,27 +159,10 @@ Deno.serve(async (req) => {
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
 
-    // === BLS regional cost-of-living multiplier (overrides ZIP heuristic when available) ===
-    let blsMultiplier = 1.0;
-    let blsRegionLabel: string | null = null;
-    try {
-      const blsRes = await fetch(`${supabaseUrl}/functions/v1/bls-price-index`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}` },
-        body: JSON.stringify({ state: userState }),
-        signal: AbortSignal.timeout(7000),
-      });
-      if (blsRes.ok) {
-        const blsData = await blsRes.json();
-        if (blsData?.multiplier && !blsData.fallback) {
-          blsMultiplier = Number(blsData.multiplier);
-          blsRegionLabel = blsData.region;
-        }
-      }
-    } catch (err) {
-      console.warn("BLS fetch failed, using flat ZIP heuristic:", err);
-    }
-    const effectiveMultiplier = blsMultiplier !== 1.0 ? blsMultiplier : regionInfo.costMultiplier;
+    // Use ZIP-based cost-of-living heuristic only (BLS edge call removed for speed)
+    const blsMultiplier = 1.0;
+    const blsRegionLabel: string | null = null;
+    const effectiveMultiplier = regionInfo.costMultiplier;
     // Real state grocery tax rate (decimal, e.g. 0.04 = 4%) — prefers DB, falls back to legacy region info
     const stateGroceryTaxRate = taxByState.has(userState)
       ? taxByState.get(userState)!
@@ -487,10 +469,8 @@ Deno.serve(async (req) => {
     // 325-recipe library. No keyword stock photos, no AI imagery — only
     // photographs from recipes already in the database. ===
     try {
-      const { data: recipePhotos } = await supabase
-        .from("recipes")
-        .select("title, image_url")
-        .not("image_url", "is", null);
+      // Reuse the recipe pool already loaded above — no extra DB round-trip
+      const recipePhotos = recipePool.map((r) => ({ title: r.title, image_url: r.imageUrl }));
 
       const STOPWORDS = new Set([
         "with","and","the","a","an","of","in","on","for","to","or","leftover",
