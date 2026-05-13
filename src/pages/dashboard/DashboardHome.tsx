@@ -43,7 +43,7 @@ export default function DashboardHome() {
       {/* 4 Summary cards */}
       <SummaryCards
         zip={profile?.zip_code ?? ""}
-        city={profile?.city ?? undefined}
+        city={(profile?.city as string | undefined) ?? undefined}
         budget={budget}
         household={profile?.household_size ?? 1}
         saved={saved}
