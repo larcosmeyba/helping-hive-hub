@@ -24,6 +24,7 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, re
   const [budgetValue, setBudgetValue] = useState(weeklyBudget ?? 75);
   const [householdValue, setHouseholdValue] = useState(householdSize ?? 1);
   const [saving, setSaving] = useState(false);
+  const zipValidation = useZipValidation(editingField === "zip" ? zipValue : "");
 
   const save = async (field: "zip" | "budget" | "household") => {
     if (!user) return;
