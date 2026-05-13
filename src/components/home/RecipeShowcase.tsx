@@ -200,6 +200,10 @@ export function RecipeShowcase() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
           {selectedRecipe && (
             <>
+              <VisuallyHidden>
+                <DialogTitle>{selectedRecipe.title}</DialogTitle>
+                <DialogDescription>{selectedRecipe.desc}</DialogDescription>
+              </VisuallyHidden>
               <div className="relative h-56 md:h-64 overflow-hidden">
                 <img
                   src={selectedRecipe.image}
