@@ -65,18 +65,17 @@ jobs:
       - name: Configure Android build for Play Store compliance
         run: |
           # --- ProGuard rules for Capacitor ---
-          cat > android/app/proguard-rules.pro << 'EOF'
+          mkdir -p android/app
+          cat > android/app/proguard-rules.pro << 'PROGUARD'
           # Capacitor core
           -keep public class com.getcapacitor.** { *; }
           -keep public class com.getcapacitor.Bridge { *; }
           -keep public class com.getcapacitor.Plugin { *; }
           -keep public class com.getcapacitor.annotation.* { *; }
           -keep public class * extends com.getcapacitor.Plugin { *; }
-          -keep public class * extends com.getcapacitor.PluginHandle { *; }
 
           # Keep all plugin classes
           -keep class com.capacitorjs.plugins.** { *; }
-          -keep class * extends com.getcapacitor.Plugin { *; }
 
           # Keep BridgeWebViewClient and related WebView classes
           -keep public class com.getcapacitor.BridgeWebViewClient { *; }
@@ -116,49 +115,68 @@ jobs:
           -dontwarn org.openjsse.**
           -dontwarn java.lang.management.**
           -dontwarn com.getcapacitor.android.BuildConfig
-          EOF
+          PROGUARD
 
-          # --- Patch build.gradle for R8 + debug symbols ---
-          GRADLE="android/app/build.gradle"
+          # --- Patch build.gradle with Python for reliability ---
+          python3 << 'PYEOF'
+          import re
 
-          # 1) Enable R8 minification and resource shrinking for release builds
-          sed -i 's/minifyEnabled false/minifyEnabled true/g' "$GRADLE"
-          # Some Capacitor templates don't have the line at all; ensure it's added if missing
-          if ! grep -q 'minifyEnabled' "$GRADLE"; then
-            # Insert after shrinkResources line if it exists, or after buildTypes/release block start
-            sed -i '/shrinkResources true/a\            minifyEnabled true' "$GRADLE" 2>/dev/null || \
-            sed -i '/buildTypes {/a\        release {\n            minifyEnabled true\n            shrinkResources true\n            proguardFiles getDefaultProguardFile('\''proguard-android-optimize.txt'\''), '\''proguard-rules.pro'\''\n        }' "$GRADLE"
-          fi
+          gradle_path = "android/app/build.gradle"
+          with open(gradle_path, "r") as f:
+              content = f.read()
 
-          # 2) Ensure shrinkResources is true
-          if grep -q 'shrinkResources' "$GRADLE"; then
-            sed -i 's/shrinkEnabled false/shrinkResources true/g' "$GRADLE"
-          fi
+          # 1) Enable minifyEnabled true in release build type
+          if "minifyEnabled" in content:
+              content = re.sub(r'minifyEnabled\s+\w+', 'minifyEnabled true', content)
+          else:
+              # Insert into release block
+              content = re.sub(
+                  r'(buildTypes\s*\{[^}]*release\s*\{)',
+                  r'\1\n            minifyEnabled true',
+                  content,
+                  flags=re.DOTALL
+              )
+
+          # 2) Enable shrinkResources true in release
+          if "shrinkResources" in content:
+              content = re.sub(r'shrinkResources\s+\w+', 'shrinkResources true', content)
+          else:
+              content = re.sub(
+                  r'(buildTypes\s*\{[^}]*release\s*\{)',
+                  r'\1\n            shrinkResources true',
+                  content,
+                  flags=re.DOTALL
+              )
 
           # 3) Ensure proguardFiles points to our rules
-          if grep -q 'proguardFiles' "$GRADLE"; then
-            sed -i "s|proguardFiles .*|proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'|g" "$GRADLE"
-          fi
+          content = re.sub(
+              r"proguardFiles\s+getDefaultProguardFile\([^)]+\),\s*'[^']*'",
+              "proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'",
+              content
+          )
 
-          # 4) Enable NDK debug symbol generation for native code
-          if ! grep -q 'ndk.debugSymbolLevel' "$GRADLE"; then
-            # Insert inside android.defaultConfig block
-            sed -i "/defaultConfig {/,/}/ { /}/i\\\n        ndk {\n            debugSymbolLevel '\''FULL'\''\n        }\n
- }" "$GRADLE"
-          fi
+          # 4) Add NDK debugSymbolLevel FULL inside defaultConfig
+          if "ndk" not in content or "debugSymbolLevel" not in content:
+              # Insert ndk block before the closing brace of defaultConfig
+              content = re.sub(
+                  r'(defaultConfig\s*\{)(.*?)(\n\s*\})',
+                  lambda m: f'{m.group(1)}{m.group(2)}\n        ndk {{\n            debugSymbolLevel \'FULL\'\n        }}\n    }}',
+                  content,
+                  count=1,
+                  flags=re.DOTALL
+              )
 
-          # 5) Enable mapping file upload (AGP 4.1+) by ensuring the build type produces it
-          if ! grep -q 'mappingFileUploadEnabled' "$GRADLE"; then
-            sed -i "/buildTypes {/,/}/ { /release {/a\\\n            firebaseCrashlytics {\n                mappingFileUploadEnabled false\n            }\n
- }" "$GRADLE"
-          fi
+          with open(gradle_path, "w") as f:
+              f.write(content)
 
-          echo "--- Final build.gradle release block ---"
-          grep -A 15 'buildTypes' "$GRADLE" || true
-          echo "--- NDK config ---"
-          grep -A 4 'ndk' "$GRADLE" || true
-          echo "--- ProGuard rules created ---"
-          head -20 android/app/proguard-rules.pro
+          print("--- Patched build.gradle ---")
+          print(content)
+          PYEOF
+
+          echo "--- ProGuard rules preview ---"
+          head -25 android/app/proguard-rules.pro
+
+      - name: Setup Android signing
 
       - name: Setup Android signing
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
