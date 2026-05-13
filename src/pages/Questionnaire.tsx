@@ -143,6 +143,7 @@ export default function Questionnaire() {
   const [cookingConfidence, setCookingConfidence] = useState<string>((localSeed.cookingConfidence as string) || "");
   const [pantryStarter, setPantryStarter] = useState<string[]>((localSeed.pantryStarter as string[]) || []);
   const [loading, setLoading] = useState(false);
+  const zipValidation = useZipValidation(zipCode);
 
   // Auto-adjust budget when household size changes (only if user hasn't manually set it)
   useEffect(() => {
