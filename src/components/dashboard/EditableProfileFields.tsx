@@ -28,6 +28,10 @@ export function EditableProfileFields({ zipCode, weeklyBudget, householdSize, re
 
   const save = async (field: "zip" | "budget" | "household") => {
     if (!user) return;
+    if (field === "zip" && !zipValidation.isValid) {
+      toast({ title: "Invalid ZIP", description: zipValidation.message || "Please enter a valid 5-digit US ZIP code", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const update = field === "zip"
