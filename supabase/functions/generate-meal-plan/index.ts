@@ -159,27 +159,10 @@ Deno.serve(async (req) => {
     const regionInfo = getRegionInfo(zipCode);
     const cityInfo = getCityFromZip(zipCode);
 
-    // === BLS regional cost-of-living multiplier (overrides ZIP heuristic when available) ===
-    let blsMultiplier = 1.0;
-    let blsRegionLabel: string | null = null;
-    try {
-      const blsRes = await fetch(`${supabaseUrl}/functions/v1/bls-price-index`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}` },
-        body: JSON.stringify({ state: userState }),
-        signal: AbortSignal.timeout(7000),
-      });
-      if (blsRes.ok) {
-        const blsData = await blsRes.json();
-        if (blsData?.multiplier && !blsData.fallback) {
-          blsMultiplier = Number(blsData.multiplier);
-          blsRegionLabel = blsData.region;
-        }
-      }
-    } catch (err) {
-      console.warn("BLS fetch failed, using flat ZIP heuristic:", err);
-    }
-    const effectiveMultiplier = blsMultiplier !== 1.0 ? blsMultiplier : regionInfo.costMultiplier;
+    // Use ZIP-based cost-of-living heuristic only (BLS edge call removed for speed)
+    const blsMultiplier = 1.0;
+    const blsRegionLabel: string | null = null;
+    const effectiveMultiplier = regionInfo.costMultiplier;
     // Real state grocery tax rate (decimal, e.g. 0.04 = 4%) — prefers DB, falls back to legacy region info
     const stateGroceryTaxRate = taxByState.has(userState)
       ? taxByState.get(userState)!
