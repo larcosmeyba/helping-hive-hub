@@ -14,6 +14,8 @@ const DEFAULT_ALLOWED = [
   "https://www.helpthehive.com",
   "https://helping-hive-hub.lovable.app",
   "https://id-preview--bf8fd03f-0e47-4e05-b2a3-0c914e6bd586.lovable.app",
+  "https://bf8fd03f-0e47-4e05-b2a3-0c914e6bd586.lovableproject.com",
+  "https://preview--bf8fd03f-0e47-4e05-b2a3-0c914e6bd586.lovable.app",
   "capacitor://localhost",
   "http://localhost",
   "http://localhost:3000",
