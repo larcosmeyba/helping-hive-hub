@@ -571,28 +571,36 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
         tokens: tokenize(r.title || ""),
       }));
 
-      const matchPhoto = (mealName: string): string | null => {
-        const mTokens = tokenize(mealName);
+      const matchPhoto = (mealName: string, ingredients: string[] = []): string | null => {
+        // Combine meal name + ingredient names for richer matching signal
+        const combined = [mealName, ...ingredients].join(" ");
+        const mTokens = tokenize(combined);
+        const nameTokens = tokenize(mealName);
         if (mTokens.size === 0) return null;
         let best: { url: string; score: number } | null = null;
         for (const r of photoIndex) {
           if (r.tokens.size === 0) continue;
           let inter = 0;
-          for (const t of mTokens) if (r.tokens.has(t)) inter++;
-          const union = mTokens.size + r.tokens.size - inter;
-          const jaccard = union ? inter / union : 0;
-          // Require at least 2 shared meaningful tokens AND decent overlap
-          if (inter >= 2 && jaccard > (best?.score ?? 0)) {
-            best = { url: r.url, score: jaccard };
+          for (const t of r.tokens) if (mTokens.has(t)) inter++;
+          if (inter === 0) continue;
+          // Score = how much of the recipe title is covered by the meal context
+          const coverage = inter / r.tokens.size;
+          // Bonus if any name token (not just ingredient) overlaps
+          let nameOverlap = 0;
+          for (const t of r.tokens) if (nameTokens.has(t)) nameOverlap++;
+          const score = coverage + nameOverlap * 0.15;
+          if (score > (best?.score ?? 0)) {
+            best = { url: r.url, score };
           }
         }
-        return best && best.score >= 0.34 ? best.url : null;
+        // Accept if recipe title is at least ~40% covered, OR a name token matched
+        return best && best.score >= 0.4 ? best.url : null;
       };
 
       for (const day of mealPlan.weeklyPlan || []) {
         for (const meal of day.meals || []) {
           if (!meal.imageUrl) {
-            const url = matchPhoto(meal.name || "");
+            const url = matchPhoto(meal.name || "", meal.ingredients || []);
             if (url) {
               meal.imageUrl = url;
               meal.imageVerified = true;
