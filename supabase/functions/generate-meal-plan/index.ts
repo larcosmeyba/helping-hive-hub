@@ -226,7 +226,8 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
             ],
-            temperature: 0.7,
+            temperature: 0.6,
+            response_format: { type: "json_object" },
           }),
           signal: AbortSignal.timeout(60000),
         }
