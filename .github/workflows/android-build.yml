@@ -54,7 +54,7 @@ jobs:
 
       - name: Bump versionCode and versionName
         run: |
-          sed -i "s/versionCode [0-9]*/versionCode 17/" android/app/build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode 18/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
           echo "Updated version info:"
           grep -E 'versionCode|versionName' android/app/build.gradle
