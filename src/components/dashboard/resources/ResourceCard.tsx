@@ -9,14 +9,13 @@ export interface ResourceCardData {
   state?: string | null;
   phone?: string | null;
   tags?: string[] | null;
-  hours?: Record<string, string> | null;
+  hours?: unknown;
   is_national?: boolean;
 }
 
-function isOpenNow(hours?: Record<string, string> | null): boolean {
-  if (!hours) return false;
-  if (hours.all === "24/7") return true;
-  return false;
+function isOpenNow(hours: unknown): boolean {
+  if (!hours || typeof hours !== "object") return false;
+  return (hours as Record<string, unknown>).all === "24/7";
 }
 
 export function ResourceCard({ r }: { r: ResourceCardData }) {
