@@ -95,7 +95,7 @@ export default function DashboardLayout() {
               <BottomNavBar />
             </>
           )}
-          <HealthDisclaimerSheet />
+          
         </div>
       </SidebarProvider>
     </MealPlanProvider>
