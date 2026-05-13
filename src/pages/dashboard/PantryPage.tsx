@@ -159,7 +159,7 @@ export default function PantryPage() {
   const [newCat, setNewCat] = useState("");
   const [newExp, setNewExp] = useState("");
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: rawItems = [], isLoading } = useQuery({
     queryKey: ["pantry_items", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -173,6 +173,10 @@ export default function PantryPage() {
     },
     enabled: !!user?.id,
   });
+  // Defensive: only keep well-formed rows so a stale/partial cache never crashes the page
+  const items = (rawItems as any[]).filter(
+    (i) => i && typeof i === "object" && typeof i.item_name === "string"
+  );
 
   const addMutation = useMutation({
     mutationFn: async (params?: { name: string; quantity: string; category: string }) => {
