@@ -1,0 +1,1 @@
+DELETE FROM public.open_food_facts_cache WHERE image IS NULL;
