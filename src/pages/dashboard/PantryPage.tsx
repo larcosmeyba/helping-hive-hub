@@ -162,15 +162,16 @@ export default function PantryPage() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["pantry_items", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("pantry_items")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .order("category");
       if (error) throw error;
-      return data;
+      return Array.isArray(data) ? data : [];
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   const addMutation = useMutation({
