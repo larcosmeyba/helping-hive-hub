@@ -8,10 +8,11 @@ import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket } from "lucide-react";
+import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket, AlertCircle, Check } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
+import { useZipValidation } from "@/hooks/useZipValidation";
 
 const TOTAL_STEPS = 10;
 
