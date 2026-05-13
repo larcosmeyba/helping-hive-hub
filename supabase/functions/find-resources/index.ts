@@ -26,18 +26,17 @@ const json = (body: unknown, status = 200) =>
 
 async function geocodeZip(zip: string): Promise<{ lat: number; lng: number; city?: string; state?: string } | null> {
   try {
-    // Census Geocoder (free, no key)
-    const url = `https://geocoding.geo.census.gov/geocoder/locations/address?street=&city=&state=&zip=${encodeURIComponent(zip)}&benchmark=Public_AR_Current&format=json`;
-    const r = await fetch(url);
+    // Zippopotam.us — free, no key, reliable ZIP → lat/lng
+    const r = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`);
     if (!r.ok) return null;
     const j = await r.json();
-    const m = j?.result?.addressMatches?.[0];
-    if (!m) return null;
+    const place = j?.places?.[0];
+    if (!place) return null;
     return {
-      lat: m.coordinates?.y,
-      lng: m.coordinates?.x,
-      city: m.addressComponents?.city,
-      state: m.addressComponents?.state,
+      lat: parseFloat(place.latitude),
+      lng: parseFloat(place.longitude),
+      city: place["place name"],
+      state: place["state abbreviation"],
     };
   } catch {
     return null;
