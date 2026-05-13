@@ -42,8 +42,18 @@ const schema = z.object({
   email: z.string().trim().email("Please enter a valid email").max(255),
   organization: z.string().trim().min(2, "Please enter your organization or publication").max(200),
   website: z.string().trim().url("Please enter a valid URL").max(300).optional().or(z.literal("")),
+  tiktok: z.string().trim().max(100).optional().or(z.literal("")),
+  instagram: z.string().trim().max(100).optional().or(z.literal("")),
   message: z.string().trim().min(20, "Tell us a bit more — at least 20 characters").max(4000),
-});
+}).refine(
+  (d) => d.type !== "affiliate" || (d.tiktok && d.tiktok.length > 0) || (d.instagram && d.instagram.length > 0),
+  { message: "Please add at least one social handle (TikTok or Instagram)", path: ["instagram"] },
+);
+
+const normalizeHandle = (v?: string) => {
+  if (!v) return "";
+  return v.trim().replace(/^@+/, "").replace(/^https?:\/\/(www\.)?(tiktok|instagram)\.com\//i, "").replace(/\/+$/, "");
+};
 
 type FormData = z.infer<typeof schema>;
 
