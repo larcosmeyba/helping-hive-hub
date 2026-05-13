@@ -83,7 +83,9 @@ export default function DashboardLayout() {
               )}
               style={isMobile ? { WebkitOverflowScrolling: "touch" } : undefined}
             >
-              <Outlet />
+              <RouteErrorBoundary>
+                <Outlet />
+              </RouteErrorBoundary>
             </main>
           </div>
 
