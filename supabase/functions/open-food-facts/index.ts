@@ -60,32 +60,55 @@ Deno.serve(async (req) => {
     const toFetch = uniqueItems.filter((i) => !cachedSet.has(i));
     const upserts: Array<Record<string, unknown>> = [];
 
+    // Strip noise that wrecks search relevance — quantities, parenthetical
+    // notes, "leftover", "to taste", "for cooking", etc.
+    function cleanQuery(raw: string): string {
+      return raw
+        .toLowerCase()
+        .replace(/\bleftover\b/g, "")
+        .replace(/\([^)]*\)/g, "")
+        .replace(/,.*$/g, "")
+        .replace(/\bfor (cooking|garnish|serving|taste).*$/g, "")
+        .replace(/\bto taste\b/g, "")
+        .replace(/\boptional\b/g, "")
+        .replace(/\b(chopped|diced|minced|sliced|shredded|grated|crushed|ground|fresh|frozen|raw|cooked|large|small|medium)\b/g, "")
+        .replace(/\bor\b.*$/g, "")
+        .replace(/[^a-z\s-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     async function fetchOne(item: string): Promise<void> {
+      const query = cleanQuery(item) || item;
       try {
-        const url = new URL("https://world.openfoodfacts.org/cgi/search.pl");
-        url.searchParams.set("search_terms", item);
-        url.searchParams.set("search_simple", "1");
-        url.searchParams.set("action", "process");
-        url.searchParams.set("json", "1");
+        // Search-a-licious (v2) — reliable, modern endpoint. Replaces the
+        // legacy cgi/search.pl which has been returning 503 under load.
+        const url = new URL("https://search.openfoodfacts.org/search");
+        url.searchParams.set("q", query);
         url.searchParams.set("page_size", "1");
-        url.searchParams.set("fields", "product_name,image_front_url,nutriments,brands,quantity");
+        url.searchParams.set("fields", "product_name,image_url,brands,nutriments");
+        url.searchParams.set("langs", "en");
 
         const res = await fetch(url.toString(), {
           headers: { "User-Agent": "HelpTheHive/1.0 (https://helpthehive.com)" },
         });
         if (!res.ok) {
-          console.error(`OFF ${res.status} for "${item}"`);
+          console.error(`OFF ${res.status} for "${query}"`);
           return;
         }
         const data = await res.json();
-        const first = data?.products?.[0];
+        const first = data?.hits?.[0];
         if (!first) return;
 
         const n = first.nutriments || {};
+        const brandsRaw = first.brands;
+        const brand = Array.isArray(brandsRaw)
+          ? (brandsRaw[0] ?? null)
+          : (brandsRaw ? String(brandsRaw).split(",")[0].trim() : null);
         const product: OFFProduct = {
           productName: first.product_name || null,
-          image: first.image_front_url || null,
-          brand: first.brands ? String(first.brands).split(",")[0].trim() : null,
+          image: first.image_url || null,
+          brand,
           calories: typeof n["energy-kcal_100g"] === "number" ? n["energy-kcal_100g"] : null,
           protein: typeof n["proteins_100g"] === "number" ? n["proteins_100g"] : null,
           carbs: typeof n["carbohydrates_100g"] === "number" ? n["carbohydrates_100g"] : null,
