@@ -147,7 +147,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
     } finally {
       setGenerating(false);
-      setTimeout(() => setGenerationStage("idle"), 500);
+      setGenerationStage("idle");
     }
   }, [user, toast, loadHistory]);
 
