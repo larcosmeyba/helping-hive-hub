@@ -177,8 +177,6 @@ jobs:
           head -25 android/app/proguard-rules.pro
 
       - name: Setup Android signing
-
-      - name: Setup Android signing
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
           echo -n "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/keystore.jks"
