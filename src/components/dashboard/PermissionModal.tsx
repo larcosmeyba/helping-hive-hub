@@ -38,6 +38,10 @@ export function PermissionModal({ open, type, onContinue, onDismiss }: Permissio
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onDismiss()}>
       <DialogContent className="max-w-[340px] rounded-2xl p-0 overflow-hidden border-0">
+        <VisuallyHidden>
+          <DialogTitle>{config.title}</DialogTitle>
+          <DialogDescription>{config.description}</DialogDescription>
+        </VisuallyHidden>
         {/* Header accent */}
         <div className="bg-gradient-honey px-6 pt-8 pb-6 flex flex-col items-center text-center">
           <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center mb-4">
