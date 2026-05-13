@@ -468,6 +468,7 @@ Deno.serve(async (req) => {
     // === Attach real recipe photos by fuzzy-matching meal names to the
     // 325-recipe library. No keyword stock photos, no AI imagery — only
     // photographs from recipes already in the database. ===
+    try {
       // Reuse the recipe pool already loaded above — no extra DB round-trip
       const recipePhotos = recipePool.map((r) => ({ title: r.title, image_url: r.imageUrl }));
 
