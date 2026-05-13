@@ -42,8 +42,18 @@ const schema = z.object({
   email: z.string().trim().email("Please enter a valid email").max(255),
   organization: z.string().trim().min(2, "Please enter your organization or publication").max(200),
   website: z.string().trim().url("Please enter a valid URL").max(300).optional().or(z.literal("")),
+  tiktok: z.string().trim().max(100).optional().or(z.literal("")),
+  instagram: z.string().trim().max(100).optional().or(z.literal("")),
   message: z.string().trim().min(20, "Tell us a bit more — at least 20 characters").max(4000),
-});
+}).refine(
+  (d) => d.type !== "affiliate" || (d.tiktok && d.tiktok.length > 0) || (d.instagram && d.instagram.length > 0),
+  { message: "Please add at least one social handle (TikTok or Instagram)", path: ["instagram"] },
+);
+
+const normalizeHandle = (v?: string) => {
+  if (!v) return "";
+  return v.trim().replace(/^@+/, "").replace(/^https?:\/\/(www\.)?(tiktok|instagram)\.com\//i, "").replace(/\/+$/, "");
+};
 
 type FormData = z.infer<typeof schema>;
 
@@ -71,6 +81,14 @@ export default function Partnerships() {
 
   const onSubmit = async (data: FormData) => {
     const id = crypto.randomUUID();
+    const tiktok = normalizeHandle(data.tiktok);
+    const instagram = normalizeHandle(data.instagram);
+    const socialBlock =
+      data.type === "affiliate" && (tiktok || instagram)
+        ? `\n\n---\nSocial:${tiktok ? `\nTikTok: @${tiktok} (https://www.tiktok.com/@${tiktok})` : ""}${instagram ? `\nInstagram: @${instagram} (https://www.instagram.com/${instagram})` : ""}`
+        : "";
+    const fullMessage = `${data.message}${socialBlock}`;
+
     const { error } = await supabase.from("partnership_requests").insert({
       id,
       request_type: data.type,
@@ -78,7 +96,7 @@ export default function Partnerships() {
       email: data.email,
       organization: data.organization,
       website: data.website || null,
-      message: data.message,
+      message: fullMessage,
     });
 
     if (error) {
@@ -101,7 +119,7 @@ export default function Partnerships() {
             email: data.email,
             organization: data.organization,
             website: data.website || null,
-            message: data.message,
+            message: fullMessage,
           },
         },
       });
@@ -239,6 +257,41 @@ export default function Partnerships() {
                     )}
                   </div>
                 </div>
+
+                {selectedType === "affiliate" && (
+                  <div className="grid sm:grid-cols-2 gap-4 rounded-xl border border-border bg-honey-50/50 p-4">
+                    <div className="sm:col-span-2">
+                      <Label className="text-sm font-semibold">Your social accounts</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Add at least one so we can review your content.
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="tiktok">TikTok handle</Label>
+                      <Input
+                        id="tiktok"
+                        placeholder="@yourhandle"
+                        {...register("tiktok")}
+                        className="mt-1.5"
+                      />
+                      {errors.tiktok && (
+                        <p className="text-xs text-destructive mt-1">{errors.tiktok.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="instagram">Instagram handle</Label>
+                      <Input
+                        id="instagram"
+                        placeholder="@yourhandle"
+                        {...register("instagram")}
+                        className="mt-1.5"
+                      />
+                      {errors.instagram && (
+                        <p className="text-xs text-destructive mt-1">{errors.instagram.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="message">Tell us about it</Label>
