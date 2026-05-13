@@ -62,6 +62,104 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Configure Android build for Play Store compliance
+        run: |
+          # --- ProGuard rules for Capacitor ---
+          cat > android/app/proguard-rules.pro << 'EOF'
+          # Capacitor core
+          -keep public class com.getcapacitor.** { *; }
+          -keep public class com.getcapacitor.Bridge { *; }
+          -keep public class com.getcapacitor.Plugin { *; }
+          -keep public class com.getcapacitor.annotation.* { *; }
+          -keep public class * extends com.getcapacitor.Plugin { *; }
+          -keep public class * extends com.getcapacitor.PluginHandle { *; }
+
+          # Keep all plugin classes
+          -keep class com.capacitorjs.plugins.** { *; }
+          -keep class * extends com.getcapacitor.Plugin { *; }
+
+          # Keep BridgeWebViewClient and related WebView classes
+          -keep public class com.getcapacitor.BridgeWebViewClient { *; }
+          -keep public class androidx.webkit.** { *; }
+          -keep public class * extends android.webkit.WebViewClient { *; }
+
+          # Keep Capacitor's Config
+          -keep public class com.getcapacitor.CapConfig { *; }
+
+          # Keep native methods
+          -keepclasseswithmembernames class * { native <methods>; }
+
+          # Keep JS bridge interface
+          -keepattributes JavascriptInterface
+          -keep public class * {
+              @android.webkit.JavascriptInterface <methods>;
+          }
+
+          # Keep serializable / parcelable
+          -keepattributes *Annotation*, Signature, Exception, InnerClasses, EnclosingMethod
+          -keepclassmembers enum * { public static **[] values(); public static ** valueOf(java.lang.String); }
+          -keep class * implements android.os.Parcelable { public static final android.os.Parcelable$Creator *; }
+
+          # Capacitor JSON serialization
+          -keepclassmembers class * {
+              @com.google.gson.annotations.SerializedName <fields>;
+          }
+          -keep class com.google.gson.** { *; }
+          -keep class com.google.gson.reflect.TypeToken { *; }
+          -keep class * extends com.google.gson.reflect.TypeToken { *; }
+
+          # Suppress warnings for missing dependencies
+          -dontwarn com.google.errorprone.annotations.*
+          -dontwarn javax.annotation.**
+          -dontwarn org.conscrypt.**
+          -dontwarn org.bouncycastle.**
+          -dontwarn org.openjsse.**
+          -dontwarn java.lang.management.**
+          -dontwarn com.getcapacitor.android.BuildConfig
+          EOF
+
+          # --- Patch build.gradle for R8 + debug symbols ---
+          GRADLE="android/app/build.gradle"
+
+          # 1) Enable R8 minification and resource shrinking for release builds
+          sed -i 's/minifyEnabled false/minifyEnabled true/g' "$GRADLE"
+          # Some Capacitor templates don't have the line at all; ensure it's added if missing
+          if ! grep -q 'minifyEnabled' "$GRADLE"; then
+            # Insert after shrinkResources line if it exists, or after buildTypes/release block start
+            sed -i '/shrinkResources true/a\            minifyEnabled true' "$GRADLE" 2>/dev/null || \
+            sed -i '/buildTypes {/a\        release {\n            minifyEnabled true\n            shrinkResources true\n            proguardFiles getDefaultProguardFile('\''proguard-android-optimize.txt'\''), '\''proguard-rules.pro'\''\n        }' "$GRADLE"
+          fi
+
+          # 2) Ensure shrinkResources is true
+          if grep -q 'shrinkResources' "$GRADLE"; then
+            sed -i 's/shrinkEnabled false/shrinkResources true/g' "$GRADLE"
+          fi
+
+          # 3) Ensure proguardFiles points to our rules
+          if grep -q 'proguardFiles' "$GRADLE"; then
+            sed -i "s|proguardFiles .*|proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'|g" "$GRADLE"
+          fi
+
+          # 4) Enable NDK debug symbol generation for native code
+          if ! grep -q 'ndk.debugSymbolLevel' "$GRADLE"; then
+            # Insert inside android.defaultConfig block
+            sed -i "/defaultConfig {/,/}/ { /}/i\\\n        ndk {\n            debugSymbolLevel '\''FULL'\''\n        }\n
+ }" "$GRADLE"
+          fi
+
+          # 5) Enable mapping file upload (AGP 4.1+) by ensuring the build type produces it
+          if ! grep -q 'mappingFileUploadEnabled' "$GRADLE"; then
+            sed -i "/buildTypes {/,/}/ { /release {/a\\\n            firebaseCrashlytics {\n                mappingFileUploadEnabled false\n            }\n
+ }" "$GRADLE"
+          fi
+
+          echo "--- Final build.gradle release block ---"
+          grep -A 15 'buildTypes' "$GRADLE" || true
+          echo "--- NDK config ---"
+          grep -A 4 'ndk' "$GRADLE" || true
+          echo "--- ProGuard rules created ---"
+          head -20 android/app/proguard-rules.pro
+
       - name: Setup Android signing
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
