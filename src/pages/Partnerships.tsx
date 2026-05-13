@@ -258,6 +258,41 @@ export default function Partnerships() {
                   </div>
                 </div>
 
+                {selectedType === "affiliate" && (
+                  <div className="grid sm:grid-cols-2 gap-4 rounded-xl border border-border bg-honey-50/50 p-4">
+                    <div className="sm:col-span-2">
+                      <Label className="text-sm font-semibold">Your social accounts</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Add at least one so we can review your content.
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="tiktok">TikTok handle</Label>
+                      <Input
+                        id="tiktok"
+                        placeholder="@yourhandle"
+                        {...register("tiktok")}
+                        className="mt-1.5"
+                      />
+                      {errors.tiktok && (
+                        <p className="text-xs text-destructive mt-1">{errors.tiktok.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="instagram">Instagram handle</Label>
+                      <Input
+                        id="instagram"
+                        placeholder="@yourhandle"
+                        {...register("instagram")}
+                        className="mt-1.5"
+                      />
+                      {errors.instagram && (
+                        <p className="text-xs text-destructive mt-1">{errors.instagram.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="message">Tell us about it</Label>
                   <Textarea
