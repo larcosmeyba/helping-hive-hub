@@ -81,6 +81,14 @@ export default function Partnerships() {
 
   const onSubmit = async (data: FormData) => {
     const id = crypto.randomUUID();
+    const tiktok = normalizeHandle(data.tiktok);
+    const instagram = normalizeHandle(data.instagram);
+    const socialBlock =
+      data.type === "affiliate" && (tiktok || instagram)
+        ? `\n\n---\nSocial:${tiktok ? `\nTikTok: @${tiktok} (https://www.tiktok.com/@${tiktok})` : ""}${instagram ? `\nInstagram: @${instagram} (https://www.instagram.com/${instagram})` : ""}`
+        : "";
+    const fullMessage = `${data.message}${socialBlock}`;
+
     const { error } = await supabase.from("partnership_requests").insert({
       id,
       request_type: data.type,
@@ -88,7 +96,7 @@ export default function Partnerships() {
       email: data.email,
       organization: data.organization,
       website: data.website || null,
-      message: data.message,
+      message: fullMessage,
     });
 
     if (error) {
@@ -111,7 +119,7 @@ export default function Partnerships() {
             email: data.email,
             organization: data.organization,
             website: data.website || null,
-            message: data.message,
+            message: fullMessage,
           },
         },
       });
