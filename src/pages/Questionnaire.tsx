@@ -8,10 +8,11 @@ import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket } from "lucide-react";
+import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket, AlertCircle, Check } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
+import { useZipValidation } from "@/hooks/useZipValidation";
 
 const TOTAL_STEPS = 10;
 
@@ -142,6 +143,7 @@ export default function Questionnaire() {
   const [cookingConfidence, setCookingConfidence] = useState<string>((localSeed.cookingConfidence as string) || "");
   const [pantryStarter, setPantryStarter] = useState<string[]>((localSeed.pantryStarter as string[]) || []);
   const [loading, setLoading] = useState(false);
+  const zipValidation = useZipValidation(zipCode);
 
   // Auto-adjust budget when household size changes (only if user hasn't manually set it)
   useEffect(() => {
@@ -498,7 +500,7 @@ export default function Questionnaire() {
           subtitle="Used to find your nearest store and local sale prices."
           onNext={next}
           onBack={back}
-          nextDisabled={zipCode.length < 5}
+          nextDisabled={!zipValidation.isValid}
         >
           <div className="mt-4 space-y-5">
             {locationStatus === "idle" && (
@@ -538,14 +540,36 @@ export default function Questionnaire() {
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
-            <Input
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              placeholder="e.g. 75001"
-              className="text-center text-2xl font-bold h-16 rounded-2xl border-2"
-              inputMode="numeric"
-              maxLength={5}
-            />
+            <div>
+              <Input
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="e.g. 75001"
+                aria-invalid={zipValidation.status === "invalid"}
+                aria-describedby="zip-feedback"
+                className={`text-center text-2xl font-bold h-16 rounded-2xl border-2 transition-colors ${
+                  zipValidation.status === "valid" ? "border-emerald-500 focus-visible:ring-emerald-500/30" :
+                  zipValidation.status === "invalid" ? "border-destructive focus-visible:ring-destructive/30" :
+                  ""
+                }`}
+                inputMode="numeric"
+                maxLength={5}
+              />
+              <div id="zip-feedback" className="min-h-5 mt-2 flex items-center justify-center gap-1.5 text-sm" role="status" aria-live="polite">
+                {zipValidation.status === "checking" && (
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…</span>
+                )}
+                {zipValidation.status === "valid" && (
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1.5"><Check className="w-4 h-4" /> {zipValidation.message}</span>
+                )}
+                {zipValidation.status === "invalid" && (
+                  <span className="text-destructive font-medium flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> {zipValidation.message}</span>
+                )}
+                {zipValidation.status === "incomplete" && zipCode.length > 0 && (
+                  <span className="text-muted-foreground">{zipValidation.message}</span>
+                )}
+              </div>
+            </div>
           </div>
         </QuestionnaireStep>
       )}
