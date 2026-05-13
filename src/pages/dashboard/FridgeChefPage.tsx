@@ -43,7 +43,7 @@ export default function FridgeChefPage() {
 
   // Load pantry items to pre-select
   const { data: pantryItems } = useQuery({
-    queryKey: ["pantry_items", user?.id],
+    queryKey: ["pantry_item_names", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pantry_items")
