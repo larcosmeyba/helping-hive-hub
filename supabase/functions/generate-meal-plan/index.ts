@@ -468,11 +468,8 @@ Deno.serve(async (req) => {
     // === Attach real recipe photos by fuzzy-matching meal names to the
     // 325-recipe library. No keyword stock photos, no AI imagery — only
     // photographs from recipes already in the database. ===
-    try {
-      const { data: recipePhotos } = await supabase
-        .from("recipes")
-        .select("title, image_url")
-        .not("image_url", "is", null);
+      // Reuse the recipe pool already loaded above — no extra DB round-trip
+      const recipePhotos = recipePool.map((r) => ({ title: r.title, image_url: r.imageUrl }));
 
       const STOPWORDS = new Set([
         "with","and","the","a","an","of","in","on","for","to","or","leftover",
