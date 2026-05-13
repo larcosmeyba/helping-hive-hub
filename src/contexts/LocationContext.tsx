@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { Capacitor } from "@capacitor/core";
-import { PermissionModal } from "@/components/dashboard/PermissionModal";
 
 interface LocationCoords {
   latitude: number;
@@ -11,7 +9,7 @@ interface LocationContextType {
   /** "granted" | "denied" | "prompt" | "unknown" */
   status: "granted" | "denied" | "prompt" | "unknown";
   coords: LocationCoords | null;
-  /** Trigger the native/browser permission request */
+  /** Trigger the native/OS permission request directly (no custom pre-prompt). */
   requestLocation: () => Promise<GeolocationPosition | null>;
 }
 
@@ -25,7 +23,6 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<"granted" | "denied" | "prompt" | "unknown">("unknown");
   // H2: coords live only in memory for the session. They are NOT persisted.
   const [coords, setCoords] = useState<LocationCoords | null>(null);
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     // Scrub any plaintext coords saved by older versions
@@ -47,16 +44,16 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  // Show the pre-permission modal once if status is "prompt" and we haven't asked before
-  useEffect(() => {
-    if (status === "prompt" && !localStorage.getItem(ASKED_KEY)) {
-      const timer = setTimeout(() => setShowModal(true), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [status]);
-
+  /**
+   * Calls the native/OS geolocation API directly. On iOS (Capacitor or Safari) and
+   * Android this surfaces the system permission dialog — no custom in-app prompt.
+   */
   const requestLocation = useCallback((): Promise<GeolocationPosition | null> => {
     return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           // Only kept in memory — never persisted.
@@ -75,25 +72,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const handleModalContinue = async () => {
-    setShowModal(false);
-    await requestLocation();
-  };
-
-  const handleModalDismiss = () => {
-    setShowModal(false);
-    localStorage.setItem(ASKED_KEY, "true");
-  };
-
   return (
     <LocationContext.Provider value={{ status, coords, requestLocation }}>
       {children}
-      <PermissionModal
-        open={showModal}
-        type="location"
-        onContinue={handleModalContinue}
-        onDismiss={handleModalDismiss}
-      />
     </LocationContext.Provider>
   );
 }

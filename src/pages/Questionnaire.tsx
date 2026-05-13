@@ -339,6 +339,17 @@ export default function Questionnaire() {
               </p>
               <p className="text-xs text-muted-foreground/70">Takes about 60 seconds</p>
             </div>
+
+            {/* Health disclaimer — shown once during onboarding */}
+            <div className="w-full max-w-sm rounded-2xl border border-border bg-muted/40 px-4 py-3 text-left">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1">
+                A quick note on health
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Help The Hive provides planning and budgeting tools only. It is not medical or
+                nutritional advice. Please consult a healthcare provider for dietary guidance.
+              </p>
+            </div>
           </div>
         </QuestionnaireStep>
       )}
