@@ -18,7 +18,9 @@ const staticRoutes: Route[] = [
   { loc: "/press", priority: 0.6, changefreq: "monthly" },
   { loc: "/signup", priority: 0.8, changefreq: "monthly" },
   { loc: "/login", priority: 0.4, changefreq: "monthly" },
+  { loc: "/about", priority: 0.6, changefreq: "monthly" },
   { loc: "/privacy", priority: 0.3, changefreq: "yearly" },
+  { loc: "/unsubscribe", priority: 0.2, changefreq: "yearly" },
 ];
 
 // Sample plans (public, indexable preview pages)
