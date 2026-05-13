@@ -4,7 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { BottomNavBar } from "@/components/dashboard/BottomNavBar";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
-import { HealthDisclaimerSheet } from "@/components/dashboard/HealthDisclaimerSheet";
+
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 import { MealPlanProvider } from "@/contexts/MealPlanContext";
