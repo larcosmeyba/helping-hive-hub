@@ -312,6 +312,17 @@ export default function Questionnaire() {
     return names[s] || "unknown";
   }
 
+  // Wait for DB hydration before rendering — prevents the flash where the
+  // form mounts with local-fallback values (or step 1) and then snaps to the
+  // server's saved step/fields a moment later.
+  if (user && !hydrated) {
+    return (
+      <div className="min-h-dvh bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-background">
 
