@@ -116,6 +116,7 @@ export default function SettingsPage() {
         user_type: userType,
       }).eq("user_id", user.id);
       if (error) throw error;
+      await refreshProfile?.();
       toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
