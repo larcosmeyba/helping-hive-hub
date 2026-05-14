@@ -109,10 +109,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
-          # Derive marketing version from package.json (strip pre-release suffix).
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          MARKETING_VERSION=${PKG_VERSION%%-*}
-          # Build number stays monotonic per release; keep hardcoded for now.
+          # Hardcoded to keep TestFlight train monotonic (last good was 1.13 (32)).
+          MARKETING_VERSION="1.14"
           BUILD_NUMBER=36
           /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PY'
           import re, sys
