@@ -38,7 +38,7 @@ const USER_TYPE_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { mealPlan } = useMealPlan();
   const navigate = useNavigate();
