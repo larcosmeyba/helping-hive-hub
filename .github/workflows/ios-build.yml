@@ -113,7 +113,7 @@ jobs:
           PKG_VERSION=$(node -p "require('./package.json').version")
           MARKETING_VERSION=${PKG_VERSION%%-*}
           # Build number stays monotonic per release; keep hardcoded for now.
-          BUILD_NUMBER=34
+          BUILD_NUMBER=35
           /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PY'
           import re, sys
           path, team, profile, marketing_version, build_number = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
