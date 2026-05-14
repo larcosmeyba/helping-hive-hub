@@ -81,7 +81,7 @@ export default function Questionnaire() {
   const localSeed = loadLocalProgress();
   const [step, setStep] = useState<number>((localSeed.step as number) || 1);
   const [hydrated, setHydrated] = useState(false);
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -265,6 +265,8 @@ export default function Questionnaire() {
 
       if (error) throw error;
 
+      await refreshProfile();
+
       trackEvent("onboarding_completed", {
         food_assistance: foodAssistance,
         tier,
@@ -281,7 +283,7 @@ export default function Questionnaire() {
         title: tier === "free_forever" ? "You're in — free 💚" : "You're in!",
         description: "Welcome to Help The Hive.",
       });
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
