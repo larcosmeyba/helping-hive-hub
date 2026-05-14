@@ -48,6 +48,13 @@ export default function DashboardHome() {
         household={profile?.household_size ?? 1}
         saved={saved}
       />
+      <button
+        type="button"
+        onClick={() => navigate("/dashboard/settings")}
+        className="block mx-auto -mt-2 text-xs text-muted-foreground hover:text-primary underline underline-offset-4 transition-colors"
+      >
+        Update this information
+      </button>
 
       {/* Your Hub */}
       <YourHubGrid />
