@@ -38,7 +38,7 @@ const USER_TYPE_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { mealPlan } = useMealPlan();
   const navigate = useNavigate();
@@ -116,6 +116,7 @@ export default function SettingsPage() {
         user_type: userType,
       }).eq("user_id", user.id);
       if (error) throw error;
+      await refreshProfile?.();
       toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
