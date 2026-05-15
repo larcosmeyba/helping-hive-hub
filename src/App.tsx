@@ -132,6 +132,7 @@ const App = () => {
                     <Route path="admins" element={<AdminManagement />} />
                     <Route path="verifications" element={<AdminVerifications />} />
                     <Route path="feedback" element={<AdminFeedback />} />
+                    <Route path="system-health" element={<AdminSystemHealth />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
