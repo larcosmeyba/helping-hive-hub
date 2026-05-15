@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, CalendarDays, BookOpen, Sparkles,
-  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft, FileCheck, ShoppingCart, Flag
+  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft, FileCheck, Flag, Activity
 } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
@@ -20,9 +20,10 @@ const navItems = [
   { title: "Recipes", url: "/admin/recipes", icon: BookOpen, permission: "manage_recipes" as const },
   { title: "Special Meals", url: "/admin/special-meals", icon: Sparkles, permission: "manage_special_meals" as const },
   { title: "Marketing Studio", url: "/admin/marketing", icon: Megaphone, permission: "manage_marketing" as const },
-  
+
   { title: "Feedback & Pricing", url: "/admin/feedback", icon: Flag, permission: "view_analytics" as const },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, permission: "view_analytics" as const },
+  { title: "System Health", url: "/admin/system-health", icon: Activity, permission: "view_analytics" as const },
   { title: "Admin Management", url: "/admin/admins", icon: ShieldCheck, permission: "invite_remove_admins" as const },
 ];
 
