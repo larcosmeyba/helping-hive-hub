@@ -59,6 +59,7 @@ const AdminManagement = lazy(() => import("./pages/admin/AdminManagement.tsx"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.tsx"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications.tsx"));
 const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback.tsx"));
+const AdminSystemHealth = lazy(() => import("./pages/admin/AdminSystemHealth.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,7 @@ const App = () => {
                     <Route path="admins" element={<AdminManagement />} />
                     <Route path="verifications" element={<AdminVerifications />} />
                     <Route path="feedback" element={<AdminFeedback />} />
+                    <Route path="system-health" element={<AdminSystemHealth />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
