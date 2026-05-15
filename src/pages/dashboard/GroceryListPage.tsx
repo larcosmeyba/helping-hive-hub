@@ -302,6 +302,9 @@ export default function GroceryListPage() {
         className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 rounded-xl font-semibold shadow-sm"
         label="Send to Instacart"
       />
+      <p className="text-[11px] text-muted-foreground text-center -mt-1 px-2 leading-relaxed">
+        Pricing & availability shown on Instacart at checkout. Help The Hive may earn a small affiliate fee that keeps the app free.
+      </p>
 
 
 

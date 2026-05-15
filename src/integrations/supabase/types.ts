@@ -415,30 +415,6 @@ export type Database = {
         }
         Relationships: []
       }
-      google_shopping_cache: {
-        Row: {
-          cached_at: string
-          id: string
-          item_name: string
-          results: Json
-          zip_code: string
-        }
-        Insert: {
-          cached_at?: string
-          id?: string
-          item_name: string
-          results?: Json
-          zip_code: string
-        }
-        Update: {
-          cached_at?: string
-          id?: string
-          item_name?: string
-          results?: Json
-          zip_code?: string
-        }
-        Relationships: []
-      }
       grocery_list_items: {
         Row: {
           created_at: string
@@ -999,42 +975,6 @@ export type Database = {
           item_name?: string
           product_name?: string | null
           protein?: number | null
-        }
-        Relationships: []
-      }
-      open_prices_cache: {
-        Row: {
-          cached_at: string
-          city: string | null
-          currency: string | null
-          id: string
-          item_name: string
-          price: number | null
-          product_name: string | null
-          store: string | null
-          submitted_date: string | null
-        }
-        Insert: {
-          cached_at?: string
-          city?: string | null
-          currency?: string | null
-          id?: string
-          item_name: string
-          price?: number | null
-          product_name?: string | null
-          store?: string | null
-          submitted_date?: string | null
-        }
-        Update: {
-          cached_at?: string
-          city?: string | null
-          currency?: string | null
-          id?: string
-          item_name?: string
-          price?: number | null
-          product_name?: string | null
-          store?: string | null
-          submitted_date?: string | null
         }
         Relationships: []
       }
@@ -2452,39 +2392,6 @@ export type Database = {
           name?: string | null
           referral_source?: string | null
           zip_code?: string | null
-        }
-        Relationships: []
-      }
-      walmart_price_cache: {
-        Row: {
-          cached_at: string
-          id: string
-          image: string | null
-          in_stock: boolean | null
-          item_name: string
-          price: number | null
-          title: string | null
-          zip_code: string
-        }
-        Insert: {
-          cached_at?: string
-          id?: string
-          image?: string | null
-          in_stock?: boolean | null
-          item_name: string
-          price?: number | null
-          title?: string | null
-          zip_code: string
-        }
-        Update: {
-          cached_at?: string
-          id?: string
-          image?: string | null
-          in_stock?: boolean | null
-          item_name?: string
-          price?: number | null
-          title?: string | null
-          zip_code?: string
         }
         Relationships: []
       }
