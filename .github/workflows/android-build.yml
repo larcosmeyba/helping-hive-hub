@@ -52,9 +52,9 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "Derived VERSION_NAME=$VERSION_NAME (from $VERSION)"
 
-      - name: Bump versionCode and versionName
+      - name: Bump versionCode 21and versionName
         run: |
-          sed -i "s/versionCode [0-9]*/versionCode 20/" android/app/build.gradle
+          sed -i "s/versionCode 21[0-9]*/versionCode 20/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
           echo "Updated version info:"
           grep -E 'versionCode|versionName' android/app/build.gradle
