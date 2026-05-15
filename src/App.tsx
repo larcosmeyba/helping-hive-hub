@@ -59,6 +59,7 @@ const AdminManagement = lazy(() => import("./pages/admin/AdminManagement.tsx"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.tsx"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications.tsx"));
 const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback.tsx"));
+const AdminSystemHealth = lazy(() => import("./pages/admin/AdminSystemHealth.tsx"));
 
 const queryClient = new QueryClient();
 
