@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
 import { MacroBadges } from "./MacroBadges";
+import { SendRecipeToInstacartButton } from "./SendRecipeToInstacartButton";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
 import { MealImage } from "./MealImage";
@@ -115,6 +116,16 @@ export function MealCard({ meal, compact, onClick }: Props) {
                   </li>
                 ))}
               </ol>
+            </div>
+            <div className="pt-1">
+              <SendRecipeToInstacartButton
+                title={meal.name}
+                ingredients={meal.ingredients}
+                instructions={meal.instructions}
+                imageUrl={meal.imageUrl}
+                size="sm"
+                className="w-full"
+              />
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <span>{meal.protein}g protein</span>
