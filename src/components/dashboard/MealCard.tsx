@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
 import { MacroBadges } from "./MacroBadges";
+import { SendRecipeToInstacartButton } from "./SendRecipeToInstacartButton";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
 import { MealImage } from "./MealImage";
