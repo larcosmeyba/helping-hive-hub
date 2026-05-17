@@ -117,6 +117,16 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 ))}
               </ol>
             </div>
+            <div className="pt-1">
+              <SendRecipeToInstacartButton
+                title={meal.name}
+                ingredients={meal.ingredients}
+                instructions={meal.instructions}
+                imageUrl={meal.imageUrl}
+                size="sm"
+                className="w-full"
+              />
+            </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <span>{meal.protein}g protein</span>
               <span>{meal.carbs}g carbs</span>
