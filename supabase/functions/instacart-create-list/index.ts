@@ -1,17 +1,26 @@
-// Instacart Developer Platform — Create "Shopping List" link
-// Docs: https://docs.instacart.com/developer_platform_api/api/products_link
+// Instacart Developer Platform — Create Shopping List or Recipe page link.
+// Docs:
+//   - Shopping list: https://docs.instacart.com/developer_platform_api/api/products_link
+//   - Recipe page:   https://docs.instacart.com/developer_platform_api/api/recipe
 // Auth: single API key via `Authorization: Bearer <INSTACART_API_KEY>`
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 const DEV_BASE = "https://connect.dev.instacart.tools";
 const PROD_BASE = "https://connect.instacart.com";
 
-interface LineItem {
+interface ShoppingLineItem {
   name: string;
   quantity?: number;
   unit?: string;
   display_text?: string;
   line_item_measurements?: Array<{ quantity: number; unit: string }>;
+  filters?: { brand_filters?: string[]; health_filters?: string[] };
+}
+
+interface RecipeIngredient {
+  name: string;
+  display_text?: string;
+  measurements?: Array<{ quantity: number; unit: string }>;
   filters?: { brand_filters?: string[]; health_filters?: string[] };
 }
 
@@ -21,13 +30,15 @@ interface CreateListBody {
   link_type?: "shopping_list" | "recipe";
   expires_in?: number; // days; defaults to 30
   instructions?: string[];
-  line_items: LineItem[];
+  // For shopping_list endpoint:
+  line_items?: ShoppingLineItem[];
+  // For recipe endpoint (preferred when link_type === "recipe"):
+  ingredients?: RecipeIngredient[];
   landing_page_configuration?: {
     partner_linkback_url?: string;
     enable_pantry_items?: boolean;
   };
   // If omitted, defaults to "production" so live users hit the prod IDP.
-  // Pass "development" explicitly only for local QA.
   environment?: "development" | "production";
 }
 
@@ -49,24 +60,43 @@ Deno.serve(async (req) => {
     if (!body?.title || typeof body.title !== "string" || body.title.length > 200) {
       return json({ error: "title is required (max 200 chars)" }, 400);
     }
-    if (!Array.isArray(body?.line_items) || body.line_items.length === 0) {
-      return json({ error: "line_items must be a non-empty array" }, 400);
+
+    const linkType = body.link_type ?? "shopping_list";
+    const isRecipe = linkType === "recipe";
+
+    // Validate the right items array depending on link type.
+    const items = isRecipe ? body.ingredients : body.line_items;
+    if (!Array.isArray(items) || items.length === 0) {
+      return json(
+        {
+          error: isRecipe
+            ? "ingredients must be a non-empty array for recipe links"
+            : "line_items must be a non-empty array",
+        },
+        400,
+      );
     }
-    if (body.line_items.length > 100) {
-      return json({ error: "line_items may not exceed 100 entries" }, 400);
+    if (items.length > 100) {
+      return json({ error: "items may not exceed 100 entries" }, 400);
     }
 
-    // Default to PRODUCTION for live users. Sandbox only when explicitly opted in.
     const env = body.environment === "development" ? "development" : "production";
     const base = env === "production" ? PROD_BASE : DEV_BASE;
-    const url = `${base}/idp/v1/products/products_link`;
+    const path = isRecipe
+      ? "/idp/v1/products/recipe"
+      : "/idp/v1/products/products_link";
+    const url = `${base}${path}`;
 
     const payload: Record<string, unknown> = {
       title: body.title,
-      link_type: body.link_type ?? "shopping_list",
+      link_type: linkType,
       expires_in: body.expires_in ?? 30,
-      line_items: body.line_items,
     };
+    if (isRecipe) {
+      payload.ingredients = body.ingredients;
+    } else {
+      payload.line_items = body.line_items;
+    }
     if (body.image_url) payload.image_url = body.image_url;
     if (body.instructions) payload.instructions = body.instructions;
     if (body.landing_page_configuration) {
@@ -100,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
     const data = JSON.parse(text);
-    return json({ ...data, environment: env });
+    return json({ ...data, environment: env, endpoint: path });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("instacart-create-list error:", msg);
