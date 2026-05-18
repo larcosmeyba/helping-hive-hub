@@ -60,14 +60,7 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-col items-start gap-3">
-              <WaitlistDialog
-                source="hero"
-                trigger={
-                  <Button variant="hero" size="lg" className="text-base px-8 h-12">
-                    Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                }
-              />
+              <DownloadAppButtons source="hero" />
               <Button
                 variant="outline"
                 size="lg"
