@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/components/DownloadAppButtons";
+import { Apple, Play } from "lucide-react";
 
 const navLinks: { label: string; to: string }[] = [
   { label: "About", to: "/about" },
