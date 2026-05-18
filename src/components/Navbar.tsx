@@ -80,10 +80,16 @@ export function Navbar() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <WaitlistDialog
-              source="navbar-mobile"
-              trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
-            />
+            <Button variant="hero" size="sm" asChild>
+              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <Apple className="w-4 h-4 mr-1" /> App Store
+              </a>
+            </Button>
+            <Button variant="hero" size="sm" asChild>
+              <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <Play className="w-4 h-4 mr-1" /> Google Play
+              </a>
+            </Button>
 
           </div>
         </div>
