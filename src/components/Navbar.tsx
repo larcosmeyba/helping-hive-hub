@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/components/DownloadAppButtons";
+import { Apple, Play } from "lucide-react";
 
 const navLinks: { label: string; to: string }[] = [
   { label: "About", to: "/about" },
@@ -40,10 +41,16 @@ export function Navbar() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Sign In</Link>
           </Button>
-          <WaitlistDialog
-            source="navbar"
-            trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
-          />
+          <Button variant="hero" size="sm" asChild>
+            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+              <Apple className="w-4 h-4 mr-1" /> App Store
+            </a>
+          </Button>
+          <Button variant="hero" size="sm" asChild>
+            <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+              <Play className="w-4 h-4 mr-1" /> Google Play
+            </a>
+          </Button>
 
         </div>
 
@@ -73,10 +80,16 @@ export function Navbar() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <WaitlistDialog
-              source="navbar-mobile"
-              trigger={<Button variant="hero" size="sm">Join Waitlist</Button>}
-            />
+            <Button variant="hero" size="sm" asChild>
+              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <Apple className="w-4 h-4 mr-1" /> App Store
+              </a>
+            </Button>
+            <Button variant="hero" size="sm" asChild>
+              <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <Play className="w-4 h-4 mr-1" /> Google Play
+              </a>
+            </Button>
 
           </div>
         </div>

@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { DownloadAppButtons } from "@/components/DownloadAppButtons";
 
 export function CTASection() {
   return (
@@ -18,20 +18,13 @@ export function CTASection() {
           className="max-w-2xl mx-auto text-center"
         >
           <h2 className="font-display text-3xl md:text-5xl font-bold text-honey-cream mb-6 leading-tight">
-            Be first in line when we launch.
+            Download Help The Hive — free.
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            We're polishing the final details. Join the waitlist and we'll email you the moment Help The Hive opens — free for SNAP &amp; WIC families.
+            Now available on iPhone and Android. Plan your week, build your grocery list, and shop smarter — free for SNAP &amp; WIC families.
           </p>
           <div className="flex flex-col items-center justify-center gap-3">
-            <WaitlistDialog
-              source="cta-section"
-              trigger={
-                <Button variant="hero" size="lg" className="text-base px-8 h-12">
-                  Join the Waitlist <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              }
-            />
+            <DownloadAppButtons source="cta-section" />
             <Button
               variant="outline"
               size="lg"
