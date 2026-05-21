@@ -500,6 +500,32 @@ export default function GroceryListPage() {
         </div>
       </div>
 
+      {/* Bottom Send to Instacart — branded CTA (opens external) */}
+      <div className="flex flex-col items-center gap-3">
+        <SendToInstacartButton
+          title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+          linkType="shopping_list"
+          lineItems={(() => {
+            const all: InstacartLineItem[] = [
+              ...groceryItems.map<InstacartLineItem>((i) => ({
+                name: i.name,
+                quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
+                unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
+              })),
+              ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
+            ];
+            if (checked.size === 0) return all;
+            const selected = all.filter((li) => checked.has(li.name));
+            return selected.length > 0 ? selected : all;
+          })()}
+          label="Send to Instacart"
+          fullWidth
+        />
+        <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
+          Opens Ralphs on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
+        </p>
+      </div>
+
       {/* Change home store — escape hatch (not a comparison view) */}
       <div className="text-center py-3">
         <p className="text-xs text-muted-foreground mb-1">Shopping somewhere different this week?</p>
