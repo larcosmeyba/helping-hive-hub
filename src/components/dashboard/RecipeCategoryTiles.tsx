@@ -301,20 +301,25 @@ export function RecipeCategoryTiles() {
                         </li>
                       ))}
                     </ul>
-                    <SendToInstacartButton
-                      title={selectedRecipe.title}
-                      linkType="recipe"
-                      imageUrl={selectedRecipe.image_url || undefined}
-                      lineItems={parseJsonArray(selectedRecipe.ingredients).map<InstacartLineItem>((ing) => ({
-                        name: String(ing).replace(/^[\d./\s]+\w*\s+/, "").trim() || String(ing),
-                        display_text: String(ing),
-                        quantity: 1,
-                        unit: "each",
-                      }))}
-                      instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
-                      className="w-full mt-3 bg-gradient-honey text-primary-foreground hover:opacity-90 h-11 rounded-xl font-semibold"
-                      label="Send to Instacart"
-                    />
+                    <div className="flex flex-col items-center gap-1.5 mt-3">
+                      <SendToInstacartButton
+                        title={selectedRecipe.title}
+                        linkType="recipe"
+                        imageUrl={selectedRecipe.image_url || undefined}
+                        lineItems={parseJsonArray(selectedRecipe.ingredients).map<InstacartLineItem>((ing) => ({
+                          name: String(ing).replace(/^[\d./\s]+\w*\s+/, "").trim() || String(ing),
+                          display_text: String(ing),
+                          quantity: 1,
+                          unit: "each",
+                        }))}
+                        instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
+                        label="Shop ingredients"
+                        fullWidth
+                      />
+                      <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">
+                        Opens on Instacart. Pricing and availability shown at checkout. Help The Hive may earn a small affiliate fee.
+                      </p>
+                    </div>
                   </div>
                 )}
                 {parseJsonArray(selectedRecipe.instructions).length > 0 && (
