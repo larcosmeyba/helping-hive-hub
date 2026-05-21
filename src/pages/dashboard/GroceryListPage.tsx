@@ -394,7 +394,7 @@ export default function GroceryListPage() {
                     <GroceryItemImage src={getItemImage(item)} alt={displayProduct.productDescription} className="w-full h-full" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm leading-tight ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    <p className="font-medium text-sm leading-tight text-foreground">
                       {displayProduct.productDescription}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -403,6 +403,11 @@ export default function GroceryListPage() {
                         <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
                       )}
                     </div>
+                    {isChecked && (
+                      <p className="text-[11px] font-semibold text-primary mt-1">
+                        Added to shopping cart
+                      </p>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
