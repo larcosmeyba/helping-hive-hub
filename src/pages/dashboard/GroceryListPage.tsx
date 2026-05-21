@@ -404,8 +404,8 @@ export default function GroceryListPage() {
                       )}
                     </div>
                     {isChecked && (
-                      <p className="text-[11px] font-semibold text-primary mt-1">
-                        Added to shopping cart
+                      <p className="text-[11px] font-bold text-primary mt-1">
+                        added
                       </p>
                     )}
                   </div>
