@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Loader2, ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
+import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
+import { openInstacartExternal } from "@/lib/openInstacartExternal";
 
 export interface InstacartLineItem {
   name: string;
@@ -19,10 +19,12 @@ interface Props {
   linkType?: "shopping_list" | "recipe";
   instructions?: string[];
   className?: string;
-  size?: "sm" | "default" | "lg";
-  variant?: "default" | "outline";
-  label?: string;
+  variant?: InstacartCTAVariant;
+  /** Approved Instacart CTA copy. */
+  label?: "Shop on Instacart" | "Shop ingredients";
   partnerLinkbackUrl?: string;
+  fullWidth?: boolean;
+  showExternalIcon?: boolean;
 }
 
 export function SendToInstacartButton({
@@ -32,10 +34,11 @@ export function SendToInstacartButton({
   linkType = "shopping_list",
   instructions,
   className,
-  size = "default",
-  variant = "default",
-  label = "Send to Instacart",
+  variant = "light",
+  label = "Shop on Instacart",
   partnerLinkbackUrl,
+  fullWidth = false,
+  showExternalIcon = false,
 }: Props) {
   const linkback =
     partnerLinkbackUrl ??
@@ -70,15 +73,15 @@ export function SendToInstacartButton({
       const url = (data as { products_link_url?: string })?.products_link_url;
       if (!url) throw new Error("No link returned from Instacart");
       void trackEvent("instacart_send_success", { itemCount: lineItems.length });
-      window.open(url, "_blank", "noopener,noreferrer");
+      openInstacartExternal(url);
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Failed to create Instacart link";
       const notConfigured = /INSTACART_API_KEY not configured|not configured/i.test(raw);
       void trackEvent("instacart_send_error", { reason: notConfigured ? "not_configured" : "api_error" });
       toast({
-        title: notConfigured ? "Instacart checkout coming soon" : "Couldn't send to Instacart",
+        title: notConfigured ? "Instacart checkout coming soon" : "Couldn't open Instacart",
         description: notConfigured
-          ? "We're finalizing our Instacart partnership. Your list is saved — you'll be able to send it in one tap very soon."
+          ? "We're finalizing our Instacart partnership. Your list is saved — you'll be able to shop it in one tap very soon."
           : raw,
         variant: notConfigured ? "default" : "destructive",
       });
@@ -88,19 +91,15 @@ export function SendToInstacartButton({
   };
 
   return (
-    <Button
+    <InstacartCTAButton
       onClick={handleClick}
-      disabled={loading || !lineItems.length}
-      size={size}
+      disabled={!lineItems.length}
+      loading={loading}
       variant={variant}
+      label={label}
+      fullWidth={fullWidth}
+      showExternalIcon={showExternalIcon}
       className={className}
-    >
-      {loading ? (
-        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-      ) : (
-        <ShoppingBag className="w-4 h-4 mr-2" />
-      )}
-      {loading ? "Building cart…" : label}
-    </Button>
+    />
   );
 }
