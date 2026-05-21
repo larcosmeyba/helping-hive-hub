@@ -21,7 +21,7 @@ interface Props {
   className?: string;
   variant?: InstacartCTAVariant;
   /** Approved Instacart CTA copy. */
-  label?: "Shop on Instacart" | "Shop ingredients";
+  label?: "Shop on Instacart" | "Shop ingredients" | "Send to Instacart";
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;

@@ -58,7 +58,7 @@ export default function BulkBuyingGuide() {
         <SendToInstacartButton
           title="Bulk Buying — Help The Hive"
           lineItems={selectedLineItems}
-          label="Shop on Instacart"
+          label="Send to Instacart"
         />
         <p className="text-[11px] text-muted-foreground text-center mt-2">
           Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
