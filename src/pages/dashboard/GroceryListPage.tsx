@@ -318,7 +318,7 @@ export default function GroceryListPage() {
             const selected = all.filter((li) => checked.has(li.name));
             return selected.length > 0 ? selected : all;
           })()}
-          label="Shop on Instacart"
+          label="Send to Instacart"
           fullWidth
           onLinkGenerated={(url) => {
             setLastInstacartUrl(url);
