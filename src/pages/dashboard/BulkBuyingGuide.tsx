@@ -36,8 +36,7 @@ export default function BulkBuyingGuide() {
                   <SendToInstacartButton
                     title={`${item.name} — Bulk Buy`}
                     lineItems={[{ name: item.instacartName, quantity: item.instacartQty, unit: item.instacartUnit }]}
-                    size="sm"
-                    label="Checkout with Instacart"
+                    label="Shop on Instacart"
                   />
                 </div>
               </div>
