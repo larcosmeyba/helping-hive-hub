@@ -25,6 +25,7 @@ interface Props {
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
+  onLinkGenerated?: (url: string) => void;
 }
 
 export function SendToInstacartButton({
