@@ -359,7 +359,6 @@ export default function PantryPage() {
       </div>
 
       {/* Pantry Staples Checklist */}
-      {/* Pantry Staples Checklist */}
       <PantryStaplesSection />
 
       {/* Alerts */}
