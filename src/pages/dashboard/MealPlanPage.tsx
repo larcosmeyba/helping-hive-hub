@@ -13,7 +13,7 @@ import { MealImage } from "@/components/dashboard/MealImage";
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
-import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
+
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
