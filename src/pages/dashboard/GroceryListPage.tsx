@@ -288,16 +288,20 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Shop on Instacart — branded CTA (opens external) */}
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-[12px] text-foreground/80 text-center px-2 leading-relaxed">
-          Select the items you want to shop for, then continue to Instacart.
-          <span className="block text-[11px] text-muted-foreground mt-0.5">
-            {checkedCount > 0
-              ? `Sending ${checkedCount} selected item${checkedCount === 1 ? "" : "s"} to Instacart.`
-              : `No items selected — we'll send all ${groceryItems.length + extraItems.length} items.`}
-          </span>
+      {/* Bold instructional banner guiding users into the Instacart flow */}
+      <div className="rounded-2xl border-2 border-primary/20 bg-primary/[0.06] p-5 md:p-6">
+        <p className="text-center font-bold text-foreground text-sm md:text-base leading-relaxed">
+          Select the items you want to shop for, then send items to Instacart to complete your purchase.
         </p>
+        <p className="text-center text-muted-foreground text-[11px] md:text-xs mt-2">
+          {checkedCount > 0
+            ? `${checkedCount} item${checkedCount === 1 ? "" : "s"} selected to send to Instacart`
+            : `All ${groceryItems.length + extraItems.length} items will be sent to Instacart`}
+        </p>
+      </div>
+
+      {/* Shop on Instacart — branded CTA (opens external) */}
+      <div className="flex flex-col items-center gap-3">
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
@@ -320,7 +324,7 @@ export default function GroceryListPage() {
             setLastInstacartUrl(url);
           }}
         />
-        <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
           Opens on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
         {lastInstacartUrl && (
