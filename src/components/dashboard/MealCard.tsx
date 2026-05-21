@@ -117,15 +117,18 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 ))}
               </ol>
             </div>
-            <div className="pt-1">
+            <div className="pt-1 flex flex-col items-center gap-1.5">
               <SendRecipeToInstacartButton
                 title={meal.name}
                 ingredients={meal.ingredients}
                 instructions={meal.instructions}
                 imageUrl={meal.imageUrl}
-                size="sm"
-                className="w-full"
+                label="Shop ingredients"
+                fullWidth
               />
+              <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">
+                Opens on Instacart. Pricing and availability shown at checkout. Help The Hive may earn a small affiliate fee.
+              </p>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <span>{meal.protein}g protein</span>
