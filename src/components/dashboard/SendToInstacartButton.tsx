@@ -40,6 +40,7 @@ export function SendToInstacartButton({
   partnerLinkbackUrl,
   fullWidth = false,
   showExternalIcon = false,
+  onLinkGenerated,
 }: Props) {
   const linkback =
     partnerLinkbackUrl ??
