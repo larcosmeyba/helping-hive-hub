@@ -85,68 +85,27 @@ const PANTRY_STAPLES: { name: string; quantity: string; cat: typeof CATEGORIES[n
   { name: "Powdered Milk", quantity: "1 box", cat: "dairy", category: "Dairy", shelf: "1–2 years" },
 ];
 
-function PantryStaplesSection({
-  existingNames,
-  onAdd,
-  isPending,
-}: {
-  existingNames: Set<string>;
-  onAdd: (item: { name: string; quantity: string; category: string }) => void;
-  isPending: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-
+function PantryStaplesSection() {
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-primary" />
-          <span className="font-display font-semibold text-foreground text-sm">Pantry Staples Every Family Should Have</span>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-      </button>
-      <div
-        className={`grid transition-all duration-200 ease-in-out ${
-          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-        }`}
-      >
-        <div className="overflow-hidden">
-          <div className="px-4 pb-4 space-y-1.5 border-t border-border pt-3">
-            <p className="text-xs text-muted-foreground mb-2">
-              Long-shelf-life essentials. Tap <Plus className="w-3 h-3 inline-block -mt-0.5" /> to add to your pantry.
+    <Link
+      to="/dashboard/resources/bulk-buying"
+      className="block bg-card rounded-2xl border border-border shadow-card hover:border-primary/40 transition-colors"
+    >
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Package className="w-4 h-4 text-primary shrink-0" />
+          <div className="min-w-0">
+            <p className="font-display font-semibold text-foreground text-sm truncate">
+              Pantry Staples Every Family Should Have
             </p>
-            {PANTRY_STAPLES.map((item, i) => {
-              const already = existingNames.has(item.name.toLowerCase());
-              return (
-                <div key={i} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.category} · {item.quantity}</p>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline">{item.shelf}</span>
-                  <button
-                    onClick={() => !already && onAdd({ name: item.name, quantity: item.quantity, category: item.cat })}
-                    disabled={already || isPending}
-                    className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-all ${
-                      already
-                        ? "bg-primary/10 text-primary border-primary/30 cursor-default"
-                        : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-primary active:scale-95"
-                    }`}
-                    title={already ? "Already in pantry" : "Add to pantry"}
-                    aria-label={already ? `${item.name} already in pantry` : `Add ${item.name} to pantry`}
-                  >
-                    {already ? "✓" : <Plus className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              );
-            })}
+            <p className="text-[11px] text-muted-foreground truncate">
+              See the full bulk-buying list and send it to Instacart
+            </p>
           </div>
         </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
       </div>
-    </div>
+    </Link>
   );
 }
 
