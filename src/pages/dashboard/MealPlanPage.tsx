@@ -293,37 +293,6 @@ export default function MealPlanPage() {
         )}
       </div>
 
-      {/* Send entire week to Instacart */}
-      {(() => {
-        const seen = new Set<string>();
-        const lineItems: InstacartLineItem[] = [];
-        mealPlan.weeklyPlan.forEach((day, di) =>
-          day.meals.forEach((m, mi) => {
-            const meal = getMeal(di, mi, m);
-            (meal.ingredients || []).forEach((ing) => {
-              const key = String(ing).toLowerCase().trim();
-              if (key && !seen.has(key)) {
-                seen.add(key);
-                lineItems.push({ name: String(ing), quantity: 1, unit: "each" });
-              }
-            });
-          })
-        );
-        return (
-          <div className="flex flex-col items-center gap-2">
-            <SendToInstacartButton
-              title="Help The Hive Weekly Meal Plan"
-              linkType="shopping_list"
-              lineItems={lineItems}
-              label="Shop on Instacart"
-              fullWidth
-            />
-            <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed">
-              Opens on Instacart in your browser. Pricing and availability shown at checkout. Help The Hive may earn a small affiliate fee that helps keep the app free.
-            </p>
-          </div>
-        );
-      })()}
 
       <AnimatePresence>
       {mealPlan.weeklyPlan.map((day, dayIndex) => (
