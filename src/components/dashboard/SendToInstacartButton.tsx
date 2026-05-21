@@ -25,6 +25,7 @@ interface Props {
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
+  onLinkGenerated?: (url: string) => void;
 }
 
 export function SendToInstacartButton({
@@ -39,6 +40,7 @@ export function SendToInstacartButton({
   partnerLinkbackUrl,
   fullWidth = false,
   showExternalIcon = false,
+  onLinkGenerated,
 }: Props) {
   const linkback =
     partnerLinkbackUrl ??
@@ -72,7 +74,10 @@ export function SendToInstacartButton({
       if (error) throw error;
       const url = (data as { products_link_url?: string })?.products_link_url;
       if (!url) throw new Error("No link returned from Instacart");
+      // Log for production review demo (URL inspectable in console & devtools)
+      console.info("[Instacart] shopping list URL:", url);
       void trackEvent("instacart_send_success", { itemCount: lineItems.length });
+      onLinkGenerated?.(url);
       openInstacartExternal(url);
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Failed to create Instacart link";

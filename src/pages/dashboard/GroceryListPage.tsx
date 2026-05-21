@@ -72,6 +72,7 @@ export default function GroceryListPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
+  const [lastInstacartUrl, setLastInstacartUrl] = useState<string | null>(null);
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
@@ -289,24 +290,62 @@ export default function GroceryListPage() {
 
       {/* Shop on Instacart — branded CTA (opens external) */}
       <div className="flex flex-col items-center gap-2">
+        <p className="text-[12px] text-foreground/80 text-center px-2 leading-relaxed">
+          Select the items you want to shop for, then continue to Instacart.
+          <span className="block text-[11px] text-muted-foreground mt-0.5">
+            {checkedCount > 0
+              ? `Sending ${checkedCount} selected item${checkedCount === 1 ? "" : "s"} to Instacart.`
+              : `No items selected — we'll send all ${groceryItems.length + extraItems.length} items.`}
+          </span>
+        </p>
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
-          lineItems={[
-            ...groceryItems.map<InstacartLineItem>((i) => ({
-              name: i.name,
-              quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
-              unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
-            })),
-            ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
-          ]}
+          lineItems={(() => {
+            const all: InstacartLineItem[] = [
+              ...groceryItems.map<InstacartLineItem>((i) => ({
+                name: i.name,
+                quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
+                unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
+              })),
+              ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
+            ];
+            if (checked.size === 0) return all;
+            const selected = all.filter((li) => checked.has(li.name));
+            return selected.length > 0 ? selected : all;
+          })()}
           label="Shop on Instacart"
           fullWidth
+          onLinkGenerated={(url) => {
+            setLastInstacartUrl(url);
+          }}
         />
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed">
-          Opens on Instacart in your browser. Pricing and availability are shown on Instacart at checkout. Help The Hive may earn a small affiliate fee that helps keep the app free.
+          Opens on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
+        {lastInstacartUrl && (
+          <div className="w-full max-w-md flex items-center gap-2 bg-muted/40 border border-border rounded-xl px-3 py-2">
+            <span className="text-[10px] text-muted-foreground truncate flex-1" title={lastInstacartUrl}>
+              {lastInstacartUrl}
+            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(lastInstacartUrl);
+                  toast({ title: "Link copied", description: "Instacart shopping list URL copied to clipboard." });
+                } catch {
+                  toast({ title: "Copy failed", description: lastInstacartUrl, variant: "destructive" });
+                }
+              }}
+              className="text-[11px] font-semibold text-primary hover:underline shrink-0"
+            >
+              Copy link
+            </button>
+          </div>
+        )}
       </div>
+
 
 
 
