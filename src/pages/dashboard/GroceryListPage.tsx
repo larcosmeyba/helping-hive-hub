@@ -72,7 +72,7 @@ export default function GroceryListPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
-  const [lastInstacartUrl, setLastInstacartUrl] = useState<string | null>(null);
+  
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
@@ -300,7 +300,7 @@ export default function GroceryListPage() {
         </p>
       </div>
 
-      {/* Shop on Instacart — branded CTA (opens external) */}
+      {/* Send to Instacart — branded CTA (opens external) */}
       <div className="flex flex-col items-center gap-3">
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
@@ -320,34 +320,10 @@ export default function GroceryListPage() {
           })()}
           label="Send to Instacart"
           fullWidth
-          onLinkGenerated={(url) => {
-            setLastInstacartUrl(url);
-          }}
         />
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
-          Opens on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
+          Opens Ralphs on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
-        {lastInstacartUrl && (
-          <div className="w-full max-w-md flex items-center gap-2 bg-muted/40 border border-border rounded-xl px-3 py-2">
-            <span className="text-[10px] text-muted-foreground truncate flex-1" title={lastInstacartUrl}>
-              {lastInstacartUrl}
-            </span>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(lastInstacartUrl);
-                  toast({ title: "Link copied", description: "Instacart shopping list URL copied to clipboard." });
-                } catch {
-                  toast({ title: "Copy failed", description: lastInstacartUrl, variant: "destructive" });
-                }
-              }}
-              className="text-[11px] font-semibold text-primary hover:underline shrink-0"
-            >
-              Copy link
-            </button>
-          </div>
-        )}
       </div>
 
 

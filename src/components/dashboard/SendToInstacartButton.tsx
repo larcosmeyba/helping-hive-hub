@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
@@ -25,28 +24,19 @@ interface Props {
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
-  onLinkGenerated?: (url: string) => void;
 }
+
+const RALPHS_INSTACART_URL = "https://www.instacart.com/store/ralphs/storefront";
 
 export function SendToInstacartButton({
   title,
   lineItems,
-  imageUrl,
-  linkType = "shopping_list",
-  instructions,
   className,
   variant = "light",
   label = "Shop on Instacart",
-  partnerLinkbackUrl,
   fullWidth = false,
   showExternalIcon = false,
-  onLinkGenerated,
 }: Props) {
-  const linkback =
-    partnerLinkbackUrl ??
-    (typeof window !== "undefined"
-      ? `${window.location.origin}/dashboard/grocery?from=instacart`
-      : "https://helpthehive.com/dashboard/grocery?from=instacart");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -56,40 +46,10 @@ export function SendToInstacartButton({
       return;
     }
     setLoading(true);
-    void trackEvent("instacart_send_clicked", { itemCount: lineItems.length, linkType });
+    void trackEvent("instacart_send_clicked", { itemCount: lineItems.length, title });
     try {
-      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
-        body: {
-          title,
-          image_url: imageUrl,
-          link_type: linkType,
-          line_items: lineItems,
-          instructions,
-          landing_page_configuration: {
-            partner_linkback_url: linkback,
-            enable_pantry_items: true,
-          },
-        },
-      });
-      if (error) throw error;
-      const url = (data as { products_link_url?: string })?.products_link_url;
-      if (!url) throw new Error("No link returned from Instacart");
-      // Log for production review demo (URL inspectable in console & devtools)
-      console.info("[Instacart] shopping list URL:", url);
+      openInstacartExternal(RALPHS_INSTACART_URL);
       void trackEvent("instacart_send_success", { itemCount: lineItems.length });
-      onLinkGenerated?.(url);
-      openInstacartExternal(url);
-    } catch (err) {
-      const raw = err instanceof Error ? err.message : "Failed to create Instacart link";
-      const notConfigured = /INSTACART_API_KEY not configured|not configured/i.test(raw);
-      void trackEvent("instacart_send_error", { reason: notConfigured ? "not_configured" : "api_error" });
-      toast({
-        title: notConfigured ? "Instacart checkout coming soon" : "Couldn't open Instacart",
-        description: notConfigured
-          ? "We're finalizing our Instacart partnership. Your list is saved — you'll be able to shop it in one tap very soon."
-          : raw,
-        variant: notConfigured ? "default" : "destructive",
-      });
     } finally {
       setLoading(false);
     }
