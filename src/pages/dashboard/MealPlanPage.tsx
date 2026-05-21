@@ -310,13 +310,18 @@ export default function MealPlanPage() {
           })
         );
         return (
-          <SendToInstacartButton
-            title="Help The Hive Weekly Meal Plan"
-            linkType="shopping_list"
-            lineItems={lineItems}
-            className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 rounded-xl font-semibold shadow-sm"
-            label="Send week to Instacart"
-          />
+          <div className="flex flex-col items-center gap-2">
+            <SendToInstacartButton
+              title="Help The Hive Weekly Meal Plan"
+              linkType="shopping_list"
+              lineItems={lineItems}
+              label="Shop on Instacart"
+              fullWidth
+            />
+            <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed">
+              Opens on Instacart in your browser. Pricing and availability shown at checkout. Help The Hive may earn a small affiliate fee that helps keep the app free.
+            </p>
+          </div>
         );
       })()}
 
