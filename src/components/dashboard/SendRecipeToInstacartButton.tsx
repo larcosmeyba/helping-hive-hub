@@ -57,7 +57,7 @@ export function SendRecipeToInstacartButton({
         ingredients: parsed.map((p) => ({
           name: p.name,
           display_text: p.display_text,
-          measurements: p.quantity && p.unit ? [{ quantity: p.quantity, unit: p.unit }] : undefined,
+          measurements: p.measurements,
         })),
       };
       if (imageUrl) payload.image_url = imageUrl;
