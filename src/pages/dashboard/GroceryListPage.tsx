@@ -72,6 +72,7 @@ export default function GroceryListPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
+  const [lastInstacartUrl, setLastInstacartUrl] = useState<string | null>(null);
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
