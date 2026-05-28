@@ -339,7 +339,10 @@ export default function GroceryListPage() {
               <p className="text-sm md:text-base font-bold text-foreground truncate">{activeStore}</p>
             </div>
           </div>
-          <p className="text-base md:text-lg font-bold text-primary shrink-0">${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
+          <div className="text-right shrink-0">
+            <p className="text-base md:text-lg font-bold text-primary">~${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
+            <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">estimated basket</p>
+          </div>
         </div>
       )}
 
