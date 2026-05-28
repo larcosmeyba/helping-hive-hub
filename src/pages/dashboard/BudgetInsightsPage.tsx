@@ -211,7 +211,7 @@ export default function BudgetInsightsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-accent/5 rounded-xl p-4 border border-accent/10">
             <p className="font-semibold text-foreground text-sm">Pantry Optimization</p>
-            <p className="text-2xl font-bold text-accent mt-1">${pantrySavings.toFixed(2)}/week</p>
+            <p className="text-2xl font-bold text-accent mt-1">~${pantrySavings.toFixed(2)}/week</p>
             <p className="text-xs text-muted-foreground mt-1">Saved by using items you already have</p>
           </div>
           <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
