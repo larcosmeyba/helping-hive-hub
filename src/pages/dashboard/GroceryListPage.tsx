@@ -465,39 +465,45 @@ export default function GroceryListPage() {
         )}
       </div>
 
-      {/* Totals */}
+      {/* Estimated Totals */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <div className="space-y-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal ({activeStore || "Average"})</span>
-            <span className="text-foreground font-medium">${subtotal.toFixed(2)}</span>
+            <span className="text-muted-foreground">Estimated Subtotal ({activeStore || "Average"})</span>
+            <span className="text-foreground font-medium">~${subtotal.toFixed(2)}</span>
           </div>
           {extraItems.length > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Additional Items ({extraItems.length})</span>
-              <span className="text-foreground font-medium">${extraItems.reduce((s, i) => s + i.price, 0).toFixed(2)}</span>
+              <span className="text-foreground font-medium">~${extraItems.reduce((s, i) => s + i.price, 0).toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Estimated Tax ({(taxRate * 100).toFixed(1)}%)</span>
-            <span className="text-foreground">${((subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate).toFixed(2)}</span>
+            <span className="text-foreground">~${((subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate).toFixed(2)}</span>
           </div>
           {mealPlan.pantrySavings > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pantry Savings</span>
-              <span className="text-accent font-semibold">-${mealPlan.pantrySavings.toFixed(2)}</span>
+              <span className="text-accent font-semibold">-~${mealPlan.pantrySavings.toFixed(2)}</span>
             </div>
           )}
-          <div className="border-t border-border pt-3 flex justify-between">
-            <span className="font-semibold text-foreground text-base">Total</span>
+          <div className="border-t border-border pt-3 flex justify-between items-baseline">
+            <div>
+              <span className="font-semibold text-foreground text-base">Estimated Grocery Total</span>
+              <p className="text-[10px] text-muted-foreground italic mt-0.5">approximate budget</p>
+            </div>
             <span className="font-bold text-2xl text-primary">
-              ${(subtotal + extraItems.reduce((s, i) => s + i.price, 0) + (subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate - (mealPlan.pantrySavings || 0)).toFixed(2)}
+              ~${(subtotal + extraItems.reduce((s, i) => s + i.price, 0) + (subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate - (mealPlan.pantrySavings || 0)).toFixed(2)}
             </span>
           </div>
+          <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
+            These are planning estimates. Final pricing and availability are confirmed at Instacart checkout.
+          </p>
           {mealPlan.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-1">
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-primary" />
-              Prices adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
+              Estimates adjusted for your region{mealPlan.regionLabel ? ` · ${mealPlan.regionLabel}` : ""}
             </p>
           )}
         </div>
