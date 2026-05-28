@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
 import { openInstacartExternal } from "@/lib/openInstacartExternal";
