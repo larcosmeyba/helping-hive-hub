@@ -21,11 +21,12 @@ export function WeeklyProgress({ budget, spent, mealsCooked, costPerMeal }: Prop
         />
       </div>
       <div className="grid grid-cols-4 gap-2 mt-4 text-center">
-        <Stat label="Spent" value={`$${spent.toFixed(0)}`} />
-        <Stat label="Left" value={`$${left.toFixed(0)}`} />
+        <Stat label="Est. Spent" value={`~$${spent.toFixed(0)}`} />
+        <Stat label="Est. Left" value={`~$${left.toFixed(0)}`} />
         <Stat label="Meals" value={`${mealsCooked}`} />
-        <Stat label="Per Meal" value={`$${costPerMeal.toFixed(2)}`} />
+        <Stat label="Est. Per Meal" value={`~$${costPerMeal.toFixed(2)}`} />
       </div>
+      <p className="text-[10px] text-muted-foreground text-center mt-2">Estimates only. Final pricing confirmed at Instacart checkout.</p>
     </div>
   );
 }

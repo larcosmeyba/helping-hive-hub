@@ -253,7 +253,7 @@ export default function FridgeChefPage() {
                   <div className="flex gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {recipe.calories} cal</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {recipe.cookTime}m</span>
-                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${recipe.cost.toFixed(2)}</span>
+                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ~${recipe.cost.toFixed(2)} est.</span>
                   </div>
                   <MacroBadges
                     protein={recipe.protein}
@@ -301,7 +301,7 @@ export default function FridgeChefPage() {
                     <Clock className="w-3 h-3" /> {selectedRecipe.cookTime} min
                   </span>
                   <span className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" /> ${selectedRecipe.cost.toFixed(2)}
+                    <DollarSign className="w-3 h-3" /> ~${selectedRecipe.cost.toFixed(2)} est.
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">

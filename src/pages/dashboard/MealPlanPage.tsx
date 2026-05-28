@@ -215,13 +215,13 @@ export default function MealPlanPage() {
         {/* Weekly cost display + cooked progress */}
         <div className="flex items-center gap-4 mt-2 flex-wrap">
           <div>
-            <p className="text-xs text-muted-foreground">Weekly Total</p>
-            <p className="text-lg font-bold text-primary">${weeklyTotal.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Estimated Weekly Total</p>
+            <p className="text-lg font-bold text-primary">~${weeklyTotal.toFixed(2)}</p>
           </div>
           <div className="w-px h-8 bg-border" />
           <div>
-            <p className="text-xs text-muted-foreground">Daily Average</p>
-            <p className="text-lg font-bold text-foreground">${dailyAvg.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Est. Daily Average</p>
+            <p className="text-lg font-bold text-foreground">~${dailyAvg.toFixed(2)}</p>
           </div>
           <div className="w-px h-8 bg-border" />
           <div>
@@ -234,6 +234,9 @@ export default function MealPlanPage() {
             <p className="text-lg font-bold text-accent">{cookedCount}/{totalMeals}</p>
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Estimates only. Final pricing and availability are confirmed at Instacart checkout.
+        </p>
       </div>
 
       {/* Swap Cost Impact Banner */}
@@ -244,10 +247,10 @@ export default function MealPlanPage() {
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>
               {impact > 0
-                ? `Swaps add +$${impact.toFixed(2)} to grocery cost`
+                ? `Swaps add ~+$${impact.toFixed(2)} to estimated grocery cost`
                 : impact < 0
-                  ? `Swaps save $${Math.abs(impact).toFixed(2)} on grocery cost`
-                  : "Swaps have no cost impact"}
+                  ? `Swaps save ~$${Math.abs(impact).toFixed(2)} on estimated grocery cost`
+                  : "Swaps have no estimated cost impact"}
             </span>
           </div>
         );

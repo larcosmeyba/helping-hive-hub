@@ -80,16 +80,17 @@ export default function BudgetInsightsPage() {
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
           <TrendingUp className="w-6 h-6 text-primary" /> Budget Insights
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Your spending, savings, and optimization at a glance</p>
+        <p className="text-sm text-muted-foreground mt-1">Your estimated spending, projected savings, and optimization at a glance</p>
+        <p className="text-[11px] text-muted-foreground mt-1">All amounts are planning estimates. Final pricing is confirmed at Instacart checkout.</p>
       </div>
 
       {/* Hero Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, sub: "Your target", icon: Target, gradient: "from-primary/20 to-primary/5" },
-          { label: "This Week", value: `$${spent.toFixed(0)}`, sub: `${((spent / budget) * 100).toFixed(0)}% of budget`, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
-          { label: "You Saved", value: `$${saved.toFixed(0)}`, sub: pantrySavings > 0 ? `incl. $${pantrySavings.toFixed(0)} pantry` : "This week", icon: PiggyBank, gradient: "from-accent/20 to-accent/5" },
-          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, sub: `${mealPlan?.weeklyPlan?.reduce((n, d) => n + d.meals.length, 0) || 0} meals`, icon: Utensils, gradient: "from-primary/20 to-primary/5" },
+          { label: "Est. This Week", value: `~$${spent.toFixed(0)}`, sub: `${((spent / budget) * 100).toFixed(0)}% of budget`, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
+          { label: "Est. You Saved", value: `~$${saved.toFixed(0)}`, sub: pantrySavings > 0 ? `incl. ~$${pantrySavings.toFixed(0)} pantry` : "This week", icon: PiggyBank, gradient: "from-accent/20 to-accent/5" },
+          { label: "Est. Cost/Meal", value: `~$${costPerMeal.toFixed(2)}`, sub: `${mealPlan?.weeklyPlan?.reduce((n, d) => n + d.meals.length, 0) || 0} meals`, icon: Utensils, gradient: "from-primary/20 to-primary/5" },
         ].map((stat) => (
           <div key={stat.label} className={`bg-gradient-to-br ${stat.gradient} rounded-2xl border border-border p-5 shadow-card`}>
             <div className="flex items-center gap-2 mb-3">
@@ -111,7 +112,7 @@ export default function BudgetInsightsPage() {
         </h2>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-foreground font-medium">${spent.toFixed(2)} spent</span>
+            <span className="text-foreground font-medium">~${spent.toFixed(2)} estimated spend</span>
             <span className="text-muted-foreground">${budget} budget</span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden">
@@ -122,7 +123,7 @@ export default function BudgetInsightsPage() {
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{((spent / budget) * 100).toFixed(0)}% used</span>
-            <span>${saved.toFixed(2)} remaining</span>
+            <span>~${saved.toFixed(2)} remaining (est.)</span>
           </div>
         </div>
       </div>
@@ -132,7 +133,7 @@ export default function BudgetInsightsPage() {
         {/* Daily Spending */}
         {dailyCosts.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4">Daily Meal Costs</h3>
+            <h3 className="font-display font-semibold text-foreground mb-4">Estimated Daily Meal Costs</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={dailyCosts}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(40, 30%, 88%)" />
@@ -151,7 +152,7 @@ export default function BudgetInsightsPage() {
         {/* Spending by Category */}
         {categoryData.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4">Spending by Category</h3>
+            <h3 className="font-display font-semibold text-foreground mb-4">Estimated Spending by Category</h3>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
@@ -168,7 +169,7 @@ export default function BudgetInsightsPage() {
 
       {/* Weekly Trend */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-        <h3 className="font-display font-semibold text-foreground mb-4">Weekly Spending Trend</h3>
+        <h3 className="font-display font-semibold text-foreground mb-4">Projected Weekly Spending Trend</h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={weeklyTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(40, 30%, 88%)" />
@@ -210,12 +211,12 @@ export default function BudgetInsightsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-accent/5 rounded-xl p-4 border border-accent/10">
             <p className="font-semibold text-foreground text-sm">Pantry Optimization</p>
-            <p className="text-2xl font-bold text-accent mt-1">${pantrySavings.toFixed(2)}/week</p>
+            <p className="text-2xl font-bold text-accent mt-1">~${pantrySavings.toFixed(2)}/week</p>
             <p className="text-xs text-muted-foreground mt-1">Saved by using items you already have</p>
           </div>
           <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
             <p className="font-semibold text-foreground text-sm">Budget Discipline</p>
-            <p className="text-2xl font-bold text-primary mt-1">{saved > 0 ? `$${saved.toFixed(2)}` : "$0"}/week</p>
+            <p className="text-2xl font-bold text-primary mt-1">{saved > 0 ? `~$${saved.toFixed(2)}` : "$0"}/week</p>
             <p className="text-xs text-muted-foreground mt-1">{saved > 0 ? "Under budget — great job!" : "On target with your budget"}</p>
           </div>
           <div className="bg-muted rounded-xl p-4 border border-border">
