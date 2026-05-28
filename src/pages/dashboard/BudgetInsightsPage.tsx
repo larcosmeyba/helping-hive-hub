@@ -152,7 +152,7 @@ export default function BudgetInsightsPage() {
         {/* Spending by Category */}
         {categoryData.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4">Spending by Category</h3>
+            <h3 className="font-display font-semibold text-foreground mb-4">Estimated Spending by Category</h3>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
