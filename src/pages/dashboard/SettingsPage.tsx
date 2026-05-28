@@ -154,7 +154,7 @@ export default function SettingsPage() {
             { label: "Budget", value: `$${weeklyBudget}`, icon: Target, color: "text-primary" },
             { label: "Est. Spend", value: `$${spent.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
             { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
-            { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
+            { label: "Est. Cost/Meal", value: `~$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
           ].map((stat) => (
             <div key={stat.label} className="bg-muted/30 rounded-xl p-3 text-center">
               <stat.icon className={`w-4 h-4 ${stat.color} mx-auto mb-1`} />
