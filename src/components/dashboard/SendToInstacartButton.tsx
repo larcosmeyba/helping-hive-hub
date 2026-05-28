@@ -84,7 +84,7 @@ export function SendToInstacartButton({
           link_type: linkType,
           title,
           itemCount: lineItems.length,
-          line_items: lineItems as unknown as Record<string, unknown>[],
+          line_items: JSON.parse(JSON.stringify(lineItems)),
         });
         // Copyable toast so the URL can be grabbed during the demo / review.
         toast({
