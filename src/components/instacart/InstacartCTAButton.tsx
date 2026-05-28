@@ -66,8 +66,8 @@ export const InstacartCTAButton = React.forwardRef<
     {
       variant = "light",
       loading = false,
-      showExternalIcon = false,
-      label = "Shop on Instacart",
+      showExternalIcon = true,
+      label = "Shop ingredients",
       fullWidth = false,
       className,
       disabled,
@@ -87,7 +87,7 @@ export const InstacartCTAButton = React.forwardRef<
       border: isDark ? "none" : "0.5px solid #EFE9E1",
       fontFamily:
         '"SF Pro Text", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      fontWeight: 600,
+      fontWeight: 700,
       fontSize: 15,
       lineHeight: 1,
       letterSpacing: "-0.01em",
@@ -111,14 +111,10 @@ export const InstacartCTAButton = React.forwardRef<
         style={{ ...base, ...style }}
         {...props}
       >
-        {loading ? (
-          <Loader2 className="animate-spin" size={18} />
-        ) : (
-          <InstacartCarrot />
-        )}
+        {loading && <Loader2 className="animate-spin" size={18} />}
         <span>{loading ? "Opening Instacart…" : label}</span>
         {showExternalIcon && !loading && (
-          <ExternalLink size={14} strokeWidth={2.25} style={{ opacity: 0.7 }} />
+          <ExternalLink size={14} strokeWidth={2.5} />
         )}
       </button>
     );
