@@ -75,10 +75,35 @@ export function SendToInstacartButton({
       if (error || !landingUrl) {
         console.error("[Instacart] Falling back to storefront:", error);
         openInstacartExternal(RALPHS_INSTACART_URL);
-        void trackEvent("instacart_send_fallback", { itemCount: lineItems.length });
+        void trackEvent("instacart_send_fallback", { itemCount: lineItems.length, error: String(error ?? "no_url") });
       } else {
+        // Log generated landing URL + payload for Instacart's ingredient-parsing review.
+        void trackEvent("instacart_link_generated", {
+          products_link_url: landingUrl,
+          link_type: linkType,
+          title,
+          itemCount: lineItems.length,
+          line_items: lineItems,
+        });
+        // Copyable toast so the URL can be grabbed during the demo / review.
+        toast({
+          title: "Instacart link ready",
+          description: landingUrl,
+          duration: 12000,
+          action: (
+            <ToastAction
+              altText="Copy Instacart link"
+              onClick={() => {
+                navigator.clipboard?.writeText(landingUrl).catch(() => {});
+                toast({ title: "Link copied" });
+              }}
+            >
+              Copy
+            </ToastAction>
+          ),
+        });
         openInstacartExternal(landingUrl);
-        void trackEvent("instacart_send_success", { itemCount: lineItems.length });
+        void trackEvent("instacart_send_success", { itemCount: lineItems.length, products_link_url: landingUrl });
       }
     } catch (err) {
       console.error("[Instacart] Send failed:", err);
