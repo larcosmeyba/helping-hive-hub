@@ -216,7 +216,7 @@ export default function BudgetInsightsPage() {
           </div>
           <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
             <p className="font-semibold text-foreground text-sm">Budget Discipline</p>
-            <p className="text-2xl font-bold text-primary mt-1">{saved > 0 ? `$${saved.toFixed(2)}` : "$0"}/week</p>
+            <p className="text-2xl font-bold text-primary mt-1">{saved > 0 ? `~$${saved.toFixed(2)}` : "$0"}/week</p>
             <p className="text-xs text-muted-foreground mt-1">{saved > 0 ? "Under budget — great job!" : "On target with your budget"}</p>
           </div>
           <div className="bg-muted rounded-xl p-4 border border-border">
