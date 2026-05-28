@@ -112,7 +112,7 @@ export default function BudgetInsightsPage() {
         </h2>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-foreground font-medium">${spent.toFixed(2)} spent</span>
+            <span className="text-foreground font-medium">~${spent.toFixed(2)} estimated spend</span>
             <span className="text-muted-foreground">${budget} budget</span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden">
