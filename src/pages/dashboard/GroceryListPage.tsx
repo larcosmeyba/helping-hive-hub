@@ -241,26 +241,26 @@ export default function GroceryListPage() {
         <div className="bg-gradient-to-r from-accent/10 to-primary/10 rounded-2xl border border-accent/30 p-4 md:p-5">
           <div className="flex items-center gap-2 mb-3">
             <PiggyBank className="w-5 h-5 text-accent" />
-            <h3 className="font-display text-sm md:text-base font-semibold text-foreground">Weekly Grocery Savings</h3>
+            <h3 className="font-display text-sm md:text-base font-semibold text-foreground">Estimated Weekly Grocery Savings</h3>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
-              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Your Cost</p>
-              <p className="text-base md:text-xl font-bold text-primary">${savings.actualGroceryCost.toFixed(2)}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Est. Your Cost</p>
+              <p className="text-base md:text-xl font-bold text-primary">~${savings.actualGroceryCost.toFixed(2)}</p>
             </div>
             <div className="text-center">
               <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Typical Cost</p>
-              <p className="text-base md:text-xl font-bold text-muted-foreground line-through">${savings.regionalAverageCost.toFixed(2)}</p>
+              <p className="text-base md:text-xl font-bold text-muted-foreground line-through">~${savings.regionalAverageCost.toFixed(2)}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">You Save</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground mb-1">Est. You Save</p>
               <p className="text-base md:text-xl font-bold text-accent flex items-center justify-center gap-1">
-                <TrendingDown className="w-4 h-4" />${savings.estimatedSavings.toFixed(2)}
+                <TrendingDown className="w-4 h-4" />~${savings.estimatedSavings.toFixed(2)}
               </p>
             </div>
           </div>
           <p className="text-[10px] md:text-xs text-muted-foreground text-center mt-2">
-            Saving ~{savings.savingsPercent}% vs typical grocery spending in your area
+            Estimated ~{savings.savingsPercent}% vs typical grocery spending in your area. Final pricing confirmed at Instacart checkout.
           </p>
         </div>
       )}
