@@ -133,7 +133,7 @@ export default function BudgetInsightsPage() {
         {/* Daily Spending */}
         {dailyCosts.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4">Daily Meal Costs</h3>
+            <h3 className="font-display font-semibold text-foreground mb-4">Estimated Daily Meal Costs</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={dailyCosts}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(40, 30%, 88%)" />
