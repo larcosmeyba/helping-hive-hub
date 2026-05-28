@@ -247,10 +247,10 @@ export default function MealPlanPage() {
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>
               {impact > 0
-                ? `Swaps add +$${impact.toFixed(2)} to grocery cost`
+                ? `Swaps add ~+$${impact.toFixed(2)} to estimated grocery cost`
                 : impact < 0
-                  ? `Swaps save $${Math.abs(impact).toFixed(2)} on grocery cost`
-                  : "Swaps have no cost impact"}
+                  ? `Swaps save ~$${Math.abs(impact).toFixed(2)} on estimated grocery cost`
+                  : "Swaps have no estimated cost impact"}
             </span>
           </div>
         );
