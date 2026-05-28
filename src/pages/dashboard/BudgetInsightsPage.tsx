@@ -169,7 +169,7 @@ export default function BudgetInsightsPage() {
 
       {/* Weekly Trend */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
-        <h3 className="font-display font-semibold text-foreground mb-4">Weekly Spending Trend</h3>
+        <h3 className="font-display font-semibold text-foreground mb-4">Projected Weekly Spending Trend</h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={weeklyTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(40, 30%, 88%)" />
