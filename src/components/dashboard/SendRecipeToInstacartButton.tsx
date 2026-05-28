@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
 import { openInstacartExternal } from "@/lib/openInstacartExternal";
@@ -76,10 +77,33 @@ export function SendRecipeToInstacartButton({
       if (error || !landingUrl) {
         console.error("[Instacart] Recipe fallback to storefront:", error);
         openInstacartExternal(RALPHS_INSTACART_URL);
-        void trackEvent("instacart_recipe_fallback", { itemCount: parsed.length });
+        void trackEvent("instacart_recipe_fallback", { itemCount: parsed.length, error: String(error ?? "no_url") });
       } else {
+        void trackEvent("instacart_link_generated", {
+          products_link_url: landingUrl,
+          link_type: "recipe",
+          title,
+          itemCount: parsed.length,
+          ingredients: JSON.parse(JSON.stringify(parsed)),
+        });
+        toast({
+          title: "Instacart link ready",
+          description: landingUrl,
+          duration: 12000,
+          action: (
+            <ToastAction
+              altText="Copy Instacart link"
+              onClick={() => {
+                navigator.clipboard?.writeText(landingUrl).catch(() => {});
+                toast({ title: "Link copied" });
+              }}
+            >
+              Copy
+            </ToastAction>
+          ),
+        });
         openInstacartExternal(landingUrl);
-        void trackEvent("instacart_recipe_success", { itemCount: parsed.length });
+        void trackEvent("instacart_recipe_success", { itemCount: parsed.length, products_link_url: landingUrl });
       }
     } catch (err) {
       console.error("[Instacart] Recipe send failed:", err);
