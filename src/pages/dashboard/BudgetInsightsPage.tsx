@@ -123,7 +123,7 @@ export default function BudgetInsightsPage() {
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{((spent / budget) * 100).toFixed(0)}% used</span>
-            <span>${saved.toFixed(2)} remaining</span>
+            <span>~${saved.toFixed(2)} remaining (est.)</span>
           </div>
         </div>
       </div>
