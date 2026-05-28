@@ -80,16 +80,17 @@ export default function BudgetInsightsPage() {
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
           <TrendingUp className="w-6 h-6 text-primary" /> Budget Insights
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Your spending, savings, and optimization at a glance</p>
+        <p className="text-sm text-muted-foreground mt-1">Your estimated spending, projected savings, and optimization at a glance</p>
+        <p className="text-[11px] text-muted-foreground mt-1">All amounts are planning estimates. Final pricing is confirmed at Instacart checkout.</p>
       </div>
 
       {/* Hero Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, sub: "Your target", icon: Target, gradient: "from-primary/20 to-primary/5" },
-          { label: "This Week", value: `$${spent.toFixed(0)}`, sub: `${((spent / budget) * 100).toFixed(0)}% of budget`, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
-          { label: "You Saved", value: `$${saved.toFixed(0)}`, sub: pantrySavings > 0 ? `incl. $${pantrySavings.toFixed(0)} pantry` : "This week", icon: PiggyBank, gradient: "from-accent/20 to-accent/5" },
-          { label: "Cost/Meal", value: `$${costPerMeal.toFixed(2)}`, sub: `${mealPlan?.weeklyPlan?.reduce((n, d) => n + d.meals.length, 0) || 0} meals`, icon: Utensils, gradient: "from-primary/20 to-primary/5" },
+          { label: "Est. This Week", value: `~$${spent.toFixed(0)}`, sub: `${((spent / budget) * 100).toFixed(0)}% of budget`, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
+          { label: "Est. You Saved", value: `~$${saved.toFixed(0)}`, sub: pantrySavings > 0 ? `incl. ~$${pantrySavings.toFixed(0)} pantry` : "This week", icon: PiggyBank, gradient: "from-accent/20 to-accent/5" },
+          { label: "Est. Cost/Meal", value: `~$${costPerMeal.toFixed(2)}`, sub: `${mealPlan?.weeklyPlan?.reduce((n, d) => n + d.meals.length, 0) || 0} meals`, icon: Utensils, gradient: "from-primary/20 to-primary/5" },
         ].map((stat) => (
           <div key={stat.label} className={`bg-gradient-to-br ${stat.gradient} rounded-2xl border border-border p-5 shadow-card`}>
             <div className="flex items-center gap-2 mb-3">
