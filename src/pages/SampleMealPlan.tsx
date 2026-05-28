@@ -362,7 +362,7 @@ export default function SampleMealPlan() {
                   <div className="bg-muted/40 px-5 py-3 border-b border-border flex items-center justify-between">
                     <h3 className="font-display text-lg font-semibold text-foreground">{day.day}</h3>
                     <span className="text-sm text-primary font-medium">
-                      ${totalDailyCosts[dayIdx].toFixed(2)} / day
+                      ~${totalDailyCosts[dayIdx].toFixed(2)} / day (est.)
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border">
