@@ -4,6 +4,7 @@
 //   - Recipe page:   https://docs.instacart.com/developer_platform_api/api/recipe
 // Auth: single API key via `Authorization: Bearer <INSTACART_API_KEY>`
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const DEV_BASE = "https://connect.dev.instacart.tools";
 const PROD_BASE = "https://connect.instacart.com";
@@ -13,6 +14,7 @@ interface ShoppingLineItem {
   quantity?: number;
   unit?: string;
   display_text?: string;
+  upcs?: string[];
   line_item_measurements?: Array<{ quantity: number; unit: string }>;
   filters?: { brand_filters?: string[]; health_filters?: string[] };
 }
@@ -20,6 +22,7 @@ interface ShoppingLineItem {
 interface RecipeIngredient {
   name: string;
   display_text?: string;
+  upcs?: string[];
   measurements?: Array<{ quantity: number; unit: string }>;
   filters?: { brand_filters?: string[]; health_filters?: string[] };
 }
