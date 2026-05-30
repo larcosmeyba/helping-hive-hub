@@ -90,15 +90,25 @@ Deno.serve(async (req) => {
       : "/idp/v1/products/products_link";
     const url = `${base}${path}`;
 
+    // Best-effort UPC enrichment for greater Instacart match accuracy.
+    // Looks up canonical_products by name (and aliases) and attaches `upcs`
+    // when a GTIN/UPC is on file. Silent no-op if the DB has no UPCs yet
+    // or if the lookup fails — never blocks the IDP call.
+    const enrichedItems = await enrichWithUpcs(items as Array<ShoppingLineItem | RecipeIngredient>);
+    const upcMatched = enrichedItems.filter((i) => i.upcs && i.upcs.length > 0).length;
+    if (upcMatched > 0) {
+      console.log(`[instacart-create-list] Attached UPCs to ${upcMatched}/${enrichedItems.length} items`);
+    }
+
     const payload: Record<string, unknown> = {
       title: body.title,
       link_type: linkType,
       expires_in: body.expires_in ?? 30,
     };
     if (isRecipe) {
-      payload.ingredients = body.ingredients;
+      payload.ingredients = enrichedItems;
     } else {
-      payload.line_items = body.line_items;
+      payload.line_items = enrichedItems;
     }
     if (body.image_url) payload.image_url = body.image_url;
     if (body.instructions) payload.instructions = body.instructions;
