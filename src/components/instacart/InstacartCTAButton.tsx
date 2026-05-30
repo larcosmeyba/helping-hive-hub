@@ -5,20 +5,23 @@ import { cn } from "@/lib/utils";
 /**
  * Instacart-branded CTA, built to Instacart's Developer Platform brand specs.
  *
- * Specs (per Instacart final review):
+ * Variants (per Instacart final review):
+ *   Dark  (default): bg #003D29, text #FAF1E5, no stroke.
+ *   Light          : bg #FAF1E5, text #003D29, 0.5px #EFE9E1 stroke.
+ *   White          : bg #FFFFFF, text #000000, 0.5px #E8E9EB stroke.
+ *
+ * All variants:
  *   Height 46px, pill radius, dynamic width.
- *   Light: bg #FAF1E5, text #003D29, 0.5px #EFE9E1 border.
- *   Dark : bg #003D29, text #FAF1E5, no border.
- *   Logo : 22px full-color Instacart carrot mark (#FF7009 + #0AAD0A).
- *   Padding: 18px horizontal, 16px vertical (effectively contained by 46px height).
- *   Approved copy: "Shop on Instacart" (preferred) or "Shop ingredients".
+ *   Padding: 18px horizontal, 16px vertical (contained by 46px height).
+ *   22px full-color Instacart carrot mark (#FF7009 body + #0AAD0A leaves).
+ *   Optional external-link icon.
+ *   Approved copy: "Shop on Instacart" or "Shop ingredients".
  *
  * The CTA always opens the Instacart landing page in an external browser
- * (Capacitor's webview defers http(s) `_blank` opens to the system browser
- * on both iOS and Android — never embedded).
+ * (Capacitor's webview defers http(s) `_blank` opens to the system browser).
  */
 
-export type InstacartCTAVariant = "light" | "dark";
+export type InstacartCTAVariant = "dark" | "light" | "white";
 
 interface InstacartCTAButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -29,34 +32,41 @@ interface InstacartCTAButtonProps
   fullWidth?: boolean;
 }
 
-function InstacartCarrot({ className }: { className?: string }) {
-  // Simplified full-color Instacart carrot mark.
-  // Body #FF7009, leaves #0AAD0A. 22px square.
+function InstacartCarrot({ size = 22 }: { size?: number }) {
+  // Instacart full-color carrot mark — #FF7009 body, #0AAD0A leaves.
   return (
     <svg
-      viewBox="0 0 24 24"
-      width={22}
-      height={22}
+      viewBox="0 0 32 32"
+      width={size}
+      height={size}
       aria-hidden="true"
-      className={className}
     >
       {/* leaves */}
       <path
-        d="M12 5.2c-.9-1.7-2.7-2.7-4.5-2.5.2 1.8 1.4 3.4 3.1 4.1.1.05.2.08.3.1.4-.6.7-1.1 1.1-1.7Z"
+        d="M16 10c-1.6-3-4.8-4.6-8-4 .4 3.2 2.8 5.8 5.9 6.6.2.05.4.08.6.1L16 10z"
         fill="#0AAD0A"
       />
       <path
-        d="M12 5.2c.9-1.7 2.7-2.7 4.5-2.5-.2 1.8-1.4 3.4-3.1 4.1-.1.05-.2.08-.3.1-.4-.6-.7-1.1-1.1-1.7Z"
+        d="M16 10c1.6-3 4.8-4.6 8-4-.4 3.2-2.8 5.8-5.9 6.6-.2.05-.4.08-.6.1L16 10z"
         fill="#0AAD0A"
       />
       {/* carrot body */}
       <path
-        d="M12 6.5c-2.6 0-5 1.7-6 4.2-1.3 3.3.4 7.4 3.6 9.4 1.5.9 3.3.9 4.8 0 3.2-2 4.9-6.1 3.6-9.4-1-2.5-3.4-4.2-6-4.2Zm-1.6 4.2a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4Zm3.2 2a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4Zm-2 2.4a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4Z"
+        d="M16 11.5c-3.9 0-7.4 2.6-8.8 6.3-1.8 4.8.7 10.7 5.2 13.5 2.2 1.3 4.9 1.3 7.1 0 4.5-2.8 7-8.7 5.2-13.5-1.4-3.7-4.9-6.3-8.8-6.3zm-2.6 5.9a1 1 0 110 2 1 1 0 010-2zm4.7 2.8a1 1 0 110 2 1 1 0 010-2zm-2.9 3.4a1 1 0 110 2 1 1 0 010-2z"
         fill="#FF7009"
       />
     </svg>
   );
 }
+
+const VARIANT_STYLES: Record<
+  InstacartCTAVariant,
+  { bg: string; fg: string; border: string }
+> = {
+  dark:  { bg: "#003D29", fg: "#FAF1E5", border: "none" },
+  light: { bg: "#FAF1E5", fg: "#003D29", border: "0.5px solid #EFE9E1" },
+  white: { bg: "#FFFFFF", fg: "#000000", border: "0.5px solid #E8E9EB" },
+};
 
 export const InstacartCTAButton = React.forwardRef<
   HTMLButtonElement,
@@ -64,7 +74,7 @@ export const InstacartCTAButton = React.forwardRef<
 >(
   (
     {
-      variant = "light",
+      variant = "dark",
       loading = false,
       showExternalIcon = true,
       label = "Shop ingredients",
@@ -76,15 +86,15 @@ export const InstacartCTAButton = React.forwardRef<
     },
     ref,
   ) => {
-    const isDark = variant === "dark";
+    const v = VARIANT_STYLES[variant];
     const base: React.CSSProperties = {
       height: 46,
       borderRadius: 9999,
       paddingLeft: 18,
       paddingRight: 18,
-      backgroundColor: isDark ? "#003D29" : "#FAF1E5",
-      color: isDark ? "#FAF1E5" : "#003D29",
-      border: isDark ? "none" : "0.5px solid #EFE9E1",
+      backgroundColor: v.bg,
+      color: v.fg,
+      border: v.border,
       fontFamily:
         '"SF Pro Text", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       fontWeight: 700,
@@ -111,7 +121,11 @@ export const InstacartCTAButton = React.forwardRef<
         style={{ ...base, ...style }}
         {...props}
       >
-        {loading && <Loader2 className="animate-spin" size={18} />}
+        {loading ? (
+          <Loader2 className="animate-spin" size={18} />
+        ) : (
+          <InstacartCarrot size={22} />
+        )}
         <span>{loading ? "Opening Instacart…" : label}</span>
         {showExternalIcon && !loading && (
           <ExternalLink size={14} strokeWidth={2.5} />
