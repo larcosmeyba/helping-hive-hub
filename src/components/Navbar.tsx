@@ -41,18 +41,8 @@ export function Navbar() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Sign In</Link>
           </Button>
-          <Button variant="hero" size="sm" asChild>
-            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
-              <Apple className="w-4 h-4 mr-1" /> App Store
-            </a>
-          </Button>
-          <Button variant="hero" size="sm" asChild>
-            <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
-              <Play className="w-4 h-4 mr-1" /> Google Play
-            </a>
-          </Button>
-
         </div>
+
 
         {/* Mobile toggle */}
         <button
