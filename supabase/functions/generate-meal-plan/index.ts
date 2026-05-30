@@ -497,8 +497,87 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       confidenceScore: Math.min((mealPlan.pricingConfidence?.confidencePercent || 40) + 20, 100),
     };
 
+    // === Attach real recipe photos by fuzzy-matching meal names to the
+    // 325-recipe library BEFORE persisting plan_data, so saved meals
+    // always carry imageUrl. ===
+    try {
+      const { data: recipePhotos } = await supabase
+        .from("recipes")
+        .select("title, image_url")
+        .not("image_url", "is", null);
+
+      const STOPWORDS = new Set([
+        "with","and","the","a","an","of","in","on","for","to","or","leftover",
+        "easy","quick","homemade","style","recipe","fresh","classic","simple",
+      ]);
+      const tokenize = (s: string) =>
+        new Set(
+          s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
+            .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+        );
+      const photoIndex = (recipePhotos || []).map((r: any) => ({
+        title: r.title as string,
+        url: r.image_url as string,
+        tokens: tokenize(r.title || ""),
+      }));
+      const CATEGORY_KEYWORDS = [
+        "salmon","tuna","shrimp","cod","tilapia","fish",
+        "chicken","turkey","beef","pork","bacon","sausage","ham","steak",
+        "tofu","tempeh","lentil","chickpea","bean",
+        "egg","omelet","frittata","pancake","waffle","oat","oatmeal","granola","yogurt","smoothie","cereal","toast","bagel",
+        "taco","burrito","quesadilla","enchilada","fajita","nacho","tortilla",
+        "pizza","pasta","spaghetti","lasagna","mac","macaroni","noodle","ramen",
+        "rice","quinoa","couscous","barley",
+        "soup","stew","chili","curry","stir fry","stirfry","fried rice",
+        "salad","sandwich","wrap","burger","slider","meatball","meatloaf",
+        "casserole","skillet","sheet pan","one pot","pot roast","pulled","bbq",
+      ];
+      const matchPhoto = (mealName: string, ingredients: string[] = []): { url: string; verified: boolean } | null => {
+        const combined = [mealName, ...ingredients].join(" ");
+        const mTokens = tokenize(combined);
+        const nameTokens = tokenize(mealName);
+        let best: { url: string; score: number } | null = null;
+        for (const r of photoIndex) {
+          if (r.tokens.size === 0) continue;
+          let inter = 0;
+          for (const t of r.tokens) if (mTokens.has(t)) inter++;
+          if (inter === 0) continue;
+          let nameOverlap = 0;
+          for (const t of r.tokens) if (nameTokens.has(t)) nameOverlap++;
+          const coverage = inter / r.tokens.size;
+          const score = coverage + nameOverlap * 0.25 + inter * 0.05;
+          if (score > (best?.score ?? 0)) best = { url: r.url, score };
+        }
+        if (best) return { url: best.url, verified: true };
+        const lowerCombined = combined.toLowerCase();
+        for (const kw of CATEGORY_KEYWORDS) {
+          if (lowerCombined.includes(kw)) {
+            const hit = (recipePhotos || []).find((r: any) =>
+              (r.title || "").toLowerCase().includes(kw)
+            );
+            if (hit?.image_url) return { url: hit.image_url, verified: false };
+          }
+        }
+        return null;
+      };
+      for (const day of mealPlan.weeklyPlan || []) {
+        for (const meal of day.meals || []) {
+          if (!meal.imageUrl) {
+            const match = matchPhoto(meal.name || "", meal.ingredients || []);
+            if (match) {
+              meal.imageUrl = match.url;
+              meal.imageVerified = match.verified;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Photo matching skipped:", err);
+    }
+
     // ===== PARALLEL DB WRITES =====
     const weekStart = getNextMonday();
+
 
     // Delete old data in parallel
     await Promise.all([
@@ -557,96 +636,10 @@ Generate 6-day plan (Mon-Sat, 18 meals). Every ingredient must appear in grocery
       if (groceryItems.length > 0) await supabase.from("grocery_list_items").insert(groceryItems);
     }
 
-    // === Attach real recipe photos by fuzzy-matching meal names to the
-    // 325-recipe library. No keyword stock photos, no AI imagery — only
-    // photographs from recipes already in the database. ===
-    try {
-      const { data: recipePhotos } = await supabase
-        .from("recipes")
-        .select("title, image_url")
-        .not("image_url", "is", null);
+    // Photo matching runs BEFORE plan_data is saved (see top of handler),
+    // so imageUrl is persisted on each meal in meal_plans.plan_data.
 
-      const STOPWORDS = new Set([
-        "with","and","the","a","an","of","in","on","for","to","or","leftover",
-        "easy","quick","homemade","style","recipe","fresh","classic","simple",
-      ]);
-      const tokenize = (s: string) =>
-        new Set(
-          s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
-            .filter((w) => w.length > 2 && !STOPWORDS.has(w))
-        );
 
-      const photoIndex = (recipePhotos || []).map((r: any) => ({
-        title: r.title as string,
-        url: r.image_url as string,
-        tokens: tokenize(r.title || ""),
-      }));
-
-      // Primary food keywords used for guaranteed category fallback. Order
-      // matters — first match wins, so put the most distinctive proteins
-      // and dishes before generic carbs.
-      const CATEGORY_KEYWORDS = [
-        "salmon","tuna","shrimp","cod","tilapia","fish",
-        "chicken","turkey","beef","pork","bacon","sausage","ham","steak",
-        "tofu","tempeh","lentil","chickpea","bean",
-        "egg","omelet","frittata","pancake","waffle","oat","oatmeal","granola","yogurt","smoothie","cereal","toast","bagel",
-        "taco","burrito","quesadilla","enchilada","fajita","nacho","tortilla",
-        "pizza","pasta","spaghetti","lasagna","mac","macaroni","noodle","ramen",
-        "rice","quinoa","couscous","barley",
-        "soup","stew","chili","curry","stir fry","stirfry","fried rice",
-        "salad","sandwich","wrap","burger","slider","meatball","meatloaf",
-        "casserole","skillet","sheet pan","one pot","pot roast","pulled","bbq",
-      ];
-
-      const matchPhoto = (mealName: string, ingredients: string[] = []): { url: string; verified: boolean } | null => {
-        const combined = [mealName, ...ingredients].join(" ");
-        const mTokens = tokenize(combined);
-        const nameTokens = tokenize(mealName);
-
-        // Pass 1: best fuzzy match by token overlap (very permissive — any
-        // shared meaningful token qualifies, best score wins).
-        let best: { url: string; score: number } | null = null;
-        for (const r of photoIndex) {
-          if (r.tokens.size === 0) continue;
-          let inter = 0;
-          for (const t of r.tokens) if (mTokens.has(t)) inter++;
-          if (inter === 0) continue;
-          let nameOverlap = 0;
-          for (const t of r.tokens) if (nameTokens.has(t)) nameOverlap++;
-          const coverage = inter / r.tokens.size;
-          const score = coverage + nameOverlap * 0.25 + inter * 0.05;
-          if (score > (best?.score ?? 0)) best = { url: r.url, score };
-        }
-        if (best) return { url: best.url, verified: true };
-
-        // Pass 2: category fallback — pick any recipe whose title contains
-        // the first primary food keyword found in the meal name + ingredients.
-        const lowerCombined = combined.toLowerCase();
-        for (const kw of CATEGORY_KEYWORDS) {
-          if (lowerCombined.includes(kw)) {
-            const hit = (recipePhotos || []).find((r: any) =>
-              (r.title || "").toLowerCase().includes(kw)
-            );
-            if (hit?.image_url) return { url: hit.image_url, verified: false };
-          }
-        }
-        return null;
-      };
-
-      for (const day of mealPlan.weeklyPlan || []) {
-        for (const meal of day.meals || []) {
-          if (!meal.imageUrl) {
-            const match = matchPhoto(meal.name || "", meal.ingredients || []);
-            if (match) {
-              meal.imageUrl = match.url;
-              meal.imageVerified = match.verified;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Photo matching skipped:", err);
-    }
 
     return new Response(JSON.stringify(mealPlan), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

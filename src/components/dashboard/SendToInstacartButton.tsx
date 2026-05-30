@@ -40,11 +40,11 @@ export function SendToInstacartButton({
   linkType = "shopping_list",
   instructions,
   className,
-  variant = "light",
+  variant = "dark",
   label = "Shop on Instacart",
   partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,
   fullWidth = false,
-  showExternalIcon = false,
+  showExternalIcon = true,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
