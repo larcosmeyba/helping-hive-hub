@@ -150,3 +150,73 @@ Deno.serve(async (req) => {
     return json({ error: msg }, 500);
   }
 });
+
+// --- UPC enrichment ---------------------------------------------------------
+
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function enrichWithUpcs<T extends { name: string; upcs?: string[] }>(
+  items: T[],
+): Promise<T[]> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return items;
+
+    const supabase = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
+
+    // Build unique normalized name set
+    const normalized = items.map((i) => normalizeName(i.name)).filter(Boolean);
+    const uniq = Array.from(new Set(normalized));
+    if (uniq.length === 0) return items;
+
+    // 1. Direct canonical name match (case-insensitive)
+    const { data: canonicals } = await supabase
+      .from("canonical_products")
+      .select("canonical_product_id, canonical_name, gtin_upc")
+      .not("gtin_upc", "is", null);
+
+    // 2. Alias match (case-insensitive)
+    const { data: aliases } = await supabase
+      .from("canonical_product_aliases")
+      .select("alias_text, canonical_product_id");
+
+    const upcByProductId = new Map<string, string>();
+    for (const c of canonicals ?? []) {
+      if (c.gtin_upc) upcByProductId.set(c.canonical_product_id as string, c.gtin_upc as string);
+    }
+
+    const upcByNormName = new Map<string, string>();
+    for (const c of canonicals ?? []) {
+      if (c.gtin_upc) {
+        upcByNormName.set(normalizeName(c.canonical_name as string), c.gtin_upc as string);
+      }
+    }
+    for (const a of aliases ?? []) {
+      const upc = upcByProductId.get(a.canonical_product_id as string);
+      if (upc) upcByNormName.set(normalizeName(a.alias_text as string), upc);
+    }
+
+    return items.map((item) => {
+      if (item.upcs && item.upcs.length > 0) return item; // caller-supplied UPCs win
+      const norm = normalizeName(item.name);
+      const upc =
+        upcByNormName.get(norm) ??
+        // loose contains-match fallback (item name contains a known canonical key)
+        Array.from(upcByNormName.entries()).find(([k]) => k && norm.includes(k))?.[1];
+      return upc ? { ...item, upcs: [upc] } : item;
+    });
+  } catch (err) {
+    console.warn("[instacart-create-list] UPC enrichment skipped:", err);
+    return items;
+  }
+}
