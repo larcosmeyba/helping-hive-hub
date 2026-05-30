@@ -31,10 +31,10 @@ export function SendRecipeToInstacartButton({
   instructions,
   imageUrl,
   className,
-  variant = "light",
+  variant = "dark",
   label = "Shop ingredients",
   fullWidth = false,
-  showExternalIcon = false,
+  showExternalIcon = true,
   partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,
 }: Props) {
   const [loading, setLoading] = useState(false);
