@@ -1,11 +1,28 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+async function isAuthorized(req: Request): Promise<boolean> {
+  // Accept internal calls signed with CRON_SECRET...
+  const internal = req.headers.get("x-internal-secret");
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (internal && cronSecret && timingSafeEqual(internal, cronSecret)) return true;
+  // ...or any authenticated end-user JWT.
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return false;
+  try {
+    const client = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: auth } } },
+    );
+    const { data, error } = await client.auth.getUser();
+    return !!(data?.user && !error);
+  } catch {
+    return false;
+  }
+}
 
 // State -> BLS Region mapping
 const STATE_TO_REGION: Record<string, { region: string; code: string }> = {};
@@ -50,7 +67,15 @@ async function fetchRegionalCPI(regionCode: string): Promise<number | null> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pf = handlePreflight(req);
+  if (pf) return pf;
+  const corsHeaders = buildCorsHeaders(req);
+
+  if (!(await isAuthorized(req))) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const { state } = await req.json().catch(() => ({ state: "" }));
