@@ -2,11 +2,27 @@
 // nutrition (per 100g basis). Used by admins to populate the ingredients table
 // and by the meal engine to verify macros.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+async function isAuthorized(req: Request): Promise<boolean> {
+  const internal = req.headers.get("x-internal-secret");
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (internal && cronSecret && timingSafeEqual(internal, cronSecret)) return true;
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return false;
+  try {
+    const client = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: auth } } },
+    );
+    const { data, error } = await client.auth.getUser();
+    return !!(data?.user && !error);
+  } catch {
+    return false;
+  }
+}
 
 const USDA_BASE = "https://api.nal.usda.gov/fdc/v1";
 
