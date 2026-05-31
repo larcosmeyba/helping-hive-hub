@@ -79,7 +79,14 @@ Deno.serve(async (req) => {
       "profiles",
     ];
     for (const table of userScoped) {
-      await admin.from(table).delete().eq("user_id", userId);
+      const { error: tableErr } = await admin.from(table).delete().eq("user_id", userId);
+      if (tableErr) {
+        console.error(`[delete-account] failed to delete from ${table}:`, tableErr);
+        return json(
+          { error: `Could not fully delete account data (failed on ${table}). Please contact support.` },
+          500,
+        );
+      }
     }
 
     // Finally remove the auth user
