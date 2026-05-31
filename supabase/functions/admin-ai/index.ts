@@ -148,7 +148,7 @@ You must respond with ONLY valid JSON, no markdown, no explanation:
   });
 }
 
-async function handleGenerateMarketing(body: any, apiKey: string) {
+async function handleGenerateMarketing(body: any, apiKey: string, corsHeaders: Record<string, string>) {
   const { prompt, platform } = body;
 
   const systemPrompt = `You are a social media marketing expert for Help The Hive — a budget-friendly meal planning platform that helps families save money on groceries. Create engaging social media content.
