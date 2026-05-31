@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === "generate_recipe") {
-      return await handleGenerateRecipe(body, LOVABLE_API_KEY, supabase);
+      return await handleGenerateRecipe(body, LOVABLE_API_KEY, supabase, corsHeaders);
     } else if (action === "generate_marketing") {
-      return await handleGenerateMarketing(body, LOVABLE_API_KEY);
+      return await handleGenerateMarketing(body, LOVABLE_API_KEY, corsHeaders);
     } else {
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
 async function handleGenerateRecipe(
   body: any,
   apiKey: string,
-  supabase: any
+  supabase: any,
+  corsHeaders: Record<string, string>
 ) {
   const { prompt, saveToDb } = body;
 
@@ -147,7 +148,7 @@ You must respond with ONLY valid JSON, no markdown, no explanation:
   });
 }
 
-async function handleGenerateMarketing(body: any, apiKey: string) {
+async function handleGenerateMarketing(body: any, apiKey: string, corsHeaders: Record<string, string>) {
   const { prompt, platform } = body;
 
   const systemPrompt = `You are a social media marketing expert for Help The Hive — a budget-friendly meal planning platform that helps families save money on groceries. Create engaging social media content.
