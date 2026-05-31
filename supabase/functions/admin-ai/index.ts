@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
 async function handleGenerateRecipe(
   body: any,
   apiKey: string,
-  supabase: any
+  supabase: any,
+  corsHeaders: Record<string, string>
 ) {
   const { prompt, saveToDb } = body;
 
