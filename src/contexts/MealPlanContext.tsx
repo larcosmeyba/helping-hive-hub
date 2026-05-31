@@ -131,6 +131,9 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
+      if (!data || typeof data !== "object" || !Array.isArray((data as any).weeklyPlan)) {
+        throw new Error("Meal plan response was incomplete. Please try again.");
+      }
       setGenerationStage("saving");
       setMealPlan(data as GeneratedMealPlan);
       setGenerationStage("done");

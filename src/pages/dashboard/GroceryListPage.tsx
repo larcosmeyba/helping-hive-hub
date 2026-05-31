@@ -358,14 +358,14 @@ export default function GroceryListPage() {
             </span>
           </div>
           <div className="divide-y divide-border">
-            {groceryItems.filter((i) => (i.section || "Other") === section).map((item) => {
+            {groceryItems.filter((i) => (i.section || "Other") === section).map((item, idx) => {
               const priceInfo = getItemPriceInfo(item);
               const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
                 <label
-                  key={item.name}
+                  key={`${section}-${item.name}-${idx}`}
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 cursor-pointer transition-colors"
                 >
                   <Checkbox checked={isChecked} onCheckedChange={() => toggle(item.name)} />
