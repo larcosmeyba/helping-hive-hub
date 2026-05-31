@@ -159,10 +159,3 @@ Deno.serve(async (req) => {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
