@@ -10,7 +10,7 @@ export default function Press() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEOHead
         title="Press & Media — Help The Hive"
-        description="Press resources, media inquiries, and quick facts about Help The Hive — budget meal planning for real families, free for SNAP & WIC."
+        description="Press resources, media inquiries, and quick facts about Help The Hive — free meal planning and grocery lists for every family."
         canonical="https://helpthehive.com/press"
       />
       <Navbar />

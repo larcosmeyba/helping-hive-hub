@@ -17,8 +17,8 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <SEOHead
-        title="Help The Hive — Budget Meal Planning for Real Families"
-        description="Meals that fit your budget. At the store you already shop at. Free for SNAP & WIC families. Plan your week in under 5 minutes."
+        title="Help The Hive — Free Meal Planning & Grocery Lists for Every Family"
+        description="Free forever meal plans and grocery lists that fit your budget — at the store you already shop at. No subscription, no paywall. Plan your week in under 5 minutes."
         canonical="https://helpthehive.com/"
       />
       <OrganizationSchema />
