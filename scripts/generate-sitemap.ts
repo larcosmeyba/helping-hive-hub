@@ -36,12 +36,16 @@ const sampleRoutes: Route[] = samplePlanSlugs.map((slug) => ({
   changefreq: "weekly",
 }));
 
-// Legal / informational pages
-const legalRoutes: Route[] = legalPages.map((p) => ({
-  loc: `/page/${p.slug}`,
-  priority: 0.3,
-  changefreq: "yearly",
-}));
+// Legal / informational pages — skip slugs that have dedicated top-level routes
+// (e.g. /about, /privacy, /press) to avoid duplicate URLs in the sitemap.
+const TOP_LEVEL_LEGAL_SLUGS = new Set(["about", "privacy", "press"]);
+const legalRoutes: Route[] = legalPages
+  .filter((p) => !TOP_LEVEL_LEGAL_SLUGS.has(p.slug))
+  .map((p) => ({
+    loc: `/page/${p.slug}`,
+    priority: 0.3,
+    changefreq: "yearly",
+  }));
 
 const routes: Route[] = [...staticRoutes, ...sampleRoutes, ...legalRoutes];
 
