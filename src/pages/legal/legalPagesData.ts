@@ -1386,7 +1386,6 @@ export const footerColumns = [
       { label: "Terms of Service", slug: "terms" },
       { label: "Privacy Policy", slug: "privacy" },
       { label: "Cookie Policy", slug: "cookies" },
-      { label: "Refund & Pricing Policy", slug: "refunds" },
       { label: "Acceptable Use Policy", slug: "acceptable-use" },
       { label: "Arbitration & Dispute Resolution", slug: "arbitration" },
     ]
@@ -1397,7 +1396,6 @@ export const footerColumns = [
       { label: "Help Center", slug: "help-center" },
       { label: "Report an Issue", slug: "report-issue" },
       { label: "Account Support", slug: "account-support" },
-      { label: "Billing Support", slug: "billing-support" },
       { label: "Security Disclosure", slug: "security-disclosure" },
       { label: "Contact Support", slug: "contact-support" },
     ]
@@ -1406,8 +1404,6 @@ export const footerColumns = [
     title: "Programs",
     links: [
       { label: "SNAP Program", slug: "snap-program" },
-      { label: "Military Discount", slug: "military-discount" },
-      { label: "Student Discount", slug: "student-discount" },
       { label: "Veterans Program", slug: "veterans-program" },
       { label: "First Responders Program", slug: "first-responders" },
       { label: "Eligibility Verification", slug: "eligibility-verification" },
@@ -1446,7 +1442,6 @@ export const footerColumns = [
       { label: "Government Program Disclaimer", slug: "government-disclaimer" },
       { label: "Apple App Store Compliance", slug: "apple-app-store" },
       { label: "Google Play Store Compliance", slug: "google-play-store" },
-      { label: "Pricing Disclosures", slug: "subscription-disclosures" },
     ]
   }
 ];
