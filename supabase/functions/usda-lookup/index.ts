@@ -75,7 +75,16 @@ function normalize(food: UsdaFood) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pf = handlePreflight(req);
+  if (pf) return pf;
+  const corsHeaders = buildCorsHeaders(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  if (!(await isAuthorized(req))) return json({ error: "Unauthorized" }, 401);
 
   try {
     const USDA_API_KEY = Deno.env.get("USDA_API_KEY");
