@@ -313,7 +313,7 @@ export function RecipeCategoryTiles() {
                           unit: "each",
                         }))}
                         instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
-                        label="Shop ingredients"
+                        label="Shop Ingredients"
                         fullWidth
                       />
                       <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">
