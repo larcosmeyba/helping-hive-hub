@@ -618,33 +618,6 @@ Users can manage cookies through browser settings, but disabling certain cookies
     ]
   },
   {
-    slug: "refunds",
-    title: "Refund & Pricing Policy",
-    lastUpdated: LAST_UPDATED,
-    category: "legal",
-    sections: [
-      {
-        content: "Help the Hive is 100% free for all users. There are no subscriptions, no in-app purchases, and no paid tiers."
-      },
-      {
-        heading: "Pricing",
-        content: "Every feature of Help the Hive is available at no cost to all users. We do not collect payment information."
-      },
-      {
-        heading: "Refunds",
-        content: "Because we do not charge users for the app, there is nothing to refund. If you are charged in error by Apple or Google, please contact them directly through their respective billing support channels."
-      },
-      {
-        heading: "Third-Party Charges",
-        content: "If you use the optional Instacart checkout handoff, any charges for groceries, delivery, or service fees are billed by Instacart and are subject to Instacart's terms and refund policies. Help the Hive does not process those payments."
-      },
-      {
-        heading: "Questions",
-        content: `Questions about our pricing model may be sent to:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
-      }
-    ]
-  },
-  {
     slug: "acceptable-use",
     title: "Acceptable Use Policy",
     lastUpdated: LAST_UPDATED,
@@ -760,25 +733,6 @@ For account help:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
     ]
   },
   {
-    slug: "billing-support",
-    title: "Billing Support",
-    lastUpdated: LAST_UPDATED,
-    category: "support",
-    sections: [
-      {
-        content: `Billing Support is available for:
-• Subscription questions
-• Duplicate charges
-• Invoice requests
-• Plan changes
-• Cancellation questions
-• Payment-related concerns
-
-For billing questions:\n\n📧 [${CONTACT_SUPPORT}](mailto:${CONTACT_SUPPORT})`
-      }
-    ]
-  },
-  {
     slug: "security-disclosure",
     title: "Security Disclosure",
     lastUpdated: LAST_UPDATED,
@@ -846,36 +800,6 @@ For legal, business, compliance, security, or media matters:\n\n📧 [${CONTACT_
       {
         heading: "Data Handling",
         content: "Documents submitted for verification are handled according to Help the Hive's privacy and security policies."
-      }
-    ]
-  },
-  {
-    slug: "military-discount",
-    title: "Military Discount",
-    lastUpdated: LAST_UPDATED,
-    category: "programs",
-    sections: [
-      {
-        content: "Help the Hive may offer discounted access to eligible active duty military personnel.\n\nVerification may require reasonable documentation or an approved third-party verification method.\n\nDiscount availability, eligibility rules, and renewal requirements may change over time."
-      }
-    ]
-  },
-  {
-    slug: "student-discount",
-    title: "Student Discount",
-    lastUpdated: LAST_UPDATED,
-    category: "programs",
-    sections: [
-      {
-        content: `Help the Hive may offer discounted access to eligible students enrolled in recognized educational institutions.
-
-Verification may require:
-• Valid student identification
-• Institutional email address
-• Third-party verification tools
-• Other proof of enrollment
-
-Discount terms may vary by plan and promotional availability.`
       }
     ]
   },
@@ -1330,28 +1254,6 @@ Use of Help the Hive does not create eligibility for government benefits, alter 
       }
     ]
   },
-  {
-    slug: "billing-plan-disclosure",
-    title: "Billing & Plan Disclosure",
-    lastUpdated: LAST_UPDATED,
-    category: "compliance",
-    sections: [
-      {
-        content: `Help the Hive may offer different plan levels, promotional pricing, trials, discount access, or program-based eligibility pricing.
-
-Plan features, pricing, and eligibility may vary based on:
-• Promotional windows
-• Subscription level
-• User category
-• Program participation
-• Platform changes
-
-Feature access may change over time as the platform evolves.
-
-All plan details shown at checkout or within account settings control over general descriptions on informational pages.`
-      }
-    ]
-  },
   // ─── PLATFORM COMPLIANCE (NEW) ───
   {
     slug: "apple-app-store",
@@ -1461,44 +1363,6 @@ All plan details shown at checkout or within account settings control over gener
       }
     ]
   },
-  {
-    slug: "subscription-disclosures",
-    title: "Pricing Disclosures",
-    lastUpdated: LAST_UPDATED,
-    category: "compliance",
-    sections: [
-      {
-        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no in-app purchases.** This page exists to clearly disclose our pricing model in line with Apple App Store and Google Play Store requirements.`
-      },
-      {
-        heading: "Pricing",
-        content: `• **All users:** $0 — every feature, forever.
-• **No subscription tiers, no premium upgrades, no paid add-ons.**
-• **No payment information is collected** by Help the Hive.`
-      },
-      {
-        heading: "How We're Funded",
-        content: `Help the Hive is funded through optional Instacart affiliate commissions when users choose to check out via Instacart, sponsored brand placements (clearly labeled), institutional licensing partnerships, and grants. None of these affect what you pay (which is nothing) or your access to features.`
-      },
-      {
-        heading: "Apple App Store",
-        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
-      },
-      {
-        heading: "Google Play",
-        content: `Help the Hive contains no subscriptions and no in-app purchases. There is no auto-renewal, no free trial that converts to paid, and no payment information collected by the app.`
-      },
-      {
-        heading: "Refunds",
-        content: `Because Help the Hive does not charge users, there is nothing to refund.`
-      },
-      {
-        heading: "Links",
-        content: `• [Terms of Service](/legal/terms)
-• [Privacy Policy](/legal/privacy)`
-      }
-    ]
-  }
 ];
 
 export function getPageBySlug(slug: string): LegalPageData | undefined {
