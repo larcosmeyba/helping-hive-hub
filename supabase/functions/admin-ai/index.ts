@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === "generate_recipe") {
-      return await handleGenerateRecipe(body, LOVABLE_API_KEY, supabase);
+      return await handleGenerateRecipe(body, LOVABLE_API_KEY, supabase, corsHeaders);
     } else if (action === "generate_marketing") {
-      return await handleGenerateMarketing(body, LOVABLE_API_KEY);
+      return await handleGenerateMarketing(body, LOVABLE_API_KEY, corsHeaders);
     } else {
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
