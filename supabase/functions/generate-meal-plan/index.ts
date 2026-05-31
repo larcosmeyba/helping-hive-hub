@@ -169,7 +169,11 @@ Deno.serve(async (req) => {
     try {
       const blsRes = await fetch(`${supabaseUrl}/functions/v1/bls-price-index`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}`,
+          "x-internal-secret": Deno.env.get("CRON_SECRET") ?? "",
+        },
         body: JSON.stringify({ state: userState }),
         signal: AbortSignal.timeout(7000),
       });
