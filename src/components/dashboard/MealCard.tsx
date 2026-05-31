@@ -123,7 +123,7 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 ingredients={meal.ingredients}
                 instructions={meal.instructions}
                 imageUrl={meal.imageUrl}
-                label="Shop ingredients"
+                label="Shop Ingredients"
                 fullWidth
               />
               <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">

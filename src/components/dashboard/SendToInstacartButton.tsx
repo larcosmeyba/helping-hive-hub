@@ -22,7 +22,7 @@ interface Props {
   className?: string;
   variant?: InstacartCTAVariant;
   /** Approved Instacart CTA copy. */
-  label?: "Shop on Instacart" | "Shop ingredients" | "Send to Instacart";
+  label?: "Shop on Instacart" | "Shop Ingredients" | "Send to Instacart";
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
@@ -41,7 +41,7 @@ export function SendToInstacartButton({
   instructions,
   className,
   variant = "dark",
-  label = "Shop on Instacart",
+  label = "Shop Ingredients",
   partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,
   fullWidth = false,
   showExternalIcon = true,

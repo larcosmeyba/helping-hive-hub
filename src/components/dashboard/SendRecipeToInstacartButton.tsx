@@ -14,7 +14,7 @@ interface Props {
   imageUrl?: string;
   className?: string;
   variant?: InstacartCTAVariant;
-  label?: "Shop on Instacart" | "Shop ingredients";
+  label?: "Shop on Instacart" | "Shop Ingredients";
   fullWidth?: boolean;
   showExternalIcon?: boolean;
   partnerLinkbackUrl?: string;
@@ -32,7 +32,7 @@ export function SendRecipeToInstacartButton({
   imageUrl,
   className,
   variant = "dark",
-  label = "Shop ingredients",
+  label = "Shop Ingredients",
   fullWidth = false,
   showExternalIcon = true,
   partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,

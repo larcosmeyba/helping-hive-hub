@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  *   Padding: 18px horizontal, 16px vertical (contained by 46px height).
  *   22px full-color Instacart carrot mark (#FF7009 body + #0AAD0A leaves).
  *   Optional external-link icon.
- *   Approved copy: "Shop on Instacart" or "Shop ingredients".
+ *   Approved copy: "Shop on Instacart" or "Shop Ingredients".
  *
  * The CTA always opens the Instacart landing page in an external browser
  * (Capacitor's webview defers http(s) `_blank` opens to the system browser).
@@ -28,7 +28,7 @@ interface InstacartCTAButtonProps
   variant?: InstacartCTAVariant;
   loading?: boolean;
   showExternalIcon?: boolean;
-  label?: "Shop on Instacart" | "Shop ingredients" | string;
+  label?: "Shop on Instacart" | "Shop Ingredients" | string;
   fullWidth?: boolean;
 }
 
@@ -77,7 +77,7 @@ export const InstacartCTAButton = React.forwardRef<
       variant = "dark",
       loading = false,
       showExternalIcon = true,
-      label = "Shop ingredients",
+      label = "Shop Ingredients",
       fullWidth = false,
       className,
       disabled,
