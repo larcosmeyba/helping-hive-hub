@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
     const env = body?.environment === "development" ? "development" : "production";
     const apiKey =
       env === "development"
-        ? Deno.env.get("INSTACART_API_KEY_DEVELOPMENT") ?? Deno.env.get("INSTACART_API_KEY")
+        ? Deno.env.get("Instacart_API_KEY_DEVELOPMENT") ??
+          Deno.env.get("INSTACART_API_KEY_DEVELOPMENT") ??
+          Deno.env.get("INSTACART_API_KEY")
         : Deno.env.get("INSTACART_API_KEY");
     if (!apiKey) {
       return json(
