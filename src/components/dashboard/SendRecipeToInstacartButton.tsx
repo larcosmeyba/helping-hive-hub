@@ -112,7 +112,11 @@ export function SendRecipeToInstacartButton({
       }
     } catch (err) {
       console.error("[Instacart] Recipe send failed:", err);
-      openInstacartExternal(RALPHS_INSTACART_URL);
+      toast({
+        title: "Couldn't reach Instacart",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
