@@ -75,7 +75,9 @@ export function openInstacartExternal(url: string, preopened?: Window | null) {
     }
   }
 
-  // Fallback 1: synthesized anchor click (still inside a recent gesture).
+  // Fallback 1: synthesized anchor click in a NEW tab so Help The Hive
+  // stays open in the original tab (required for the review demo's
+  // "back to Help The Hive" return path).
   try {
     const a = document.createElement("a");
     a.href = url;
@@ -84,22 +86,24 @@ export function openInstacartExternal(url: string, preopened?: Window | null) {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    console.info("[Instacart] Fallback: synthesized anchor click");
+    console.info("[Instacart] Fallback: synthesized anchor click (new tab)");
+    return;
   } catch (err) {
     console.error("[Instacart] Anchor click fallback failed:", err);
   }
 
-  // Fallback 2: try window.open, then same-tab redirect.
-  setTimeout(() => {
-    try {
-      const opened = window.open(url, "_blank");
-      if (!opened) {
-        console.warn("[Instacart] window.open blocked — redirecting current tab");
-        window.location.href = url;
-      }
-    } catch (err) {
-      console.error("[Instacart] window.open fallback failed, redirecting current tab:", err);
-      window.location.href = url;
+  // Fallback 2: window.open in a new tab. If the browser blocks it we
+  // deliberately do NOT redirect the current tab — Help The Hive must stay
+  // open so the user can return to it. The caller's toast covers the
+  // (rare) blocked case.
+  try {
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      console.warn(
+        "[Instacart] window.open blocked — keeping Help The Hive tab intact (no same-tab redirect).",
+      );
     }
-  }, 150);
+  } catch (err) {
+    console.error("[Instacart] window.open fallback failed:", err);
+  }
 }
