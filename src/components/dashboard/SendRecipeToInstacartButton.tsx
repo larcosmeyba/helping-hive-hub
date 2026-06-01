@@ -76,9 +76,13 @@ export function SendRecipeToInstacartButton({
         (data as { products_link_url?: string } | null)?.products_link_url ?? null;
 
       if (error || !landingUrl) {
-        console.error("[Instacart] Recipe fallback to storefront:", error);
-        openInstacartExternal(RALPHS_INSTACART_URL);
-        void trackEvent("instacart_recipe_fallback", { itemCount: parsed.length, error: String(error ?? "no_url") });
+        console.error("[Instacart] No products_link_url returned:", error);
+        toast({
+          title: "Couldn't reach Instacart",
+          description: "Please try again in a moment.",
+          variant: "destructive",
+        });
+        void trackEvent("instacart_recipe_error", { itemCount: parsed.length, error: String(error ?? "no_url") });
       } else {
         void trackEvent("instacart_link_generated", {
           products_link_url: landingUrl,
