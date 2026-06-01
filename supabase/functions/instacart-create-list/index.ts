@@ -93,7 +93,6 @@ Deno.serve(async (req) => {
       return json({ error: "items may not exceed 100 entries" }, 400);
     }
 
-    const env = body.environment === "development" ? "development" : "production";
     const base = env === "production" ? PROD_BASE : DEV_BASE;
     const path = isRecipe
       ? "/idp/v1/products/recipe"
