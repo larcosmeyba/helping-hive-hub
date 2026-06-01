@@ -56,13 +56,25 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const apiKey = Deno.env.get("INSTACART_API_KEY");
-    if (!apiKey) return json({ error: "INSTACART_API_KEY not configured" }, 500);
-
     const body = (await req.json()) as CreateListBody;
+    const env = body?.environment === "development" ? "development" : "production";
+    const apiKey =
+      env === "development"
+        ? Deno.env.get("Instacart_API_KEY_DEVELOPMENT") ??
+          Deno.env.get("INSTACART_API_KEY_DEVELOPMENT") ??
+          Deno.env.get("INSTACART_API_KEY")
+        : Deno.env.get("INSTACART_API_KEY");
+    if (!apiKey) {
+      return json(
+        { error: `Instacart API key not configured for ${env} environment` },
+        500,
+      );
+    }
+
     if (!body?.title || typeof body.title !== "string" || body.title.length > 200) {
       return json({ error: "title is required (max 200 chars)" }, 400);
     }
+
 
     const linkType = body.link_type ?? "shopping_list";
     const isRecipe = linkType === "recipe";
@@ -83,7 +95,6 @@ Deno.serve(async (req) => {
       return json({ error: "items may not exceed 100 entries" }, 400);
     }
 
-    const env = body.environment === "development" ? "development" : "production";
     const base = env === "production" ? PROD_BASE : DEV_BASE;
     const path = isRecipe
       ? "/idp/v1/products/recipe"
