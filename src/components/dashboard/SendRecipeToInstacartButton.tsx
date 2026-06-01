@@ -61,6 +61,7 @@ export function SendRecipeToInstacartButton({
           display_text: p.display_text,
           measurements: p.measurements,
         })),
+        environment: "development",
       };
       if (imageUrl) payload.image_url = imageUrl;
       if (instructions?.length) payload.instructions = instructions;

@@ -60,6 +60,7 @@ export function SendToInstacartButton({
         title,
         link_type: linkType,
         line_items: lineItems,
+        environment: "development",
       };
       if (imageUrl) payload.image_url = imageUrl;
       if (instructions?.length) payload.instructions = instructions;
