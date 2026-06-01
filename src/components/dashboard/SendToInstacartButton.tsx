@@ -28,10 +28,9 @@ interface Props {
   showExternalIcon?: boolean;
 }
 
-// Fallback storefront if the IDP call fails for any reason.
-const RALPHS_INSTACART_URL = "https://www.instacart.com/store/ralphs/storefront";
-// Default Instacart landing-page linkback that returns the user to Help The Hive.
-const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list";
+// Default Instacart landing-page linkback that returns the user to Help The Hive
+// after they finish on Instacart (per Instacart's partner-linkback spec).
+const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list?from=instacart";
 
 export function SendToInstacartButton({
   title,
@@ -76,9 +75,13 @@ export function SendToInstacartButton({
         (data as { products_link_url?: string } | null)?.products_link_url ?? null;
 
       if (error || !landingUrl) {
-        console.error("[Instacart] Falling back to storefront:", error);
-        openInstacartExternal(RALPHS_INSTACART_URL);
-        void trackEvent("instacart_send_fallback", { itemCount: lineItems.length, error: String(error ?? "no_url") });
+        console.error("[Instacart] No products_link_url returned:", error);
+        toast({
+          title: "Couldn't reach Instacart",
+          description: "Please try again in a moment.",
+          variant: "destructive",
+        });
+        void trackEvent("instacart_send_error", { itemCount: lineItems.length, error: String(error ?? "no_url") });
       } else {
         // Log generated landing URL + payload for Instacart's ingredient-parsing review.
         void trackEvent("instacart_link_generated", {
@@ -110,7 +113,11 @@ export function SendToInstacartButton({
       }
     } catch (err) {
       console.error("[Instacart] Send failed:", err);
-      openInstacartExternal(RALPHS_INSTACART_URL);
+      toast({
+        title: "Couldn't reach Instacart",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
