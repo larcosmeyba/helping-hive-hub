@@ -322,7 +322,7 @@ export default function GroceryListPage() {
           fullWidth
         />
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
-          Opens Ralphs on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
+          Opens your Instacart cart with these ingredients pre-loaded in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
       </div>
 
