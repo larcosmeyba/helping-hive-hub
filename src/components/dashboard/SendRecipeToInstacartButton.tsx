@@ -92,23 +92,12 @@ export function SendRecipeToInstacartButton({
           itemCount: parsed.length,
           ingredients: JSON.parse(JSON.stringify(parsed)),
         });
-        toast({
-          title: "Instacart link ready",
-          description: landingUrl,
-          duration: 12000,
-          action: (
-            <ToastAction
-              altText="Copy Instacart link"
-              onClick={() => {
-                navigator.clipboard?.writeText(landingUrl).catch(() => {});
-                toast({ title: "Link copied" });
-              }}
-            >
-              Copy
-            </ToastAction>
-          ),
-        });
         openInstacartExternal(landingUrl);
+        toast({
+          title: "Opening Instacart…",
+          description: "Your cart is loading in Instacart.",
+          duration: 4000,
+        });
         void trackEvent("instacart_recipe_success", { itemCount: parsed.length, products_link_url: landingUrl });
       }
     } catch (err) {
