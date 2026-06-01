@@ -69,11 +69,10 @@ Deno.serve(async (req) => {
       );
     }
 
-
-    const body = (await req.json()) as CreateListBody;
     if (!body?.title || typeof body.title !== "string" || body.title.length > 200) {
       return json({ error: "title is required (max 200 chars)" }, 400);
     }
+
 
     const linkType = body.link_type ?? "shopping_list";
     const isRecipe = linkType === "recipe";
