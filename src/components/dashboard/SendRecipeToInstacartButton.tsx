@@ -20,10 +20,9 @@ interface Props {
   partnerLinkbackUrl?: string;
 }
 
-// Fallback storefront if the IDP call fails for any reason.
-const RALPHS_INSTACART_URL = "https://www.instacart.com/store/ralphs/storefront";
-// Default Instacart landing-page linkback that returns the user to Help The Hive.
-const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list";
+// Default Instacart landing-page linkback that returns the user to Help The Hive
+// after they finish on Instacart (per Instacart's partner-linkback spec).
+const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list?from=instacart";
 
 export function SendRecipeToInstacartButton({
   title,
