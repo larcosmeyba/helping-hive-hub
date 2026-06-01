@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
+
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
 import { openInstacartExternal } from "@/lib/openInstacartExternal";
@@ -92,24 +92,14 @@ export function SendToInstacartButton({
           itemCount: lineItems.length,
           line_items: JSON.parse(JSON.stringify(lineItems)),
         });
-        // Copyable toast so the URL can be grabbed during the demo / review.
-        toast({
-          title: "Instacart link ready",
-          description: landingUrl,
-          duration: 12000,
-          action: (
-            <ToastAction
-              altText="Copy Instacart link"
-              onClick={() => {
-                navigator.clipboard?.writeText(landingUrl).catch(() => {});
-                toast({ title: "Link copied" });
-              }}
-            >
-              Copy
-            </ToastAction>
-          ),
-        });
+        // Open the generated Instacart URL externally immediately — no
+        // intermediate toast/status. Required for Instacart's review demo.
         openInstacartExternal(landingUrl);
+        toast({
+          title: "Opening Instacart…",
+          description: "Your cart is loading in Instacart.",
+          duration: 4000,
+        });
         void trackEvent("instacart_send_success", { itemCount: lineItems.length, products_link_url: landingUrl });
       }
     } catch (err) {
