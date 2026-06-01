@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
-import { openInstacartExternal } from "@/lib/openInstacartExternal";
+import { openInstacartExternal, preopenExternalWindow } from "@/lib/openInstacartExternal";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface InstacartLineItem {
@@ -53,6 +53,9 @@ export function SendToInstacartButton({
       toast({ title: "Nothing to send", description: "Add ingredients first.", variant: "destructive" });
       return;
     }
+    // Open the external tab SYNCHRONOUSLY so the browser keeps the user
+    // gesture and doesn't block the popup when the URL arrives later.
+    const preopened = preopenExternalWindow();
     setLoading(true);
     void trackEvent("instacart_send_clicked", { itemCount: lineItems.length, title });
     try {
@@ -76,6 +79,7 @@ export function SendToInstacartButton({
         (data as { products_link_url?: string } | null)?.products_link_url ?? null;
 
       if (error || !landingUrl) {
+        if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
         console.error("[Instacart] No products_link_url returned:", error);
         toast({
           title: "Couldn't reach Instacart",
@@ -94,7 +98,7 @@ export function SendToInstacartButton({
         });
         // Open the generated Instacart URL externally immediately — no
         // intermediate toast/status. Required for Instacart's review demo.
-        openInstacartExternal(landingUrl);
+        openInstacartExternal(landingUrl, preopened);
         toast({
           title: "Opening Instacart…",
           description: "Your cart is loading in Instacart.",
@@ -103,6 +107,7 @@ export function SendToInstacartButton({
         void trackEvent("instacart_send_success", { itemCount: lineItems.length, products_link_url: landingUrl });
       }
     } catch (err) {
+      if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
       console.error("[Instacart] Send failed:", err);
       toast({
         title: "Couldn't reach Instacart",
