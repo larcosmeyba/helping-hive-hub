@@ -75,9 +75,13 @@ export function SendToInstacartButton({
         (data as { products_link_url?: string } | null)?.products_link_url ?? null;
 
       if (error || !landingUrl) {
-        console.error("[Instacart] Falling back to storefront:", error);
-        openInstacartExternal(RALPHS_INSTACART_URL);
-        void trackEvent("instacart_send_fallback", { itemCount: lineItems.length, error: String(error ?? "no_url") });
+        console.error("[Instacart] No products_link_url returned:", error);
+        toast({
+          title: "Couldn't reach Instacart",
+          description: "Please try again in a moment.",
+          variant: "destructive",
+        });
+        void trackEvent("instacart_send_error", { itemCount: lineItems.length, error: String(error ?? "no_url") });
       } else {
         // Log generated landing URL + payload for Instacart's ingredient-parsing review.
         void trackEvent("instacart_link_generated", {
