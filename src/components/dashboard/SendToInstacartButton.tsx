@@ -113,7 +113,11 @@ export function SendToInstacartButton({
       }
     } catch (err) {
       console.error("[Instacart] Send failed:", err);
-      openInstacartExternal(RALPHS_INSTACART_URL);
+      toast({
+        title: "Couldn't reach Instacart",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
