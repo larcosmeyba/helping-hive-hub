@@ -56,8 +56,19 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const apiKey = Deno.env.get("INSTACART_API_KEY");
-    if (!apiKey) return json({ error: "INSTACART_API_KEY not configured" }, 500);
+    const body = (await req.json()) as CreateListBody;
+    const env = body?.environment === "development" ? "development" : "production";
+    const apiKey =
+      env === "development"
+        ? Deno.env.get("INSTACART_API_KEY_DEVELOPMENT") ?? Deno.env.get("INSTACART_API_KEY")
+        : Deno.env.get("INSTACART_API_KEY");
+    if (!apiKey) {
+      return json(
+        { error: `Instacart API key not configured for ${env} environment` },
+        500,
+      );
+    }
+
 
     const body = (await req.json()) as CreateListBody;
     if (!body?.title || typeof body.title !== "string" || body.title.length > 200) {
