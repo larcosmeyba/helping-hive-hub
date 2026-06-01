@@ -1,25 +1,58 @@
 import { Capacitor } from "@capacitor/core";
 
 /**
+ * Synchronously open a blank window during a click handler so a later
+ * async navigation is still treated as user-initiated by popup blockers.
+ * Returns null on native or if the browser blocked the popup.
+ *
+ * IMPORTANT: do NOT pass "noopener" here — that causes window.open to
+ * return null, so we can't redirect the tab later.
+ */
+export function preopenExternalWindow(): Window | null {
+  try {
+    if (Capacitor.isNativePlatform()) return null;
+    const w = window.open("about:blank", "_blank");
+    if (w) {
+      try {
+        w.document.write(
+          '<!doctype html><title>Opening Instacart…</title>' +
+            '<style>body{font-family:system-ui;padding:32px;color:#333;text-align:center}</style>' +
+            '<p>Opening Instacart…</p>',
+        );
+      } catch {
+        /* cross-origin write may fail, fine */
+      }
+    } else {
+      console.warn("[Instacart] preopenExternalWindow: popup blocked (window.open returned null)");
+    }
+    return w;
+  } catch (err) {
+    console.warn("[Instacart] preopenExternalWindow error:", err);
+    return null;
+  }
+}
+
+/**
  * Open an Instacart landing-page URL externally.
  *
- * Web: callers should `preopenExternalWindow()` synchronously inside the
- * click handler and pass the returned handle here, so the navigation is
- * still attributed to the user gesture (avoids popup blockers when the
- * URL only arrives after an async edge-function call).
+ * Web: redirects the pre-opened window (from preopenExternalWindow) to the
+ * generated URL. Falls back to a synthesized anchor click, then to a
+ * same-tab redirect if nothing else worked.
  *
- * Native (Capacitor): top-level navigation to an http(s) URL is routed
- * by the webview to the OS — opens the Instacart app if installed,
- * otherwise the system browser.
+ * Native (Capacitor): top-level navigation routes through the OS — opens
+ * the Instacart app if installed, otherwise the system browser.
  */
 export function openInstacartExternal(url: string, preopened?: Window | null) {
-  if (!url) return;
-  // eslint-disable-next-line no-console
-  console.info("[Instacart] Opening external landing page:", url);
+  if (!url) {
+    console.warn("[Instacart] openInstacartExternal called with empty url");
+    return;
+  }
+  console.info("[Instacart] Redirecting to landing page:", url);
 
+  // Native: top-level navigation — webview hands off to OS.
   try {
     if (Capacitor.isNativePlatform()) {
-      if (preopened) {
+      if (preopened && !preopened.closed) {
         try { preopened.close(); } catch { /* noop */ }
       }
       window.location.href = url;
@@ -29,58 +62,44 @@ export function openInstacartExternal(url: string, preopened?: Window | null) {
     /* fall through */
   }
 
-  // Web: reuse the pre-opened window from the click gesture if available.
+  // Preferred path: redirect the window opened synchronously on click.
   if (preopened && !preopened.closed) {
     try {
       preopened.location.href = url;
-      preopened.focus?.();
+      try { preopened.focus?.(); } catch { /* noop */ }
+      console.info("[Instacart] Redirected pre-opened tab to URL");
       return;
-    } catch {
-      /* fall through to fallback strategies */
+    } catch (err) {
+      console.error("[Instacart] Failed to set preopened.location.href:", err);
+      try { preopened.close(); } catch { /* noop */ }
     }
   }
 
-  // Fallback 1: synthesized anchor click.
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener,noreferrer";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  // Fallback 1: synthesized anchor click (still inside a recent gesture).
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener,noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    console.info("[Instacart] Fallback: synthesized anchor click");
+  } catch (err) {
+    console.error("[Instacart] Anchor click fallback failed:", err);
+  }
 
-  // Fallback 2: same-tab redirect — guarantees the user reaches Instacart
-  // even if popups are blocked.
+  // Fallback 2: try window.open, then same-tab redirect.
   setTimeout(() => {
     try {
-      const opened = window.open(url, "_blank", "noopener,noreferrer");
-      if (!opened) window.location.href = url;
-    } catch {
+      const opened = window.open(url, "_blank");
+      if (!opened) {
+        console.warn("[Instacart] window.open blocked — redirecting current tab");
+        window.location.href = url;
+      }
+    } catch (err) {
+      console.error("[Instacart] window.open fallback failed, redirecting current tab:", err);
       window.location.href = url;
     }
-  }, 100);
-}
-
-/**
- * Synchronously open a blank window during a click handler so a later
- * async navigation is still treated as user-initiated by popup blockers.
- * Returns null on native or if the browser blocked the popup.
- */
-export function preopenExternalWindow(): Window | null {
-  try {
-    if (Capacitor.isNativePlatform()) return null;
-    const w = window.open("about:blank", "_blank", "noopener,noreferrer");
-    if (w) {
-      try {
-        w.document.write(
-          '<!doctype html><title>Opening Instacart…</title>' +
-            '<style>body{font-family:system-ui;padding:32px;color:#333;text-align:center}</style>' +
-            '<p>Opening Instacart…</p>',
-        );
-      } catch { /* cross-origin write may fail, fine */ }
-    }
-    return w;
-  } catch {
-    return null;
-  }
+  }, 150);
 }
