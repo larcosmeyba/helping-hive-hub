@@ -13,6 +13,7 @@ import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedB
 import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
+import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -324,6 +325,7 @@ export default function GroceryListPage() {
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
           Opens your Instacart cart with these ingredients pre-loaded in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
+        <InstacartDisclaimer variant="inline" className="text-center max-w-lg px-2" />
       </div>
 
 
@@ -533,6 +535,7 @@ export default function GroceryListPage() {
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
           Opens Ralphs on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
         </p>
+        <InstacartDisclaimer variant="inline" className="text-center max-w-lg px-2" />
       </div>
 
       {/* Change home store — escape hatch (not a comparison view) */}
