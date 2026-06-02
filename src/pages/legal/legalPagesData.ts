@@ -12,9 +12,9 @@ export interface LegalSection {
 }
 
 const LAST_UPDATED = "April 21, 2026";
-const CONTACT_BUSINESS = "legal@helpthehive.com";
+const CONTACT_BUSINESS = "marcos@helpthehive.com";
 const CONTACT_SUPPORT = "marcos@helpthehive.com";
-const CONTACT_PRIVACY = "privacy@helpthehive.com";
+const CONTACT_PRIVACY = "marcos@helpthehive.com";
 
 export const legalPages: LegalPageData[] = [
   // ─── COMPANY ───
@@ -227,14 +227,10 @@ We do not guarantee:
         content: "You may submit information, household data, uploaded documents, pantry information, and other content to the platform. You retain ownership of your content, but you grant Help the Hive a limited license to use, host, process, and display that content as needed to operate and improve the platform.\n\nYou represent that you have the rights necessary to submit any content you provide."
       },
       {
-        heading: "7. Verification and Program Access",
-        content: "Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval."
-      },
-      {
-        heading: "7. Verification, Program Access, and SNAP/WIC Self-Attestation",
-        content: `Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval.
+        heading: "7. SNAP/WIC Self-Attestation (Optional)",
+        content: `Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier, paywall, subscription, or verification gate. We do not require identity documents, eligibility proof, or any verification to access any feature.
 
-**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, we use that to tailor your experience and connect you with resources. Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier.
+**Food assistance self-attestation.** If you optionally tell us you receive SNAP, WIC, or other food assistance benefits, we use that signal only to surface relevant educational resources and budget-friendly meal plans.
 
 **SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
