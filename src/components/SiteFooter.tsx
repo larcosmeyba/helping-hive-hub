@@ -92,7 +92,7 @@ export function SiteFooter() {
           </div>
         </div>
         <p className="text-sm text-white/50 leading-relaxed max-w-lg ml-11 mb-3">
-          Budget meal planning for real families. Meals that fit your budget at the store you already shop at — free for SNAP & WIC households.
+          Free meal planning for every family. Budget smarter on groceries — proudly supports SNAP/EBT families through our Instacart partnership.
         </p>
         <div className="ml-11">
           <p className="text-xs font-semibold text-white/60 mb-1.5">Contact</p>
@@ -105,20 +105,20 @@ export function SiteFooter() {
             </li>
             <li>
               Partnerships:{" "}
-              <a href="mailto:partnerships@helpthehive.com" className="hover:text-white/80 transition-colors">
-                partnerships@helpthehive.com
+              <a href="mailto:marcos@helpthehive.com" className="hover:text-white/80 transition-colors">
+                marcos@helpthehive.com
               </a>
             </li>
             <li>
               Press:{" "}
-              <a href="mailto:press@helpthehive.com" className="hover:text-white/80 transition-colors">
-                press@helpthehive.com
+              <a href="mailto:marcos@helpthehive.com" className="hover:text-white/80 transition-colors">
+                marcos@helpthehive.com
               </a>
             </li>
             <li>
               Support:{" "}
-              <a href="mailto:support@helpthehive.com" className="hover:text-white/80 transition-colors">
-                support@helpthehive.com
+              <a href="mailto:marcos@helpthehive.com" className="hover:text-white/80 transition-colors">
+                marcos@helpthehive.com
               </a>
             </li>
           </ul>
