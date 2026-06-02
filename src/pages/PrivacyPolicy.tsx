@@ -68,7 +68,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-xl font-display font-semibold text-foreground mb-3">Data Deletion</h2>
               <p className="mb-3">Users may delete their account at any time directly inside the app settings, or by contacting:{" "}
-                <a href="mailto:support@helpthehive.com" className="text-primary hover:underline">support@helpthehive.com</a>
+                <a href="mailto:marcos@helpthehive.com" className="text-primary hover:underline">marcos@helpthehive.com</a>
               </p>
               <p>When you request account deletion, your personal data is permanently removed immediately. An anonymized audit record (date only) is retained for legal compliance.</p>
             </section>
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
               <p className="mb-1">If you have questions regarding this Privacy Policy or your data, please contact:</p>
               <p className="mt-3 font-medium text-foreground">Help The Hive</p>
               <p>
-                <a href="mailto:support@helpthehive.com" className="text-primary hover:underline">support@helpthehive.com</a>
+                <a href="mailto:marcos@helpthehive.com" className="text-primary hover:underline">marcos@helpthehive.com</a>
               </p>
               <p>
                 <a href="https://helpthehive.com" className="text-primary hover:underline">https://helpthehive.com</a>

@@ -202,10 +202,10 @@ const SAMPLE_PLANS: Record<string, {
     ],
   },
   "snap-friendly-meals": {
-    title: "SNAP-Friendly Meals",
+    title: "SNAP-Friendly Meal Plan",
     budget: "$45 / week",
-    desc: "Optimized for SNAP benefits with maximum nutritional value. Every dollar works harder.",
-    tag: "SNAP Eligible",
+    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating Instacart retailers. Every dollar works harder.",
+    tag: "Eligible for SNAP Purchases",
     servings: "4 servings",
     meals: 21,
     days: [

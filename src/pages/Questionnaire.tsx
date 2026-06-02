@@ -8,19 +8,13 @@ import { OptionChip } from "@/components/questionnaire/OptionChip";
 import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, ChefHat, ShoppingBasket, AlertCircle, Check } from "lucide-react";
+import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, AlertCircle, Check } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
 
-const TOTAL_STEPS = 10;
-
-const FOOD_ASSISTANCE_OPTIONS = [
-  { value: "snap_wic", label: "🟢 Yes — we receive SNAP, WIC, or EBT", helper: "We built Help The Hive for you" },
-  { value: "tight_budget", label: "🟡 No, but we're on a tight budget", helper: "Welcome — same free plan, same features" },
-  { value: "none", label: "⚪ No — just here to plan smarter meals", helper: "Welcome — same free plan, same features" },
-];
+const TOTAL_STEPS = 9;
 
 const HOME_STORE_OPTIONS = [
   "Aldi", "Trader Joe's", "Whole Foods", "Target",
@@ -46,8 +40,6 @@ const PANTRY_STAPLES = [
 
 const STORAGE_KEY = "hth_onboarding_progress";
 
-// localStorage is now an OFFLINE FALLBACK only. The source of truth for
-// in-progress onboarding is profiles.questionnaire_progress (JSONB).
 function loadLocalProgress(): Record<string, unknown> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -76,8 +68,6 @@ function defaultBudget(size: number): number {
 }
 
 export default function Questionnaire() {
-  // Seed from local fallback immediately so the form is interactive on first
-  // paint; the DB load below will overwrite this if a server copy exists.
   const localSeed = loadLocalProgress();
   const [step, setStep] = useState<number>((localSeed.step as number) || 1);
   const [hydrated, setHydrated] = useState(false);
@@ -85,8 +75,6 @@ export default function Questionnaire() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load progress from DB (preferred) and short-circuit to dashboard if the
-  // questionnaire has already been completed.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -106,9 +94,7 @@ export default function Questionnaire() {
           | Record<string, unknown>
           | null;
         if (dbProgress && typeof dbProgress === "object") {
-          // DB is the source of truth — apply server progress to all fields.
           if (typeof dbProgress.step === "number") setStep(dbProgress.step);
-          if (typeof dbProgress.foodAssistance === "string") setFoodAssistance(dbProgress.foodAssistance);
           if (typeof dbProgress.householdSize === "number") setHouseholdSize(dbProgress.householdSize);
           if (typeof dbProgress.hasYoungKids === "boolean") setHasYoungKids(dbProgress.hasYoungKids);
           if (typeof dbProgress.weeklyBudget === "number") setWeeklyBudget(dbProgress.weeklyBudget);
@@ -130,9 +116,6 @@ export default function Questionnaire() {
     };
   }, [user, navigate]);
 
-  // Form state — initial values come from the local fallback. The DB load
-  // effect above replaces these once the server copy arrives.
-  const [foodAssistance, setFoodAssistance] = useState<string>((localSeed.foodAssistance as string) || "");
   const [householdSize, setHouseholdSize] = useState<number>((localSeed.householdSize as number) ?? 2);
   const [hasYoungKids, setHasYoungKids] = useState<boolean>((localSeed.hasYoungKids as boolean) ?? false);
   const [weeklyBudget, setWeeklyBudget] = useState<number>((localSeed.weeklyBudget as number) || defaultBudget(2));
@@ -145,12 +128,10 @@ export default function Questionnaire() {
   const [loading, setLoading] = useState(false);
   const zipValidation = useZipValidation(zipCode);
 
-  // Auto-adjust budget when household size changes (only if user hasn't manually set it)
   useEffect(() => {
     if (!budgetTouched) setWeeklyBudget(defaultBudget(householdSize));
   }, [householdSize, budgetTouched]);
 
-  // Location
   const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
   const [userLatitude, setUserLatitude] = useState<number | null>(null);
   const [userLongitude, setUserLongitude] = useState<number | null>(null);
@@ -158,13 +139,9 @@ export default function Questionnaire() {
 
   useEffect(() => { trackEvent("onboarding_started"); }, []);
 
-  // Persist progress to BOTH local fallback (for offline reloads) and the
-  // server (source of truth). The DB write is debounced and only fires once
-  // we've finished hydrating from the server, to avoid clobbering server state
-  // with the local seed on the first render.
   useEffect(() => {
     const progress = {
-      step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched,
+      step, householdSize, hasYoungKids, weeklyBudget, budgetTouched,
       homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter,
     };
     saveLocalProgress(progress);
@@ -181,7 +158,7 @@ export default function Questionnaire() {
         });
     }, 400);
     return () => clearTimeout(t);
-  }, [user, hydrated, step, foodAssistance, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
+  }, [user, hydrated, step, householdSize, hasYoungKids, weeklyBudget, budgetTouched, homeStore, zipCode, dietaryPrefs, cookingConfidence, pantryStarter]);
 
   const togglePantryItem = (item: string) => {
     setPantryStarter((prev) => prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]);
@@ -195,8 +172,6 @@ export default function Questionnaire() {
     setLocationStatus("requesting");
     try {
       const isNative = Capacitor.isNativePlatform();
-      // Dynamic import keeps the Capacitor Geolocation plugin out of the
-      // web bundle until the user actually triggers location permission.
       const { Geolocation } = await import("@capacitor/geolocation");
       if (isNative) {
         const perm = await Geolocation.requestPermissions();
@@ -227,9 +202,6 @@ export default function Questionnaire() {
     if (!user) return;
     setLoading(true);
     try {
-      const tier = foodAssistance === "snap_wic" ? "free_forever" : "standard";
-      const snapStatus = foodAssistance === "snap_wic";
-
       // Seed pantry items the user said they have
       if (pantryStarter.length > 0) {
         const pantryRows = pantryStarter.map((item) => ({
@@ -242,9 +214,6 @@ export default function Questionnaire() {
       }
 
       const { error } = await supabase.from("profiles").update({
-        food_assistance_status: foodAssistance || "none",
-        snap_status: snapStatus,
-        tier,
         household_size: householdSize,
         children_ages: hasYoungKids ? ["0-4"] : [],
         weekly_budget: weeklyBudget,
@@ -256,8 +225,6 @@ export default function Questionnaire() {
         questionnaire_completed: true,
         onboarding_completed_at: new Date().toISOString(),
         beta_user: true,
-        verification_status: "not_started",
-        membership_tier: snapStatus ? "free_forever" : "standard",
         latitude: userLatitude,
         longitude: userLongitude,
         city: locationCity || null,
@@ -268,8 +235,6 @@ export default function Questionnaire() {
       await refreshProfile();
 
       trackEvent("onboarding_completed", {
-        food_assistance: foodAssistance,
-        tier,
         household_size: householdSize,
         weekly_budget: weeklyBudget,
         home_store: homeStore,
@@ -280,8 +245,8 @@ export default function Questionnaire() {
 
       clearProgress();
       toast({
-        title: tier === "free_forever" ? "You're in — free 💚" : "You're in!",
-        description: "Welcome to Help The Hive.",
+        title: "You're in! 💚",
+        description: "Welcome to Help The Hive — free for every family.",
       });
       navigate("/dashboard", { replace: true });
     } catch (error: any) {
@@ -301,22 +266,18 @@ export default function Questionnaire() {
   function stepName(s: number) {
     const names: Record<number, string> = {
       1: "welcome",
-      2: "food_assistance",
-      3: "household_size",
-      4: "weekly_budget",
-      5: "home_store",
-      6: "zip_code",
-      7: "dietary_preferences",
-      8: "cooking_confidence",
-      9: "pantry_check",
-      10: "completion",
+      2: "household_size",
+      3: "weekly_budget",
+      4: "home_store",
+      5: "zip_code",
+      6: "dietary_preferences",
+      7: "cooking_confidence",
+      8: "pantry_check",
+      9: "completion",
     };
     return names[s] || "unknown";
   }
 
-  // Wait for DB hydration before rendering — prevents the flash where the
-  // form mounts with local-fallback values (or step 1) and then snaps to the
-  // server's saved step/fields a moment later.
   if (user && !hydrated) {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center">
@@ -334,7 +295,7 @@ export default function Questionnaire() {
           step={1}
           totalSteps={TOTAL_STEPS}
           title="Welcome to Help The Hive 🐝"
-          subtitle="Meals that fit your budget. At the store you already shop at. Let's set you up in 60 seconds."
+          subtitle="Free meal planning for every family. Let's set you up in 60 seconds."
           onNext={next}
         >
           <div className="flex flex-col items-center mt-8 space-y-6">
@@ -350,62 +311,26 @@ export default function Questionnaire() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 We'll ask a few quick questions to build your first weekly meal plan.
               </p>
-              <p className="text-xs text-muted-foreground/70">Takes about 60 seconds</p>
+              <p className="text-xs text-muted-foreground/70">Takes about 60 seconds — 100% free, no payment ever.</p>
             </div>
 
-            {/* Health disclaimer — shown once during onboarding */}
             <div className="w-full max-w-sm rounded-2xl border border-border bg-muted/40 px-4 py-3 text-left">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1">
-                A quick note on health
+                A quick note on health & pricing
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Help The Hive provides planning and budgeting tools only. It is not medical or
-                nutritional advice. Please consult a healthcare provider for dietary guidance.
+                Help The Hive provides planning and budgeting tools only — not medical or nutritional advice.
+                Prices shown are estimates; final pricing is confirmed at Instacart checkout.
               </p>
             </div>
           </div>
         </QuestionnaireStep>
       )}
 
-      {/* Step 2: Food Assistance (SNAP self-attestation) */}
+      {/* Step 2: Household Size */}
       {step === 2 && (
         <QuestionnaireStep
           step={2}
-          totalSteps={TOTAL_STEPS}
-          title="First, let's make sure you get the right plan."
-          subtitle="Do you or your household currently receive food assistance?"
-          onNext={() => { trackEvent("food_assistance_selected", { value: foodAssistance }); next(); }}
-          onBack={back}
-          nextDisabled={!foodAssistance}
-        >
-          <div className="space-y-3 mt-4">
-            {FOOD_ASSISTANCE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setFoodAssistance(opt.value)}
-                className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
-                  foodAssistance === opt.value
-                    ? "bg-primary/10 border-primary"
-                    : "bg-card border-border hover:border-primary/30"
-                }`}
-              >
-                <div className="text-base font-medium text-foreground">{opt.label}</div>
-                {opt.helper && (
-                  <div className="text-xs text-primary mt-1">{opt.helper}</div>
-                )}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-6 leading-relaxed text-center">
-            Help The Hive is 100% free for everyone — forever. We ask so we can tailor your plan and connect you with extra resources if you qualify. Honor system, no documents.
-          </p>
-        </QuestionnaireStep>
-      )}
-
-      {/* Step 3: Household Size */}
-      {step === 3 && (
-        <QuestionnaireStep
-          step={3}
           totalSteps={TOTAL_STEPS}
           title="How many people are you cooking for?"
           onNext={next}
@@ -446,10 +371,10 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 4: Weekly Budget */}
-      {step === 4 && (
+      {/* Step 3: Weekly Budget */}
+      {step === 3 && (
         <QuestionnaireStep
-          step={4}
+          step={3}
           totalSteps={TOTAL_STEPS}
           title="What's your weekly grocery budget?"
           subtitle="We'll build meal plans that fit inside this budget."
@@ -484,10 +409,10 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 5: Home Store */}
-      {step === 5 && (
+      {/* Step 4: Home Store */}
+      {step === 4 && (
         <QuestionnaireStep
-          step={5}
+          step={4}
           totalSteps={TOTAL_STEPS}
           title="Which store do you shop at most?"
           subtitle="We'll build your meal plan using products available at this store."
@@ -511,14 +436,16 @@ export default function Questionnaire() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-4 text-center">You can change stores anytime.</p>
+          <p className="text-xs text-muted-foreground mt-4 text-center">
+            Grocery checkout depends on stores Instacart supports in your area. You can change stores anytime.
+          </p>
         </QuestionnaireStep>
       )}
 
-      {/* Step 6: ZIP Code */}
-      {step === 6 && (
+      {/* Step 5: ZIP Code */}
+      {step === 5 && (
         <QuestionnaireStep
-          step={6}
+          step={5}
           totalSteps={TOTAL_STEPS}
           title="Your ZIP code?"
           subtitle="Used to find your nearest store and local sale prices."
@@ -598,12 +525,12 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 7: Dietary Preferences (optional) */}
-      {step === 7 && (
+      {/* Step 6: Dietary Preferences (optional) */}
+      {step === 6 && (
         <QuestionnaireStep
-          step={7}
+          step={6}
           totalSteps={TOTAL_STEPS}
-          title="Any dietary preferences?"
+          title="Any dietary preferences or allergies?"
           subtitle="Optional — tap any that apply."
           onNext={next}
           onBack={back}
@@ -623,10 +550,10 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 8: Cooking Confidence (optional) */}
-      {step === 8 && (
+      {/* Step 7: Cooking Confidence (optional) */}
+      {step === 7 && (
         <QuestionnaireStep
-          step={8}
+          step={7}
           totalSteps={TOTAL_STEPS}
           title="How comfortable are you in the kitchen?"
           subtitle="We'll calibrate recipe complexity to your skill level."
@@ -648,10 +575,10 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 9: Quick Pantry Check (optional) */}
-      {step === 9 && (
+      {/* Step 8: Quick Pantry Check (optional) */}
+      {step === 8 && (
         <QuestionnaireStep
-          step={9}
+          step={8}
           totalSteps={TOTAL_STEPS}
           title="Quick pantry check"
           subtitle="Tap anything you already have at home. We'll skip these on your grocery list."
@@ -683,10 +610,10 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* Step 10: All Set */}
-      {step === 10 && (
+      {/* Step 9: All Set */}
+      {step === 9 && (
         <QuestionnaireStep
-          step={10}
+          step={9}
           totalSteps={TOTAL_STEPS}
           title="Perfect — you're all set! 🎉"
           onNext={handleSubmit}
@@ -713,9 +640,7 @@ export default function Questionnaire() {
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
               <Sparkles className="w-3.5 h-3.5" />
-              {foodAssistance === "snap_wic"
-                ? "Free — built for SNAP & WIC families"
-                : "Free — for everyone"}
+              Free for every family — forever
             </div>
           </div>
         </QuestionnaireStep>

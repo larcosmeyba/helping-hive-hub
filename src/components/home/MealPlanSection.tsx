@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import mealFamilyDinner from "@/assets/meal-family-dinner.jpg";
 import mealVariety from "@/assets/meal-variety.jpg";
 import mealSnapFriendly from "@/assets/meal-snap-friendly.jpg";
@@ -28,14 +29,14 @@ const plans = [
     note: null as string | null,
   },
   {
-    title: "Family on SNAP",
-    desc: "Optimized for SNAP benefits with maximum nutritional value.",
+    title: "SNAP-Friendly Meal Plan",
+    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating Instacart retailers.",
     budget: "$65 / week grocery budget",
     store: "Aldi / WinCo",
-    tag: "Free",
+    tag: "SNAP-Friendly",
     slug: "snap-friendly-meals",
     image: mealSnapFriendly,
-    note: "Free for eligible households",
+    note: "Eligible for SNAP purchases via Instacart",
   },
 ];
 
@@ -102,6 +103,11 @@ export function MealPlanSection() {
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* Instacart + SNAP/EBT partnership explainer */}
+        <div className="max-w-3xl mx-auto mt-12">
+          <InstacartDisclaimer variant="why-instacart" />
         </div>
       </div>
     </section>

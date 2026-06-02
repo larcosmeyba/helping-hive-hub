@@ -12,9 +12,9 @@ export interface LegalSection {
 }
 
 const LAST_UPDATED = "April 21, 2026";
-const CONTACT_BUSINESS = "legal@helpthehive.com";
+const CONTACT_BUSINESS = "marcos@helpthehive.com";
 const CONTACT_SUPPORT = "marcos@helpthehive.com";
-const CONTACT_PRIVACY = "privacy@helpthehive.com";
+const CONTACT_PRIVACY = "marcos@helpthehive.com";
 
 export const legalPages: LegalPageData[] = [
   // ─── COMPANY ───
@@ -227,14 +227,10 @@ We do not guarantee:
         content: "You may submit information, household data, uploaded documents, pantry information, and other content to the platform. You retain ownership of your content, but you grant Help the Hive a limited license to use, host, process, and display that content as needed to operate and improve the platform.\n\nYou represent that you have the rights necessary to submit any content you provide."
       },
       {
-        heading: "7. Verification and Program Access",
-        content: "Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval."
-      },
-      {
-        heading: "7. Verification, Program Access, and SNAP/WIC Self-Attestation",
-        content: `Some discounts, programs, or eligibility flows may require documentation or identity verification. Help the Hive may review submitted information or use third-party services to verify eligibility. Submission of materials does not guarantee approval.
+        heading: "7. SNAP/WIC Self-Attestation (Optional)",
+        content: `Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier, paywall, subscription, or verification gate. We do not require identity documents, eligibility proof, or any verification to access any feature.
 
-**Food assistance self-attestation.** If you indicate during onboarding that you receive SNAP, WIC, or other food assistance benefits, we use that to tailor your experience and connect you with resources. Help the Hive is 100% free for everyone regardless of eligibility — there is no paid tier.
+**Food assistance self-attestation.** If you optionally tell us you receive SNAP, WIC, or other food assistance benefits, we use that signal only to surface relevant educational resources and budget-friendly meal plans.
 
 **SNAP benefit tracker.** If you enable the optional SNAP benefit tracker, you manually enter your monthly benefit amount. Help the Hive does NOT connect to EBT portals, store EBT card numbers, store PINs, or process benefit transactions.`
       },
@@ -768,138 +764,152 @@ For legal, business, compliance, security, or media matters:\n\n📧 [${CONTACT_
     ]
   },
 
-  // ─── PROGRAMS ───
+  // ─── RESOURCES (Educational) ───
   {
-    slug: "snap-program",
-    title: "SNAP Program",
+    slug: "apply-for-snap",
+    title: "How to Apply for SNAP Benefits",
     lastUpdated: LAST_UPDATED,
     category: "programs",
     sections: [
       {
-        content: "Help the Hive may offer discounted or free access to eligible users receiving Supplemental Nutrition Assistance Program (SNAP) benefits."
+        content: "The Supplemental Nutrition Assistance Program (SNAP) helps eligible low-income households buy groceries. Help the Hive is not a government agency and does not process SNAP applications — this page is educational only."
       },
       {
-        heading: "Eligibility",
-        content: "Users may be asked to provide documentation or other verification materials to confirm eligibility."
+        heading: "Where to apply",
+        content: `Apply through your state's SNAP office. The official starting point is:
+
+• USDA SNAP State Directory: https://www.fns.usda.gov/snap/state-directory
+• Federal SNAP overview: https://www.fns.usda.gov/snap/recipient/eligibility
+
+Each state runs its own SNAP application — most accept online applications, mail-in forms, or in-person submissions at a local office.`
       },
       {
-        heading: "Verification",
-        content: `Verification may include review of:
-• Current benefit documentation
-• Participant identification details
-• Other reasonable eligibility evidence`
+        heading: "What you'll typically need",
+        content: `• Proof of identity (ID, driver's license, passport)
+• Proof of address (utility bill, lease)
+• Proof of income (pay stubs, benefits letters)
+• Household member information (names, dates of birth, SSNs)
+• Recent expenses (rent, utilities, childcare, medical)`
       },
       {
-        heading: "Approval",
-        content: "Submission of documentation does not guarantee approval. Help the Hive reserves the right to deny, revoke, or limit access where verification cannot be completed or where misuse is suspected."
-      },
-      {
-        heading: "Government Disclaimer",
-        content: "Help the Hive is not affiliated with, endorsed by, or operated by the U.S. government or any state agency unless explicitly stated."
-      },
-      {
-        heading: "Data Handling",
-        content: "Documents submitted for verification are handled according to Help the Hive's privacy and security policies."
+        heading: "After you apply",
+        content: "States must process applications within 30 days (7 days for emergency SNAP). You may receive a phone or in-person interview. If approved, benefits load monthly onto an EBT card you can use at participating retailers — including many Instacart-supported stores."
       }
     ]
   },
   {
-    slug: "veterans-program",
-    title: "Veterans Program",
+    slug: "apply-for-ebt",
+    title: "How to Apply for EBT",
     lastUpdated: LAST_UPDATED,
     category: "programs",
     sections: [
       {
-        content: `Help the Hive may offer discounted access to eligible veterans.
-
-Verification may require:
-• Veteran status documentation
-• Approved verification systems
-• Other reasonable proof of status
-
-Misrepresentation of eligibility may result in denial or removal of discounted access.`
+        content: "EBT (Electronic Benefits Transfer) is the card system states use to deliver SNAP and, in some states, cash assistance benefits. You don't apply for the EBT card separately — it's issued automatically once your SNAP or TANF application is approved."
+      },
+      {
+        heading: "Steps to get an EBT card",
+        content: `1. Apply for SNAP (or TANF) through your state agency — see our **How to Apply for SNAP Benefits** page.
+2. Complete any required interview.
+3. If approved, your state mails an EBT card with instructions to set a PIN.
+4. Activate the card per the instructions included.`
+      },
+      {
+        heading: "Using EBT online",
+        content: "Most states allow SNAP EBT to be used online at participating retailers. Instacart accepts SNAP/EBT at many partner stores — Help the Hive routes your grocery list to Instacart so eligible items can be paid for with EBT at checkout."
       }
     ]
   },
   {
-    slug: "first-responders",
-    title: "First Responders Program",
+    slug: "housing-assistance",
+    title: "Housing Assistance Resources",
     lastUpdated: LAST_UPDATED,
     category: "programs",
     sections: [
       {
-        content: `Help the Hive may offer discounted access to eligible first responders, including:
-• Firefighters
-• Police officers
-• EMTs
-• Paramedics
-• Other qualifying emergency personnel
-
-Verification may require valid documentation or an approved third-party verification process.`
+        content: "If your household is struggling with rent, mortgage, or utility-driven housing costs, these federal and nonprofit resources may help. Help the Hive is not a housing provider or government agency."
+      },
+      {
+        heading: "Federal programs",
+        content: `• **HUD rental assistance & Section 8 / Housing Choice Vouchers:** https://www.hud.gov/topics/rental_assistance
+• **Find a Public Housing Agency near you:** https://www.hud.gov/program_offices/public_indian_housing/pha/contacts
+• **Emergency Housing Vouchers (EHV):** Ask your local PHA.`
+      },
+      {
+        heading: "Help in an emergency",
+        content: `• **211:** Dial 2-1-1 or visit https://www.211.org for local rental, shelter, and eviction-prevention referrals.
+• **National Domestic Violence Hotline:** 1-800-799-7233 — emergency shelter referrals.`
       }
     ]
   },
   {
-    slug: "eligibility-verification",
-    title: "Eligibility Verification",
+    slug: "food-assistance",
+    title: "Food Assistance Resources",
     lastUpdated: LAST_UPDATED,
     category: "programs",
     sections: [
       {
-        content: "Some Help the Hive programs and discounts require verification to protect the platform from fraud and preserve access for eligible users."
+        content: "If you need help putting food on the table, you're not alone — and there are programs designed exactly for this. Help the Hive is not a food bank; this page is educational."
       },
       {
-        heading: "Verification May Include",
-        content: `• Document upload
-• Identity confirmation
-• Status confirmation
-• Renewal verification
-• Third-party validation tools`
+        heading: "National programs",
+        content: `• **SNAP** — see **How to Apply for SNAP Benefits**.
+• **WIC (Women, Infants, and Children):** https://www.fns.usda.gov/wic — nutrition support for pregnant women, new mothers, and children under 5.
+• **Child Nutrition Programs (school meals, summer meals):** https://www.fns.usda.gov/programs
+• **The Emergency Food Assistance Program (TEFAP):** USDA-funded food distributions via local food banks.`
       },
       {
-        heading: "Review Standards",
-        content: `We may reject, request more information, or revoke benefits where:
-• Documentation is incomplete
-• Information appears inaccurate
-• Fraud is suspected
-• Eligibility cannot be reasonably confirmed`
+        heading: "Find a food bank or pantry",
+        content: `• **Feeding America food bank locator:** https://www.feedingamerica.org/find-your-local-foodbank
+• **211:** Dial 2-1-1 or visit https://www.211.org for the nearest pantry, hot-meal site, or food box program.`
+      }
+    ]
+  },
+  {
+    slug: "utility-assistance",
+    title: "Utility Assistance Resources",
+    lastUpdated: LAST_UPDATED,
+    category: "programs",
+    sections: [
+      {
+        content: "If high utility bills are squeezing your food budget, federal and local programs may be able to reduce or cover what you owe."
+      },
+      {
+        heading: "Federal programs",
+        content: `• **LIHEAP (Low Income Home Energy Assistance Program):** https://www.acf.hhs.gov/ocs/programs/liheap — heating, cooling, and emergency utility help.
+• **Weatherization Assistance Program:** https://www.energy.gov/scep/wap/weatherization-assistance-program — home efficiency upgrades for income-eligible households.
+• **Lifeline (low-cost phone/internet):** https://www.lifelinesupport.org`
+      },
+      {
+        heading: "Local help",
+        content: "Most utility companies offer hardship plans, payment arrangements, and shutoff-protection programs. Call the number on your bill and ask for the customer hardship or LIHEAP coordinator. **211** can also connect you to local energy assistance funds."
+      }
+    ]
+  },
+  {
+    slug: "community-support",
+    title: "Community Support Programs",
+    lastUpdated: LAST_UPDATED,
+    category: "programs",
+    sections: [
+      {
+        content: "Local nonprofits, faith communities, and mutual-aid networks offer everything from diapers and school supplies to childcare and mental-health support."
+      },
+      {
+        heading: "Start here",
+        content: `• **211:** https://www.211.org — the most comprehensive directory of community services in the U.S. and Canada.
+• **Findhelp.org:** https://www.findhelp.org — search free and reduced-cost services by ZIP code.
+• **United Way:** https://www.unitedway.org — local chapters offer family stability and benefits-enrollment help.`
+      },
+      {
+        heading: "Specific populations",
+        content: `• **National Council on Aging — BenefitsCheckUp:** https://www.benefitscheckup.org — screens older adults for 2,000+ benefit programs.
+• **Veterans:** https://www.va.gov — VA benefits, healthcare, and emergency support.
+• **Families with children:** https://www.childcare.gov — childcare subsidies and family resource centers.`
       }
     ]
   },
 
   // ─── TRUST & SAFETY ───
-  {
-    slug: "identity-verification",
-    title: "Identity Verification Policy",
-    lastUpdated: LAST_UPDATED,
-    category: "trust",
-    sections: [
-      {
-        content: "Help the Hive may require identity or eligibility verification for certain features, discounts, support escalations, or fraud prevention measures."
-      },
-      {
-        heading: "Why Verification May Be Required",
-        content: `• Protect discounts from abuse
-• Confirm benefit status
-• Reduce fraud
-• Protect users and platform integrity
-• Maintain fair access`
-      },
-      {
-        heading: "Verification Methods",
-        content: `Verification may include:
-• Document upload
-• Identity matching
-• Email verification
-• Phone verification
-• Third-party identity verification systems`
-      },
-      {
-        heading: "Document Handling",
-        content: "Documents are used only for authorized verification, fraud prevention, platform integrity, and legal compliance purposes."
-      }
-    ]
-  },
   {
     slug: "responsible-ai",
     title: "Responsible AI Policy",
@@ -1401,18 +1411,19 @@ export const footerColumns = [
     ]
   },
   {
-    title: "Programs",
+    title: "Resources",
     links: [
-      { label: "SNAP Program", slug: "snap-program" },
-      { label: "Veterans Program", slug: "veterans-program" },
-      { label: "First Responders Program", slug: "first-responders" },
-      { label: "Eligibility Verification", slug: "eligibility-verification" },
+      { label: "How to Apply for SNAP Benefits", slug: "apply-for-snap" },
+      { label: "How to Apply for EBT", slug: "apply-for-ebt" },
+      { label: "Housing Assistance Resources", slug: "housing-assistance" },
+      { label: "Food Assistance Resources", slug: "food-assistance" },
+      { label: "Utility Assistance Resources", slug: "utility-assistance" },
+      { label: "Community Support Programs", slug: "community-support" },
     ]
   },
   {
     title: "Trust & Safety",
     links: [
-      { label: "Identity Verification Policy", slug: "identity-verification" },
       { label: "Responsible AI Policy", slug: "responsible-ai" },
       { label: "Accessibility Statement", slug: "accessibility" },
       { label: "Community Guidelines", slug: "community-guidelines" },
