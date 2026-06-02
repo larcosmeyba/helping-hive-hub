@@ -163,34 +163,40 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://helpthehive.com/page/snap-program</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://helpthehive.com/page/apply-for-snap</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://helpthehive.com/page/veterans-program</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://helpthehive.com/page/apply-for-ebt</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://helpthehive.com/page/first-responders</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://helpthehive.com/page/housing-assistance</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://helpthehive.com/page/eligibility-verification</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://helpthehive.com/page/food-assistance</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://helpthehive.com/page/identity-verification</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://helpthehive.com/page/utility-assistance</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://helpthehive.com/page/community-support</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://helpthehive.com/page/responsible-ai</loc>

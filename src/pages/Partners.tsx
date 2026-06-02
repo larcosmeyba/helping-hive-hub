@@ -18,7 +18,7 @@ const sections = [
       "Aggregated insights on meal planning behavior",
       "Retail media integration",
     ],
-    cta: { label: "Contact our partnerships team", email: "partnerships@helpthehive.com" },
+    cta: { label: "Contact our partnerships team", email: "marcos@helpthehive.com" },
   },
   {
     icon: HeartHandshake,
@@ -31,7 +31,7 @@ const sections = [
       "Co-branded launch and onboarding support",
       "Free for SNAP & WIC households",
     ],
-    cta: { label: "Start a community pilot", email: "support@helpthehive.com" },
+    cta: { label: "Start a community pilot", email: "marcos@helpthehive.com" },
   },
   {
     icon: Sparkles,
@@ -44,7 +44,7 @@ const sections = [
       "Quarterly progress updates",
       "Mission-aligned restricted grant support",
     ],
-    cta: { label: "Request our impact deck", email: "partnerships@helpthehive.com" },
+    cta: { label: "Request our impact deck", email: "marcos@helpthehive.com" },
   },
 ];
 

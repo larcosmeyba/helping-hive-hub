@@ -56,7 +56,7 @@ export default function Press() {
                 <Link to="/partnerships?type=press">Submit press inquiry</Link>
               </Button>
               <Button asChild variant="outline">
-                <a href="mailto:press@helpthehive.com">
+                <a href="mailto:marcos@helpthehive.com">
                   <Mail className="mr-2 h-4 w-4" />
                   Email directly
                 </a>
