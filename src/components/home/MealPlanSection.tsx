@@ -104,6 +104,11 @@ export function MealPlanSection() {
             </motion.div>
           ))}
         </div>
+
+        {/* Instacart + SNAP/EBT partnership explainer */}
+        <div className="max-w-3xl mx-auto mt-12">
+          <InstacartDisclaimer variant="why-instacart" />
+        </div>
       </div>
     </section>
   );
