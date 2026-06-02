@@ -1,86 +1,128 @@
-# Help The Hive — Home + Resource Hub Redesign
+# Help The Hive — Free-For-All Rebrand & Cleanup
 
-This is a large, multi-surface redesign. Before I start writing code, I want to lock scope, confirm the data model for resources, and confirm a few product decisions so I don't ship something you'll have to redo.
+This is a large, cross-cutting change. I'll group the work into logical batches and ship them together. Before I start, a few notes so you know what to expect:
 
-## What's in scope
+- The questionnaire (`src/pages/Questionnaire.tsx`) and footer/legal data (`src/pages/legal/legalPagesData.ts`) likely drive a lot of the gated copy and links. I'll audit them first and rewrite in place.
+- Removing the verification system means deleting/disabling routes, admin pages (`AdminVerifications.tsx`), and any DB-backed verification logic. I'll keep the underlying tables intact (no destructive migration) but stop writing to or reading from them in the UI. If you want the tables dropped too, say the word.
+- "Free · SNAP & WIC" badges and similar copy will be replaced with neutral "Free for everyone" framing while still acknowledging SNAP/EBT support.
 
-1. **Today / Home page** (`src/pages/dashboard/DashboardHome.tsx`) — full rebuild
-   - Greeting, 4 summary cards (ZIP, Budget, Household, Saved)
-   - "Your Hub" 6-card grid (Meal Plan, Grocery, Pantry, Fridge Chef, Resource Hub, Bulk Buying)
-   - Weekly Progress card (% budget used, spend, left, meals cooked, cost/meal)
-   - Remove existing meal/grocery/fridge shortcuts on Today
-2. **Resource Hub** — new section under `/dashboard/resources`
-   - Hub home: 14 category cards, ZIP-aware
-   - Category page: list of nearby resources (distance, open-now, tags)
-   - Detail page: photo, hours, address, phone, website, directions, what-to-bring, save
-   - "No resources found" fallback with 211 / SNAP office / gov lookup links
-3. **Bulk Buying Guide** — new page `/dashboard/resources/bulk-buying`
-   - 12 staples with photo, shelf life, family-savings note
-   - "Checkout with Instacart" per item using existing `SendToInstacartButton`
-4. **Bottom nav** stays exactly: Today, Meal Plan, Pantry, Grocery, Fridge Chef (Resource Hub reached via Your Hub card, not nav)
-5. **Recipe photos** — audit meal generator to make sure `imageUrl` is always populated; fall back gracefully (already handled by `MealImage`, but I'll verify the generator pipeline actually emits photos)
+## 1. Branding & positioning (sitewide copy)
 
-## What's NOT in scope (per your instructions)
+Replace SNAP/WIC-exclusive language with inclusive "free for every family" messaging, while keeping SNAP/EBT as a supported use case.
 
-- Fridge Chef UI/flow — untouched
-- Pantry — only restyled to match new tokens, no logic changes
-- Meal Plan / Grocery list pages — untouched (only the Today shortcuts to them are removed)
+Files:
+- `src/components/home/HeroSection.tsx` — eyebrow + subhead
+- `src/components/home/{WhoWeHelpSection,TrustSection,FeaturesSection,CTASection,MealPlanSection,RecipeShowcase}.tsx`
+- `src/components/Footer.tsx`, `src/components/SiteFooter.tsx` brand summary
+- `src/components/dashboard/TierBadge.tsx` → "Free for everyone"
+- `src/pages/Signup.tsx`, `src/pages/Login.tsx`, `src/pages/About.tsx`
+- `index.html` meta/OG copy, `public/llms.txt`
+- Memory: update `mem://business/revenue-model` and core line to drop "SNAP & WIC families" framing where it implies exclusivity.
 
-## Technical approach
+## 2. Meal/recipe label changes
 
-### Data model for resources
-I'll add three tables via migration:
-- `resource_categories` — slug, title, description, icon name (seeded with the 14 categories)
-- `resources` — name, category_slug, address, lat/lng, zip, phone, website, hours (jsonb), tags (text[]), about, what_to_bring, eligibility, image_url, verified
-- `saved_resources` — user_id, resource_id (RLS: own rows only)
+- Find and replace "Recipe Family on SNAP $50 Budget" and similar SNAP-budget-only labels with one of:
+  - "SNAP-Friendly Meal Plan"
+  - "Budget-Friendly Meal Plan"
+  - "Eligible for SNAP Purchases" (for individual items)
+- Likely in `src/components/home/MealPlanSection.tsx`, `RecipeShowcase.tsx`, `SampleMealPlan.tsx`, and any admin special meal seeds.
 
-Distance + "nearby" computed client-side from user's stored ZIP centroid (we already have ZIP in profile). For v1 I'll seed a small set of national/sample resources keyed by ZIP prefix; admin can add more later. If no rows match the user's ZIP region → "no resources found" fallback.
+## 3. Instacart + SNAP/EBT explainer + pricing disclaimer
 
-### Routing
-```
-/dashboard                          → Today (redesigned)
-/dashboard/resources                → Hub home (14 categories)
-/dashboard/resources/bulk-buying    → Bulk Buying Guide
-/dashboard/resources/:categorySlug  → Category list
-/dashboard/resources/detail/:id     → Resource detail
-```
-Every resource page has a back button (uses `navigate(-1)` with hub home fallback).
+New shared component `src/components/InstacartDisclaimer.tsx` with two variants:
+- `variant="why-instacart"` — explains the SNAP/EBT partnership rationale, Trader Joe's example.
+- `variant="pricing"` — the legal pricing disclaimer string.
 
-### Visual system
-Honey cream background (`hsl(43 100% 96%)`), green accent already in tokens, soft shadows, rounded-2xl cards, lucide icons, Framer Motion stagger on grid mounts. Matches your mockups (cream cards, green accents, compact stat chips).
+Disclaimer text (verbatim):
+> Prices shown in Help The Hive are estimated for budgeting purposes only. Final pricing, taxes, promotions, availability, and discounts are confirmed directly through Instacart at checkout.
 
-### Files I'll create
-- `src/pages/dashboard/ResourceHubHome.tsx`
-- `src/pages/dashboard/ResourceCategoryPage.tsx`
-- `src/pages/dashboard/ResourceDetailPage.tsx`
-- `src/pages/dashboard/BulkBuyingGuide.tsx`
-- `src/components/dashboard/home/GreetingHeader.tsx`
-- `src/components/dashboard/home/SummaryCards.tsx`
-- `src/components/dashboard/home/YourHubGrid.tsx`
-- `src/components/dashboard/home/WeeklyProgress.tsx`
-- `src/components/dashboard/resources/ResourceCard.tsx`
-- `src/components/dashboard/resources/CategoryCard.tsx`
-- `src/components/dashboard/resources/ResourceBackButton.tsx`
-- `src/data/bulkBuyingItems.ts` (12 staples + Instacart line items)
+Mount it near:
+- Grocery totals (`GroceryListPage.tsx`)
+- Recipe pricing / meal cards (`MealCard.tsx`, recipe detail)
+- Meal plan totals (`MealPlanPage.tsx`, `DashboardHome.tsx` summary cards)
+- Send-to-Instacart buttons (`SendToInstacartButton.tsx`, `SendRecipeToInstacartButton.tsx`, `InstacartCTAButton.tsx`)
+- Landing page Instacart explainer block under MealPlanSection
 
-### Files I'll edit
-- `src/pages/dashboard/DashboardHome.tsx` — full rebuild
-- `src/App.tsx` — add 4 new routes
-- `src/components/dashboard/BottomNavBar.tsx` — verified unchanged (5 tabs)
+## 4. Email routing → Marcos@helpthehive.com
 
-## Phasing
+Replace every `legal@`, `press@`, `support@`, `partnerships@` mailto with `marcos@helpthehive.com`.
 
-I'll ship in this order so each phase is reviewable:
-1. **DB migration** for resource tables + seed data (asks for your approval first)
-2. **New Today page** + Your Hub + Weekly Progress
-3. **Resource Hub home** + category + detail pages
-4. **Bulk Buying Guide** with Instacart per-item checkout
-5. **Recipe photo audit** — confirm meal generator always emits `imageUrl`
+Files (grep-driven sweep):
+- `src/components/SiteFooter.tsx`
+- `src/pages/legal/legalPagesData.ts` and any rendered legal pages
+- `src/pages/{Press,Partners,Partnerships,About}.tsx`
+- Edge functions/email templates that send to/from those addresses (recipient overrides only — sender domain stays the same)
 
-## Decisions I need from you
+## 5. Footer & resource section overhaul
 
-1. **Resource data source for v1** — seed ~30 national + a handful of regional rows so the Hub isn't empty, then let Admin add more? Or wait and only show "no resources found" until admin adds them?
-2. **Bulk Buying "Checkout with Instacart"** — per-item (one Instacart cart per staple, lots of taps) or a single cart with checkboxes for all selected staples? The mockup looks per-item; I'll default to that unless you say otherwise.
-3. **Recipe photos** — the generator already returns `imageUrl` from Gemini; if you're seeing blank cards in production, do you want me to (a) just verify the pipeline, or (b) add a server-side fallback that fetches a stock photo by recipe name when `imageUrl` is missing?
+Remove from `src/pages/legal/legalPagesData.ts` (and any nav):
+- SNAP Program, First Responder Program, Teacher Program
+- Verification Process, ID verification, eligibility verification
 
-Reply with answers (or "go with your defaults") and I'll start with the DB migration.
+Replace with new educational resource pages (stub content via existing `LegalPage` renderer or new resource entries):
+- How to Apply for SNAP Benefits
+- How to Apply for EBT
+- Housing Assistance Resources
+- Food Assistance Resources
+- Utility Assistance Resources
+- Community Support Programs
+
+Also reflect in `src/pages/dashboard/ResourceHubHome.tsx` categories where applicable (or add to `resource_categories` if seeded).
+
+## 6. Verification system removal
+
+UI/route removal:
+- Delete `src/pages/admin/AdminVerifications.tsx` route registration (keep file or delete — I'll delete).
+- Remove verification steps from `src/pages/Questionnaire.tsx`.
+- Remove "verified user" badges, gating in dashboard widgets, eligibility chips in `MembershipEligibility` feature.
+- Remove ID upload UI/components.
+
+Data:
+- Stop reading `verification_status`/eligibility flags in the UI.
+- Tables left in place (non-destructive). I'll note this and you can request a drop migration later.
+
+Memory update: remove `mem://features/membership-eligibility` reference from index, replace with a "free for everyone" note.
+
+## 7. Questionnaire cleanup
+
+Rewrite `src/pages/Questionnaire.tsx` step list to exactly:
+1. Household size
+2. Weekly grocery budget
+3. Dietary restrictions
+4. Preferred grocery stores
+5. Meal preferences (cuisines)
+6. Allergies
+7. Family goals
+8. Pantry usage
+9. Location permissions (ZIP + permission prompt)
+
+Drop: teacher/first responder/student/veteran/SNAP-status questions, ID upload, verification consent screens. Update the "11-step" memory note to the new count.
+
+## 8. Disclaimer constants
+
+Add `src/lib/disclaimers.ts` exporting:
+- `INSTACART_PRICING_DISCLAIMER`
+- `INSTACART_PARTNERSHIP_EXPLAINER`
+- `STORE_AVAILABILITY_NOTE` (Trader Joe's example)
+
+So copy stays consistent everywhere.
+
+## What I will NOT touch unless you ask
+
+- Database schema for verification tables (left intact; safe to drop later).
+- Instacart edge function logic (already working per recent fixes).
+- Native app shell / Capacitor config.
+- Pricing/payment flows (none exist — app is free).
+
+## Order of execution
+
+1. Audit: grep for SNAP-exclusive copy, verification references, old email addresses.
+2. Add shared `InstacartDisclaimer` + `disclaimers.ts`.
+3. Rewrite questionnaire.
+4. Sweep footer + legal pages + email routing.
+5. Sweep landing/dashboard copy + meal labels.
+6. Remove verification UI and admin route.
+7. Drop disclaimer + Instacart explainer into all required surfaces.
+8. Update memory.
+
+Ready to execute on approval.
