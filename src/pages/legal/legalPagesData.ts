@@ -1411,18 +1411,19 @@ export const footerColumns = [
     ]
   },
   {
-    title: "Programs",
+    title: "Resources",
     links: [
-      { label: "SNAP Program", slug: "snap-program" },
-      { label: "Veterans Program", slug: "veterans-program" },
-      { label: "First Responders Program", slug: "first-responders" },
-      { label: "Eligibility Verification", slug: "eligibility-verification" },
+      { label: "How to Apply for SNAP Benefits", slug: "apply-for-snap" },
+      { label: "How to Apply for EBT", slug: "apply-for-ebt" },
+      { label: "Housing Assistance Resources", slug: "housing-assistance" },
+      { label: "Food Assistance Resources", slug: "food-assistance" },
+      { label: "Utility Assistance Resources", slug: "utility-assistance" },
+      { label: "Community Support Programs", slug: "community-support" },
     ]
   },
   {
     title: "Trust & Safety",
     links: [
-      { label: "Identity Verification Policy", slug: "identity-verification" },
       { label: "Responsible AI Policy", slug: "responsible-ai" },
       { label: "Accessibility Statement", slug: "accessibility" },
       { label: "Community Guidelines", slug: "community-guidelines" },
