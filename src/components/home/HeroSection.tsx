@@ -44,7 +44,7 @@ export function HeroSection() {
               className="inline-block px-5 py-3 mb-5 text-xs font-extrabold tracking-[0.15em] uppercase rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm"
               style={{ boxShadow: "0 4px 12px rgba(232, 168, 32, 0.25)" }}
             >
-              Free for everyone · Built for SNAP & WIC families
+              100% free · Smarter grocery budgeting for every family
             </span>
 
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-honey-cream leading-[1.1] mb-4">
@@ -53,10 +53,10 @@ export function HeroSection() {
             </h1>
 
             <p className="text-lg md:text-xl text-honey-cream/85 mb-2 max-w-xl leading-relaxed">
-              We plan your week, build your grocery list, and help you shop — all from your kitchen, in under 5 minutes.
+              Help The Hive helps every family budget smarter, spend less on groceries, and take the stress out of dinner — in under 5 minutes a week.
             </p>
             <p className="text-sm md:text-base text-honey-cream/60 mb-10 max-w-xl">
-              Built for SNAP, WIC, military, and teacher families — and anyone planning meals on a budget. Free.
+              100% free for everyone. Proudly supports SNAP/EBT families through our Instacart partnership.
             </p>
 
             <div className="flex flex-col items-start gap-3">
