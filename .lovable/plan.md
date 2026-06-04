@@ -1,72 +1,55 @@
-## Grocery List + Cook From What I Have — Backend
+## Generate This Week's Meal Plan — Full Flow
 
-Two coordinated backends. The existing approved Instacart flow is **not touched** (button, endpoint, CTA, payload, disclaimer, linkback all stay).
+A guided 4-screen flow that wraps the **existing** `generate-meal-plan` edge function and `MealPlanContext`. Meal-management actions stay where they already live (Meal Plan tab). The approved Instacart flow stays untouched.
 
----
+### Flow
 
-### PART 1 — Grocery List (extends what we already shipped)
+```
+Home → "Generate This Week's Meal Plan"
+  → /dashboard/meal-plan/setup        (Step 2: Settings confirmation)
+  → /dashboard/meal-plan/generating   (Step 3 loading)
+  → /dashboard/meal-plan/why          (Step 4: Why This Plan? + CTAs)
+  → /dashboard/meal-plan              (Step 5: existing Meal Plan tab — unchanged)
+  → /dashboard/grocery                (Step 6+7: existing grocery list + existing Send to Instacart)
+```
 
-**Migration:** add missing columns to `grocery_list_items`:
-- `recipe_id UUID` (link to generated_recipes)
-- `normalized_item_name TEXT` (lower-trim of item_name)
-- `checked BOOLEAN DEFAULT false` (already_have is separate)
+### New routes / files
 
-(`source_type`, `selected_for_instacart`, `source_ref_id` already added in last migration.)
+1. `src/pages/dashboard/MealPlanSetupPage.tsx` — Step 2 settings list (Budget, Family Size, Store, Dietary Preferences, Allergies, Pantry Items count, Fridge Items count, Cooking Skill). Each row opens an inline editor or routes to existing Settings field. "Generate Plan" CTA calls `MealPlanContext.generate(...)` with the assembled `meal_plan_context`, then routes to `/meal-plan/generating`.
 
-**Edge function `grocery-list-add-items`** (already shipped): accepts all source types — `meal_plan | cook_from_what_i_have | food_waste | pantry_low_stock | manual | bulk_buying`. Add `cook_from_what_i_have` to its allowed-sources list (currently `fridge_chef`; rename).
+2. `src/pages/dashboard/MealPlanGeneratingPage.tsx` — Step 3 loading screen ("Building your weekly meal plan…") with the existing 4-stage progress UI. Subscribes to context state; on success routes to `/meal-plan/why`.
 
-**Helper `src/lib/groceryList.ts`** (already shipped): expose `addItemsToGroceryList(source_type, items[])`. Update the type union to use `cook_from_what_i_have`.
+3. `src/pages/dashboard/WhyThisPlanPage.tsx` — Step 4. Reads from the just-created plan + profile to render checklist:
+   - Stays within $X budget
+   - Uses items you already have
+   - Reduces food waste
+   - Matches dietary preferences / allergies
+   - Available at {preferred_store}
+   - Portion sizes for {household_size}
+   - Matches cooking skill level
+   Plus savings sentence ("You'll save ~$X this week"). Primary CTA → `/dashboard/meal-plan`, secondary CTA → `/dashboard/grocery`.
 
-**Out of scope this pass:** rewriting `GroceryListPage` UI. The page already supports category grouping, check/uncheck, manual add, Send to Instacart via existing button. We just point its data source at `grocery_list_items` so multi-source items appear — separate UI pass if you want.
+4. Register routes in the dashboard router.
 
----
+### Home dashboard
 
-### PART 2 — Cook From What I Have
+Change `DashboardHome` CTA `onClick` from `/dashboard/meal-plan` → `/dashboard/meal-plan/setup`.
 
-**Migrations**
+### Backend — `meal_plan_context`
 
-1. Extend `pantry_items`:
-   - `normalized_item_name TEXT`
-   - `freshness_status` already exists; extend allowed values via app code (no DB enum) to include `manually_added`, `photo_detected`, `checked_off`
+Update `supabase/functions/generate-meal-plan/index.ts` to accept (and prefer) a client-supplied `meal_plan_context` object with all spec fields (children buckets, expiring_soon, low_stock, disliked_foods, preferred_meal_count). Falls back to current behavior when omitted, so nothing breaks. Already writes to `meal_plans` + items; we add `estimated_daily_average` and `savings_estimate` to the insert if not already set.
 
-2. New `generated_recipes` table:
-   - `user_id`, `source_type` (`cook_from_what_i_have | food_waste | meal_plan`), `recipe_name`, `description`, `servings`, `prep_time_minutes`, `cook_time_minutes`, `difficulty`, `estimated_cost_of_missing_items`, `savings_estimate`, `food_waste_reason`, `instructions JSONB`, `status` (`suggested | saved | cooked`), `cooked_at`, timestamps
-   - RLS: user owns rows
-   - GRANTs to authenticated + service_role
+Grocery list auto-generation already runs server-side from meal ingredients (per existing core functionality memory). No change there. The new `grocery_list_items.normalized_item_name` / `checked` / `recipe_id` columns from last migration are honored.
 
-3. New `generated_recipe_ingredients` table:
-   - `recipe_id`, `user_id`, `item_name`, `normalized_item_name`, `quantity`, `unit`, `already_have`, `source_location` (`pantry | fridge | freezer | grocery_needed`), `pantry_item_id`, `estimated_price`, `instacart_search_term`, `created_at`
-   - RLS + GRANTs same pattern
+### Not in scope (already done or explicitly out)
 
-**Edge function `cook-from-what-i-have`** (new):
-- Auth user from JWT
-- Pull pantry/fridge/freezer items, tag freshness (expiring_today / use_soon / low_stock / good — exclude expired)
-- Pull profile (household, dietary, allergies, cooking confidence)
-- Call Lovable AI Gateway (`google/gemini-2.5-flash`) with the assembled context and a `return_recipes` tool schema requesting 3 recipes that maximize use of existing items, flagging missing ingredients, food-waste reason, and estimates
-- Persist recipes + ingredients
-- Return structured recipes
+- Meal plan management UI (swap, regenerate, save, favorite, mark cooked) — already in `MealPlanPage`.
+- Grocery review UI — already in `GroceryListPage` with Send-to-Instacart button.
+- Instacart endpoint / payload / button / disclaimer — untouched.
+- No new tables. All listed tables already exist.
 
-**Edge function `mark-recipe-cooked`** (new):
-- Decrement pantry quantities for `already_have` ingredients
-- Mark fully-used items `freshness_status = 'checked_off'`
-- Update recipe `status = 'cooked'`, `cooked_at = now()`
-- Log waste-savings delta
+### Visual
 
-**Food Waste Alert helper**
-- Re-use existing pantry freshness function on the client to surface expiring counts + estimated value
-- No new table needed for v1 — alerts are derived
+Match the uploaded mockups: white cards on honey-cream background, honey-yellow icon circles, single green primary CTA, no gradients.
 
----
-
-### PART 3 — Frontend hook-ups (minimal, backend-first)
-
-- `src/lib/cookFromWhatIHave.ts` — thin client wrappers calling the two new edge functions and `addItemsToGroceryList('cook_from_what_i_have', missingIngredients)`
-- Rename existing `FridgeChefPage` route content to call the new endpoint; keep page path for backward compat (UI overhaul not in this pass)
-
----
-
-### What I will NOT change
-- `SendToInstacartButton`, `InstacartCTAButton`, `instacart-create-list`, `InstacartDisclaimer`, `openInstacartExternal`, partner linkback URL
-- Existing meal plan generator (already writes to `grocery_list_items`; tagging it `meal_plan` source happens in a follow-up if you want)
-
-Approve and I'll ship the migrations + 2 edge functions + client helpers in this turn.
+Approve and I'll ship the 3 new pages, route registration, the home CTA wire-up, and the optional `meal_plan_context` accept in the edge function.
