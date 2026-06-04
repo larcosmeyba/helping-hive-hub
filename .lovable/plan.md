@@ -1,55 +1,84 @@
-## Generate This Week's Meal Plan — Full Flow
+# Hive AI + Hive Family Assistance — Backend Build Plan
 
-A guided 4-screen flow that wraps the **existing** `generate-meal-plan` edge function and `MealPlanContext`. Meal-management actions stay where they already live (Meal Plan tab). The approved Instacart flow stays untouched.
+Two separate systems. Mock AI now, OpenAI-ready later. **Existing Instacart integration untouched.**
 
-### Flow
+---
 
-```
-Home → "Generate This Week's Meal Plan"
-  → /dashboard/meal-plan/setup        (Step 2: Settings confirmation)
-  → /dashboard/meal-plan/generating   (Step 3 loading)
-  → /dashboard/meal-plan/why          (Step 4: Why This Plan? + CTAs)
-  → /dashboard/meal-plan              (Step 5: existing Meal Plan tab — unchanged)
-  → /dashboard/grocery                (Step 6+7: existing grocery list + existing Send to Instacart)
-```
+## PART 1 — HIVE AI
 
-### New routes / files
+### Database migrations
+Reuse existing `pantry_items`, `generated_recipes`, `generated_recipe_ingredients` (already present). Add what's missing:
 
-1. `src/pages/dashboard/MealPlanSetupPage.tsx` — Step 2 settings list (Budget, Family Size, Store, Dietary Preferences, Allergies, Pantry Items count, Fridge Items count, Cooking Skill). Each row opens an inline editor or routes to existing Settings field. "Generate Plan" CTA calls `MealPlanContext.generate(...)` with the assembled `meal_plan_context`, then routes to `/meal-plan/generating`.
+- **Extend `pantry_items`**: ensure `freshness_status` accepts (`good`, `use_soon`, `expiring_today`, `expired`, `low_stock`, `manually_added`, `photo_detected`, `checked_off`) — text field already exists, no schema change needed beyond doc.
+- **New `inventory_photos`**: `id, user_id, image_url, scan_type (pantry|fridge|freezer|receipt), ai_processed bool, detected_items_json jsonb, created_at`. RLS: user owns. GRANTs to authenticated + service_role.
+- **New `food_waste_alerts`**: `id, user_id, pantry_item_id, alert_type (expiring_today|expiring_soon|low_stock|expired), days_until_expiration int, estimated_value numeric, message text, resolved bool default false, created_at`. RLS: user owns.
 
-2. `src/pages/dashboard/MealPlanGeneratingPage.tsx` — Step 3 loading screen ("Building your weekly meal plan…") with the existing 4-stage progress UI. Subscribes to context state; on success routes to `/meal-plan/why`.
+### Edge functions (Supabase)
+- `create-food-waste-alerts` — scans user's `pantry_items`, computes days-to-expiration, upserts alerts.
+- `scan-inventory-photo` — accepts `{ image_base64, scan_type }`, uploads to `inventory-photos` storage bucket (new, private), returns mock detected items array. OpenAI Vision hook stubbed with TODO.
+- `generate-recipes-from-inventory` — already exists as `cook-from-what-i-have`. Add thin alias OR keep existing; wire client to it. Confirm it prioritizes `use_soon`/`expiring_today` items.
+- `add-missing-items-to-grocery-list` — already exists as `grocery-list-add-items`. Reuse.
+- `mark-recipe-cooked` — already exists. Extend to resolve related `food_waste_alerts` for consumed pantry items.
 
-3. `src/pages/dashboard/WhyThisPlanPage.tsx` — Step 4. Reads from the just-created plan + profile to render checklist:
-   - Stays within $X budget
-   - Uses items you already have
-   - Reduces food waste
-   - Matches dietary preferences / allergies
-   - Available at {preferred_store}
-   - Portion sizes for {household_size}
-   - Matches cooking skill level
-   Plus savings sentence ("You'll save ~$X this week"). Primary CTA → `/dashboard/meal-plan`, secondary CTA → `/dashboard/grocery`.
+### Storage
+- Create private bucket `inventory-photos` for user scans.
 
-4. Register routes in the dashboard router.
+### Context object
+- New file `src/lib/hiveAiContext.ts` + `supabase/functions/_shared/hiveAiContext.ts`: builds `hive_ai_context` from profile + pantry + alerts + grocery list. Passed into mock AI calls now; OpenAI later.
 
-### Home dashboard
+### UI wiring (minimal — most screens already exist)
+- Bottom nav: rename "Hive AI" tab — currently points to `/dashboard/fridge-chef`. Keep route but ensure landing dashboard surfaces: Add Items, Scan Photo, AI Detected Review, Inventory, Food Waste Alerts, Meals From What You Have. Most exist (PantryPage, CookInventoryPage, CookRecipesPage, CookRecipeDetailPage, CookAddedToGroceryPage).
+- Add lightweight `ScanInventoryPage` (camera/upload → calls `scan-inventory-photo` → review screen to confirm detected items → bulk insert into `pantry_items`).
+- Add `FoodWasteAlertsPage` listing alerts from `food_waste_alerts` with "Use These Items First" CTA → routes to `/dashboard/cook`.
+- Wire "Use These Items First" button on `DashboardHome` Hive Assistant card to first call `create-food-waste-alerts` then route to `/dashboard/cook`.
 
-Change `DashboardHome` CTA `onClick` from `/dashboard/meal-plan` → `/dashboard/meal-plan/setup`.
+---
 
-### Backend — `meal_plan_context`
+## PART 2 — HIVE FAMILY ASSISTANCE
 
-Update `supabase/functions/generate-meal-plan/index.ts` to accept (and prefer) a client-supplied `meal_plan_context` object with all spec fields (children buckets, expiring_soon, low_stock, disliked_foods, preferred_meal_count). Falls back to current behavior when omitted, so nothing breaks. Already writes to `meal_plans` + items; we add `estimated_daily_average` and `savings_estimate` to the insert if not already set.
+### Database migrations
+- **New `family_assistance_profiles`**: `id, user_id (unique), zip_code, household_size, children_under_5, children_5_to_12, teenagers, seniors_65_plus, employment_status, lost_job_recently bool, reduced_hours_recently bool, monthly_income_range text, currently_receiving_snap bool, currently_receiving_wic bool, currently_receiving_medicaid bool, created_at, updated_at`. RLS user-owned.
+- **New `assistance_needs`**: `id, user_id (unique), needs_food_assistance bool, needs_snap bool, needs_wic bool, needs_diapers_formula bool, needs_housing bool, needs_utilities bool, needs_healthcare bool, needs_transportation bool, needs_childcare bool, needs_employment bool, created_at, updated_at`. RLS user-owned.
+- **New `local_resources`**: `id, resource_name, category (enum text), description, address, city, state, zip_code, phone, website_url, application_url, hours, eligibility_notes, documents_needed text[], verified bool, created_at, updated_at`. Public SELECT (anon + authenticated); admin manage.
+- **New `saved_resources`**: `id, user_id, resource_id → local_resources, status (saved|applied|contacted|completed), notes, created_at, updated_at`. RLS user-owned.
 
-Grocery list auto-generation already runs server-side from meal ingredients (per existing core functionality memory). No change there. The new `grocery_list_items.normalized_item_name` / `checked` / `recipe_id` columns from last migration are honored.
+All four with GRANTs (authenticated + service_role; anon SELECT only on `local_resources`).
 
-### Not in scope (already done or explicitly out)
+### Edge functions
+- `submit-family-assistance-questionnaire` — upsert into both `family_assistance_profiles` and `assistance_needs`.
+- `match-family-resources` — query `local_resources` by zip prefix + needed categories; mock-AI ranks/explains (TODO OpenAI). Returns array with "may qualify" hedged language.
+- `get-resource-details` — single resource by id (anon-readable, but called via function to keep room for AI enrichment).
+- `save-resource` — insert into `saved_resources`.
+- `update-resource-status` — update `saved_resources.status` and `notes`.
 
-- Meal plan management UI (swap, regenerate, save, favorite, mark cooked) — already in `MealPlanPage`.
-- Grocery review UI — already in `GroceryListPage` with Send-to-Instacart button.
-- Instacart endpoint / payload / button / disclaimer — untouched.
-- No new tables. All listed tables already exist.
+### Context object
+- `family_assistance_context` builder in `supabase/functions/_shared/familyAssistanceContext.ts` consumed by `match-family-resources`.
 
-### Visual
+### UI
+- Home Page card (already present) — keep route to `/dashboard/resources`.
+- `ResourceHubHome` already exists. Add short questionnaire flow at `/dashboard/resources/intake` (new page) that posts to `submit-family-assistance-questionnaire` then routes to results.
+- Results page: `/dashboard/resources/matches` — calls `match-family-resources`, renders resource cards with hedged copy ("You may qualify for…").
+- Detail page (already exists `ResourceDetailPage`): add Save / Apply / Call / Website actions wired to `save-resource` and `update-resource-status`.
 
-Match the uploaded mockups: white cards on honey-cream background, honey-yellow icon circles, single green primary CTA, no gradients.
+### AI safety language
+Edge functions and UI must use "may qualify"/"may be helpful"/"please confirm eligibility directly". Never "you qualify" / "approved".
 
-Approve and I'll ship the 3 new pages, route registration, the home CTA wire-up, and the optional `meal_plan_context` accept in the edge function.
+---
+
+## What stays untouched
+- Instacart endpoint, CTA, disclaimer, payload, handoff, partner linkback.
+- Existing meal plan, grocery list, cook flow pages already shipped.
+
+---
+
+## Build order
+1. Migration 1 — Hive AI tables (`inventory_photos`, `food_waste_alerts`) + storage bucket.
+2. Migration 2 — Family Assistance tables (4 new).
+3. Edge functions (Hive AI: 2 new + 1 extend; Family: 5 new).
+4. Shared context builders.
+5. UI: ScanInventoryPage, FoodWasteAlertsPage, FamilyAssistance intake + matches pages; wire CTAs.
+6. Seed a handful of `local_resources` for demo.
+
+Skipping: changes to Instacart code, changes to existing meal-plan/grocery/cook pages beyond minor wiring.
+
+Total: ~2 migrations, 7 edge functions, ~5 new pages, ~2 shared libs.
