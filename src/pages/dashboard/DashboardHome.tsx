@@ -122,12 +122,18 @@ export default function DashboardHome() {
           <p className="text-[12px] text-[#4a4a4a] mb-3">
             Recommended: 20-Minute Beginner Workout
           </p>
-          <button
-            onClick={() => navigate("/dashboard/settings")}
-            className="bg-[#5B3FBF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
+          <a
+            href={
+              /iPad|iPhone|iPod/.test(navigator.userAgent)
+                ? "https://apps.apple.com/us/app/apollo-reborn/id6761779680"
+                : "https://play.google.com/store/apps/details?id=com.apollonation.app"
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-[#5B3FBF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
           >
             Download Apollo Reborn
-          </button>
+          </a>
         </div>
         <img src={apolloMarcos.url} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
       </div>
