@@ -1,128 +1,94 @@
-# Help The Hive — Free-For-All Rebrand & Cleanup
+## Onboarding Questionnaire Expansion — Plan
 
-This is a large, cross-cutting change. I'll group the work into logical batches and ship them together. Before I start, a few notes so you know what to expect:
+Expand the existing 9-step questionnaire into an 11-section questionnaire whose answers are stored as permanent profile attributes, editable from Settings, and exposed to all AI integrations (Hive Assistant, Meal Planning, Pantry, Food Waste, Plaid, Apollo Reborn) via a shared profile-context object.
 
-- The questionnaire (`src/pages/Questionnaire.tsx`) and footer/legal data (`src/pages/legal/legalPagesData.ts`) likely drive a lot of the gated copy and links. I'll audit them first and rewrite in place.
-- Removing the verification system means deleting/disabling routes, admin pages (`AdminVerifications.tsx`), and any DB-backed verification logic. I'll keep the underlying tables intact (no destructive migration) but stop writing to or reading from them in the UI. If you want the tables dropped too, say the word.
-- "Free · SNAP & WIC" badges and similar copy will be replaced with neutral "Free for everyone" framing while still acknowledging SNAP/EBT support.
+---
 
-## 1. Branding & positioning (sitewide copy)
+### 1. Database schema changes (single migration)
 
-Replace SNAP/WIC-exclusive language with inclusive "free for every family" messaging, while keeping SNAP/EBT as a supported use case.
+Add new columns to `public.profiles` (all nullable so existing users aren't broken):
 
-Files:
-- `src/components/home/HeroSection.tsx` — eyebrow + subhead
-- `src/components/home/{WhoWeHelpSection,TrustSection,FeaturesSection,CTASection,MealPlanSection,RecipeShowcase}.tsx`
-- `src/components/Footer.tsx`, `src/components/SiteFooter.tsx` brand summary
-- `src/components/dashboard/TierBadge.tsx` → "Free for everyone"
-- `src/pages/Signup.tsx`, `src/pages/Login.tsx`, `src/pages/About.tsx`
-- `index.html` meta/OG copy, `public/llms.txt`
-- Memory: update `mem://business/revenue-model` and core line to drop "SNAP & WIC families" framing where it implies exclusivity.
+**Household composition**
+- `children_under_5` int default 0
+- `children_5_to_12` int default 0
+- `teenagers` int default 0
+- `seniors_65_plus` int default 0
 
-## 2. Meal/recipe label changes
+**Store preference**
+- `preferred_store_id` text (keeps existing `home_store` text)
 
-- Find and replace "Recipe Family on SNAP $50 Budget" and similar SNAP-budget-only labels with one of:
-  - "SNAP-Friendly Meal Plan"
-  - "Budget-Friendly Meal Plan"
-  - "Eligible for SNAP Purchases" (for individual items)
-- Likely in `src/components/home/MealPlanSection.tsx`, `RecipeShowcase.tsx`, `SampleMealPlan.tsx`, and any admin special meal seeds.
+**Family assistance needs** (booleans, default false)
+- `assistance_food`, `assistance_snap`, `assistance_wic`, `assistance_diapers`, `assistance_housing`, `assistance_utilities`, `assistance_healthcare`, `assistance_employment`, `assistance_transportation`, `assistance_childcare`
 
-## 3. Instacart + SNAP/EBT explainer + pricing disclaimer
+**Food waste prefs**
+- `food_waste_alerts_enabled` bool default true
+- `food_waste_recipe_suggestions_enabled` bool default true
 
-New shared component `src/components/InstacartDisclaimer.tsx` with two variants:
-- `variant="why-instacart"` — explains the SNAP/EBT partnership rationale, Trader Joe's example.
-- `variant="pricing"` — the legal pricing disclaimer string.
+**Budget tracking**
+- `plaid_interest` text check in ('yes','later','skip')
 
-Disclaimer text (verbatim):
-> Prices shown in Help The Hive are estimated for budgeting purposes only. Final pricing, taxes, promotions, availability, and discounts are confirmed directly through Instacart at checkout.
+**Apollo goals** (booleans, default false)
+- `goal_lose_weight`, `goal_build_muscle`, `goal_stay_active`, `goal_improve_mobility`
 
-Mount it near:
-- Grocery totals (`GroceryListPage.tsx`)
-- Recipe pricing / meal cards (`MealCard.tsx`, recipe detail)
-- Meal plan totals (`MealPlanPage.tsx`, `DashboardHome.tsx` summary cards)
-- Send-to-Instacart buttons (`SendToInstacartButton.tsx`, `SendRecipeToInstacartButton.tsx`, `InstacartCTAButton.tsx`)
-- Landing page Instacart explainer block under MealPlanSection
+Reuses existing columns: `household_size`, `weekly_budget`, `zip_code`, `city`, `state`, `home_store`, `dietary_preferences` (array), `cooking_confidence`, `questionnaire_completed`.
 
-## 4. Email routing → Marcos@helpthehive.com
+No new tables. RLS already covers profiles.
 
-Replace every `legal@`, `press@`, `support@`, `partnerships@` mailto with `marcos@helpthehive.com`.
+---
 
-Files (grep-driven sweep):
-- `src/components/SiteFooter.tsx`
-- `src/pages/legal/legalPagesData.ts` and any rendered legal pages
-- `src/pages/{Press,Partners,Partnerships,About}.tsx`
-- Edge functions/email templates that send to/from those addresses (recipient overrides only — sender domain stays the same)
+### 2. Questionnaire UI (`src/pages/Questionnaire.tsx`)
 
-## 5. Footer & resource section overhaul
+Restructure to 11 sections matching the spec, in this order:
 
-Remove from `src/pages/legal/legalPagesData.ts` (and any nav):
-- SNAP Program, First Responder Program, Teacher Program
-- Verification Process, ID verification, eligibility verification
+1. Household Profile — household size + child/teen/senior counts
+2. Budget Profile — weekly grocery budget slider
+3. Location Profile — ZIP (auto-fills city/state via existing reverse geocode)
+4. Grocery Store Preference — store picker (writes `home_store` + `preferred_store_id`)
+5. Family Assistance — multi-select chips (10 options)
+6. Dietary Profile — multi-select chips (8 options, stored in `dietary_preferences`)
+7. Cooking Confidence — beginner / intermediate / advanced
+8. Pantry Defaults — seeds `pantry_items` (same as today)
+9. Food Waste Preferences — 2 toggles
+10. Budget Tracking — Plaid interest (yes / later / skip)
+11. Apollo Goals — multi-select goals
 
-Replace with new educational resource pages (stub content via existing `LegalPage` renderer or new resource entries):
-- How to Apply for SNAP Benefits
-- How to Apply for EBT
-- Housing Assistance Resources
-- Food Assistance Resources
-- Utility Assistance Resources
-- Community Support Programs
+Final step writes everything to `profiles` in one update, sets `questionnaire_completed = true`, redirects to `/dashboard`.
 
-Also reflect in `src/pages/dashboard/ResourceHubHome.tsx` categories where applicable (or add to `resource_categories` if seeded).
+Welcome intro screen kept as the first card (does not count toward the 11).
 
-## 6. Verification system removal
+---
 
-UI/route removal:
-- Delete `src/pages/admin/AdminVerifications.tsx` route registration (keep file or delete — I'll delete).
-- Remove verification steps from `src/pages/Questionnaire.tsx`.
-- Remove "verified user" badges, gating in dashboard widgets, eligibility chips in `MembershipEligibility` feature.
-- Remove ID upload UI/components.
+### 3. Settings page — make every answer editable
 
-Data:
-- Stop reading `verification_status`/eligibility flags in the UI.
-- Tables left in place (non-destructive). I'll note this and you can request a drop migration later.
+Extend `src/pages/dashboard/SettingsPage.tsx` with grouped sections that mirror the questionnaire so users can update any value later. Reuse the same chip / slider / toggle components.
 
-Memory update: remove `mem://features/membership-eligibility` reference from index, replace with a "free for everyone" note.
+---
 
-## 7. Questionnaire cleanup
+### 4. Shared AI profile-context helper
 
-Rewrite `src/pages/Questionnaire.tsx` step list to exactly:
-1. Household size
-2. Weekly grocery budget
-3. Dietary restrictions
-4. Preferred grocery stores
-5. Meal preferences (cuisines)
-6. Allergies
-7. Family goals
-8. Pantry usage
-9. Location permissions (ZIP + permission prompt)
+Add `src/lib/aiProfileContext.ts`:
 
-Drop: teacher/first responder/student/veteran/SNAP-status questions, ID upload, verification consent screens. Update the "11-step" memory note to the new count.
+```ts
+export function buildProfileContext(profile): ProfileContext { ... }
+```
 
-## 8. Disclaimer constants
+Returns a normalized object (household, budget, location, store, assistance[], dietary[], cookingConfidence, foodWaste, plaidInterest, apolloGoals[]). Mirrored Deno helper at `supabase/functions/_shared/profileContext.ts` so every edge function (generate-meal-plan, fridge-chef, future Hive Assistant, etc.) injects the same context block into Gemini/OpenAI prompts.
 
-Add `src/lib/disclaimers.ts` exporting:
-- `INSTACART_PRICING_DISCLAIMER`
-- `INSTACART_PARTNERSHIP_EXPLAINER`
-- `STORE_AVAILABILITY_NOTE` (Trader Joe's example)
+Wire it into `generate-meal-plan` and `fridge-chef` now; other features pick it up as they're built.
 
-So copy stays consistent everywhere.
+---
 
-## What I will NOT touch unless you ask
+### Technical notes
 
-- Database schema for verification tables (left intact; safe to drop later).
-- Instacart edge function logic (already working per recent fixes).
-- Native app shell / Capacitor config.
-- Pricing/payment flows (none exist — app is free).
+- Migration adds columns + a CHECK on `plaid_interest`; no destructive changes.
+- `questionnaire_progress` jsonb already exists — used to persist partial progress across sessions.
+- Existing onboarding fields keep their column names so no data migration is required.
+- All new fields default to safe values so users created before the migration continue to load.
 
-## Order of execution
+---
 
-1. Audit: grep for SNAP-exclusive copy, verification references, old email addresses.
-2. Add shared `InstacartDisclaimer` + `disclaimers.ts`.
-3. Rewrite questionnaire.
-4. Sweep footer + legal pages + email routing.
-5. Sweep landing/dashboard copy + meal labels.
-6. Remove verification UI and admin route.
-7. Drop disclaimer + Instacart explainer into all required surfaces.
-8. Update memory.
+### Out of scope (call out, don't build)
 
-Ready to execute on approval.
+- Plaid SDK integration itself (only intent capture now)
+- Apollo Reborn recommendation engine (only goal capture now)
+- Hive Assistant chat surface (context helper is ready; UI is a separate task)
