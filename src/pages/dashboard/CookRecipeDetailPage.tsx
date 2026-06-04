@@ -85,7 +85,7 @@ export default function CookRecipeDetailPage() {
         state: {
           recipe_name: recipe.recipe_name,
           updated_items,
-          money_saved: result?.money_saved ?? recipe.estimated_savings ?? 0,
+          money_saved: result?.money_saved ?? (recipe as any).estimated_savings ?? 0,
           food_waste_prevented: result?.food_waste_prevented ?? updated_items.length,
         },
       });
