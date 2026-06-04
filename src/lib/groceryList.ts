@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type GrocerySourceType =
   | "meal_plan"
+  | "cook_from_what_i_have"
   | "fridge_chef"
   | "food_waste"
   | "pantry_low_stock"

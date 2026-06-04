@@ -7,6 +7,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 type SourceType =
   | "meal_plan"
+  | "cook_from_what_i_have"
   | "fridge_chef"
   | "food_waste"
   | "pantry_low_stock"
@@ -26,6 +27,7 @@ interface IncomingItem {
 
 const ALLOWED_SOURCES: SourceType[] = [
   "meal_plan",
+  "cook_from_what_i_have",
   "fridge_chef",
   "food_waste",
   "pantry_low_stock",
