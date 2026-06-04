@@ -44,6 +44,10 @@ const GroceryReviewPage = lazy(() => import("./pages/dashboard/GroceryReviewPage
 const PantryPage = lazy(() => import("./pages/dashboard/PantryPage.tsx"));
 const BudgetInsightsPage = lazy(() => import("./pages/dashboard/BudgetInsightsPage.tsx"));
 const FridgeChefPage = lazy(() => import("./pages/dashboard/FridgeChefPage.tsx"));
+const CookInventoryPage = lazy(() => import("./pages/dashboard/CookInventoryPage.tsx"));
+const CookRecipesPage = lazy(() => import("./pages/dashboard/CookRecipesPage.tsx"));
+const CookRecipeDetailPage = lazy(() => import("./pages/dashboard/CookRecipeDetailPage.tsx"));
+const CookAddedToGroceryPage = lazy(() => import("./pages/dashboard/CookAddedToGroceryPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/dashboard/SettingsPage.tsx"));
 const SupportPage = lazy(() => import("./pages/dashboard/SupportPage.tsx"));
 const ResourceHubHome = lazy(() => import("./pages/dashboard/ResourceHubHome.tsx"));
