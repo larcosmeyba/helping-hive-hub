@@ -129,7 +129,7 @@ export default function DashboardHome() {
             Download Apollo Reborn
           </button>
         </div>
-        <img src={apolloWomanImg} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
+        <img src={apolloMarcos.url} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
       </div>
     </div>
   );
