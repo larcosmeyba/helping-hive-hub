@@ -170,7 +170,7 @@ function ActionCard({
     >
       <div className="flex-1 min-w-0 pr-1">
         <h3 className="text-white font-bold text-[16px] leading-tight">{title}</h3>
-        <p className="text-white/85 text-[12.5px] mt-1 leading-snug">{subtitle}</p>
+        <p className="text-white text-[12.5px] mt-1 leading-snug">{subtitle}</p>
       </div>
       <img src={image} alt="" loading="lazy" className="w-20 h-20 object-contain shrink-0" />
       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
