@@ -44,7 +44,7 @@ export default function DashboardHome() {
           aria-label="Settings"
         >
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            <img src={profile.avatar_url as string} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
               {firstName.charAt(0).toUpperCase()}
