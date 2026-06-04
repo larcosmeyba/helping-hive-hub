@@ -51,7 +51,7 @@ export default function DashboardHome() {
           title="Generate This Week's Meal Plan"
           subtitle={`Custom plan for your $${budget} budget`}
           image={bowlImg}
-          onClick={() => navigate("/dashboard/meal-plan")}
+          onClick={() => navigate("/dashboard/meal-plan/setup")}
         />
         <ActionCard
           bg="#4A8F3D"
