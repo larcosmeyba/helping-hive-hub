@@ -126,6 +126,10 @@ const App = () => {
                     <Route path="grocery-list/details" element={<GroceryListPage />} />
                     <Route path="pantry" element={<PantryPage />} />
                     <Route path="fridge-chef" element={<FridgeChefPage />} />
+                    <Route path="cook" element={<CookInventoryPage />} />
+                    <Route path="cook/recipes" element={<CookRecipesPage />} />
+                    <Route path="cook/recipes/:id" element={<CookRecipeDetailPage />} />
+                    <Route path="cook/recipes/:id/added" element={<CookAddedToGroceryPage />} />
                     <Route path="budget" element={<BudgetInsightsPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="support" element={<SupportPage />} />
