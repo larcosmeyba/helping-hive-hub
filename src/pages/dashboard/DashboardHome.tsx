@@ -115,7 +115,7 @@ export default function DashboardHome() {
       <div className="mt-3 rounded-2xl p-4 bg-white border border-[#EEE7DA] flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <Dumbbell className="w-4 h-4 text-[#5B3FBF]" />
+            <img src={apolloLogo.url} alt="Apollo Reborn" className="w-4 h-4 object-contain" />
             <span className="font-bold text-[15px] text-[#1a1a1a]">Move With Your Meal Plan</span>
           </div>
           <p className="text-[12px] font-semibold text-[#5B3FBF] mb-1">Powered by Apollo Reborn</p>
