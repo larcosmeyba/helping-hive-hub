@@ -1,84 +1,77 @@
-# Hive AI + Hive Family Assistance — Backend Build Plan
+# Plaid Food Budget Dashboard
 
-Two separate systems. Mock AI now, OpenAI-ready later. **Existing Instacart integration untouched.**
+Build a secure, Plaid-powered budget feature scoped strictly to **food spending** (groceries, restaurants, coffee, food delivery, Instacart, other food). No income, debt, investments, or non-food data is stored or shown.
 
----
+## Scope clarifications
 
-## PART 1 — HIVE AI
+- UI ships with **mock data** so the flow is usable today.
+- Backend is structured for **real Plaid Transactions** the moment `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV` are added as secrets.
+- Mock AI insights now; real OpenAI later (no key requested yet).
+- Not added to bottom nav. Entry point = Home page "Budget Snapshot" card under existing cards.
 
-### Database migrations
-Reuse existing `pantry_items`, `generated_recipes`, `generated_recipe_ingredients` (already present). Add what's missing:
+## Database (one migration)
 
-- **Extend `pantry_items`**: ensure `freshness_status` accepts (`good`, `use_soon`, `expiring_today`, `expired`, `low_stock`, `manually_added`, `photo_detected`, `checked_off`) — text field already exists, no schema change needed beyond doc.
-- **New `inventory_photos`**: `id, user_id, image_url, scan_type (pantry|fridge|freezer|receipt), ai_processed bool, detected_items_json jsonb, created_at`. RLS: user owns. GRANTs to authenticated + service_role.
-- **New `food_waste_alerts`**: `id, user_id, pantry_item_id, alert_type (expiring_today|expiring_soon|low_stock|expired), days_until_expiration int, estimated_value numeric, message text, resolved bool default false, created_at`. RLS: user owns.
+New tables (all RLS-scoped to `auth.uid() = user_id`, grants to `authenticated` + `service_role`):
 
-### Edge functions (Supabase)
-- `create-food-waste-alerts` — scans user's `pantry_items`, computes days-to-expiration, upserts alerts.
-- `scan-inventory-photo` — accepts `{ image_base64, scan_type }`, uploads to `inventory-photos` storage bucket (new, private), returns mock detected items array. OpenAI Vision hook stubbed with TODO.
-- `generate-recipes-from-inventory` — already exists as `cook-from-what-i-have`. Add thin alias OR keep existing; wire client to it. Confirm it prioritizes `use_soon`/`expiring_today` items.
-- `add-missing-items-to-grocery-list` — already exists as `grocery-list-add-items`. Reuse.
-- `mark-recipe-cooked` — already exists. Extend to resolve related `food_waste_alerts` for consumed pantry items.
+- `plaid_connections` — institution + encrypted access token + item_id + status
+- `plaid_accounts` — masked account metadata only (no full numbers)
+- `food_transactions` — only food-categorized transactions; unique on `(user_id, plaid_transaction_id)`
+- `food_budget_settings` — monthly + per-category budgets
+- `food_budget_summaries` — per-month rollup with health score + projection
+- `budget_ai_insights` — mock now, OpenAI-ready later
 
-### Storage
-- Create private bucket `inventory-photos` for user scans.
+`access_token_encrypted` is `text` (encrypted server-side before insert; plaintext never leaves edge functions).
 
-### Context object
-- New file `src/lib/hiveAiContext.ts` + `supabase/functions/_shared/hiveAiContext.ts`: builds `hive_ai_context` from profile + pantry + alerts + grocery list. Passed into mock AI calls now; OpenAI later.
+## Edge Functions
 
-### UI wiring (minimal — most screens already exist)
-- Bottom nav: rename "Hive AI" tab — currently points to `/dashboard/fridge-chef`. Keep route but ensure landing dashboard surfaces: Add Items, Scan Photo, AI Detected Review, Inventory, Food Waste Alerts, Meals From What You Have. Most exist (PantryPage, CookInventoryPage, CookRecipesPage, CookRecipeDetailPage, CookAddedToGroceryPage).
-- Add lightweight `ScanInventoryPage` (camera/upload → calls `scan-inventory-photo` → review screen to confirm detected items → bulk insert into `pantry_items`).
-- Add `FoodWasteAlertsPage` listing alerts from `food_waste_alerts` with "Use These Items First" CTA → routes to `/dashboard/cook`.
-- Wire "Use These Items First" button on `DashboardHome` Hive Assistant card to first call `create-food-waste-alerts` then route to `/dashboard/cook`.
+All JWT-validated via `getClaims`, CORS-enabled, food-only filters enforced server-side.
 
----
+1. `create-plaid-link-token` — returns `link_token` for current user.
+2. `exchange-plaid-public-token` — exchanges public token, stores encrypted access token + accounts.
+3. `sync-plaid-transactions` — pulls `/transactions/sync`, filters to food PFC categories, upserts into `food_transactions`.
+4. `categorize-food-transactions` — maps Plaid PFC + merchant heuristics → `groceries | restaurants | coffee_drinks | food_delivery | instacart | other_food`.
+5. `calculate-budget-dashboard` — computes monthly totals, remaining, health score (0–100), projection, potential savings; upserts `food_budget_summaries`.
+6. `disconnect-plaid-account` — removes Plaid item, deletes access token, optional purge of `food_transactions`.
 
-## PART 2 — HIVE FAMILY ASSISTANCE
+All six gracefully short-circuit with a clear error when Plaid secrets are not yet configured, so the mock UI still works.
 
-### Database migrations
-- **New `family_assistance_profiles`**: `id, user_id (unique), zip_code, household_size, children_under_5, children_5_to_12, teenagers, seniors_65_plus, employment_status, lost_job_recently bool, reduced_hours_recently bool, monthly_income_range text, currently_receiving_snap bool, currently_receiving_wic bool, currently_receiving_medicaid bool, created_at, updated_at`. RLS user-owned.
-- **New `assistance_needs`**: `id, user_id (unique), needs_food_assistance bool, needs_snap bool, needs_wic bool, needs_diapers_formula bool, needs_housing bool, needs_utilities bool, needs_healthcare bool, needs_transportation bool, needs_childcare bool, needs_employment bool, created_at, updated_at`. RLS user-owned.
-- **New `local_resources`**: `id, resource_name, category (enum text), description, address, city, state, zip_code, phone, website_url, application_url, hours, eligibility_notes, documents_needed text[], verified bool, created_at, updated_at`. Public SELECT (anon + authenticated); admin manage.
-- **New `saved_resources`**: `id, user_id, resource_id → local_resources, status (saved|applied|contacted|completed), notes, created_at, updated_at`. RLS user-owned.
+## Frontend pages & flow
 
-All four with GRANTs (authenticated + service_role; anon SELECT only on `local_resources`).
+Home page gets a new **Budget Snapshot** card below "Move With Your Meal Plan":
+- Not connected → "Track Your Food Spending" + Connect button.
+- Connected → budget / spent / remaining / health score + "View Full Budget Dashboard".
 
-### Edge functions
-- `submit-family-assistance-questionnaire` — upsert into both `family_assistance_profiles` and `assistance_needs`.
-- `match-family-resources` — query `local_resources` by zip prefix + needed categories; mock-AI ranks/explains (TODO OpenAI). Returns array with "may qualify" hedged language.
-- `get-resource-details` — single resource by id (anon-readable, but called via function to keep room for AI enrichment).
-- `save-resource` — insert into `saved_resources`.
-- `update-resource-status` — update `saved_resources.status` and `notes`.
+New routes under `/dashboard/budget/*`:
 
-### Context object
-- `family_assistance_context` builder in `supabase/functions/_shared/familyAssistanceContext.ts` consumed by `match-family-resources`.
+- `BudgetConnectPage` — trust points + Connect With Plaid CTA.
+- `BudgetSyncingPage` — 5-step animated sync checklist.
+- `BudgetDashboardPage` — overview: monthly budget, spent, remaining, health score, breakdown, insights, top categories, savings opportunities, recent transactions.
+- `BudgetTransactionsPage` — filterable food transactions list (All / Groceries / Restaurants / Coffee / Food Delivery / Instacart).
+- `BudgetInsightsPage` — mock insights + "Generate Savings Meal Plan" CTA → `/dashboard/meal-plan/setup` with budget prefilled.
+- `BudgetGoalsPage` — set monthly + category goals.
+- `BudgetSettingsPage` — disconnect Plaid, delete imported transactions, manage budgets, data usage copy.
 
-### UI
-- Home Page card (already present) — keep route to `/dashboard/resources`.
-- `ResourceHubHome` already exists. Add short questionnaire flow at `/dashboard/resources/intake` (new page) that posts to `submit-family-assistance-questionnaire` then routes to results.
-- Results page: `/dashboard/resources/matches` — calls `match-family-resources`, renders resource cards with hedged copy ("You may qualify for…").
-- Detail page (already exists `ResourceDetailPage`): add Save / Apply / Call / Website actions wired to `save-resource` and `update-resource-status`.
+Privacy disclosure copy is shown on Connect, Settings, and Data Usage screens:
+> "Help The Hive only uses food-related transactions to help you understand grocery and restaurant spending. We do not display income, debt, investments, or unrelated purchases."
 
-### AI safety language
-Edge functions and UI must use "may qualify"/"may be helpful"/"please confirm eligibility directly". Never "you qualify" / "approved".
+## Meal-plan integration
 
----
+When `remaining_budget` drops below a threshold, dashboard shows a banner:
+"You have $X remaining in your food budget this month. Generate a low-cost meal plan?" → `/dashboard/meal-plan/setup?budget=<remaining>`.
 
-## What stays untouched
-- Instacart endpoint, CTA, disclaimer, payload, handoff, partner linkback.
-- Existing meal plan, grocery list, cook flow pages already shipped.
+## Security
 
----
+- Plaid keys only in Supabase Secrets.
+- Access tokens encrypted at rest, never returned to the client.
+- RLS on every new table; service_role used by edge functions only.
+- No PII beyond what's needed (merchant, amount, date, category, plaid ids, masked account).
 
-## Build order
-1. Migration 1 — Hive AI tables (`inventory_photos`, `food_waste_alerts`) + storage bucket.
-2. Migration 2 — Family Assistance tables (4 new).
-3. Edge functions (Hive AI: 2 new + 1 extend; Family: 5 new).
-4. Shared context builders.
-5. UI: ScanInventoryPage, FoodWasteAlertsPage, FamilyAssistance intake + matches pages; wire CTAs.
-6. Seed a handful of `local_resources` for demo.
+## Mock data behavior
 
-Skipping: changes to Instacart code, changes to existing meal-plan/grocery/cook pages beyond minor wiring.
+If user has no `plaid_connections` row, frontend uses a deterministic mock summary so screenshots and the full flow render. The moment Plaid is connected, real data takes over with no UI changes.
 
-Total: ~2 migrations, 7 edge functions, ~5 new pages, ~2 shared libs.
+## Out of scope this pass
+
+- Real OpenAI insights (mock now; schema ready).
+- Bottom nav entry (intentionally excluded).
+- Goal automation/notifications (basic CRUD only).

@@ -230,6 +230,42 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_ai_insights: {
+        Row: {
+          created_at: string
+          estimated_savings: number | null
+          id: string
+          insight_type: string
+          message: string
+          month: string
+          related_category: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_savings?: number | null
+          id?: string
+          insight_type: string
+          message: string
+          month: string
+          related_category?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_savings?: number | null
+          id?: string
+          insight_type?: string
+          message?: string
+          month?: string
+          related_category?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       canonical_product_aliases: {
         Row: {
           alias_id: string
@@ -496,6 +532,153 @@ export type Database = {
           updated_at?: string
           user_id?: string
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      food_budget_settings: {
+        Row: {
+          budget_month: string | null
+          coffee_budget: number | null
+          created_at: string
+          food_delivery_budget: number | null
+          grocery_budget: number | null
+          id: string
+          monthly_food_budget: number
+          restaurant_budget: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_month?: string | null
+          coffee_budget?: number | null
+          created_at?: string
+          food_delivery_budget?: number | null
+          grocery_budget?: number | null
+          id?: string
+          monthly_food_budget?: number
+          restaurant_budget?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_month?: string | null
+          coffee_budget?: number | null
+          created_at?: string
+          food_delivery_budget?: number | null
+          grocery_budget?: number | null
+          id?: string
+          monthly_food_budget?: number
+          restaurant_budget?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      food_budget_summaries: {
+        Row: {
+          budget_health_score: number
+          coffee_spending: number
+          created_at: string
+          food_delivery_spending: number
+          grocery_spending: number
+          id: string
+          month: string
+          monthly_food_budget: number | null
+          other_food_spending: number
+          potential_savings: number | null
+          projected_month_end_spending: number | null
+          remaining_budget: number
+          restaurant_spending: number
+          spent_total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_health_score?: number
+          coffee_spending?: number
+          created_at?: string
+          food_delivery_spending?: number
+          grocery_spending?: number
+          id?: string
+          month: string
+          monthly_food_budget?: number | null
+          other_food_spending?: number
+          potential_savings?: number | null
+          projected_month_end_spending?: number | null
+          remaining_budget?: number
+          restaurant_spending?: number
+          spent_total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_health_score?: number
+          coffee_spending?: number
+          created_at?: string
+          food_delivery_spending?: number
+          grocery_spending?: number
+          id?: string
+          month?: string
+          monthly_food_budget?: number | null
+          other_food_spending?: number
+          potential_savings?: number | null
+          projected_month_end_spending?: number | null
+          remaining_budget?: number
+          restaurant_spending?: number
+          spent_total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      food_transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category: string | null
+          created_at: string
+          date: string
+          id: string
+          merchant_name: string | null
+          normalized_category: string
+          pending: boolean
+          plaid_transaction_id: string
+          source: string
+          transaction_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          merchant_name?: string | null
+          normalized_category: string
+          pending?: boolean
+          plaid_transaction_id: string
+          source?: string
+          transaction_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          merchant_name?: string | null
+          normalized_category?: string
+          pending?: boolean
+          plaid_transaction_id?: string
+          source?: string
+          transaction_name?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1644,6 +1827,92 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      plaid_accounts: {
+        Row: {
+          account_id: string
+          account_name: string | null
+          account_subtype: string | null
+          account_type: string | null
+          connected: boolean
+          created_at: string
+          id: string
+          mask: string | null
+          plaid_connection_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          account_name?: string | null
+          account_subtype?: string | null
+          account_type?: string | null
+          connected?: boolean
+          created_at?: string
+          id?: string
+          mask?: string | null
+          plaid_connection_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          account_name?: string | null
+          account_subtype?: string | null
+          account_type?: string | null
+          connected?: boolean
+          created_at?: string
+          id?: string
+          mask?: string | null
+          plaid_connection_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plaid_accounts_plaid_connection_id_fkey"
+            columns: ["plaid_connection_id"]
+            isOneToOne: false
+            referencedRelation: "plaid_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plaid_connections: {
+        Row: {
+          access_token_encrypted: string
+          created_at: string
+          id: string
+          institution_id: string | null
+          institution_name: string | null
+          item_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          item_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          item_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
