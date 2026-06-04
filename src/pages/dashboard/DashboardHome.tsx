@@ -27,7 +27,7 @@ export default function DashboardHome() {
   const groceryCount = 12; // TODO: wire to grocery list
 
   return (
-    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 bg-white min-h-full">
+    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full">
       {/* Greeting */}
       <div className="pt-2 pb-1">
         <h1 className="text-[22px] font-extrabold text-[#1a1a1a] leading-tight">
