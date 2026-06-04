@@ -27,7 +27,39 @@ import { useShowMacros } from "@/hooks/useShowMacros";
 
 const STORE_OPTIONS = ["Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
-const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
+const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher", "Gluten-free", "Dairy-free", "Nut allergy", "No seafood"];
+
+const ASSISTANCE_OPTIONS: { key: string; label: string }[] = [
+  { key: "assistance_food", label: "Food" },
+  { key: "assistance_snap", label: "SNAP / EBT" },
+  { key: "assistance_wic", label: "WIC" },
+  { key: "assistance_diapers", label: "Diapers" },
+  { key: "assistance_housing", label: "Housing" },
+  { key: "assistance_utilities", label: "Utilities" },
+  { key: "assistance_healthcare", label: "Healthcare" },
+  { key: "assistance_employment", label: "Employment" },
+  { key: "assistance_transportation", label: "Transportation" },
+  { key: "assistance_childcare", label: "Childcare" },
+];
+
+const APOLLO_GOALS: { key: string; label: string }[] = [
+  { key: "goal_lose_weight", label: "Lose weight" },
+  { key: "goal_build_muscle", label: "Build muscle" },
+  { key: "goal_stay_active", label: "Stay active" },
+  { key: "goal_improve_mobility", label: "Improve mobility" },
+];
+
+const COOKING_OPTIONS = [
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+];
+
+const PLAID_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "later", label: "Maybe later" },
+  { value: "skip", label: "No thanks" },
+];
 
 export default function SettingsPage() {
   const { user, signOut, refreshProfile } = useAuth();
