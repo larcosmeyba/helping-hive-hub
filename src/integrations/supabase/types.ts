@@ -415,10 +415,127 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_recipe_ingredients: {
+        Row: {
+          already_have: boolean
+          created_at: string
+          estimated_price: number | null
+          id: string
+          instacart_search_term: string | null
+          item_name: string
+          normalized_item_name: string | null
+          pantry_item_id: string | null
+          quantity: string | null
+          recipe_id: string
+          source_location: string | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          already_have?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          id?: string
+          instacart_search_term?: string | null
+          item_name: string
+          normalized_item_name?: string | null
+          pantry_item_id?: string | null
+          quantity?: string | null
+          recipe_id: string
+          source_location?: string | null
+          unit?: string | null
+          user_id: string
+        }
+        Update: {
+          already_have?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          id?: string
+          instacart_search_term?: string | null
+          item_name?: string
+          normalized_item_name?: string | null
+          pantry_item_id?: string | null
+          quantity?: string | null
+          recipe_id?: string
+          source_location?: string | null
+          unit?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "generated_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_recipes: {
+        Row: {
+          cook_time_minutes: number | null
+          cooked_at: string | null
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          estimated_cost_of_missing_items: number | null
+          food_waste_reason: string | null
+          id: string
+          instructions: Json | null
+          prep_time_minutes: number | null
+          recipe_name: string
+          savings_estimate: number | null
+          servings: number | null
+          source_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cook_time_minutes?: number | null
+          cooked_at?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          estimated_cost_of_missing_items?: number | null
+          food_waste_reason?: string | null
+          id?: string
+          instructions?: Json | null
+          prep_time_minutes?: number | null
+          recipe_name: string
+          savings_estimate?: number | null
+          servings?: number | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cook_time_minutes?: number | null
+          cooked_at?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          estimated_cost_of_missing_items?: number | null
+          food_waste_reason?: string | null
+          id?: string
+          instructions?: Json | null
+          prep_time_minutes?: number | null
+          recipe_name?: string
+          savings_estimate?: number | null
+          servings?: number | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grocery_list_items: {
         Row: {
           already_have: boolean | null
           category: string | null
+          checked: boolean
           created_at: string
           estimated_price: number | null
           grocery_list_id: string | null
@@ -428,7 +545,9 @@ export type Database = {
           is_checked: boolean | null
           meal_plan_id: string | null
           needed_for_meals: string[] | null
+          normalized_item_name: string | null
           quantity: string
+          recipe_id: string | null
           selected_for_instacart: boolean
           source_ref_id: string | null
           source_type: string
@@ -439,6 +558,7 @@ export type Database = {
         Insert: {
           already_have?: boolean | null
           category?: string | null
+          checked?: boolean
           created_at?: string
           estimated_price?: number | null
           grocery_list_id?: string | null
@@ -448,7 +568,9 @@ export type Database = {
           is_checked?: boolean | null
           meal_plan_id?: string | null
           needed_for_meals?: string[] | null
+          normalized_item_name?: string | null
           quantity: string
+          recipe_id?: string | null
           selected_for_instacart?: boolean
           source_ref_id?: string | null
           source_type?: string
@@ -459,6 +581,7 @@ export type Database = {
         Update: {
           already_have?: boolean | null
           category?: string | null
+          checked?: boolean
           created_at?: string
           estimated_price?: number | null
           grocery_list_id?: string | null
@@ -468,7 +591,9 @@ export type Database = {
           is_checked?: boolean | null
           meal_plan_id?: string | null
           needed_for_meals?: string[] | null
+          normalized_item_name?: string | null
           quantity?: string
+          recipe_id?: string | null
           selected_for_instacart?: boolean
           source_ref_id?: string | null
           source_type?: string
@@ -1200,6 +1325,7 @@ export type Database = {
           is_out_of_stock: boolean | null
           item_name: string
           location: string | null
+          normalized_item_name: string | null
           purchase_date: string | null
           quantity: string | null
           unit: string | null
@@ -1216,6 +1342,7 @@ export type Database = {
           is_out_of_stock?: boolean | null
           item_name: string
           location?: string | null
+          normalized_item_name?: string | null
           purchase_date?: string | null
           quantity?: string | null
           unit?: string | null
@@ -1232,6 +1359,7 @@ export type Database = {
           is_out_of_stock?: boolean | null
           item_name?: string
           location?: string | null
+          normalized_item_name?: string | null
           purchase_date?: string | null
           quantity?: string | null
           unit?: string | null
