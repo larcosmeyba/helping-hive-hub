@@ -1,13 +1,13 @@
-import { LayoutDashboard, CalendarDays, Package, ShoppingCart, ChefHat } from "lucide-react";
+import { Home, CalendarDays, Package, ShoppingCart, Sparkles } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { label: "Today", to: "/dashboard", icon: LayoutDashboard, end: true },
+  { label: "Today", to: "/dashboard", icon: Home, end: true },
   { label: "Meal Plan", to: "/dashboard/meal-plan", icon: CalendarDays },
   { label: "Pantry", to: "/dashboard/pantry", icon: Package },
   { label: "Grocery", to: "/dashboard/grocery-list", icon: ShoppingCart },
-  { label: "Fridge Chef", to: "/dashboard/fridge-chef", icon: ChefHat },
+  { label: "Hive AI", to: "/dashboard/fridge-chef", icon: Sparkles },
 ];
 
 export function BottomNavBar() {
