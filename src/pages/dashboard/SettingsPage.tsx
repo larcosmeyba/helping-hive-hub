@@ -27,7 +27,39 @@ import { useShowMacros } from "@/hooks/useShowMacros";
 
 const STORE_OPTIONS = ["Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
-const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher"];
+const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher", "Gluten-free", "Dairy-free", "Nut allergy", "No seafood"];
+
+const ASSISTANCE_OPTIONS: { key: string; label: string }[] = [
+  { key: "assistance_food", label: "Food" },
+  { key: "assistance_snap", label: "SNAP / EBT" },
+  { key: "assistance_wic", label: "WIC" },
+  { key: "assistance_diapers", label: "Diapers" },
+  { key: "assistance_housing", label: "Housing" },
+  { key: "assistance_utilities", label: "Utilities" },
+  { key: "assistance_healthcare", label: "Healthcare" },
+  { key: "assistance_employment", label: "Employment" },
+  { key: "assistance_transportation", label: "Transportation" },
+  { key: "assistance_childcare", label: "Childcare" },
+];
+
+const APOLLO_GOALS: { key: string; label: string }[] = [
+  { key: "goal_lose_weight", label: "Lose weight" },
+  { key: "goal_build_muscle", label: "Build muscle" },
+  { key: "goal_stay_active", label: "Stay active" },
+  { key: "goal_improve_mobility", label: "Improve mobility" },
+];
+
+const COOKING_OPTIONS = [
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+];
+
+const PLAID_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "later", label: "Maybe later" },
+  { value: "skip", label: "No thanks" },
+];
 
 export default function SettingsPage() {
   const { user, signOut, refreshProfile } = useAuth();
@@ -42,6 +74,19 @@ export default function SettingsPage() {
   const [homeStore, setHomeStore] = useState<string>("");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  // Extended onboarding profile fields
+  const [childrenUnder5, setChildrenUnder5] = useState(0);
+  const [children5to12, setChildren5to12] = useState(0);
+  const [teenagers, setTeenagers] = useState(0);
+  const [seniors65plus, setSeniors65plus] = useState(0);
+  const [city, setCity] = useState("");
+  const [stateCode, setStateCode] = useState("");
+  const [cookingConfidence, setCookingConfidence] = useState("");
+  const [assistance, setAssistance] = useState<Record<string, boolean>>({});
+  const [goals, setGoals] = useState<Record<string, boolean>>({});
+  const [foodWasteAlerts, setFoodWasteAlerts] = useState(true);
+  const [foodWasteSuggestions, setFoodWasteSuggestions] = useState(true);
+  const [plaidInterest, setPlaidInterest] = useState("");
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
   const [showMacros, setShowMacros] = useShowMacros();
@@ -55,14 +100,31 @@ export default function SettingsPage() {
     if (!user) return;
     supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
       if (!data) return;
-      setHouseholdSize(data.household_size ?? 2);
-      setWeeklyBudget(data.weekly_budget != null ? Number(data.weekly_budget) : 75);
-      setZipCode(data.zip_code ?? "");
-      setSelectedStores((data.preferred_stores as string[]) ?? []);
-      setHomeStore(data.home_store ?? "");
-      setAllergies((data.allergies as string[]) ?? []);
-      setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
-      const prefs = (data.notification_preferences as Record<string, boolean> | null) ?? {};
+      const d = data as Record<string, any>;
+      setHouseholdSize(d.household_size ?? 2);
+      setWeeklyBudget(d.weekly_budget != null ? Number(d.weekly_budget) : 75);
+      setZipCode(d.zip_code ?? "");
+      setSelectedStores((d.preferred_stores as string[]) ?? []);
+      setHomeStore(d.home_store ?? "");
+      setAllergies((d.allergies as string[]) ?? []);
+      setDietaryPreferences((d.dietary_preferences as string[]) ?? []);
+      setChildrenUnder5(d.children_under_5 ?? 0);
+      setChildren5to12(d.children_5_to_12 ?? 0);
+      setTeenagers(d.teenagers ?? 0);
+      setSeniors65plus(d.seniors_65_plus ?? 0);
+      setCity(d.city ?? "");
+      setStateCode(d.state ?? "");
+      setCookingConfidence(d.cooking_confidence ?? "");
+      const a: Record<string, boolean> = {};
+      ASSISTANCE_OPTIONS.forEach((o) => { a[o.key] = !!d[o.key]; });
+      setAssistance(a);
+      const g: Record<string, boolean> = {};
+      APOLLO_GOALS.forEach((o) => { g[o.key] = !!d[o.key]; });
+      setGoals(g);
+      setFoodWasteAlerts(d.food_waste_alerts_enabled ?? true);
+      setFoodWasteSuggestions(d.food_waste_recipe_suggestions_enabled ?? true);
+      setPlaidInterest(d.plaid_interest ?? "");
+      const prefs = (d.notification_preferences as Record<string, boolean> | null) ?? {};
       setNotifPrefs({
         meal_plan_reminders: prefs.meal_plan_reminders ?? true,
         snap_deposit_alerts: prefs.snap_deposit_alerts ?? true,
@@ -89,29 +151,49 @@ export default function SettingsPage() {
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
   };
 
+  const toggleMap = (map: Record<string, boolean>, setter: (m: Record<string, boolean>) => void, key: string) => {
+    setter({ ...map, [key]: !map[key] });
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setLoading(true);
     try {
+      const assistanceCols = ASSISTANCE_OPTIONS.reduce((acc, o) => { acc[o.key] = !!assistance[o.key]; return acc; }, {} as Record<string, boolean>);
+      const goalCols = APOLLO_GOALS.reduce((acc, o) => { acc[o.key] = !!goals[o.key]; return acc; }, {} as Record<string, boolean>);
+
       const { error } = await supabase.from("profiles").update({
         household_size: householdSize,
+        children_under_5: childrenUnder5,
+        children_5_to_12: children5to12,
+        teenagers: teenagers,
+        seniors_65_plus: seniors65plus,
         weekly_budget: weeklyBudget,
         zip_code: zipCode,
+        city: city || null,
+        state: stateCode || null,
         preferred_stores: selectedStores,
         home_store: homeStore || null,
         allergies,
         dietary_preferences: dietaryPreferences,
-        
+        cooking_confidence: cookingConfidence || null,
+        ...assistanceCols,
+        ...goalCols,
+        food_waste_alerts_enabled: foodWasteAlerts,
+        food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
+        plaid_interest: plaidInterest || null,
       }).eq("user_id", user.id);
       if (error) throw error;
       await refreshProfile?.();
-      toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
+      toast({ title: "Saved!", description: "Your settings have been updated." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -169,14 +251,47 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <Label>Weekly Grocery Budget: ${weeklyBudget}</Label>
-          <input type="range" min={25} max={300} step={5} value={weeklyBudget} onChange={(e) => setWeeklyBudget(Number(e.target.value))} className="w-full mt-2 accent-primary" />
+          <Label>Household composition</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Used for portion sizing and resource recommendations.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { label: "Children under 5", val: childrenUnder5, set: setChildrenUnder5 },
+              { label: "Children 5–12", val: children5to12, set: setChildren5to12 },
+              { label: "Teenagers (13–17)", val: teenagers, set: setTeenagers },
+              { label: "Seniors 65+", val: seniors65plus, set: setSeniors65plus },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+                <span className="text-sm text-foreground">{row.label}</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(Math.max(0, row.val - 1))}>−</Button>
+                  <span className="w-6 text-center font-semibold text-foreground tabular-nums">{row.val}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(row.val + 1)}>+</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
-          <Label>ZIP Code</Label>
-          <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} maxLength={5} className="mt-1 max-w-xs" />
+          <Label>Weekly Grocery Budget: ${weeklyBudget}</Label>
+          <input type="range" min={25} max={500} step={5} value={weeklyBudget} onChange={(e) => setWeeklyBudget(Number(e.target.value))} className="w-full mt-2 accent-primary" />
         </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label>ZIP Code</Label>
+            <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} maxLength={5} className="mt-1" />
+          </div>
+          <div>
+            <Label>City</Label>
+            <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label>State</Label>
+            <Input value={stateCode} onChange={(e) => setStateCode(e.target.value)} maxLength={2} className="mt-1" />
+          </div>
+        </div>
+
 
         <div>
           <Label className="flex items-center gap-1.5">
@@ -244,10 +359,80 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div>
+          <Label>Cooking confidence</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {COOKING_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setCookingConfidence(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${cookingConfidence === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Family assistance needs</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Tap any that apply. Hive Family Assistance uses these to recommend resources.</p>
+          <div className="flex flex-wrap gap-2">
+            {ASSISTANCE_OPTIONS.map((opt) => (
+              <button key={opt.key} onClick={() => toggleMap(assistance, setAssistance, opt.key)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${assistance[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Food waste preferences</Label>
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-foreground">Expiration alerts</p>
+                <p className="text-[11px] text-muted-foreground">Warn me before pantry items spoil.</p>
+              </div>
+              <Switch checked={foodWasteAlerts} onCheckedChange={setFoodWasteAlerts} />
+            </div>
+            <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-foreground">Recipe suggestions for leftovers</p>
+                <p className="text-[11px] text-muted-foreground">"Use it up" recipes from current pantry.</p>
+              </div>
+              <Switch checked={foodWasteSuggestions} onCheckedChange={setFoodWasteSuggestions} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label>Budget tracking (Plaid)</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Connect your bank later for grocery spend insights.</p>
+          <div className="flex flex-wrap gap-2">
+            {PLAID_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setPlaidInterest(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${plaidInterest === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Wellness goals (Apollo Reborn)</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {APOLLO_GOALS.map((opt) => (
+              <button key={opt.key} onClick={() => toggleMap(goals, setGoals, opt.key)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${goals[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
-          <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
+          <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Changes"}
         </Button>
+
       </div>
 
       {/* Permissions Section */}
