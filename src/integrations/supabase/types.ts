@@ -149,6 +149,57 @@ export type Database = {
         }
         Relationships: []
       }
+      assistance_needs: {
+        Row: {
+          created_at: string
+          id: string
+          needs_childcare: boolean | null
+          needs_diapers_formula: boolean | null
+          needs_employment: boolean | null
+          needs_food_assistance: boolean | null
+          needs_healthcare: boolean | null
+          needs_housing: boolean | null
+          needs_snap: boolean | null
+          needs_transportation: boolean | null
+          needs_utilities: boolean | null
+          needs_wic: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          needs_childcare?: boolean | null
+          needs_diapers_formula?: boolean | null
+          needs_employment?: boolean | null
+          needs_food_assistance?: boolean | null
+          needs_healthcare?: boolean | null
+          needs_housing?: boolean | null
+          needs_snap?: boolean | null
+          needs_transportation?: boolean | null
+          needs_utilities?: boolean | null
+          needs_wic?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          needs_childcare?: boolean | null
+          needs_diapers_formula?: boolean | null
+          needs_employment?: boolean | null
+          needs_food_assistance?: boolean | null
+          needs_healthcare?: boolean | null
+          needs_housing?: boolean | null
+          needs_snap?: boolean | null
+          needs_transportation?: boolean | null
+          needs_utilities?: boolean | null
+          needs_wic?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bls_regional_cpi_cache: {
         Row: {
           cached_at: string
@@ -384,6 +435,102 @@ export type Database = {
           id?: string
           period_key?: string
           sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      family_assistance_profiles: {
+        Row: {
+          children_5_to_12: number | null
+          children_under_5: number | null
+          created_at: string
+          currently_receiving_medicaid: boolean | null
+          currently_receiving_snap: boolean | null
+          currently_receiving_wic: boolean | null
+          employment_status: string | null
+          household_size: number | null
+          id: string
+          lost_job_recently: boolean | null
+          monthly_income_range: string | null
+          reduced_hours_recently: boolean | null
+          seniors_65_plus: number | null
+          teenagers: number | null
+          updated_at: string
+          user_id: string
+          zip_code: string | null
+        }
+        Insert: {
+          children_5_to_12?: number | null
+          children_under_5?: number | null
+          created_at?: string
+          currently_receiving_medicaid?: boolean | null
+          currently_receiving_snap?: boolean | null
+          currently_receiving_wic?: boolean | null
+          employment_status?: string | null
+          household_size?: number | null
+          id?: string
+          lost_job_recently?: boolean | null
+          monthly_income_range?: string | null
+          reduced_hours_recently?: boolean | null
+          seniors_65_plus?: number | null
+          teenagers?: number | null
+          updated_at?: string
+          user_id: string
+          zip_code?: string | null
+        }
+        Update: {
+          children_5_to_12?: number | null
+          children_under_5?: number | null
+          created_at?: string
+          currently_receiving_medicaid?: boolean | null
+          currently_receiving_snap?: boolean | null
+          currently_receiving_wic?: boolean | null
+          employment_status?: string | null
+          household_size?: number | null
+          id?: string
+          lost_job_recently?: boolean | null
+          monthly_income_range?: string | null
+          reduced_hours_recently?: boolean | null
+          seniors_65_plus?: number | null
+          teenagers?: number | null
+          updated_at?: string
+          user_id?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      food_waste_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          days_until_expiration: number | null
+          estimated_value: number | null
+          id: string
+          message: string | null
+          pantry_item_id: string | null
+          resolved: boolean
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          days_until_expiration?: number | null
+          estimated_value?: number | null
+          id?: string
+          message?: string | null
+          pantry_item_id?: string | null
+          resolved?: boolean
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          days_until_expiration?: number | null
+          estimated_value?: number | null
+          id?: string
+          message?: string | null
+          pantry_item_id?: string | null
+          resolved?: boolean
           user_id?: string
         }
         Relationships: []
@@ -883,6 +1030,96 @@ export type Database = {
           retailer_name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      inventory_photos: {
+        Row: {
+          ai_processed: boolean
+          created_at: string
+          detected_items_json: Json | null
+          id: string
+          image_url: string
+          scan_type: string
+          user_id: string
+        }
+        Insert: {
+          ai_processed?: boolean
+          created_at?: string
+          detected_items_json?: Json | null
+          id?: string
+          image_url: string
+          scan_type?: string
+          user_id: string
+        }
+        Update: {
+          ai_processed?: boolean
+          created_at?: string
+          detected_items_json?: Json | null
+          id?: string
+          image_url?: string
+          scan_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      local_resources: {
+        Row: {
+          address: string | null
+          application_url: string | null
+          category: string
+          city: string | null
+          created_at: string
+          description: string | null
+          documents_needed: string[] | null
+          eligibility_notes: string | null
+          hours: string | null
+          id: string
+          phone: string | null
+          resource_name: string
+          state: string | null
+          updated_at: string
+          verified: boolean
+          website_url: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          application_url?: string | null
+          category: string
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          documents_needed?: string[] | null
+          eligibility_notes?: string | null
+          hours?: string | null
+          id?: string
+          phone?: string | null
+          resource_name: string
+          state?: string | null
+          updated_at?: string
+          verified?: boolean
+          website_url?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          application_url?: string | null
+          category?: string
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          documents_needed?: string[] | null
+          eligibility_notes?: string | null
+          hours?: string | null
+          id?: string
+          phone?: string | null
+          resource_name?: string
+          state?: string | null
+          updated_at?: string
+          verified?: boolean
+          website_url?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -2178,19 +2415,28 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notes: string | null
           resource_id: string
+          status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          notes?: string | null
           resource_id: string
+          status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          notes?: string | null
           resource_id?: string
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [

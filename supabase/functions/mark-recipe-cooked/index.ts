@@ -107,6 +107,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve food waste alerts tied to consumed pantry items.
+    const consumedPantryIds = (ings ?? [])
+      .filter((i: any) => i.already_have && i.pantry_item_id)
+      .map((i: any) => i.pantry_item_id);
+    if (consumedPantryIds.length > 0) {
+      await admin
+        .from("food_waste_alerts")
+        .update({ resolved: true })
+        .eq("user_id", userId)
+        .in("pantry_item_id", consumedPantryIds);
+    }
+
     await admin
       .from("generated_recipes")
       .update({ status: "cooked", cooked_at: new Date().toISOString() })
