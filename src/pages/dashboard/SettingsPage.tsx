@@ -251,14 +251,47 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <Label>Weekly Grocery Budget: ${weeklyBudget}</Label>
-          <input type="range" min={25} max={300} step={5} value={weeklyBudget} onChange={(e) => setWeeklyBudget(Number(e.target.value))} className="w-full mt-2 accent-primary" />
+          <Label>Household composition</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Used for portion sizing and resource recommendations.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { label: "Children under 5", val: childrenUnder5, set: setChildrenUnder5 },
+              { label: "Children 5–12", val: children5to12, set: setChildren5to12 },
+              { label: "Teenagers (13–17)", val: teenagers, set: setTeenagers },
+              { label: "Seniors 65+", val: seniors65plus, set: setSeniors65plus },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+                <span className="text-sm text-foreground">{row.label}</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(Math.max(0, row.val - 1))}>−</Button>
+                  <span className="w-6 text-center font-semibold text-foreground tabular-nums">{row.val}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(row.val + 1)}>+</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
-          <Label>ZIP Code</Label>
-          <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} maxLength={5} className="mt-1 max-w-xs" />
+          <Label>Weekly Grocery Budget: ${weeklyBudget}</Label>
+          <input type="range" min={25} max={500} step={5} value={weeklyBudget} onChange={(e) => setWeeklyBudget(Number(e.target.value))} className="w-full mt-2 accent-primary" />
         </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label>ZIP Code</Label>
+            <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} maxLength={5} className="mt-1" />
+          </div>
+          <div>
+            <Label>City</Label>
+            <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label>State</Label>
+            <Input value={stateCode} onChange={(e) => setStateCode(e.target.value)} maxLength={2} className="mt-1" />
+          </div>
+        </div>
+
 
         <div>
           <Label className="flex items-center gap-1.5">
