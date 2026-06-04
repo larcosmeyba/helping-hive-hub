@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { buildProfileContext, profileContextToPromptBlock } from "../_shared/profileContext.ts";
 
 const FALLBACK_PRICES: Record<string, number> = {
   chicken: 4.50, beef: 5.80, pork: 4.00, turkey: 4.50, salmon: 8.00, fish: 6.00, shrimp: 7.00, tofu: 2.50,
