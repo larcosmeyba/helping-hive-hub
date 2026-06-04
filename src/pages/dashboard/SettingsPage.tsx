@@ -74,6 +74,19 @@ export default function SettingsPage() {
   const [homeStore, setHomeStore] = useState<string>("");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  // Extended onboarding profile fields
+  const [childrenUnder5, setChildrenUnder5] = useState(0);
+  const [children5to12, setChildren5to12] = useState(0);
+  const [teenagers, setTeenagers] = useState(0);
+  const [seniors65plus, setSeniors65plus] = useState(0);
+  const [city, setCity] = useState("");
+  const [stateCode, setStateCode] = useState("");
+  const [cookingConfidence, setCookingConfidence] = useState("");
+  const [assistance, setAssistance] = useState<Record<string, boolean>>({});
+  const [goals, setGoals] = useState<Record<string, boolean>>({});
+  const [foodWasteAlerts, setFoodWasteAlerts] = useState(true);
+  const [foodWasteSuggestions, setFoodWasteSuggestions] = useState(true);
+  const [plaidInterest, setPlaidInterest] = useState("");
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
   const [showMacros, setShowMacros] = useShowMacros();
