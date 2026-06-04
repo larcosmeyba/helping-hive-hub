@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { ArrowRight, Heart, Sparkles, Dumbbell } from "lucide-react";
+import { ArrowRight, Heart, Sparkles } from "lucide-react";
 import bowlImg from "@/assets/home-bowl.png";
 import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
-import apolloWomanImg from "@/assets/home-apollo-woman.png";
+import apolloLogo from "@/assets/apollo-logo.png.asset.json";
+import apolloMarcos from "@/assets/apollo-marcos.png.asset.json";
 
 export default function DashboardHome() {
   const { profile } = useAuth();
@@ -114,7 +115,7 @@ export default function DashboardHome() {
       <div className="mt-3 rounded-2xl p-4 bg-white border border-[#EEE7DA] flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <Dumbbell className="w-4 h-4 text-[#5B3FBF]" />
+            <img src={apolloLogo.url} alt="Apollo Reborn" className="w-4 h-4 object-contain" />
             <span className="font-bold text-[15px] text-[#1a1a1a]">Move With Your Meal Plan</span>
           </div>
           <p className="text-[12px] font-semibold text-[#5B3FBF] mb-1">Powered by Apollo Reborn</p>
@@ -128,7 +129,7 @@ export default function DashboardHome() {
             Download Apollo Reborn
           </button>
         </div>
-        <img src={apolloWomanImg} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
+        <img src={apolloMarcos.url} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
       </div>
     </div>
   );
