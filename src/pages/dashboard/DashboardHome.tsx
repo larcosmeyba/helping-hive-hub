@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { ArrowRight, Heart, Sparkles, Dumbbell } from "lucide-react";
+import { ArrowRight, Heart, Sparkles } from "lucide-react";
 import bowlImg from "@/assets/home-bowl.png";
 import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
-import apolloWomanImg from "@/assets/home-apollo-woman.png";
+import apolloLogo from "@/assets/apollo-logo.png.asset.json";
+import apolloMarcos from "@/assets/apollo-marcos.png.asset.json";
 
 export default function DashboardHome() {
   const { profile } = useAuth();
