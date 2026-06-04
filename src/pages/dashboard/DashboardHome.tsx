@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { SummaryCards } from "@/components/dashboard/home/SummaryCards";
-import { YourHubGrid } from "@/components/dashboard/home/YourHubGrid";
-import { WeeklyProgress } from "@/components/dashboard/home/WeeklyProgress";
-import { SnapTracker } from "@/components/dashboard/SnapTracker";
+import { ArrowRight, Heart, Sparkles, Dumbbell } from "lucide-react";
+import bowlImg from "@/assets/home-bowl.png";
+import basketImg from "@/assets/home-basket.png";
+import fridgeImg from "@/assets/home-fridge.png";
+import produceBoxImg from "@/assets/home-produce-box.png";
+import apolloWomanImg from "@/assets/home-apollo-woman.png";
 
 export default function DashboardHome() {
   const { profile } = useAuth();
@@ -21,49 +23,159 @@ export default function DashboardHome() {
   const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
   const budget = profile?.weekly_budget ?? 75;
-  const spent = mealPlan?.totalEstimatedCost ?? 0;
-  const saved = Math.max(0, budget - spent);
-  const mealsCount = mealPlan?.weeklyPlan.reduce((acc, d) => acc + d.meals.length, 0) ?? 0;
-  const costPerMeal = mealPlan?.costPerMeal ?? 0;
+  const groceryCount = 12; // TODO: wire to grocery list
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-5 pb-6">
+    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 bg-white min-h-full">
       {/* Greeting */}
-      <div>
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground leading-tight">
-          {greeting}, {firstName} <span aria-hidden>👋</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Meals that fit your budget. At the store you already shop at.
-        </p>
+      <div className="flex items-start justify-between gap-3 pt-2 pb-1">
+        <div>
+          <h1 className="text-[22px] font-extrabold text-[#1a1a1a] leading-tight">
+            {greeting}, {firstName} <span aria-hidden>☀️</span>
+          </h1>
+          <p className="text-[13px] text-[#6b6b6b] mt-1">
+            Let's save money, eat better, and feel your best.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/dashboard/settings")}
+          className="w-11 h-11 rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-white shadow-sm"
+          aria-label="Settings"
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+              {firstName.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </button>
       </div>
 
-      {/* 4 Summary cards */}
-      <SummaryCards
-        zip={profile?.zip_code ?? ""}
-        city={(profile?.city as string | undefined) ?? undefined}
-        budget={budget}
-        household={profile?.household_size ?? 1}
-        saved={saved}
-      />
-      <button
-        type="button"
-        onClick={() => navigate("/dashboard/settings")}
-        className="block mx-auto -mt-2 text-xs text-muted-foreground hover:text-primary underline underline-offset-4 transition-colors"
-      >
-        Update this information
-      </button>
+      {/* Section heading */}
+      <h2 className="text-[15px] font-bold text-[#1a1a1a] mt-5 mb-3">
+        What would you like to do today?
+      </h2>
 
-      {/* Your Hub */}
-      <YourHubGrid />
+      {/* Three primary action cards */}
+      <div className="space-y-3">
+        <ActionCard
+          bg="#E85D2F"
+          title="Generate This Week's Meal Plan"
+          subtitle={`Custom plan for your $${budget} budget`}
+          image={bowlImg}
+          onClick={() => navigate("/dashboard/meal-plan")}
+        />
+        <ActionCard
+          bg="#4A8F3D"
+          title="Shop Your Grocery List"
+          subtitle={`${groceryCount} items ready to shop`}
+          image={basketImg}
+          onClick={() => navigate("/dashboard/grocery-list")}
+        />
+        <ActionCard
+          bg="#5B3FBF"
+          title="Cook From What I Have"
+          subtitle="Use your fridge & pantry first"
+          image={fridgeImg}
+          onClick={() => navigate("/dashboard/fridge-chef")}
+        />
+      </div>
 
-      {/* Weekly Progress */}
-      <WeeklyProgress budget={budget} spent={spent} mealsCooked={mealsCount} costPerMeal={costPerMeal} />
+      {/* Hive Assistant */}
+      <div className="mt-4 rounded-2xl p-4 bg-[#F5EBDC] relative overflow-hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4 text-[#1a1a1a]" />
+          <span className="font-bold text-[15px] text-[#1a1a1a]">Hive Assistant</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#9CB87A] text-white">AI</span>
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] text-[#3a3a3a] leading-snug mb-3 max-w-[200px]">
+              You have spinach, eggs, and chicken that may go bad soon. I can build meals to use these first and save you about $8 this week.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard/fridge-chef")}
+              className="bg-[#1F5A3D] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
+            >
+              Use These Items First
+            </button>
+          </div>
+          <img src={produceBoxImg} alt="" loading="lazy" className="w-24 h-24 object-contain shrink-0" />
+        </div>
+      </div>
 
-      {/* SNAP tracker (kept for SNAP users) */}
-      {(profile?.snap_status || profile?.food_assistance_status === "snap") && <SnapTracker />}
+      {/* Hive Family Assistance */}
+      <div className="mt-3 rounded-2xl p-4 bg-[#FCE7EC] flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Heart className="w-4 h-4 fill-[#E63B6B] text-[#E63B6B]" />
+            <span className="font-bold text-[15px] text-[#1a1a1a]">Hive Family Assistance</span>
+          </div>
+          <p className="text-[13px] text-[#4a4a4a] leading-snug">
+            Get help with food, housing, bills, childcare, healthcare, and more.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/dashboard/resources")}
+          className="bg-[#E63B6B] text-white text-[13px] font-semibold px-4 py-2.5 rounded-lg shrink-0"
+        >
+          Find Help
+        </button>
+      </div>
+
+      {/* Apollo Reborn */}
+      <div className="mt-3 rounded-2xl p-4 bg-white border border-[#EEE7DA] flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <Dumbbell className="w-4 h-4 text-[#5B3FBF]" />
+            <span className="font-bold text-[15px] text-[#1a1a1a]">Move With Your Meal Plan</span>
+          </div>
+          <p className="text-[12px] font-semibold text-[#5B3FBF] mb-1">Powered by Apollo Reborn</p>
+          <p className="text-[12px] text-[#4a4a4a] mb-3">
+            Recommended: 20-Minute Beginner Workout
+          </p>
+          <button
+            onClick={() => navigate("/dashboard/settings")}
+            className="bg-[#5B3FBF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
+          >
+            Download Apollo Reborn
+          </button>
+        </div>
+        <img src={apolloWomanImg} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
+      </div>
     </div>
+  );
+}
+
+function ActionCard({
+  bg,
+  title,
+  subtitle,
+  image,
+  onClick,
+}: {
+  bg: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left rounded-2xl p-4 flex items-center gap-3 relative overflow-hidden active:scale-[0.99] transition-transform"
+      style={{ backgroundColor: bg }}
+    >
+      <div className="flex-1 min-w-0 pr-1">
+        <h3 className="text-white font-bold text-[16px] leading-tight">{title}</h3>
+        <p className="text-white/85 text-[12.5px] mt-1 leading-snug">{subtitle}</p>
+      </div>
+      <img src={image} alt="" loading="lazy" className="w-20 h-20 object-contain shrink-0" />
+      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+        <ArrowRight className="w-4 h-4 text-[#1a1a1a]" />
+      </div>
+    </button>
   );
 }
