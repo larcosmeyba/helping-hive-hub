@@ -65,7 +65,7 @@ export default function DashboardHome() {
           title="Cook From What I Have"
           subtitle="Use your fridge & pantry first"
           image={fridgeImg}
-          onClick={() => navigate("/dashboard/fridge-chef")}
+          onClick={() => navigate("/dashboard/cook")}
         />
       </div>
 
