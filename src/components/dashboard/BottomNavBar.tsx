@@ -7,7 +7,7 @@ const tabs = [
   { label: "Meal Plan", to: "/dashboard/meal-plan", icon: CalendarDays },
   { label: "Pantry", to: "/dashboard/pantry", icon: Package },
   { label: "Grocery", to: "/dashboard/grocery-list", icon: ShoppingCart },
-  { label: "Hive AI", to: "/dashboard/fridge-chef", icon: Sparkles },
+  { label: "Hive AI", to: "/dashboard/hive-ai", icon: Sparkles },
 ];
 
 export function BottomNavBar() {

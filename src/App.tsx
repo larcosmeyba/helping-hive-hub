@@ -57,6 +57,11 @@ const BulkBuyingGuide = lazy(() => import("./pages/dashboard/BulkBuyingGuide.tsx
 const FamilyAssistanceIntakePage = lazy(() => import("./pages/dashboard/FamilyAssistanceIntakePage.tsx"));
 const FamilyAssistanceMatchesPage = lazy(() => import("./pages/dashboard/FamilyAssistanceMatchesPage.tsx"));
 const FoodWasteAlertsPage = lazy(() => import("./pages/dashboard/FoodWasteAlertsPage.tsx"));
+const HiveAiHub = lazy(() => import("./pages/dashboard/HiveAiHub.tsx"));
+const HiveAiScanPage = lazy(() => import("./pages/dashboard/HiveAiScanPage.tsx"));
+const HiveAiScanReviewPage = lazy(() => import("./pages/dashboard/HiveAiScanReviewPage.tsx"));
+const HiveAiAddItemPage = lazy(() => import("./pages/dashboard/HiveAiAddItemPage.tsx"));
+const MealCookedPage = lazy(() => import("./pages/dashboard/MealCookedPage.tsx"));
 
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout.tsx"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.tsx"));
@@ -143,6 +148,11 @@ const App = () => {
                     <Route path="resources/detail/:id" element={<ResourceDetailPage />} />
                     <Route path="resources/:categorySlug" element={<ResourceCategoryPage />} />
                     <Route path="food-waste-alerts" element={<FoodWasteAlertsPage />} />
+                    <Route path="hive-ai" element={<HiveAiHub />} />
+                    <Route path="hive-ai/scan" element={<HiveAiScanPage />} />
+                    <Route path="hive-ai/scan/review" element={<HiveAiScanReviewPage />} />
+                    <Route path="hive-ai/add" element={<HiveAiAddItemPage />} />
+                    <Route path="cook/recipes/:id/cooked" element={<MealCookedPage />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
