@@ -1115,8 +1115,20 @@ export type Database = {
           account_status: string | null
           allergies: string[] | null
           analytics_opt_in: boolean
+          assistance_childcare: boolean | null
+          assistance_diapers: boolean | null
+          assistance_employment: boolean | null
+          assistance_food: boolean | null
+          assistance_healthcare: boolean | null
+          assistance_housing: boolean | null
+          assistance_snap: boolean | null
+          assistance_transportation: boolean | null
+          assistance_utilities: boolean | null
+          assistance_wic: boolean | null
           beta_user: boolean
+          children_5_to_12: number | null
           children_ages: string[] | null
+          children_under_5: number | null
           city: string | null
           cooking_confidence: string | null
           cooking_style: string | null
@@ -1129,6 +1141,12 @@ export type Database = {
           email: string | null
           food_assistance_status: string | null
           food_preferences: string[] | null
+          food_waste_alerts_enabled: boolean | null
+          food_waste_recipe_suggestions_enabled: boolean | null
+          goal_build_muscle: boolean | null
+          goal_improve_mobility: boolean | null
+          goal_lose_weight: boolean | null
+          goal_stay_active: boolean | null
           home_store: string | null
           household_size: number | null
           id: string
@@ -1145,14 +1163,18 @@ export type Database = {
           notification_preferences: Json
           onboarding_completed_at: string | null
           phone_number: string | null
+          plaid_interest: string | null
+          preferred_store_id: string | null
           preferred_stores: string[] | null
           questionnaire_completed: boolean | null
           questionnaire_progress: Json | null
           referral_source: string | null
+          seniors_65_plus: number | null
           show_snap_tracker: boolean
           snap_deposit_day: number | null
           snap_status: boolean | null
           state: string | null
+          teenagers: number | null
           tier: string
           updated_at: string
           user_goals: string[] | null
@@ -1168,8 +1190,20 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           analytics_opt_in?: boolean
+          assistance_childcare?: boolean | null
+          assistance_diapers?: boolean | null
+          assistance_employment?: boolean | null
+          assistance_food?: boolean | null
+          assistance_healthcare?: boolean | null
+          assistance_housing?: boolean | null
+          assistance_snap?: boolean | null
+          assistance_transportation?: boolean | null
+          assistance_utilities?: boolean | null
+          assistance_wic?: boolean | null
           beta_user?: boolean
+          children_5_to_12?: number | null
           children_ages?: string[] | null
+          children_under_5?: number | null
           city?: string | null
           cooking_confidence?: string | null
           cooking_style?: string | null
@@ -1182,6 +1216,12 @@ export type Database = {
           email?: string | null
           food_assistance_status?: string | null
           food_preferences?: string[] | null
+          food_waste_alerts_enabled?: boolean | null
+          food_waste_recipe_suggestions_enabled?: boolean | null
+          goal_build_muscle?: boolean | null
+          goal_improve_mobility?: boolean | null
+          goal_lose_weight?: boolean | null
+          goal_stay_active?: boolean | null
           home_store?: string | null
           household_size?: number | null
           id?: string
@@ -1198,14 +1238,18 @@ export type Database = {
           notification_preferences?: Json
           onboarding_completed_at?: string | null
           phone_number?: string | null
+          plaid_interest?: string | null
+          preferred_store_id?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           questionnaire_progress?: Json | null
           referral_source?: string | null
+          seniors_65_plus?: number | null
           show_snap_tracker?: boolean
           snap_deposit_day?: number | null
           snap_status?: boolean | null
           state?: string | null
+          teenagers?: number | null
           tier?: string
           updated_at?: string
           user_goals?: string[] | null
@@ -1221,8 +1265,20 @@ export type Database = {
           account_status?: string | null
           allergies?: string[] | null
           analytics_opt_in?: boolean
+          assistance_childcare?: boolean | null
+          assistance_diapers?: boolean | null
+          assistance_employment?: boolean | null
+          assistance_food?: boolean | null
+          assistance_healthcare?: boolean | null
+          assistance_housing?: boolean | null
+          assistance_snap?: boolean | null
+          assistance_transportation?: boolean | null
+          assistance_utilities?: boolean | null
+          assistance_wic?: boolean | null
           beta_user?: boolean
+          children_5_to_12?: number | null
           children_ages?: string[] | null
+          children_under_5?: number | null
           city?: string | null
           cooking_confidence?: string | null
           cooking_style?: string | null
@@ -1235,6 +1291,12 @@ export type Database = {
           email?: string | null
           food_assistance_status?: string | null
           food_preferences?: string[] | null
+          food_waste_alerts_enabled?: boolean | null
+          food_waste_recipe_suggestions_enabled?: boolean | null
+          goal_build_muscle?: boolean | null
+          goal_improve_mobility?: boolean | null
+          goal_lose_weight?: boolean | null
+          goal_stay_active?: boolean | null
           home_store?: string | null
           household_size?: number | null
           id?: string
@@ -1251,14 +1313,18 @@ export type Database = {
           notification_preferences?: Json
           onboarding_completed_at?: string | null
           phone_number?: string | null
+          plaid_interest?: string | null
+          preferred_store_id?: string | null
           preferred_stores?: string[] | null
           questionnaire_completed?: boolean | null
           questionnaire_progress?: Json | null
           referral_source?: string | null
+          seniors_65_plus?: number | null
           show_snap_tracker?: boolean
           snap_deposit_day?: number | null
           snap_status?: boolean | null
           state?: string | null
+          teenagers?: number | null
           tier?: string
           updated_at?: string
           user_goals?: string[] | null
