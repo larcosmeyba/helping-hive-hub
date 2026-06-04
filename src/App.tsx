@@ -39,6 +39,8 @@ const MealPlanSetupPage = lazy(() => import("./pages/dashboard/MealPlanSetupPage
 const MealPlanGeneratingPage = lazy(() => import("./pages/dashboard/MealPlanGeneratingPage.tsx"));
 const WhyThisPlanPage = lazy(() => import("./pages/dashboard/WhyThisPlanPage.tsx"));
 const GroceryListPage = lazy(() => import("./pages/dashboard/GroceryListPage.tsx"));
+const GrocerySummaryPage = lazy(() => import("./pages/dashboard/GrocerySummaryPage.tsx"));
+const GroceryReviewPage = lazy(() => import("./pages/dashboard/GroceryReviewPage.tsx"));
 const PantryPage = lazy(() => import("./pages/dashboard/PantryPage.tsx"));
 const BudgetInsightsPage = lazy(() => import("./pages/dashboard/BudgetInsightsPage.tsx"));
 const FridgeChefPage = lazy(() => import("./pages/dashboard/FridgeChefPage.tsx"));
@@ -115,7 +117,9 @@ const App = () => {
                     <Route path="meal-plan/setup" element={<MealPlanSetupPage />} />
                     <Route path="meal-plan/generating" element={<MealPlanGeneratingPage />} />
                     <Route path="meal-plan/why" element={<WhyThisPlanPage />} />
-                    <Route path="grocery-list" element={<GroceryListPage />} />
+                    <Route path="grocery-list" element={<GrocerySummaryPage />} />
+                    <Route path="grocery-list/review" element={<GroceryReviewPage />} />
+                    <Route path="grocery-list/details" element={<GroceryListPage />} />
                     <Route path="pantry" element={<PantryPage />} />
                     <Route path="fridge-chef" element={<FridgeChefPage />} />
                     <Route path="budget" element={<BudgetInsightsPage />} />
