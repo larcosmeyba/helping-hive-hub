@@ -54,6 +54,9 @@ const ResourceHubHome = lazy(() => import("./pages/dashboard/ResourceHubHome.tsx
 const ResourceCategoryPage = lazy(() => import("./pages/dashboard/ResourceCategoryPage.tsx"));
 const ResourceDetailPage = lazy(() => import("./pages/dashboard/ResourceDetailPage.tsx"));
 const BulkBuyingGuide = lazy(() => import("./pages/dashboard/BulkBuyingGuide.tsx"));
+const FamilyAssistanceIntakePage = lazy(() => import("./pages/dashboard/FamilyAssistanceIntakePage.tsx"));
+const FamilyAssistanceMatchesPage = lazy(() => import("./pages/dashboard/FamilyAssistanceMatchesPage.tsx"));
+const FoodWasteAlertsPage = lazy(() => import("./pages/dashboard/FoodWasteAlertsPage.tsx"));
 
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout.tsx"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.tsx"));
@@ -134,9 +137,12 @@ const App = () => {
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="support" element={<SupportPage />} />
                     <Route path="resources" element={<ResourceHubHome />} />
+                    <Route path="resources/intake" element={<FamilyAssistanceIntakePage />} />
+                    <Route path="resources/matches" element={<FamilyAssistanceMatchesPage />} />
                     <Route path="resources/bulk-buying" element={<BulkBuyingGuide />} />
                     <Route path="resources/detail/:id" element={<ResourceDetailPage />} />
                     <Route path="resources/:categorySlug" element={<ResourceCategoryPage />} />
+                    <Route path="food-waste-alerts" element={<FoodWasteAlertsPage />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>

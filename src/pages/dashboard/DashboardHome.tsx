@@ -82,7 +82,7 @@ export default function DashboardHome() {
               You have spinach, eggs, and chicken that may go bad soon. I can build meals to use these first and save you about $8 this week.
             </p>
             <button
-              onClick={() => navigate("/dashboard/fridge-chef")}
+              onClick={() => navigate("/dashboard/food-waste-alerts")}
               className="bg-[#1F5A3D] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
             >
               Use These Items First
@@ -104,7 +104,7 @@ export default function DashboardHome() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/dashboard/resources")}
+          onClick={() => navigate("/dashboard/resources/intake")}
           className="bg-[#E63B6B] text-white text-[13px] font-semibold px-4 py-2.5 rounded-lg shrink-0"
         >
           Find Help
