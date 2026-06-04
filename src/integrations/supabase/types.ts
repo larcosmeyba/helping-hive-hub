@@ -429,6 +429,9 @@ export type Database = {
           meal_plan_id: string | null
           needed_for_meals: string[] | null
           quantity: string
+          selected_for_instacart: boolean
+          source_ref_id: string | null
+          source_type: string
           store_section: string | null
           unit: string | null
           user_id: string
@@ -446,6 +449,9 @@ export type Database = {
           meal_plan_id?: string | null
           needed_for_meals?: string[] | null
           quantity: string
+          selected_for_instacart?: boolean
+          source_ref_id?: string | null
+          source_type?: string
           store_section?: string | null
           unit?: string | null
           user_id: string
@@ -463,6 +469,9 @@ export type Database = {
           meal_plan_id?: string | null
           needed_for_meals?: string[] | null
           quantity?: string
+          selected_for_instacart?: boolean
+          source_ref_id?: string | null
+          source_type?: string
           store_section?: string | null
           unit?: string | null
           user_id?: string
