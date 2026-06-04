@@ -100,14 +100,31 @@ export default function SettingsPage() {
     if (!user) return;
     supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
       if (!data) return;
-      setHouseholdSize(data.household_size ?? 2);
-      setWeeklyBudget(data.weekly_budget != null ? Number(data.weekly_budget) : 75);
-      setZipCode(data.zip_code ?? "");
-      setSelectedStores((data.preferred_stores as string[]) ?? []);
-      setHomeStore(data.home_store ?? "");
-      setAllergies((data.allergies as string[]) ?? []);
-      setDietaryPreferences((data.dietary_preferences as string[]) ?? []);
-      const prefs = (data.notification_preferences as Record<string, boolean> | null) ?? {};
+      const d = data as Record<string, any>;
+      setHouseholdSize(d.household_size ?? 2);
+      setWeeklyBudget(d.weekly_budget != null ? Number(d.weekly_budget) : 75);
+      setZipCode(d.zip_code ?? "");
+      setSelectedStores((d.preferred_stores as string[]) ?? []);
+      setHomeStore(d.home_store ?? "");
+      setAllergies((d.allergies as string[]) ?? []);
+      setDietaryPreferences((d.dietary_preferences as string[]) ?? []);
+      setChildrenUnder5(d.children_under_5 ?? 0);
+      setChildren5to12(d.children_5_to_12 ?? 0);
+      setTeenagers(d.teenagers ?? 0);
+      setSeniors65plus(d.seniors_65_plus ?? 0);
+      setCity(d.city ?? "");
+      setStateCode(d.state ?? "");
+      setCookingConfidence(d.cooking_confidence ?? "");
+      const a: Record<string, boolean> = {};
+      ASSISTANCE_OPTIONS.forEach((o) => { a[o.key] = !!d[o.key]; });
+      setAssistance(a);
+      const g: Record<string, boolean> = {};
+      APOLLO_GOALS.forEach((o) => { g[o.key] = !!d[o.key]; });
+      setGoals(g);
+      setFoodWasteAlerts(d.food_waste_alerts_enabled ?? true);
+      setFoodWasteSuggestions(d.food_waste_recipe_suggestions_enabled ?? true);
+      setPlaidInterest(d.plaid_interest ?? "");
+      const prefs = (d.notification_preferences as Record<string, boolean> | null) ?? {};
       setNotifPrefs({
         meal_plan_reminders: prefs.meal_plan_reminders ?? true,
         snap_deposit_alerts: prefs.snap_deposit_alerts ?? true,
@@ -134,29 +151,49 @@ export default function SettingsPage() {
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
   };
 
+  const toggleMap = (map: Record<string, boolean>, setter: (m: Record<string, boolean>) => void, key: string) => {
+    setter({ ...map, [key]: !map[key] });
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setLoading(true);
     try {
+      const assistanceCols = ASSISTANCE_OPTIONS.reduce((acc, o) => { acc[o.key] = !!assistance[o.key]; return acc; }, {} as Record<string, boolean>);
+      const goalCols = APOLLO_GOALS.reduce((acc, o) => { acc[o.key] = !!goals[o.key]; return acc; }, {} as Record<string, boolean>);
+
       const { error } = await supabase.from("profiles").update({
         household_size: householdSize,
+        children_under_5: childrenUnder5,
+        children_5_to_12: children5to12,
+        teenagers: teenagers,
+        seniors_65_plus: seniors65plus,
         weekly_budget: weeklyBudget,
         zip_code: zipCode,
+        city: city || null,
+        state: stateCode || null,
         preferred_stores: selectedStores,
         home_store: homeStore || null,
         allergies,
         dietary_preferences: dietaryPreferences,
-        
+        cooking_confidence: cookingConfidence || null,
+        ...assistanceCols,
+        ...goalCols,
+        food_waste_alerts_enabled: foodWasteAlerts,
+        food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
+        plaid_interest: plaidInterest || null,
       }).eq("user_id", user.id);
       if (error) throw error;
       await refreshProfile?.();
-      toast({ title: "Saved!", description: "Your settings have been updated. A new meal plan will be generated." });
+      toast({ title: "Saved!", description: "Your settings have been updated." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleSignOut = async () => {
     await signOut();
