@@ -75,9 +75,20 @@ export default function CookRecipeDetailPage() {
   const handleCook = async () => {
     setCooking(true);
     try {
-      await markRecipeCooked(recipe.id);
-      toast({ title: "Marked as cooked!", description: "We updated your pantry quantities." });
-      navigate("/dashboard/cook");
+      const result: any = await markRecipeCooked(recipe.id);
+      const updated_items = (result?.updated_items ?? []).map((u: any) => ({
+        name: u.item_name ?? u.name ?? "Item",
+        before: u.before ?? u.previous_quantity ?? "",
+        after: u.after ?? u.new_quantity ?? (u.depleted ? "Used" : ""),
+      }));
+      navigate(`/dashboard/cook/recipes/${recipe.id}/cooked`, {
+        state: {
+          recipe_name: recipe.recipe_name,
+          updated_items,
+          money_saved: result?.money_saved ?? (recipe as any).estimated_savings ?? 0,
+          food_waste_prevented: result?.food_waste_prevented ?? updated_items.length,
+        },
+      });
     } catch (err) {
       toast({ title: "Couldn't mark cooked", description: (err as Error).message, variant: "destructive" });
     } finally {
