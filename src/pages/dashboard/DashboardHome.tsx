@@ -29,28 +29,13 @@ export default function DashboardHome() {
   return (
     <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 bg-white min-h-full">
       {/* Greeting */}
-      <div className="flex items-start justify-between gap-3 pt-2 pb-1">
-        <div>
-          <h1 className="text-[22px] font-extrabold text-[#1a1a1a] leading-tight">
-            {greeting}, {firstName} <span aria-hidden>☀️</span>
-          </h1>
-          <p className="text-[13px] text-[#6b6b6b] mt-1">
-            Let's save money, eat better, and feel your best.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/dashboard/settings")}
-          className="w-11 h-11 rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-white shadow-sm"
-          aria-label="Settings"
-        >
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url as string} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-              {firstName.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </button>
+      <div className="pt-2 pb-1">
+        <h1 className="text-[22px] font-extrabold text-[#1a1a1a] leading-tight">
+          {greeting}, {firstName} <span aria-hidden>☀️</span>
+        </h1>
+        <p className="text-[13px] text-[#6b6b6b] mt-1">
+          Let's save money, eat better, and feel your best.
+        </p>
       </div>
 
       {/* Section heading */}
