@@ -359,10 +359,80 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div>
+          <Label>Cooking confidence</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {COOKING_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setCookingConfidence(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${cookingConfidence === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Family assistance needs</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Tap any that apply. Hive Family Assistance uses these to recommend resources.</p>
+          <div className="flex flex-wrap gap-2">
+            {ASSISTANCE_OPTIONS.map((opt) => (
+              <button key={opt.key} onClick={() => toggleMap(assistance, setAssistance, opt.key)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${assistance[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Food waste preferences</Label>
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-foreground">Expiration alerts</p>
+                <p className="text-[11px] text-muted-foreground">Warn me before pantry items spoil.</p>
+              </div>
+              <Switch checked={foodWasteAlerts} onCheckedChange={setFoodWasteAlerts} />
+            </div>
+            <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-foreground">Recipe suggestions for leftovers</p>
+                <p className="text-[11px] text-muted-foreground">"Use it up" recipes from current pantry.</p>
+              </div>
+              <Switch checked={foodWasteSuggestions} onCheckedChange={setFoodWasteSuggestions} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label>Budget tracking (Plaid)</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Connect your bank later for grocery spend insights.</p>
+          <div className="flex flex-wrap gap-2">
+            {PLAID_OPTIONS.map((opt) => (
+              <button key={opt.value} onClick={() => setPlaidInterest(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${plaidInterest === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Wellness goals (Apollo Reborn)</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {APOLLO_GOALS.map((opt) => (
+              <button key={opt.key} onClick={() => toggleMap(goals, setGoals, opt.key)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${goals[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
-          <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save & Regenerate Plan"}
+          <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Changes"}
         </Button>
+
       </div>
 
       {/* Permissions Section */}
