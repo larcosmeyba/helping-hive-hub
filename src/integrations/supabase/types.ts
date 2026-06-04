@@ -417,36 +417,54 @@ export type Database = {
       }
       grocery_list_items: {
         Row: {
+          already_have: boolean | null
+          category: string | null
           created_at: string
           estimated_price: number | null
-          grocery_list_id: string
+          grocery_list_id: string | null
           id: string
           ingredient_name: string
+          instacart_search_term: string | null
           is_checked: boolean | null
+          meal_plan_id: string | null
+          needed_for_meals: string[] | null
           quantity: string
           store_section: string | null
+          unit: string | null
           user_id: string
         }
         Insert: {
+          already_have?: boolean | null
+          category?: string | null
           created_at?: string
           estimated_price?: number | null
-          grocery_list_id: string
+          grocery_list_id?: string | null
           id?: string
           ingredient_name: string
+          instacart_search_term?: string | null
           is_checked?: boolean | null
+          meal_plan_id?: string | null
+          needed_for_meals?: string[] | null
           quantity: string
           store_section?: string | null
+          unit?: string | null
           user_id: string
         }
         Update: {
+          already_have?: boolean | null
+          category?: string | null
           created_at?: string
           estimated_price?: number | null
-          grocery_list_id?: string
+          grocery_list_id?: string | null
           id?: string
           ingredient_name?: string
+          instacart_search_term?: string | null
           is_checked?: boolean | null
+          meal_plan_id?: string | null
+          needed_for_meals?: string[] | null
           quantity?: string
           store_section?: string | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: [
@@ -776,6 +794,94 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_ingredients: {
+        Row: {
+          already_have: boolean
+          created_at: string
+          estimated_price: number | null
+          id: string
+          instacart_search_term: string | null
+          item_name: string
+          meal_id: string
+          quantity: string | null
+          source: string | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          already_have?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          id?: string
+          instacart_search_term?: string | null
+          item_name: string
+          meal_id: string
+          quantity?: string | null
+          source?: string | null
+          unit?: string | null
+          user_id: string
+        }
+        Update: {
+          already_have?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          id?: string
+          instacart_search_term?: string | null
+          item_name?: string
+          meal_id?: string
+          quantity?: string | null
+          source?: string | null
+          unit?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_ingredients_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plan_meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_plan_days: {
+        Row: {
+          created_at: string
+          date: string | null
+          day_name: string
+          id: string
+          meal_plan_id: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          day_name: string
+          id?: string
+          meal_plan_id: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          day_name?: string
+          id?: string
+          meal_plan_id?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_days_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plan_items: {
         Row: {
           calories: number | null
@@ -835,36 +941,132 @@ export type Database = {
           },
         ]
       }
+      meal_plan_meals: {
+        Row: {
+          calories_estimate: number | null
+          cook_time_minutes: number | null
+          created_at: string
+          day_id: string | null
+          description: string | null
+          difficulty: string | null
+          estimated_cost: number | null
+          estimated_cost_per_serving: number | null
+          food_waste_reason: string | null
+          id: string
+          instructions: Json | null
+          marked_cooked: boolean
+          meal_name: string
+          meal_plan_id: string
+          meal_type: string
+          prep_time_minutes: number | null
+          protein_estimate: number | null
+          user_id: string
+        }
+        Insert: {
+          calories_estimate?: number | null
+          cook_time_minutes?: number | null
+          created_at?: string
+          day_id?: string | null
+          description?: string | null
+          difficulty?: string | null
+          estimated_cost?: number | null
+          estimated_cost_per_serving?: number | null
+          food_waste_reason?: string | null
+          id?: string
+          instructions?: Json | null
+          marked_cooked?: boolean
+          meal_name: string
+          meal_plan_id: string
+          meal_type: string
+          prep_time_minutes?: number | null
+          protein_estimate?: number | null
+          user_id: string
+        }
+        Update: {
+          calories_estimate?: number | null
+          cook_time_minutes?: number | null
+          created_at?: string
+          day_id?: string | null
+          description?: string | null
+          difficulty?: string | null
+          estimated_cost?: number | null
+          estimated_cost_per_serving?: number | null
+          food_waste_reason?: string | null
+          id?: string
+          instructions?: Json | null
+          marked_cooked?: boolean
+          meal_name?: string
+          meal_plan_id?: string
+          meal_type?: string
+          prep_time_minutes?: number | null
+          protein_estimate?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_meals_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plan_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_meals_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plans: {
         Row: {
           created_at: string
+          estimated_cost_per_serving: number | null
+          estimated_daily_average: number | null
           id: string
           plan_data: Json | null
+          savings_estimate: number | null
           status: string | null
           total_estimated_cost: number | null
+          total_meals: number | null
           updated_at: string
           user_id: string
           week_start: string
+          week_start_date: string | null
+          why_this_plan: Json | null
         }
         Insert: {
           created_at?: string
+          estimated_cost_per_serving?: number | null
+          estimated_daily_average?: number | null
           id?: string
           plan_data?: Json | null
+          savings_estimate?: number | null
           status?: string | null
           total_estimated_cost?: number | null
+          total_meals?: number | null
           updated_at?: string
           user_id: string
           week_start: string
+          week_start_date?: string | null
+          why_this_plan?: Json | null
         }
         Update: {
           created_at?: string
+          estimated_cost_per_serving?: number | null
+          estimated_daily_average?: number | null
           id?: string
           plan_data?: Json | null
+          savings_estimate?: number | null
           status?: string | null
           total_estimated_cost?: number | null
+          total_meals?: number | null
           updated_at?: string
           user_id?: string
           week_start?: string
+          week_start_date?: string | null
+          why_this_plan?: Json | null
         }
         Relationships: []
       }
@@ -983,11 +1185,15 @@ export type Database = {
           category: string | null
           created_at: string
           expiration_date: string | null
+          freshness_status: string | null
           id: string
           is_low_stock: boolean | null
           is_out_of_stock: boolean | null
           item_name: string
+          location: string | null
+          purchase_date: string | null
           quantity: string | null
+          unit: string | null
           updated_at: string
           user_id: string
         }
@@ -995,11 +1201,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           expiration_date?: string | null
+          freshness_status?: string | null
           id?: string
           is_low_stock?: boolean | null
           is_out_of_stock?: boolean | null
           item_name: string
+          location?: string | null
+          purchase_date?: string | null
           quantity?: string | null
+          unit?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1007,11 +1217,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           expiration_date?: string | null
+          freshness_status?: string | null
           id?: string
           is_low_stock?: boolean | null
           is_out_of_stock?: boolean | null
           item_name?: string
+          location?: string | null
+          purchase_date?: string | null
           quantity?: string | null
+          unit?: string | null
           updated_at?: string
           user_id?: string
         }
