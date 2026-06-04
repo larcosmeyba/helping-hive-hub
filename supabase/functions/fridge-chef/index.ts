@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { buildProfileContext, profileContextToPromptBlock } from "../_shared/profileContext.ts";
 
 Deno.serve(async (req) => {
   const pf = handlePreflight(req);
