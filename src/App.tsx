@@ -56,6 +56,8 @@ const ResourceDetailPage = lazy(() => import("./pages/dashboard/ResourceDetailPa
 const BulkBuyingGuide = lazy(() => import("./pages/dashboard/BulkBuyingGuide.tsx"));
 const FamilyAssistanceIntakePage = lazy(() => import("./pages/dashboard/FamilyAssistanceIntakePage.tsx"));
 const FamilyAssistanceMatchesPage = lazy(() => import("./pages/dashboard/FamilyAssistanceMatchesPage.tsx"));
+const FamilyMatchDetailPage = lazy(() => import("./pages/dashboard/FamilyMatchDetailPage.tsx"));
+const FamilyAssistancePlanPage = lazy(() => import("./pages/dashboard/FamilyAssistancePlanPage.tsx"));
 const FoodWasteAlertsPage = lazy(() => import("./pages/dashboard/FoodWasteAlertsPage.tsx"));
 const HiveAiHub = lazy(() => import("./pages/dashboard/HiveAiHub.tsx"));
 const HiveAiScanPage = lazy(() => import("./pages/dashboard/HiveAiScanPage.tsx"));
@@ -144,6 +146,8 @@ const App = () => {
                     <Route path="resources" element={<ResourceHubHome />} />
                     <Route path="resources/intake" element={<FamilyAssistanceIntakePage />} />
                     <Route path="resources/matches" element={<FamilyAssistanceMatchesPage />} />
+                    <Route path="resources/match/:id" element={<FamilyMatchDetailPage />} />
+                    <Route path="resources/plan" element={<FamilyAssistancePlanPage />} />
                     <Route path="resources/bulk-buying" element={<BulkBuyingGuide />} />
                     <Route path="resources/detail/:id" element={<ResourceDetailPage />} />
                     <Route path="resources/:categorySlug" element={<ResourceCategoryPage />} />

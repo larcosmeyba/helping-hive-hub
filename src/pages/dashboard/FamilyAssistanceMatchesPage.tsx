@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { matchFamilyResources, saveResource } from "@/lib/familyAssistance";
-import { ArrowRight, BookmarkPlus, Phone, ExternalLink, Heart } from "lucide-react";
+import { matchFamilyResources } from "@/lib/familyAssistance";
 import { toast } from "@/components/ui/sonner";
+import { Apple, Home, Baby, Zap, ShoppingBasket, HeartPulse, Car, Briefcase, ChevronRight, BookmarkCheck } from "lucide-react";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  food_bank: "Food bank", snap: "SNAP", wic: "WIC", diapers_formula: "Diapers & formula",
-  housing: "Housing", utilities: "Utilities", healthcare: "Healthcare",
-  transportation: "Transportation", childcare: "Childcare", employment: "Employment",
+const CATEGORY_META: Record<string, { label: string; subtitle: string; icon: React.ComponentType<any>; bg: string; iconColor: string }> = {
+  snap: { label: "SNAP Benefits", subtitle: "Food assistance for your family", icon: Apple, bg: "#FFE5E5", iconColor: "#D64545" },
+  wic: { label: "WIC Program", subtitle: "Nutrition for women & children", icon: Baby, bg: "#FFF1D6", iconColor: "#B5781A" },
+  food_bank: { label: "Food Pantry", subtitle: "Local food pantries near you", icon: ShoppingBasket, bg: "#E4F4E4", iconColor: "#1F7A3D" },
+  housing: { label: "Housing Assistance", subtitle: "Help with rent or housing", icon: Home, bg: "#EAE4FB", iconColor: "#5B3FBF" },
+  utilities: { label: "Utility Assistance", subtitle: "Help with electricity, gas, water", icon: Zap, bg: "#FFF8E0", iconColor: "#B59500" },
+  diapers_formula: { label: "Diapers & Formula", subtitle: "Baby essentials assistance", icon: Baby, bg: "#FCE7EC", iconColor: "#E63B6B" },
+  healthcare: { label: "Healthcare", subtitle: "Medical and clinic support", icon: HeartPulse, bg: "#E0F2FE", iconColor: "#0369A1" },
+  transportation: { label: "Transportation", subtitle: "Rides and bus passes", icon: Car, bg: "#F0F0F0", iconColor: "#1a1a1a" },
+  employment: { label: "Employment", subtitle: "Job search and training", icon: Briefcase, bg: "#E4F4E4", iconColor: "#1F7A3D" },
+  childcare: { label: "Childcare", subtitle: "Affordable childcare programs", icon: Baby, bg: "#FCE7EC", iconColor: "#E63B6B" },
 };
 
 export default function FamilyAssistanceMatchesPage() {
@@ -18,55 +25,64 @@ export default function FamilyAssistanceMatchesPage() {
 
   useEffect(() => {
     matchFamilyResources()
-      .then((r) => { setMatches(r.matches ?? []); setDisclaimer(r.disclaimer ?? ""); })
+      .then((r) => {
+        setMatches(r.matches ?? []);
+        setDisclaimer(r.disclaimer ?? "Based on your answers, these resources may help.");
+      })
       .catch((e) => toast.error(e?.message ?? "Could not load resources"))
       .finally(() => setLoading(false));
   }, []);
 
-  const onSave = async (id: string) => {
-    try { await saveResource(id); toast.success("Saved"); } catch (e: any) { toast.error(e?.message ?? "Could not save"); }
-  };
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 pb-8">
-      <div className="flex items-center gap-2 mb-1">
-        <Heart className="w-5 h-5 fill-[#E63B6B] text-[#E63B6B]" />
-        <h1 className="text-xl font-extrabold text-foreground">Resources for your family</h1>
-      </div>
-      {disclaimer && <p className="text-xs text-muted-foreground mb-4">{disclaimer}</p>}
+    <div className="max-w-md mx-auto px-1 pb-32">
+      <h1 className="text-center text-[20px] font-extrabold text-[#1a1a1a] mt-2 mb-1">Resources Near You</h1>
+      <p className="text-center text-[12.5px] text-[#6b6b6b] mb-5">
+        {disclaimer || "Based on your answers, these resources may help."}
+      </p>
 
       {loading ? (
-        <div className="py-12 text-center text-muted-foreground">Finding resources…</div>
+        <p className="text-center text-[#6b6b6b] py-10">Finding resources…</p>
       ) : matches.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-6 text-center">
-          <p className="text-foreground font-semibold mb-1">No matches yet</p>
-          <p className="text-sm text-muted-foreground mb-3">Tell us a bit more so we can find help in your area.</p>
-          <button onClick={() => navigate("/dashboard/resources/intake")} className="px-4 py-2 rounded-xl bg-[#E63B6B] text-white font-semibold">Answer a few questions</button>
+        <div className="bg-white border border-[#EAEAEA] rounded-2xl p-6 text-center">
+          <p className="font-semibold text-[#1a1a1a] mb-3">No matches yet.</p>
+          <button
+            onClick={() => navigate("/dashboard/resources/intake")}
+            className="px-4 py-2 rounded-xl bg-[#E63B6B] text-white font-semibold text-[14px]"
+          >
+            Answer a few questions
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {matches.map((r) => (
-            <article key={r.id} className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-[#E63B6B]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
-                  <h3 className="font-bold text-foreground leading-tight">{r.resource_name}</h3>
+        <div className="space-y-2">
+          {matches.map((m) => {
+            const meta = CATEGORY_META[m.category] ?? { label: m.resource_name, subtitle: "", icon: Apple, bg: "#F0F0F0", iconColor: "#1a1a1a" };
+            const Icon = meta.icon;
+            return (
+              <button
+                key={m.id}
+                onClick={() => navigate(`/dashboard/resources/match/${m.id}`)}
+                className="w-full text-left bg-white border border-[#EAEAEA] rounded-2xl p-3 flex items-center gap-3 active:scale-[0.99] transition-transform"
+              >
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: meta.bg }}>
+                  <Icon className="w-5 h-5" style={{ color: meta.iconColor }} />
                 </div>
-                <button onClick={() => onSave(r.id)} className="p-2 rounded-lg hover:bg-muted" aria-label="Save">
-                  <BookmarkPlus className="w-4 h-4 text-foreground" />
-                </button>
-              </div>
-              {r.ai_explanation && <p className="text-sm text-foreground/80 mb-2">{r.ai_explanation}</p>}
-              {r.description && <p className="text-xs text-muted-foreground mb-3">{r.description}</p>}
-              <div className="flex flex-wrap gap-2">
-                {r.phone && <a href={`tel:${r.phone}`} className="text-xs font-semibold text-foreground inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border"><Phone className="w-3 h-3" />{r.phone}</a>}
-                {r.website_url && <a href={r.website_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-foreground inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border"><ExternalLink className="w-3 h-3" />Website</a>}
-                {r.application_url && <a href={r.application_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E63B6B]"><ArrowRight className="w-3 h-3" />Apply</a>}
-              </div>
-            </article>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-[14px] text-[#1a1a1a]">{m.resource_name || meta.label}</p>
+                  <p className="text-[12px] text-[#6b6b6b] truncate">{m.description || meta.subtitle}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#999] shrink-0" />
+              </button>
+            );
+          })}
         </div>
       )}
+
+      <button
+        onClick={() => navigate("/dashboard/resources/plan")}
+        className="mt-5 w-full border border-[#E63B6B] text-[#E63B6B] font-bold text-[14px] py-3 rounded-xl flex items-center justify-center gap-2"
+      >
+        <BookmarkCheck className="w-4 h-4" /> View Your Family Assistance Plan
+      </button>
     </div>
   );
 }
