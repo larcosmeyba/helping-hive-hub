@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         model_used: model,
         provider,
         status: "pending",
-        metadata: { has_prompt: Boolean(prompt), enabled },
+        metadata: { has_prompt: Boolean(prompt) },
       })
       .select("id")
       .single();
