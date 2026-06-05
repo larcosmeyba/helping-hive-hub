@@ -73,6 +73,8 @@ export default function SettingsPage() {
   const [zipCode, setZipCode] = useState("");
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [homeStore, setHomeStore] = useState<string>("");
+  const retailers = useInstacartRetailers(/^\d{5}$/.test(zipCode) ? zipCode : null);
+  const storeOptions = retailers.retailers.map((r) => r.name);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   // Extended onboarding profile fields
