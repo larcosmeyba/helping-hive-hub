@@ -51,6 +51,10 @@ Deno.serve(async (req) => {
     });
 
   try {
+    const ip = clientIp(req);
+    if (!rateLimitOk(ip)) {
+      return json({ error: "Too many requests. Try again in a minute." }, 429);
+    }
     const url = new URL(req.url);
     const postal = (url.searchParams.get("postal_code") ?? "").trim();
     const country = (url.searchParams.get("country_code") ?? "US").trim().toUpperCase();
