@@ -146,6 +146,7 @@ export default function Questionnaire() {
 
   const [loading, setLoading] = useState(false);
   const zipValidation = useZipValidation(zipCode);
+  const retailers = useInstacartRetailers(zipValidation.isValid ? zipCode : null);
 
   useEffect(() => {
     if (!budgetTouched) setWeeklyBudget(defaultBudget(householdSize));
