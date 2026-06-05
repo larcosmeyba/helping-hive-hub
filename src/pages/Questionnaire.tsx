@@ -14,15 +14,10 @@ import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
+import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
 // 1 welcome + 11 onboarding sections
 const TOTAL_STEPS = 12;
-
-const HOME_STORE_OPTIONS = [
-  "Aldi", "Trader Joe's", "Whole Foods", "Target",
-  "Safeway / Albertsons", "H-E-B", "Publix", "Costco",
-  "Sam's Club", "Sprouts", "Other",
-];
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
