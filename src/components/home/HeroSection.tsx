@@ -1,83 +1,121 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Sparkles, Archive, ShoppingCart, Wallet, Heart, PlayCircle, Check } from "lucide-react";
 import { DownloadAppButtons } from "@/components/DownloadAppButtons";
 
-// Hero image lives in public/ for a stable URL so it can be preloaded from
-// index.html. Vite still serves it efficiently and avoids hash invalidation.
 const heroFamily = "/hero-family.jpg";
+
+const pills = [
+  { icon: Sparkles, label: "AI Meal Planning" },
+  { icon: Archive, label: "Pantry Tracking" },
+  { icon: ShoppingCart, label: "Grocery Lists" },
+  { icon: Wallet, label: "Budget Insights" },
+  { icon: Heart, label: "Family Assistance" },
+];
+
+const trustItems = [
+  "Free To Use",
+  "Powered By Instacart",
+  "AI-Powered",
+  "Built For Real Families",
+];
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden min-h-[90vh] flex items-center">
-      {/* Full-bleed family photo background */}
-      <div className="absolute inset-0">
-        <img
-          src={heroFamily}
-          alt="Real family planning a weekly grocery budget at home"
-          className="w-full h-full object-cover"
-          width={1920}
-          height={960}
-        />
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-hive-black/85 via-hive-black/70 to-hive-black/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-hive-black/60 via-transparent to-hive-black/30" />
-        {/* Extra readability overlay (Fix 2.1) */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.15) 100%)",
-          }}
-        />
-      </div>
-
-      <div className="container mx-auto px-4 py-12 md:py-24 relative z-10">
-        <div className="max-w-2xl">
+    <section className="relative overflow-hidden bg-honey-cream">
+      <div className="container mx-auto px-4 py-12 md:py-20 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          {/* LEFT */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
+            {/* Top badge: light green bg, dark green text */}
             <span
-              className="inline-block px-5 py-3 mb-5 text-xs font-extrabold tracking-[0.15em] uppercase rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm"
-              style={{ boxShadow: "0 4px 12px rgba(232, 168, 32, 0.25)" }}
+              className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[11px] font-extrabold tracking-[0.15em] uppercase rounded-full"
+              style={{ backgroundColor: "#E6F4E6", color: "#1F5A2C" }}
             >
-              100% free · Smarter grocery budgeting for every family
+              <Heart className="w-3.5 h-3.5" fill="#1F5A2C" stroke="#1F5A2C" />
+              Free For Every Family
             </span>
 
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-honey-cream leading-[1.1] mb-4">
-              Meals that fit your budget.{" "}
-              <span className="text-gradient-honey">At the store you already shop at.</span>
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.05] mb-5">
+              Save Money On Groceries.{" "}
+              <span className="text-primary block mt-2">Feed Your Family Smarter.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-honey-cream/85 mb-2 max-w-xl leading-relaxed">
-              Help The Hive helps every family budget smarter, spend less on groceries, and take the stress out of dinner — in under 5 minutes a week.
-            </p>
-            <p className="text-sm md:text-base text-honey-cream/60 mb-10 max-w-xl">
-              100% free for everyone. Proudly supports SNAP/EBT families through our Instacart partnership.
+            <p className="text-base md:text-lg text-foreground/75 mb-7 max-w-xl leading-relaxed">
+              Help The Hive combines AI meal planning, pantry tracking, grocery lists, budget insights, and family assistance resources to help families spend less and waste less.
             </p>
 
-            <div className="flex flex-col items-start gap-3">
+            {/* Feature Pills */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              {pills.map(({ icon: Icon, label }) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-foreground/10 text-sm font-medium text-foreground/80 shadow-sm"
+                >
+                  <Icon className="w-4 h-4 text-primary" />
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
               <DownloadAppButtons source="hero" />
               <Button
                 variant="outline"
                 size="lg"
-                className="text-base px-8 h-12 border-2 border-primary text-primary bg-transparent hover:bg-primary/10 hover:text-primary font-semibold"
+                className="text-base px-7 h-12 border-2 border-primary text-primary bg-white hover:bg-primary/5 font-semibold"
                 asChild
               >
-                <a href="#meal-plan-examples">
-                  View Sample Plans <ArrowRight className="w-4 h-4 ml-1" />
+                <a href="#how-it-works">
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  Watch Demo
                 </a>
               </Button>
             </div>
+
+            {/* Trust Row */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mb-5">
+              {trustItems.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/70"
+                >
+                  <Check className="w-4 h-4" style={{ color: "#1F5A2C" }} />
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <p className="text-sm font-semibold" style={{ color: "#1F5A2C" }}>
+              Built for every family.
+            </p>
+            <p className="text-sm text-foreground/60">
+              Especially helpful for SNAP, EBT, and budget-conscious households.
+            </p>
+          </motion.div>
+
+          {/* RIGHT - Hero image */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/5] lg:aspect-auto lg:h-[640px]"
+          >
+            <img
+              src={heroFamily}
+              alt="Real family planning a weekly grocery budget at home"
+              className="w-full h-full object-cover"
+              width={1200}
+              height={1500}
+            />
           </motion.div>
         </div>
       </div>
-
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/60 to-transparent" />
     </section>
   );
 }
