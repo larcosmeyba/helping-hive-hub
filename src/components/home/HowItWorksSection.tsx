@@ -108,21 +108,16 @@ export function HowItWorksSection() {
 
         {/* Phone mockups */}
         <div className="max-w-6xl mx-auto">
-          {/* Desktop / tablet: overlapping with glow */}
+          {/* Desktop / tablet: overlapping with centered backdrop */}
           <div className="relative hidden md:block mb-12">
-            {/* Warm glow backdrop */}
+            {/* Centered cream backdrop panel */}
             <div
               aria-hidden
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <div
-                className="w-[680px] h-[420px] rounded-full blur-3xl opacity-70"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at center, #D8A84C 0%, #FAF6EF 55%, transparent 75%)",
-                }}
-              />
+              <div className="w-[680px] h-[420px] rounded-[2.5rem] bg-[hsl(43_100%_96%)]" />
             </div>
+
 
             <div className="relative flex items-end justify-center gap-0 px-4">
               {phones.map((p, i) => (
@@ -172,14 +167,9 @@ export function HowItWorksSection() {
               aria-hidden
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <div
-                className="w-[320px] h-[280px] rounded-full blur-3xl opacity-60"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at center, #D8A84C 0%, #FAF6EF 55%, transparent 75%)",
-                }}
-              />
+              <div className="w-[320px] h-[280px] rounded-[2rem] bg-[hsl(43_100%_96%)]" />
             </div>
+
             <div className="relative flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
               {phones.map((p, i) => (
                 <div
