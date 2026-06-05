@@ -6,13 +6,8 @@ verify_jwt = false
 [functions.walmart-prices]
 verify_jwt = false
 
-[functions.usda-lookup]
-verify_jwt = false
 [functions.process-email-queue]
 verify_jwt = true
-
-[functions.bls-price-index]
-verify_jwt = false
 
 [functions.open-prices]
 verify_jwt = false

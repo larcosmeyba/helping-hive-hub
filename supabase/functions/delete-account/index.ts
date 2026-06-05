@@ -69,9 +69,8 @@ Deno.serve(async (req) => {
     // Hard-delete owned rows. Order: dependents -> parents.
     const userScoped = [
       "grocery_list_items", "grocery_lists",
-      "meal_plan_items", "meal_plans",
+      "meal_ingredients", "meal_plan_meals", "meal_plan_days", "meal_plans",
       "pantry_items", "food_waste_logs",
-      
       "support_tickets", "user_feedback",
       "push_tokens", "notifications",
       "user_roles", "admin_permissions",
