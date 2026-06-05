@@ -60,7 +60,7 @@ export const MOCK_SUMMARY: BudgetSummary = {
 };
 
 export const MOCK_TX: FoodTx[] = [
-  { id: "m1", merchant_name: "Trader Joe's", transaction_name: "TJ Groceries", amount: 48.32, date: today(-1), normalized_category: "groceries", pending: false },
+  { id: "m1", merchant_name: "Aldi", transaction_name: "Aldi Groceries", amount: 48.32, date: today(-1), normalized_category: "groceries", pending: false },
   { id: "m2", merchant_name: "Starbucks", transaction_name: "Coffee", amount: 5.75, date: today(-1), normalized_category: "coffee_drinks", pending: false },
   { id: "m3", merchant_name: "Chipotle", transaction_name: "Lunch", amount: 14.2, date: today(-2), normalized_category: "restaurants", pending: false },
   { id: "m4", merchant_name: "Instacart", transaction_name: "Costco delivery", amount: 86.4, date: today(-4), normalized_category: "instacart", pending: false },
