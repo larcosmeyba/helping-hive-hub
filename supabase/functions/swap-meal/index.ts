@@ -1,34 +1,62 @@
-// swap-meal: replace one selected meal in the active plan.
-// Mock for now; structure ready for OpenAI.
+// swap-meal: replace one selected meal in the active plan using OpenAI (gpt-5.4-mini).
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, buildMealPlanContext, getUserIdFromAuth } from "../_shared/mealPlanContext.ts";
+import { callOpenAI } from "../_shared/openaiClient.ts";
 
-const MOCK_BY_TYPE: Record<string, Array<Record<string, unknown>>> = {
-  breakfast: [
-    { name: "Greek Yogurt Parfait", calories: 320, protein: 18, cookTime: 5, estimatedCost: 2.5,
-      ingredients: ["Greek yogurt", "Granola", "Berries", "Honey"],
-      instructions: ["Layer yogurt", "Add granola + berries", "Drizzle honey"] },
-    { name: "Veggie Scramble", calories: 340, protein: 22, cookTime: 10, estimatedCost: 2.1,
-      ingredients: ["Eggs", "Spinach", "Bell pepper", "Cheddar"],
-      instructions: ["Sauté veg", "Add eggs", "Top with cheese"] },
-  ],
-  lunch: [
-    { name: "Chickpea Salad Bowl", calories: 420, protein: 18, cookTime: 10, estimatedCost: 2.8,
-      ingredients: ["Chickpeas", "Cucumber", "Tomatoes", "Feta"],
-      instructions: ["Combine", "Toss with vinaigrette"] },
-    { name: "Turkey & Avocado Wrap", calories: 450, protein: 28, cookTime: 10, estimatedCost: 3.5,
-      ingredients: ["Tortilla", "Turkey", "Avocado", "Lettuce"],
-      instructions: ["Layer", "Roll tightly"] },
-  ],
-  dinner: [
-    { name: "Sheet Pan Sausage & Veggies", calories: 510, protein: 24, cookTime: 30, estimatedCost: 3.4,
-      ingredients: ["Sausage", "Potatoes", "Peppers", "Olive oil"],
-      instructions: ["Toss with oil", "Roast 25-30 min at 425°F"] },
-    { name: "White Bean & Kale Soup", calories: 380, protein: 18, cookTime: 25, estimatedCost: 2.2,
-      ingredients: ["White beans", "Kale", "Onion", "Broth"],
-      instructions: ["Sauté", "Simmer 15 min", "Stir in kale"] },
-  ],
+const SYSTEM_PROMPT = `You are Help The Hive's meal-swap assistant.
+Replace ONE meal in the user's current week plan with a new, budget-friendly recipe
+that fits their household size, dietary preferences, allergies, pantry inventory,
+and the meal type being swapped (breakfast/lunch/dinner).
+
+STRICT RULES:
+- Output ONLY via the return_meal tool. No prose.
+- Prices are ESTIMATES ONLY. Final pricing confirmed at Instacart checkout.
+- Prefer ingredients the user already has, especially expiring items.
+- Honor allergies and dietary preferences absolutely.
+- Keep the swap roughly similar in cost and calories to the original meal.`;
+
+const TOOL = {
+  type: "function" as const,
+  function: {
+    name: "return_meal",
+    description: "Return a single replacement meal.",
+    parameters: {
+      type: "object",
+      required: ["meal_name", "ingredients", "instructions"],
+      properties: {
+        meal_name: { type: "string" },
+        description: { type: "string" },
+        calories_estimate: { type: "number" },
+        protein_estimate: { type: "number" },
+        estimated_cost: { type: "number" },
+        estimated_cost_per_serving: { type: "number" },
+        prep_time_minutes: { type: "number" },
+        cook_time_minutes: { type: "number" },
+        difficulty: { type: "string" },
+        food_waste_reason: { type: "string" },
+        instructions: { type: "array", items: { type: "string" } },
+        ingredients: {
+          type: "array",
+          items: {
+            type: "object",
+            required: ["item_name"],
+            properties: {
+              item_name: { type: "string" },
+              quantity: { type: "string" },
+              unit: { type: "string" },
+              already_have: { type: "boolean" },
+              source_location: {
+                type: "string",
+                enum: ["pantry", "fridge", "freezer", "grocery_needed"],
+              },
+              estimated_price: { type: "number" },
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 Deno.serve(async (req) => {
@@ -52,15 +80,14 @@ Deno.serve(async (req) => {
     }
 
     const admin = adminClient();
-
-    // Build context (will be passed to OpenAI later)
     const context = await buildMealPlanContext(admin, userId);
 
     let resolvedType = meal_type;
+    let originalMeal: any = null;
     if (meal_id) {
       const { data: existing } = await admin
         .from("meal_plan_meals")
-        .select("meal_type, meal_plan_id, day_id")
+        .select("*")
         .eq("id", meal_id)
         .eq("user_id", userId)
         .maybeSingle();
@@ -70,48 +97,75 @@ Deno.serve(async (req) => {
         });
       }
       resolvedType = existing.meal_type;
+      originalMeal = existing;
     }
 
-    const pool = MOCK_BY_TYPE[(resolvedType ?? "dinner").toLowerCase()] ?? MOCK_BY_TYPE.dinner;
-    const choice = pool[Math.floor(Math.random() * pool.length)];
+    const userPrompt = JSON.stringify({
+      meal_type_being_swapped: resolvedType,
+      original_meal: originalMeal
+        ? { meal_name: originalMeal.meal_name, estimated_cost: originalMeal.estimated_cost, calories_estimate: originalMeal.calories_estimate }
+        : null,
+      context,
+    });
 
-    const replacement = {
-      meal_type: resolvedType,
-      meal_name: choice.name,
-      calories_estimate: choice.calories,
-      protein_estimate: choice.protein,
-      estimated_cost: choice.estimatedCost,
-      cook_time_minutes: choice.cookTime,
-      instructions: choice.instructions,
-      ingredients: choice.ingredients,
-    };
+    let replacement: any;
+    try {
+      const ai = await callOpenAI({
+        model: "gpt-5.4-mini",
+        system: SYSTEM_PROMPT,
+        user: userPrompt,
+        tools: [TOOL],
+        tool_choice: { type: "function", function: { name: "return_meal" } },
+        log: { admin, user_id: userId, request_type: "meal_swap" },
+      });
+      if (!ai.tool_arguments) {
+        return new Response(JSON.stringify({ error: "No replacement returned" }), {
+          status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      replacement = { ...ai.tool_arguments, meal_type: resolvedType };
+    } catch (err: any) {
+      const status = err?.status === 429 || err?.status === 402 ? err.status : 500;
+      return new Response(JSON.stringify({ error: err?.message ?? "AI request failed" }), {
+        status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // If meal_id provided, persist replacement in meal_plan_meals
     if (meal_id) {
       await admin
         .from("meal_plan_meals")
         .update({
           meal_name: replacement.meal_name,
-          calories_estimate: replacement.calories_estimate,
-          protein_estimate: replacement.protein_estimate,
-          estimated_cost: replacement.estimated_cost,
-          cook_time_minutes: replacement.cook_time_minutes,
-          instructions: replacement.instructions,
+          description: replacement.description ?? null,
+          calories_estimate: replacement.calories_estimate ?? null,
+          protein_estimate: replacement.protein_estimate ?? null,
+          estimated_cost: replacement.estimated_cost ?? null,
+          estimated_cost_per_serving: replacement.estimated_cost_per_serving ?? null,
+          prep_time_minutes: replacement.prep_time_minutes ?? null,
+          cook_time_minutes: replacement.cook_time_minutes ?? null,
+          difficulty: replacement.difficulty ?? null,
+          food_waste_reason: replacement.food_waste_reason ?? null,
+          instructions: replacement.instructions ?? [],
         })
         .eq("id", meal_id)
         .eq("user_id", userId);
 
-      // Replace ingredient rows
       await admin.from("meal_ingredients").delete().eq("meal_id", meal_id);
-      const ingRows = (choice.ingredients as string[]).map((name) => ({
-        meal_id, user_id: userId, item_name: name,
-        source_location: "grocery_needed", already_have: false,
+      const ingRows = (replacement.ingredients ?? []).map((ing: any) => ({
+        meal_id,
+        user_id: userId,
+        item_name: ing.item_name,
+        quantity: ing.quantity ?? null,
+        unit: ing.unit ?? null,
+        source_location: ing.source_location ?? (ing.already_have ? "pantry" : "grocery_needed"),
+        already_have: !!ing.already_have,
+        estimated_price: ing.estimated_price ?? null,
       }));
       if (ingRows.length) await admin.from("meal_ingredients").insert(ingRows);
     }
 
     return new Response(
-      JSON.stringify({ replacement, context_keys: Object.keys(context) }),
+      JSON.stringify({ replacement, pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
