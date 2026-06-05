@@ -13,7 +13,7 @@ import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 import { MealImage } from "@/components/dashboard/MealImage";
-import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
+
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
@@ -66,23 +66,11 @@ export default function MealPlanPage() {
   const [cookingMode, setCookingMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
-  const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
+  
 
   useEffect(() => {
     safeSetItem("cooked_meals", JSON.stringify([...cookedMeals]));
   }, [cookedMeals]);
-
-  const offFingerprint = mealPlan?.weeklyPlan
-    ?.flatMap((d) => d.meals.map((m) => m.name))
-    .sort()
-    .join("|") ?? "";
-  const [offInitialized, setOffInitialized] = useState<string | null>(null);
-  useEffect(() => {
-    if (!offFingerprint || offInitialized === offFingerprint) return;
-    const names = Array.from(new Set(offFingerprint.split("|").filter(Boolean)));
-    if (names.length) fetchOffProducts(names);
-    setOffInitialized(offFingerprint);
-  }, [offFingerprint, offInitialized, fetchOffProducts]);
 
   useEffect(() => {
     if (selectedMeal) {
@@ -93,17 +81,7 @@ export default function MealPlanPage() {
     }
   }, [selectedMeal]);
 
-  const enrich = (meal: MealPlanMeal): MealPlanMeal => {
-    const off = offProducts[meal.name.toLowerCase()];
-    if (!off) return meal;
-    return {
-      ...meal,
-      calories: off.calories != null ? Math.round(off.calories) : meal.calories,
-      protein: off.protein != null ? Math.round(off.protein) : meal.protein,
-      carbs: off.carbs != null ? Math.round(off.carbs) : meal.carbs,
-      fats: off.fat != null ? Math.round(off.fat) : meal.fats,
-    };
-  };
+  const enrich = (meal: MealPlanMeal): MealPlanMeal => meal;
 
   const getMeal = (dayIndex: number, mealIndex: number, original: MealPlanMeal) =>
     enrich(swappedMeals[`${dayIndex}-${mealIndex}`] || original);
