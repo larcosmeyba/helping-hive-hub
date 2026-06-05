@@ -1357,8 +1357,10 @@ export type Database = {
           instacart_search_term: string | null
           item_name: string
           meal_id: string
+          pantry_item_id: string | null
           quantity: string | null
           source: string | null
+          source_location: string | null
           unit: string | null
           user_id: string
         }
@@ -1370,8 +1372,10 @@ export type Database = {
           instacart_search_term?: string | null
           item_name: string
           meal_id: string
+          pantry_item_id?: string | null
           quantity?: string | null
           source?: string | null
+          source_location?: string | null
           unit?: string | null
           user_id: string
         }
@@ -1383,8 +1387,10 @@ export type Database = {
           instacart_search_term?: string | null
           item_name?: string
           meal_id?: string
+          pantry_item_id?: string | null
           quantity?: string | null
           source?: string | null
+          source_location?: string | null
           unit?: string | null
           user_id?: string
         }
@@ -1397,6 +1403,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meal_plan_ai_insights: {
+        Row: {
+          created_at: string
+          estimated_savings: number | null
+          id: string
+          insight_type: string
+          meal_plan_id: string
+          message: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_savings?: number | null
+          id?: string
+          insight_type: string
+          meal_plan_id: string
+          message?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_savings?: number | null
+          id?: string
+          insight_type?: string
+          meal_plan_id?: string
+          message?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       meal_plan_days: {
         Row: {
@@ -1499,14 +1538,17 @@ export type Database = {
         Row: {
           calories_estimate: number | null
           cook_time_minutes: number | null
+          cooked_at: string | null
           created_at: string
           day_id: string | null
           description: string | null
           difficulty: string | null
           estimated_cost: number | null
           estimated_cost_per_serving: number | null
+          favorited: boolean
           food_waste_reason: string | null
           id: string
+          image_url: string | null
           instructions: Json | null
           marked_cooked: boolean
           meal_name: string
@@ -1519,14 +1561,17 @@ export type Database = {
         Insert: {
           calories_estimate?: number | null
           cook_time_minutes?: number | null
+          cooked_at?: string | null
           created_at?: string
           day_id?: string | null
           description?: string | null
           difficulty?: string | null
           estimated_cost?: number | null
           estimated_cost_per_serving?: number | null
+          favorited?: boolean
           food_waste_reason?: string | null
           id?: string
+          image_url?: string | null
           instructions?: Json | null
           marked_cooked?: boolean
           meal_name: string
@@ -1539,14 +1584,17 @@ export type Database = {
         Update: {
           calories_estimate?: number | null
           cook_time_minutes?: number | null
+          cooked_at?: string | null
           created_at?: string
           day_id?: string | null
           description?: string | null
           difficulty?: string | null
           estimated_cost?: number | null
           estimated_cost_per_serving?: number | null
+          favorited?: boolean
           food_waste_reason?: string | null
           id?: string
+          image_url?: string | null
           instructions?: Json | null
           marked_cooked?: boolean
           meal_name?: string
@@ -1575,10 +1623,16 @@ export type Database = {
       }
       meal_plans: {
         Row: {
+          budget_status: string | null
           created_at: string
           estimated_cost_per_serving: number | null
           estimated_daily_average: number | null
+          food_waste_prevented_count: number
+          grocery_purchase_date: string | null
+          grocery_status: string
           id: string
+          instacart_order_id: string | null
+          meals_completed: number
           plan_data: Json | null
           savings_estimate: number | null
           status: string | null
@@ -1588,13 +1642,20 @@ export type Database = {
           user_id: string
           week_start: string
           week_start_date: string | null
+          weekly_savings: number | null
           why_this_plan: Json | null
         }
         Insert: {
+          budget_status?: string | null
           created_at?: string
           estimated_cost_per_serving?: number | null
           estimated_daily_average?: number | null
+          food_waste_prevented_count?: number
+          grocery_purchase_date?: string | null
+          grocery_status?: string
           id?: string
+          instacart_order_id?: string | null
+          meals_completed?: number
           plan_data?: Json | null
           savings_estimate?: number | null
           status?: string | null
@@ -1604,13 +1665,20 @@ export type Database = {
           user_id: string
           week_start: string
           week_start_date?: string | null
+          weekly_savings?: number | null
           why_this_plan?: Json | null
         }
         Update: {
+          budget_status?: string | null
           created_at?: string
           estimated_cost_per_serving?: number | null
           estimated_daily_average?: number | null
+          food_waste_prevented_count?: number
+          grocery_purchase_date?: string | null
+          grocery_status?: string
           id?: string
+          instacart_order_id?: string | null
+          meals_completed?: number
           plan_data?: Json | null
           savings_estimate?: number | null
           status?: string | null
@@ -1620,6 +1688,7 @@ export type Database = {
           user_id?: string
           week_start?: string
           week_start_date?: string | null
+          weekly_savings?: number | null
           why_this_plan?: Json | null
         }
         Relationships: []
