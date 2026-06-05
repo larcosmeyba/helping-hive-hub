@@ -138,6 +138,9 @@ export default function DashboardHome() {
         </div>
         <img src={apolloMarcos.url} alt="" loading="lazy" className="w-24 h-28 object-contain shrink-0" />
       </div>
+
+      {/* Budget Snapshot (Plaid) */}
+      <BudgetSnapshotCard />
     </div>
   );
 }
