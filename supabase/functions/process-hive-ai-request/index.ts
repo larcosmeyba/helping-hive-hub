@@ -140,11 +140,11 @@ Deno.serve(async (req) => {
     const log_id = logRow?.id;
 
     let data: unknown;
-    let mocked = true;
+    let mocked = !apiKey;
     let status = "ok";
     let errorMessage: string | null = null;
 
-    if (enabled && apiKey) {
+    if (apiKey) {
       try {
         data = await callOpenAI({ apiKey, model, request_type, context: enrichedContext, prompt, options });
         mocked = false;
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
           status,
           latency_ms,
           error_message: errorMessage,
-          metadata: { has_prompt: Boolean(prompt), enabled, mocked },
+          metadata: { has_prompt: Boolean(prompt), mocked },
         })
         .eq("id", log_id);
     }
