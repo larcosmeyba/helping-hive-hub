@@ -522,7 +522,6 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 5 — Section 4: Store */}
       {/* STEP 5 — Section 4: Store (live Instacart-supported retailers for this ZIP) */}
       {step === 5 && (
         <QuestionnaireStep step={5} totalSteps={TOTAL_STEPS}
