@@ -48,13 +48,15 @@ export default function BudgetDashboardPage() {
     return <div className="p-6 text-[13px] text-[#6b6b6b]">Loading budget…</div>;
   }
 
-  const breakdown: { key: FoodCategory; value: number }[] = [
-    { key: "groceries", value: summary.grocery_spending },
-    { key: "restaurants", value: summary.restaurant_spending },
-    { key: "coffee_drinks", value: summary.coffee_spending },
-    { key: "food_delivery", value: summary.food_delivery_spending },
-    { key: "other_food", value: summary.other_food_spending },
-  ].filter((b) => b.value > 0);
+  const breakdown: { key: FoodCategory; value: number }[] = (
+    [
+      { key: "groceries", value: summary.grocery_spending },
+      { key: "restaurants", value: summary.restaurant_spending },
+      { key: "coffee_drinks", value: summary.coffee_spending },
+      { key: "food_delivery", value: summary.food_delivery_spending },
+      { key: "other_food", value: summary.other_food_spending },
+    ] as { key: FoodCategory; value: number }[]
+  ).filter((b) => b.value > 0);
 
   const lowBudget = summary.remaining_budget > 0 && summary.remaining_budget < summary.monthly_food_budget * 0.2;
 
