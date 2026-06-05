@@ -22,7 +22,6 @@ const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   vons: "Signature Select",
   albertsons: "Signature Select",
   "whole foods": "365 by Whole Foods Market",
-  "trader joe": "Trader Joe's",
   publix: "Publix",
   "h-e-b": "HEB",
   heb: "HEB",
