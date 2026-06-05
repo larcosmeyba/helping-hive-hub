@@ -11,7 +11,7 @@ interface Props {
 
 /**
  * Compact protein/carbs/fats macro badges.
- * Used everywhere meals appear (meal cards, fridge chef cards, recipe details).
+ * Used everywhere meals appear (meal cards, Hive AI cards, recipe details).
  */
 export function MacroBadges({ protein, carbs, fats, fiber, size = "sm", className }: Props) {
   const sizing = {

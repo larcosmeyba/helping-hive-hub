@@ -46,7 +46,7 @@ export default function AdminMembers() {
       "cooking_style", "cooking_time_preference", "meal_repetition",
       "preferred_stores", "kitchen_equipment", "user_goals",
       "food_preferences", "dietary_preferences",
-      "tier", "membership_tier", "verification_status", "verification_badge",
+      "tier", "membership_tier",
     ];
     if (canSeeSnap) baseCols.push("snap_status", "snap_deposit_day", "monthly_snap_amount", "food_assistance_status");
     if (canSeeFullPII) baseCols.push("phone_number", "allergies");
@@ -379,10 +379,7 @@ export default function AdminMembers() {
                   {(isOwner || permissions.view_snap_data) && (
                     <InfoRow label="SNAP Status" value={selectedMember.snap_status ? <Badge className="bg-accent text-accent-foreground">Active</Badge> : "No"} />
                   )}
-                  <InfoRow label="Verification Status" value={<Badge variant={selectedMember.verification_status === "verified" ? "default" : "secondary"} className="capitalize">{selectedMember.verification_status || "none"}</Badge>} />
-                  <InfoRow label="Verification Badge" value={selectedMember.verification_badge} />
                   <InfoRow label="Membership Discount" value={selectedMember.membership_discount ? `${selectedMember.membership_discount}%` : "0%"} />
-                  <InfoRow label="Verified At" value={selectedMember.verification_verified_at ? new Date(selectedMember.verification_verified_at).toLocaleDateString() : null} />
                 </div>
               </TabsContent>
             </Tabs>

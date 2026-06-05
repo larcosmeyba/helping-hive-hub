@@ -36,6 +36,10 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ["react", "react-dom", "@tanstack/react-query"],
   },
+  esbuild: {
+    // Strip console.* and debugger statements from production bundles.
+    drop: mode === "production" ? ["console", "debugger"] : [],
+  },
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {

@@ -1,6 +1,6 @@
 // Deno mirror of src/lib/aiProfileContext.ts — keep in sync.
-// Used by edge functions (generate-meal-plan, fridge-chef, future Hive
-// Assistant) to inject a normalized profile context into AI prompts.
+// Used by edge functions (generate-meal-plan, cook-from-what-i-have, Hive AI)
+// to inject a normalized profile context into AI prompts.
 
 export interface ProfileContext {
   household: {
