@@ -279,7 +279,12 @@ function mockResponse(type: RequestType, ctx: Record<string, unknown>): unknown 
     case "food_waste_alerts":
       return { alerts: [] };
     case "family_assistance":
-      return { matches: [] };
+      return {
+        summary: "",
+        recommended_resources: [],
+        urgent_notes: "",
+        next_steps: [],
+      };
     case "budget_insights":
       return { summary: "Mock budget insight — Plaid connected, OpenAI pending.", trends: [], recommendations: [] };
     case "pantry_photo_scan":
