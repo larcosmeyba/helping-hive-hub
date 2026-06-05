@@ -26,15 +26,34 @@ export default function AdminMealPlans() {
 
   const viewPlan = async (plan: any) => {
     setSelectedPlan(plan);
-    const { data } = await supabase.from("meal_plan_items").select("*").eq("meal_plan_id", plan.id).order("day_of_week");
-    setPlanItems(data || []);
+    const [{ data: days }, { data: meals }] = await Promise.all([
+      supabase.from("meal_plan_days").select("*").eq("meal_plan_id", plan.id).order("sort_order"),
+      supabase.from("meal_plan_meals").select("*").eq("meal_plan_id", plan.id),
+    ]);
+    const dayMap = new Map((days || []).map((d: any) => [d.id, d]));
+    const items = (meals || []).map((m: any) => {
+      const d = m.day_id ? dayMap.get(m.day_id) : null;
+      return {
+        id: m.id,
+        meal_name: m.meal_name,
+        meal_type: m.meal_type,
+        estimated_cost: m.estimated_cost,
+        day_name: d?.day_name ?? "Unscheduled",
+        sort_order: d?.sort_order ?? 999,
+      };
+    });
+    setPlanItems(items);
   };
 
   const filtered = plans.filter(p =>
     !search || p.week_start.includes(search) || (p.status || "").includes(search)
   );
 
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = Array.from(new Set(planItems.map(i => i.day_name))).sort((a, b) => {
+    const ai = planItems.find(i => i.day_name === a)?.sort_order ?? 999;
+    const bi = planItems.find(i => i.day_name === b)?.sort_order ?? 999;
+    return ai - bi;
+  });
 
   return (
     <div className="space-y-6">
@@ -96,8 +115,8 @@ export default function AdminMealPlans() {
             <p className="text-sm text-muted-foreground">No items in this plan.</p>
           ) : (
             <div className="space-y-4">
-              {days.map((day, idx) => {
-                const dayItems = planItems.filter(i => i.day_of_week === idx);
+              {days.map((day) => {
+                const dayItems = planItems.filter(i => i.day_name === day);
                 if (dayItems.length === 0) return null;
                 return (
                   <div key={day}>
