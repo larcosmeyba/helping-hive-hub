@@ -39,31 +39,42 @@ export function BudgetSnapshotCard() {
   }
 
   const s = summary;
+  const monthly = s?.monthly_food_budget ?? 0;
+  const spent = s?.spent_total ?? 0;
+  const remaining = s?.remaining_budget ?? 0;
+  const health = s?.budget_health_score ?? 100;
+  const pct = monthly > 0 ? Math.min(100, (spent / monthly) * 100) : 0;
+
   return (
-    <button
-      onClick={() => navigate("/dashboard/budget-snapshot")}
-      className="mt-3 w-full text-left rounded-2xl p-4 bg-white border border-[#EEE7DA]"
-    >
-      <div className="flex items-center gap-2 mb-2">
+    <div className="mt-3 rounded-2xl p-4 bg-white border border-[#EEE7DA]">
+      <div className="flex items-center gap-2 mb-3">
         <Wallet className="w-4 h-4 text-[#1F5A3D]" />
         <span className="font-bold text-[15px] text-[#1a1a1a]">Budget Snapshot</span>
-        <ArrowRight className="w-4 h-4 text-[#1a1a1a] ml-auto" />
+        <button
+          onClick={() => navigate("/dashboard/budget-snapshot")}
+          className="ml-auto flex items-center gap-1 text-[12px] font-semibold text-[#1F5A3D]"
+        >
+          View Dashboard <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-[12px]">
-        <Stat label="Monthly Budget" value={`$${(s?.monthly_food_budget ?? 0).toFixed(0)}`} />
-        <Stat label="Spent" value={`$${(s?.spent_total ?? 0).toFixed(0)}`} />
-        <Stat label="Remaining" value={`$${(s?.remaining_budget ?? 0).toFixed(0)}`} />
-        <Stat label="Health" value={`${s?.budget_health_score ?? 100}/100`} />
+      <div className="grid grid-cols-4 gap-2 text-center mb-3">
+        <Stat label="Monthly" value={`$${monthly.toFixed(0)}`} />
+        <Stat label="Spent" value={`$${spent.toFixed(0)}`} />
+        <Stat label="Remaining" value={`$${remaining.toFixed(0)}`} />
+        <Stat label="Health" value={`${health}/100`} />
       </div>
-    </button>
+      <div className="h-2 w-full bg-[#F5EBDC] rounded-full overflow-hidden">
+        <div className="h-full bg-[#1F5A3D]" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[#F5EBDC] rounded-lg px-3 py-2">
-      <p className="text-[10px] text-[#6b6b6b]">{label}</p>
-      <p className="text-[14px] font-extrabold text-[#1a1a1a]">{value}</p>
+    <div>
+      <p className="text-[10px] text-[#6b6b6b] mb-0.5">{label}</p>
+      <p className="text-[13px] font-extrabold text-[#1a1a1a]">{value}</p>
     </div>
   );
 }
