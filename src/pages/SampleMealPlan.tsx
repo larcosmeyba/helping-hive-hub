@@ -7,9 +7,9 @@ import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 
 const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
-  "feed-a-family-50": { primary: "Aldi", secondary: "Trader Joe's" },
+  "feed-a-family-50": { primary: "Aldi", secondary: "Walmart" },
   "more-variety-75": { primary: "Sprouts", secondary: "Safeway" },
-  "college-eats-35": { primary: "Aldi", secondary: "Trader Joe's" },
+  "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
   "snap-friendly-meals": { primary: "Aldi", secondary: "WinCo" },
 };
 
