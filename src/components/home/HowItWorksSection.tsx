@@ -51,7 +51,7 @@ const captions = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-16 md:py-24 bg-honey-cream scroll-mt-20">
+    <section id="how-it-works" className="py-16 md:py-24 bg-white scroll-mt-20">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
