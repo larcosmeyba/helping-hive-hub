@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/types/mealPlan";
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
-import { useOpenFoodFacts } from "@/hooks/useOpenFoodFacts";
+
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
@@ -85,18 +85,6 @@ export default function GroceryListPage() {
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
   const { status: locationStatus } = useLocation();
-  const { products: offProducts, fetchProducts: fetchOffProducts } = useOpenFoodFacts();
-  const [offInitialized, setOffInitialized] = useState<string | null>(null);
-
-  const planFingerprint = mealPlan?.groceryList?.map((i: GroceryItem) => i.name).sort().join("|") ?? "";
-
-  // Fetch Open Food Facts product images/brands only (no pricing) — runs once per plan
-  useEffect(() => {
-    if (!mealPlan?.groceryList?.length || offInitialized === planFingerprint) return;
-    const itemNames = mealPlan.groceryList.map((i: GroceryItem) => i.name);
-    fetchOffProducts(itemNames);
-    setOffInitialized(planFingerprint);
-  }, [planFingerprint, offInitialized, mealPlan?.groceryList, fetchOffProducts]);
 
   // Instacart return-flow handler — detect ?from=instacart and welcome user back
   useEffect(() => {
@@ -200,13 +188,9 @@ export default function GroceryListPage() {
     return { price: item.estimatedPrice || 0, source: 'estimate' };
   };
 
-  // Product image: Open Food Facts only — no keyword-matched stock photos.
-  // Returns null when no verified image is available; the GroceryItemImage
-  // component falls back to a flat icon tile.
-  const getItemImage = (item: typeof groceryItems[0]): string | null => {
-    const off = offProducts[item.name.toLowerCase()];
-    return off?.image ?? null;
-  };
+  // Product image: no keyword-matched stock photos. Returns null so the
+  // GroceryItemImage component falls back to its flat icon tile.
+  const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
   // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
   const subtotal = getStoreTotalFromItems(activeStore);

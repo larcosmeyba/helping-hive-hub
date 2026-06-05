@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     const tables = [
       "profiles",
-      "meal_plans", "meal_plan_items",
+      "meal_plans", "meal_plan_days", "meal_plan_meals", "meal_ingredients",
       "grocery_lists", "grocery_list_items",
       "pantry_items", "food_waste_logs",
       "support_tickets", "user_feedback",
