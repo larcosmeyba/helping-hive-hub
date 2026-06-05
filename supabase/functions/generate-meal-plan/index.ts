@@ -265,8 +265,8 @@ Deno.serve(async (req) => {
     const groceryList = parsed.grocery_list ?? [];
     const whyThisPlan = parsed.why_this_plan ?? {};
 
-    // Use service role to persist (bypasses RLS but we set user_id explicitly)
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // admin client already created above for AI logging.
+
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
