@@ -36,7 +36,6 @@ export default function BudgetInsightsPage() {
   const monthlySpent = spent * 4;
   const monthlySaved = saved * 4;
 
-  // Category breakdown from grocery list
   const categoryData = (() => {
     if (!mealPlan?.groceryList?.length) return [];
     const cats: Record<string, number> = {};
@@ -49,7 +48,6 @@ export default function BudgetInsightsPage() {
       .sort((a, b) => b.value - a.value);
   })();
 
-  // Real weekly trend from history
   const weeklyTrend = (() => {
     const entries = [...history].reverse().slice(-8);
     if (entries.length === 0 && mealPlan) {
@@ -67,7 +65,6 @@ export default function BudgetInsightsPage() {
     });
   })();
 
-  // Daily cost breakdown
   const dailyCosts = mealPlan?.weeklyPlan?.map((day) => ({
     day: day.day.substring(0, 3),
     cost: day.meals.reduce((sum, m) => sum + (m.estimatedCost || 0), 0),
@@ -84,7 +81,6 @@ export default function BudgetInsightsPage() {
         <p className="text-[11px] text-muted-foreground mt-1">All amounts are planning estimates. Final pricing is confirmed at Instacart checkout.</p>
       </div>
 
-      {/* Hero Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Weekly Budget", value: `$${budget}`, sub: "Your target", icon: Target, gradient: "from-primary/20 to-primary/5" },
@@ -105,7 +101,6 @@ export default function BudgetInsightsPage() {
         ))}
       </div>
 
-      {/* Budget Progress */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" /> Budget Usage
@@ -128,9 +123,7 @@ export default function BudgetInsightsPage() {
         </div>
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Spending */}
         {dailyCosts.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
             <h3 className="font-display font-semibold text-foreground mb-4">Estimated Daily Meal Costs</h3>
@@ -149,7 +142,6 @@ export default function BudgetInsightsPage() {
           </div>
         )}
 
-        {/* Spending by Category */}
         {categoryData.length > 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-card p-6">
             <h3 className="font-display font-semibold text-foreground mb-4">Estimated Spending by Category</h3>
@@ -167,7 +159,6 @@ export default function BudgetInsightsPage() {
         )}
       </div>
 
-      {/* Weekly Trend */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <h3 className="font-display font-semibold text-foreground mb-4">Projected Weekly Spending Trend</h3>
         <ResponsiveContainer width="100%" height={280}>
@@ -184,7 +175,6 @@ export default function BudgetInsightsPage() {
         </ResponsiveContainer>
       </div>
 
-      {/* Monthly Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-border p-6 shadow-card">
           <DollarSign className="w-6 h-6 text-primary mb-2" />
@@ -203,7 +193,6 @@ export default function BudgetInsightsPage() {
         </div>
       </div>
 
-      {/* Optimization Tips */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-accent" /> Where You're Saving
@@ -218,22 +207,6 @@ export default function BudgetInsightsPage() {
             <p className="font-semibold text-foreground text-sm">Budget Discipline</p>
             <p className="text-2xl font-bold text-primary mt-1">{saved > 0 ? `~$${saved.toFixed(2)}` : "$0"}/week</p>
             <p className="text-xs text-muted-foreground mt-1">{saved > 0 ? "Under budget — great job!" : "On target with your budget"}</p>
-          </div>
-          <div className="bg-muted rounded-xl p-4 border border-border">
-            <p className="font-semibold text-foreground text-sm">Your Home Store</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {mealPlan?.storeRecommendations?.length ? (
-                <>Shopping at <span className="text-primary font-medium">{mealPlan.storeRecommendations[0].store}</span> this week</>
-              ) : "Generate a meal plan to set your home store"}
-            </p>
-          </div>
-          <div className="bg-muted rounded-xl p-4 border border-border">
-            <p className="font-semibold text-foreground text-sm">Regional Pricing</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {mealPlan?.regionLabel ? (
-                <>Prices adjusted for <span className="text-primary font-medium">{mealPlan.regionLabel}</span> ({mealPlan.costOfLivingMultiplier}x)</>
-              ) : "Set your ZIP code for accurate regional pricing"}
-            </p>
           </div>
         </div>
       </div>
