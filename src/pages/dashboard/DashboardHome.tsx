@@ -7,6 +7,7 @@ import bowlImg from "@/assets/home-bowl.png";
 import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
+import { BudgetSnapshotCard } from "@/components/dashboard/home/BudgetSnapshotCard";
 import apolloLogo from "@/assets/apollo-logo.png.asset.json";
 import apolloMarcos from "@/assets/apollo-marcos.png.asset.json";
 
