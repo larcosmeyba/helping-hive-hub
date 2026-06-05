@@ -5,7 +5,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+// OpenAI access is via _shared/openaiClient.ts (gpt-5.4-mini).
 
 function daysUntil(date: string | null): number | null {
   if (!date) return null;
