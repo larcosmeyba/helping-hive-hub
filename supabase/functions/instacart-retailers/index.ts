@@ -19,6 +19,27 @@ interface RetailerOut {
 const CACHE = new Map<string, { at: number; data: RetailerOut[] }>();
 const TTL_MS = 6 * 60 * 60 * 1000;
 
+// Simple per-IP rate limit (60 req / 60s) to prevent abuse. The 6h cache
+// above already shields upstream Instacart on repeat ZIPs; this caps the
+// raw request rate per client regardless of cache state.
+const RL = new Map<string, { count: number; resetAt: number }>();
+const RL_WINDOW_MS = 60_000;
+const RL_MAX = 60;
+function rateLimitOk(ip: string): boolean {
+  const now = Date.now();
+  const cur = RL.get(ip);
+  if (!cur || now > cur.resetAt) {
+    RL.set(ip, { count: 1, resetAt: now + RL_WINDOW_MS });
+    return true;
+  }
+  cur.count += 1;
+  return cur.count <= RL_MAX;
+}
+function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for") ?? "";
+  return xff.split(",")[0].trim() || req.headers.get("cf-connecting-ip") || "unknown";
+}
+
 Deno.serve(async (req) => {
   const pf = handlePreflight(req);
   if (pf) return pf;
@@ -30,6 +51,10 @@ Deno.serve(async (req) => {
     });
 
   try {
+    const ip = clientIp(req);
+    if (!rateLimitOk(ip)) {
+      return json({ error: "Too many requests. Try again in a minute." }, 429);
+    }
     const url = new URL(req.url);
     const postal = (url.searchParams.get("postal_code") ?? "").trim();
     const country = (url.searchParams.get("country_code") ?? "US").trim().toUpperCase();
