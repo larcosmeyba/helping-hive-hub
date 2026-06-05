@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, ShoppingCart, Package, ChefHat, LifeBuoy, ShoppingBag } from "lucide-react";
+import { CalendarDays, ShoppingCart, Package, Sparkles, LifeBuoy, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 
 const HUB = [
   { to: "/dashboard/meal-plan", icon: CalendarDays, title: "Meal Plan", desc: "View your weekly meal plan" },
   { to: "/dashboard/grocery-list", icon: ShoppingCart, title: "Grocery List", desc: "See your list & shop items" },
   { to: "/dashboard/pantry", icon: Package, title: "Pantry", desc: "See what you already have" },
-  { to: "/dashboard/fridge-chef", icon: ChefHat, title: "Fridge Chef", desc: "Make meals from what you have" },
+  { to: "/dashboard/hive-ai", icon: Sparkles, title: "Hive AI", desc: "Cook from what you have" },
   { to: "/dashboard/resources", icon: LifeBuoy, title: "Resources", desc: "Find help in your area" },
   { to: "/dashboard/resources/bulk-buying", icon: ShoppingBag, title: "Bulk Buying", desc: "What to buy in bulk & save" },
 ];

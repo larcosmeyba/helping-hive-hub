@@ -43,7 +43,7 @@ const GrocerySummaryPage = lazy(() => import("./pages/dashboard/GrocerySummaryPa
 const GroceryReviewPage = lazy(() => import("./pages/dashboard/GroceryReviewPage.tsx"));
 const PantryPage = lazy(() => import("./pages/dashboard/PantryPage.tsx"));
 const BudgetInsightsPage = lazy(() => import("./pages/dashboard/BudgetInsightsPage.tsx"));
-const FridgeChefPage = lazy(() => import("./pages/dashboard/FridgeChefPage.tsx"));
+
 const CookInventoryPage = lazy(() => import("./pages/dashboard/CookInventoryPage.tsx"));
 const CookRecipesPage = lazy(() => import("./pages/dashboard/CookRecipesPage.tsx"));
 const CookRecipeDetailPage = lazy(() => import("./pages/dashboard/CookRecipeDetailPage.tsx"));
@@ -142,7 +142,7 @@ const App = () => {
                     <Route path="grocery-list/review" element={<GroceryReviewPage />} />
                     <Route path="grocery-list/details" element={<GroceryListPage />} />
                     <Route path="pantry" element={<PantryPage />} />
-                    <Route path="fridge-chef" element={<FridgeChefPage />} />
+                    <Route path="fridge-chef" element={<Navigate to="/dashboard/hive-ai" replace />} />
                     <Route path="cook" element={<CookInventoryPage />} />
                     <Route path="cook/recipes" element={<CookRecipesPage />} />
                     <Route path="cook/recipes/:id" element={<CookRecipeDetailPage />} />

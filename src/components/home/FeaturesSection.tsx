@@ -51,7 +51,7 @@ export function FeaturesSection() {
             Built for real families and real budgets
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Meal planning, grocery lists, and Fridge Chef — all working together to stretch every grocery dollar at your store.
+            Meal planning, grocery lists, and Hive AI — all working together to stretch every grocery dollar at your store.
           </p>
         </motion.div>
 

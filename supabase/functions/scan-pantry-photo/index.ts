@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     }
 
     const systemPrompt = mode === "fridge-chef"
-      ? `You are a food identification AI for Help The Hive's FridgeChef feature. Look at this photo of a fridge or pantry and identify ALL food items you can see.
+      ? `You are a food identification AI for Help The Hive's Hive AI feature. Look at this photo of a fridge or pantry and identify ALL food items you can see.
 
 Return ONLY valid JSON:
 {

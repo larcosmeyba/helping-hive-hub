@@ -236,7 +236,7 @@ We do not guarantee:
       },
       {
         heading: "8. Pricing",
-        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Fridge Chef, budget insights, and Instacart checkout handoff — are available at no cost to every user.
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Hive AI, budget insights, and Instacart checkout handoff — are available at no cost to every user.
 
 We do not charge for the app, do not collect payment information, and do not offer in-app purchases. Help the Hive is funded through optional Instacart affiliate commissions, sponsored brand placements, institutional licensing, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
@@ -259,7 +259,7 @@ We do not charge for the app, do not collect payment information, and do not off
       },
       {
         heading: "12. Intellectual Property",
-        content: `All Help the Hive content is owned by Help the Hive and protected by IP laws. "Help the Hive" and "Fridge Chef" are our trademarks. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes.`
+        content: `All Help the Hive content is owned by Help the Hive and protected by IP laws. "Help the Hive" and "Hive AI" are our trademarks. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes.`
       },
       {
         heading: "13. Disclaimer of Warranties",

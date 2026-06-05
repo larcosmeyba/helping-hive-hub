@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, ShoppingCart, Package, Settings, LogOut, ChefHat, LifeBuoy, FileText } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ShoppingCart, Package, Settings, LogOut, Sparkles, LifeBuoy, FileText } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -20,8 +20,7 @@ const navItems = [
   { title: "Meal Plan", url: "/dashboard/meal-plan", icon: CalendarDays },
   { title: "Grocery List", url: "/dashboard/grocery-list", icon: ShoppingCart },
   { title: "Pantry", url: "/dashboard/pantry", icon: Package },
-  { title: "Fridge Chef", url: "/dashboard/fridge-chef", icon: ChefHat },
-  
+  { title: "Hive AI", url: "/dashboard/hive-ai", icon: Sparkles },
 ];
 
 export function DashboardSidebar() {
