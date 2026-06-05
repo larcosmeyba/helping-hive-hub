@@ -24,8 +24,9 @@ import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
 import { Switch } from "@/components/ui/switch";
 import { useShowMacros } from "@/hooks/useShowMacros";
+import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
+import { Loader2 } from "lucide-react";
 
-const STORE_OPTIONS = ["Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher", "Gluten-free", "Dairy-free", "Nut allergy", "No seafood"];
 
