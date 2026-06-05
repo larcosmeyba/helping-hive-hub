@@ -1806,7 +1806,9 @@ export type Database = {
       pantry_items: {
         Row: {
           category: string | null
+          checked_off: boolean
           created_at: string
+          estimated_value: number | null
           expiration_date: string | null
           freshness_status: string | null
           id: string
@@ -1814,16 +1816,21 @@ export type Database = {
           is_out_of_stock: boolean | null
           item_name: string
           location: string | null
+          manually_added: boolean
           normalized_item_name: string | null
+          photo_detected: boolean
           purchase_date: string | null
           quantity: string | null
+          receipt_detected: boolean
           unit: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           category?: string | null
+          checked_off?: boolean
           created_at?: string
+          estimated_value?: number | null
           expiration_date?: string | null
           freshness_status?: string | null
           id?: string
@@ -1831,16 +1838,21 @@ export type Database = {
           is_out_of_stock?: boolean | null
           item_name: string
           location?: string | null
+          manually_added?: boolean
           normalized_item_name?: string | null
+          photo_detected?: boolean
           purchase_date?: string | null
           quantity?: string | null
+          receipt_detected?: boolean
           unit?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           category?: string | null
+          checked_off?: boolean
           created_at?: string
+          estimated_value?: number | null
           expiration_date?: string | null
           freshness_status?: string | null
           id?: string
@@ -1848,9 +1860,12 @@ export type Database = {
           is_out_of_stock?: boolean | null
           item_name?: string
           location?: string | null
+          manually_added?: boolean
           normalized_item_name?: string | null
+          photo_detected?: boolean
           purchase_date?: string | null
           quantity?: string | null
+          receipt_detected?: boolean
           unit?: string | null
           updated_at?: string
           user_id?: string
