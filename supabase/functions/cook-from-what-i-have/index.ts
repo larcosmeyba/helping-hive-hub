@@ -169,51 +169,28 @@ Deno.serve(async (req) => {
       inventory,
     });
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: sysPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools,
-        tool_choice: { type: "function", function: { name: "return_recipes" } },
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const text = await aiRes.text();
-      console.error("AI gateway error", aiRes.status, text);
-      return new Response(
-        JSON.stringify({ error: "AI request failed", status: aiRes.status }),
-        {
-          status: aiRes.status === 429 || aiRes.status === 402 ? aiRes.status : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const aiJson = await aiRes.json();
-    const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "No recipes returned" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     let parsed: any;
     try {
-      parsed = JSON.parse(toolCall.function.arguments);
-    } catch {
-      return new Response(JSON.stringify({ error: "Bad AI response" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const { callOpenAI } = await import("../_shared/openaiClient.ts");
+      const ai = await callOpenAI({
+        model: "gpt-5.4-mini",
+        system: sysPrompt,
+        user: userPrompt,
+        tools,
+        tool_choice: { type: "function", function: { name: "return_recipes" } },
+        log: { admin, user_id: userId, request_type: "cook_from_what_i_have" },
+      });
+      if (!ai.tool_arguments) {
+        return new Response(JSON.stringify({ error: "No recipes returned" }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      parsed = ai.tool_arguments;
+    } catch (err: any) {
+      const status = err?.status === 429 || err?.status === 402 ? err.status : 500;
+      return new Response(JSON.stringify({ error: err?.message ?? "AI request failed" }), {
+        status, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
