@@ -234,20 +234,14 @@ Deno.serve(async (req) => {
       week_start_date: new Date().toISOString().slice(0, 10),
     };
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: "Missing LOVABLE_API_KEY" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Build this week's plan from this meal_plan_context:\n\n${JSON.stringify(mealPlanContext)}` },
-        ],
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    let parsed: any;
+    try {
+      const { callOpenAI } = await import("../_shared/openaiClient.ts");
+      const ai = await callOpenAI({
+        model: "gpt-5.4-mini",
+        system: SYSTEM_PROMPT,
+        user: `Build this week's plan from this meal_plan_context:\n\n${JSON.stringify(mealPlanContext)}`,
         tools: [{
           type: "function",
           function: {
@@ -257,32 +251,22 @@ Deno.serve(async (req) => {
           },
         }],
         tool_choice: { type: "function", function: { name: "return_meal_plan" } },
-      }),
-    });
-
-    if (aiRes.status === 429) {
-      return new Response(JSON.stringify({ error: "AI rate limit reached. Please try again shortly." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        log: { admin, user_id: userId, request_type: "meal_plan_generation" },
+      });
+      if (!ai.tool_arguments) {
+        return new Response(JSON.stringify({ error: "Malformed AI response", raw: ai.raw }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      parsed = ai.tool_arguments;
+    } catch (e: any) {
+      const status = e?.status === 429 || e?.status === 402 ? e.status : 500;
+      return new Response(JSON.stringify({ error: e?.message ?? "AI error" }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (aiRes.status === 402) {
-      return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to your workspace." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    if (!aiRes.ok) {
-      const txt = await aiRes.text();
-      return new Response(JSON.stringify({ error: "AI error", details: txt }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const aiJson = await aiRes.json();
-    const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "Malformed AI response", raw: aiJson }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const parsed = JSON.parse(toolCall.function.arguments);
     const mealPlan = parsed.meal_plan;
     const groceryList = parsed.grocery_list ?? [];
     const whyThisPlan = parsed.why_this_plan ?? {};
 
-    // Use service role to persist (bypasses RLS but we set user_id explicitly)
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // admin client already created above for AI logging.
+
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
