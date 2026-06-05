@@ -119,7 +119,7 @@ export default function Questionnaire() {
   const [userLongitude, setUserLongitude] = useState<number | null>(null);
   const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
 
-  // SECTION 4 — Store
+  // SECTION 4 — Store (chosen from Instacart-supported retailers for this ZIP)
   const [homeStore, setHomeStore] = useState<string>((localSeed.homeStore as string) || "");
 
   // SECTION 5 — Family assistance
