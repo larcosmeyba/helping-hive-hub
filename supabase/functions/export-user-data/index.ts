@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
       "grocery_lists", "grocery_list_items",
       "pantry_items", "food_waste_logs",
       "support_tickets", "user_feedback",
-      "verification_documents",
     ] as const;
 
     const exported: Record<string, unknown> = {

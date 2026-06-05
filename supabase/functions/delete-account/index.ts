@@ -72,7 +72,6 @@ Deno.serve(async (req) => {
       "meal_plan_items", "meal_plans",
       "pantry_items", "food_waste_logs",
       
-      "verification_documents",
       "support_tickets", "user_feedback",
       "push_tokens", "notifications",
       "user_roles", "admin_permissions",

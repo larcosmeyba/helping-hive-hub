@@ -68,8 +68,7 @@ export default function AdminAnalytics() {
         const cs = m.cooking_style || "Not set";
         cookingStyleBreakdown[cs] = (cookingStyleBreakdown[cs] || 0) + 1;
 
-        const vs = m.verification_status || "none";
-        verificationBreakdown[vs] = (verificationBreakdown[vs] || 0) + 1;
+        // verification removed
 
         const tier = m.membership_tier || "standard";
         tierBreakdown[tier] = (tierBreakdown[tier] || 0) + 1;
