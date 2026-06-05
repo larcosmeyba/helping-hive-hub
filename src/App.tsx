@@ -164,6 +164,13 @@ const App = () => {
                     <Route path="hive-ai/scan/review" element={<HiveAiScanReviewPage />} />
                     <Route path="hive-ai/add" element={<HiveAiAddItemPage />} />
                     <Route path="cook/recipes/:id/cooked" element={<MealCookedPage />} />
+                    <Route path="budget-snapshot" element={<BudgetDashboardPage />} />
+                    <Route path="budget-snapshot/connect" element={<BudgetConnectPage />} />
+                    <Route path="budget-snapshot/syncing" element={<BudgetSyncingPage />} />
+                    <Route path="budget-snapshot/transactions" element={<BudgetTransactionsPage />} />
+                    <Route path="budget-snapshot/insights" element={<BudgetAiInsightsPage />} />
+                    <Route path="budget-snapshot/goals" element={<BudgetGoalsPage />} />
+                    <Route path="budget-snapshot/settings" element={<BudgetSettingsPage />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
