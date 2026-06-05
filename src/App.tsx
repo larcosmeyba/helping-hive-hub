@@ -64,6 +64,13 @@ const HiveAiScanPage = lazy(() => import("./pages/dashboard/HiveAiScanPage.tsx")
 const HiveAiScanReviewPage = lazy(() => import("./pages/dashboard/HiveAiScanReviewPage.tsx"));
 const HiveAiAddItemPage = lazy(() => import("./pages/dashboard/HiveAiAddItemPage.tsx"));
 const MealCookedPage = lazy(() => import("./pages/dashboard/MealCookedPage.tsx"));
+const BudgetConnectPage = lazy(() => import("./pages/dashboard/BudgetConnectPage.tsx"));
+const BudgetSyncingPage = lazy(() => import("./pages/dashboard/BudgetSyncingPage.tsx"));
+const BudgetDashboardPage = lazy(() => import("./pages/dashboard/BudgetDashboardPage.tsx"));
+const BudgetTransactionsPage = lazy(() => import("./pages/dashboard/BudgetTransactionsPage.tsx"));
+const BudgetAiInsightsPage = lazy(() => import("./pages/dashboard/BudgetAiInsightsPage.tsx"));
+const BudgetGoalsPage = lazy(() => import("./pages/dashboard/BudgetGoalsPage.tsx"));
+const BudgetSettingsPage = lazy(() => import("./pages/dashboard/BudgetSettingsPage.tsx"));
 
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout.tsx"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.tsx"));
