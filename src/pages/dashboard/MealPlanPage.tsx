@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, X,
   AlertTriangle, Check, ChefHat, Share2, Minus, Plus, ArrowRight, ArrowLeft,
-  Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper, Trash2,
+  Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
