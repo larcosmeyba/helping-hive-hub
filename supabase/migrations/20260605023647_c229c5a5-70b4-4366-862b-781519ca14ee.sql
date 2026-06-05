@@ -1,0 +1,1 @@
+ALTER TABLE public.meal_plan_items RENAME TO _deprecated_meal_plan_items;
