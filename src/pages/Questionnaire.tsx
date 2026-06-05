@@ -14,15 +14,10 @@ import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
+import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
 // 1 welcome + 11 onboarding sections
 const TOTAL_STEPS = 12;
-
-const HOME_STORE_OPTIONS = [
-  "Aldi", "Trader Joe's", "Whole Foods", "Target",
-  "Safeway / Albertsons", "H-E-B", "Publix", "Costco",
-  "Sam's Club", "Sprouts", "Other",
-];
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -124,7 +119,7 @@ export default function Questionnaire() {
   const [userLongitude, setUserLongitude] = useState<number | null>(null);
   const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
 
-  // SECTION 4 — Store
+  // SECTION 4 — Store (chosen from Instacart-supported retailers for this ZIP)
   const [homeStore, setHomeStore] = useState<string>((localSeed.homeStore as string) || "");
 
   // SECTION 5 — Family assistance
@@ -151,6 +146,7 @@ export default function Questionnaire() {
 
   const [loading, setLoading] = useState(false);
   const zipValidation = useZipValidation(zipCode);
+  const retailers = useInstacartRetailers(zipValidation.isValid ? zipCode : null);
 
   useEffect(() => {
     if (!budgetTouched) setWeeklyBudget(defaultBudget(householdSize));
@@ -526,31 +522,58 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 5 — Section 4: Store */}
+      {/* STEP 5 — Section 4: Store (live Instacart-supported retailers for this ZIP) */}
       {step === 5 && (
         <QuestionnaireStep step={5} totalSteps={TOTAL_STEPS}
           title="Which store do you shop at most?"
-          subtitle="Meal plans and grocery lists are tailored to this store."
+          subtitle={zipCode ? `Showing stores Instacart supports near ${zipCode}.` : "Enter your ZIP code first so we can show stores Instacart supports near you."}
           onNext={() => { trackEvent("home_store_selected", { store: homeStore }); next(); }}
           onBack={back}
           nextDisabled={!homeStore}
         >
-          <div className="grid grid-cols-2 gap-2.5 mt-4">
-            {HOME_STORE_OPTIONS.map((store) => (
-              <button key={store} onClick={() => setHomeStore(store)}
-                className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all text-left ${
-                  homeStore === store ? "bg-primary/10 border-primary" : "bg-card border-border hover:border-primary/30"
-                }`}>
-                <Store className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-sm font-medium text-foreground truncate">{store}</span>
-              </button>
-            ))}
-          </div>
+          {!zipValidation.isValid && (
+            <div className="mt-4 p-4 rounded-2xl border border-border bg-card text-sm text-muted-foreground text-center">
+              Please go back and enter a valid 5-digit ZIP code.
+            </div>
+          )}
+          {zipValidation.isValid && retailers.loading && (
+            <div className="mt-4 flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading stores near {zipCode}…
+            </div>
+          )}
+          {zipValidation.isValid && !retailers.loading && retailers.error && (
+            <div className="mt-4 p-4 rounded-2xl border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+              Couldn't load stores for ZIP {zipCode}. {retailers.error}
+            </div>
+          )}
+          {zipValidation.isValid && !retailers.loading && !retailers.error && retailers.retailers.length === 0 && (
+            <div className="mt-4 p-4 rounded-2xl border border-border bg-card text-sm text-muted-foreground text-center">
+              No Instacart-supported stores were found for ZIP {zipCode}.
+            </div>
+          )}
+          {zipValidation.isValid && !retailers.loading && retailers.retailers.length > 0 && (
+            <div className="grid grid-cols-2 gap-2.5 mt-4 max-h-[420px] overflow-y-auto pr-1">
+              {retailers.retailers.map((r) => (
+                <button key={r.retailer_key} onClick={() => setHomeStore(r.name)}
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all text-left ${
+                    homeStore === r.name ? "bg-primary/10 border-primary" : "bg-card border-border hover:border-primary/30"
+                  }`}>
+                  {r.retailer_logo_url ? (
+                    <img src={r.retailer_logo_url} alt="" className="w-6 h-6 rounded object-contain shrink-0" loading="lazy" />
+                  ) : (
+                    <Store className="w-4 h-4 text-primary shrink-0" />
+                  )}
+                  <span className="text-sm font-medium text-foreground truncate">{r.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-4 text-center">
-            You can change this anytime. Grocery checkout depends on stores Instacart supports in your area.
+            You can change this anytime. Only stores Instacart supports in your area are shown.
           </p>
         </QuestionnaireStep>
       )}
+
 
       {/* STEP 6 — Section 5: Family Assistance */}
       {step === 6 && (

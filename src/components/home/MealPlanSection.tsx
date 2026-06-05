@@ -12,7 +12,7 @@ const plans = [
     title: "The $50 Family Week",
     desc: "7 days of balanced meals for a family of 4 on a tight budget.",
     budget: "$50 / week grocery budget",
-    store: "Aldi / Trader Joe's",
+    store: "Aldi / Walmart",
     tag: "Most Popular",
     slug: "feed-a-family-50",
     image: mealFamilyDinner,

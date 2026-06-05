@@ -24,8 +24,9 @@ import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
 import { Switch } from "@/components/ui/switch";
 import { useShowMacros } from "@/hooks/useShowMacros";
+import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
+import { Loader2 } from "lucide-react";
 
-const STORE_OPTIONS = ["Target", "Costco", "Sam's Club", "Trader Joe's", "Whole Foods", "Safeway", "Albertsons", "Aldi", "Sprouts", "Publix", "H-E-B"];
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher", "Gluten-free", "Dairy-free", "Nut allergy", "No seafood"];
 
@@ -72,6 +73,8 @@ export default function SettingsPage() {
   const [zipCode, setZipCode] = useState("");
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [homeStore, setHomeStore] = useState<string>("");
+  const retailers = useInstacartRetailers(/^\d{5}$/.test(zipCode) ? zipCode : null);
+  const storeOptions = retailers.retailers.map((r) => r.name);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   // Extended onboarding profile fields
@@ -298,42 +301,67 @@ export default function SettingsPage() {
             <MapPin className="w-3.5 h-3.5 text-primary" /> Home Store
           </Label>
           <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
-            Your primary store. Meal plans and grocery prices are tailored to this store.
+            Your primary store. Only stores Instacart supports near your ZIP are shown. Meal plans and grocery prices are tailored to this store.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {STORE_OPTIONS.map((store) => (
-              <button
-                key={store}
-                onClick={() => {
-                  setHomeStore(store);
-                  if (!selectedStores.includes(store)) setSelectedStores([...selectedStores, store]);
-                }}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                  homeStore === store
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
-                }`}
-              >
-                {homeStore === store ? "★ " : ""}{store}
-              </button>
-            ))}
-          </div>
+          {!/^\d{5}$/.test(zipCode) && (
+            <div className="text-xs text-muted-foreground p-3 rounded-lg border border-border bg-card">
+              Enter a valid 5-digit ZIP code above to see available stores.
+            </div>
+          )}
+          {/^\d{5}$/.test(zipCode) && retailers.loading && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground p-3">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading stores near {zipCode}…
+            </div>
+          )}
+          {/^\d{5}$/.test(zipCode) && !retailers.loading && retailers.error && (
+            <div className="text-xs text-destructive p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+              Couldn't load stores for ZIP {zipCode}. {retailers.error}
+            </div>
+          )}
+          {/^\d{5}$/.test(zipCode) && !retailers.loading && !retailers.error && storeOptions.length === 0 && (
+            <div className="text-xs text-muted-foreground p-3 rounded-lg border border-border bg-card">
+              No Instacart-supported stores were found for ZIP {zipCode}.
+            </div>
+          )}
+          {storeOptions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {storeOptions.map((store) => (
+                <button
+                  key={store}
+                  onClick={() => {
+                    setHomeStore(store);
+                    if (!selectedStores.includes(store)) setSelectedStores([...selectedStores, store]);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    homeStore === store
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                  }`}
+                >
+                  {homeStore === store ? "★ " : ""}{store}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div>
-          <Label>Backup Stores <span className="text-[11px] text-muted-foreground font-normal">(optional)</span></Label>
-          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
-            Other stores you sometimes shop at. Used as fallbacks when items aren't available at your home store.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {STORE_OPTIONS.filter((s) => s !== homeStore).map((store) => (
-              <button key={store} onClick={() => toggle(selectedStores, setSelectedStores, store)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selectedStores.includes(store) ? "bg-accent/15 text-accent border-accent/40" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
-                {store}
-              </button>
-            ))}
+        {storeOptions.length > 0 && (
+          <div>
+            <Label>Backup Stores <span className="text-[11px] text-muted-foreground font-normal">(optional)</span></Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
+              Other stores you sometimes shop at. Used as fallbacks when items aren't available at your home store.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {storeOptions.filter((s) => s !== homeStore).map((store) => (
+                <button key={store} onClick={() => toggle(selectedStores, setSelectedStores, store)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selectedStores.includes(store) ? "bg-accent/15 text-accent border-accent/40" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+                  {store}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
 
         <div>
           <Label>Allergies</Label>
