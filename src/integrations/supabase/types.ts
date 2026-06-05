@@ -281,36 +281,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bls_regional_cpi_cache: {
-        Row: {
-          cached_at: string
-          id: string
-          last_cpi_value: number | null
-          multiplier: number
-          national_avg_cpi: number | null
-          region: string
-          region_code: string
-        }
-        Insert: {
-          cached_at?: string
-          id?: string
-          last_cpi_value?: number | null
-          multiplier?: number
-          national_avg_cpi?: number | null
-          region: string
-          region_code: string
-        }
-        Update: {
-          cached_at?: string
-          id?: string
-          last_cpi_value?: number | null
-          multiplier?: number
-          national_avg_cpi?: number | null
-          region?: string
-          region_code?: string
-        }
-        Relationships: []
-      }
       budget_ai_insights: {
         Row: {
           created_at: string
@@ -1112,73 +1082,7 @@ export type Database = {
           updated_at?: string
           zip_code?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "household_store_preferences_preferred_retailer_id_fkey"
-            columns: ["preferred_retailer_id"]
-            isOneToOne: false
-            referencedRelation: "retailers"
-            referencedColumns: ["retailer_id"]
-          },
-          {
-            foreignKeyName: "household_store_preferences_preferred_store_id_fkey"
-            columns: ["preferred_store_id"]
-            isOneToOne: false
-            referencedRelation: "store_locations"
-            referencedColumns: ["store_id"]
-          },
-        ]
-      }
-      ingredient_product_mapping: {
-        Row: {
-          canonical_product_id: string | null
-          created_at: string
-          ingredient_mapping_id: string
-          manual_override: boolean
-          mapping_confidence: string | null
-          mapping_method: string | null
-          preferred_retailer_product_id: string | null
-          recipe_ingredient_text: string
-          updated_at: string
-        }
-        Insert: {
-          canonical_product_id?: string | null
-          created_at?: string
-          ingredient_mapping_id?: string
-          manual_override?: boolean
-          mapping_confidence?: string | null
-          mapping_method?: string | null
-          preferred_retailer_product_id?: string | null
-          recipe_ingredient_text: string
-          updated_at?: string
-        }
-        Update: {
-          canonical_product_id?: string | null
-          created_at?: string
-          ingredient_mapping_id?: string
-          manual_override?: boolean
-          mapping_confidence?: string | null
-          mapping_method?: string | null
-          preferred_retailer_product_id?: string | null
-          recipe_ingredient_text?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ingredient_product_mapping_canonical_product_id_fkey"
-            columns: ["canonical_product_id"]
-            isOneToOne: false
-            referencedRelation: "canonical_products"
-            referencedColumns: ["canonical_product_id"]
-          },
-          {
-            foreignKeyName: "ingredient_product_mapping_preferred_retailer_product_id_fkey"
-            columns: ["preferred_retailer_product_id"]
-            isOneToOne: false
-            referencedRelation: "retailer_products"
-            referencedColumns: ["retailer_product_id"]
-          },
-        ]
+        Relationships: []
       }
       ingredients: {
         Row: {
@@ -1774,41 +1678,6 @@ export type Database = {
         }
         Relationships: []
       }
-      national_food_prices: {
-        Row: {
-          id: string
-          ingredient_id: string
-          last_updated: string
-          national_avg_price: number
-          source: string | null
-          unit: string
-        }
-        Insert: {
-          id?: string
-          ingredient_id: string
-          last_updated?: string
-          national_avg_price: number
-          source?: string | null
-          unit: string
-        }
-        Update: {
-          id?: string
-          ingredient_id?: string
-          last_updated?: string
-          national_avg_price?: number
-          source?: string | null
-          unit?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "national_food_prices_ingredient_id_fkey"
-            columns: ["ingredient_id"]
-            isOneToOne: false
-            referencedRelation: "ingredients"
-            referencedColumns: ["ingredient_id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           body: string | null
@@ -2081,57 +1950,6 @@ export type Database = {
         }
         Relationships: []
       }
-      product_price_history: {
-        Row: {
-          freshness_status: string | null
-          observed_at: string
-          observed_price: number
-          observed_sale_price: number | null
-          price_history_id: string
-          raw_source_payload: Json | null
-          retailer_product_id: string
-          source_system: string
-          store_id: string | null
-        }
-        Insert: {
-          freshness_status?: string | null
-          observed_at?: string
-          observed_price: number
-          observed_sale_price?: number | null
-          price_history_id?: string
-          raw_source_payload?: Json | null
-          retailer_product_id: string
-          source_system: string
-          store_id?: string | null
-        }
-        Update: {
-          freshness_status?: string | null
-          observed_at?: string
-          observed_price?: number
-          observed_sale_price?: number | null
-          price_history_id?: string
-          raw_source_payload?: Json | null
-          retailer_product_id?: string
-          source_system?: string
-          store_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_price_history_retailer_product_id_fkey"
-            columns: ["retailer_product_id"]
-            isOneToOne: false
-            referencedRelation: "retailer_products"
-            referencedColumns: ["retailer_product_id"]
-          },
-          {
-            foreignKeyName: "product_price_history_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "store_locations"
-            referencedColumns: ["store_id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           account_status: string | null
@@ -2202,9 +2020,6 @@ export type Database = {
           user_goals: string[] | null
           user_id: string
           user_type: string | null
-          verification_badge: string | null
-          verification_status: string | null
-          verification_verified_at: string | null
           weekly_budget: number | null
           zip_code: string | null
         }
@@ -2277,9 +2092,6 @@ export type Database = {
           user_goals?: string[] | null
           user_id: string
           user_type?: string | null
-          verification_badge?: string | null
-          verification_status?: string | null
-          verification_verified_at?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
@@ -2352,76 +2164,10 @@ export type Database = {
           user_goals?: string[] | null
           user_id?: string
           user_type?: string | null
-          verification_badge?: string | null
-          verification_status?: string | null
-          verification_verified_at?: string | null
           weekly_budget?: number | null
           zip_code?: string | null
         }
         Relationships: []
-      }
-      provider_sync_logs: {
-        Row: {
-          completed_at: string | null
-          error_message: string | null
-          provider_name: string
-          records_created: number | null
-          records_failed: number | null
-          records_updated: number | null
-          request_reference: string | null
-          request_status: string
-          retailer_id: string | null
-          started_at: string
-          store_id: string | null
-          sync_log_id: string
-          sync_type: string
-        }
-        Insert: {
-          completed_at?: string | null
-          error_message?: string | null
-          provider_name: string
-          records_created?: number | null
-          records_failed?: number | null
-          records_updated?: number | null
-          request_reference?: string | null
-          request_status?: string
-          retailer_id?: string | null
-          started_at?: string
-          store_id?: string | null
-          sync_log_id?: string
-          sync_type: string
-        }
-        Update: {
-          completed_at?: string | null
-          error_message?: string | null
-          provider_name?: string
-          records_created?: number | null
-          records_failed?: number | null
-          records_updated?: number | null
-          request_reference?: string | null
-          request_status?: string
-          retailer_id?: string | null
-          started_at?: string
-          store_id?: string | null
-          sync_log_id?: string
-          sync_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "provider_sync_logs_retailer_id_fkey"
-            columns: ["retailer_id"]
-            isOneToOne: false
-            referencedRelation: "retailers"
-            referencedColumns: ["retailer_id"]
-          },
-          {
-            foreignKeyName: "provider_sync_logs_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "store_locations"
-            referencedColumns: ["store_id"]
-          },
-        ]
       }
       push_tokens: {
         Row: {
@@ -2567,44 +2313,6 @@ export type Database = {
         }
         Relationships: []
       }
-      regional_food_prices: {
-        Row: {
-          average_price: number
-          id: string
-          ingredient_id: string
-          last_updated: string
-          region: string
-          source: string | null
-          unit: string
-        }
-        Insert: {
-          average_price: number
-          id?: string
-          ingredient_id: string
-          last_updated?: string
-          region: string
-          source?: string | null
-          unit: string
-        }
-        Update: {
-          average_price?: number
-          id?: string
-          ingredient_id?: string
-          last_updated?: string
-          region?: string
-          source?: string | null
-          unit?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "regional_food_prices_ingredient_id_fkey"
-            columns: ["ingredient_id"]
-            isOneToOne: false
-            referencedRelation: "ingredients"
-            referencedColumns: ["ingredient_id"]
-          },
-        ]
-      }
       resource_categories: {
         Row: {
           created_at: string
@@ -2715,136 +2423,6 @@ export type Database = {
           },
         ]
       }
-      retailer_products: {
-        Row: {
-          active_status: string
-          canonical_product_id: string | null
-          created_at: string
-          gtin_upc: string | null
-          image_url: string | null
-          package_size_text: string | null
-          product_url: string | null
-          provider_name: string | null
-          provider_product_reference: string | null
-          retailer_brand: string | null
-          retailer_category: string | null
-          retailer_id: string
-          retailer_product_id: string
-          retailer_product_title: string
-          retailer_sku: string | null
-          size_unit: string | null
-          size_value: number | null
-          store_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          active_status?: string
-          canonical_product_id?: string | null
-          created_at?: string
-          gtin_upc?: string | null
-          image_url?: string | null
-          package_size_text?: string | null
-          product_url?: string | null
-          provider_name?: string | null
-          provider_product_reference?: string | null
-          retailer_brand?: string | null
-          retailer_category?: string | null
-          retailer_id: string
-          retailer_product_id?: string
-          retailer_product_title: string
-          retailer_sku?: string | null
-          size_unit?: string | null
-          size_value?: number | null
-          store_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active_status?: string
-          canonical_product_id?: string | null
-          created_at?: string
-          gtin_upc?: string | null
-          image_url?: string | null
-          package_size_text?: string | null
-          product_url?: string | null
-          provider_name?: string | null
-          provider_product_reference?: string | null
-          retailer_brand?: string | null
-          retailer_category?: string | null
-          retailer_id?: string
-          retailer_product_id?: string
-          retailer_product_title?: string
-          retailer_sku?: string | null
-          size_unit?: string | null
-          size_value?: number | null
-          store_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "retailer_products_canonical_product_id_fkey"
-            columns: ["canonical_product_id"]
-            isOneToOne: false
-            referencedRelation: "canonical_products"
-            referencedColumns: ["canonical_product_id"]
-          },
-          {
-            foreignKeyName: "retailer_products_retailer_id_fkey"
-            columns: ["retailer_id"]
-            isOneToOne: false
-            referencedRelation: "retailers"
-            referencedColumns: ["retailer_id"]
-          },
-          {
-            foreignKeyName: "retailer_products_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "store_locations"
-            referencedColumns: ["store_id"]
-          },
-        ]
-      }
-      retailers: {
-        Row: {
-          created_at: string
-          provider_name: string | null
-          provider_retailer_reference: string | null
-          retailer_id: string
-          retailer_logo_url: string | null
-          retailer_name: string
-          retailer_slug: string
-          retailer_status: string
-          supports_live_inventory: boolean
-          supports_live_pricing: boolean
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          provider_name?: string | null
-          provider_retailer_reference?: string | null
-          retailer_id?: string
-          retailer_logo_url?: string | null
-          retailer_name: string
-          retailer_slug: string
-          retailer_status?: string
-          supports_live_inventory?: boolean
-          supports_live_pricing?: boolean
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          provider_name?: string | null
-          provider_retailer_reference?: string | null
-          retailer_id?: string
-          retailer_logo_url?: string | null
-          retailer_name?: string
-          retailer_slug?: string
-          retailer_status?: string
-          supports_live_inventory?: boolean
-          supports_live_pricing?: boolean
-          updated_at?: string
-        }
-        Relationships: []
-      }
       saved_resources: {
         Row: {
           created_at: string
@@ -2882,96 +2460,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      serpapi_usage: {
-        Row: {
-          call_count: number
-          updated_at: string
-          usage_date: string
-        }
-        Insert: {
-          call_count?: number
-          updated_at?: string
-          usage_date: string
-        }
-        Update: {
-          call_count?: number
-          updated_at?: string
-          usage_date?: string
-        }
-        Relationships: []
-      }
-      snap_benefit_tracking: {
-        Row: {
-          created_at: string
-          current_balance: number
-          deposit_day: number | null
-          id: string
-          month_start: string
-          monthly_allotment: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_balance?: number
-          deposit_day?: number | null
-          id?: string
-          month_start: string
-          monthly_allotment?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_balance?: number
-          deposit_day?: number | null
-          id?: string
-          month_start?: string
-          monthly_allotment?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      snap_purchase_log: {
-        Row: {
-          amount_spent: number
-          created_at: string
-          id: string
-          meal_plan_id: string | null
-          notes: string | null
-          paid_with_other: number
-          paid_with_snap: number
-          purchase_date: string
-          store_name: string | null
-          user_id: string
-        }
-        Insert: {
-          amount_spent?: number
-          created_at?: string
-          id?: string
-          meal_plan_id?: string | null
-          notes?: string | null
-          paid_with_other?: number
-          paid_with_snap?: number
-          purchase_date?: string
-          store_name?: string | null
-          user_id: string
-        }
-        Update: {
-          amount_spent?: number
-          created_at?: string
-          id?: string
-          meal_plan_id?: string | null
-          notes?: string | null
-          paid_with_other?: number
-          paid_with_snap?: number
-          purchase_date?: string
-          store_name?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
       special_meal_collection_recipes: {
         Row: {
@@ -3056,192 +2544,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      state_tax_rules: {
-        Row: {
-          grocery_tax_rate: number
-          local_tax_possible: boolean
-          notes: string | null
-          state: string
-          state_name: string
-          updated_at: string
-        }
-        Insert: {
-          grocery_tax_rate?: number
-          local_tax_possible?: boolean
-          notes?: string | null
-          state: string
-          state_name: string
-          updated_at?: string
-        }
-        Update: {
-          grocery_tax_rate?: number
-          local_tax_possible?: boolean
-          notes?: string | null
-          state?: string
-          state_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      store_locations: {
-        Row: {
-          address_line_1: string | null
-          address_line_2: string | null
-          city: string | null
-          created_at: string
-          latitude: number | null
-          longitude: number | null
-          phone_number: string | null
-          provider_store_reference: string | null
-          retailer_id: string
-          state: string | null
-          store_id: string
-          store_name: string
-          store_status: string
-          timezone: string | null
-          updated_at: string
-          zip_code: string | null
-        }
-        Insert: {
-          address_line_1?: string | null
-          address_line_2?: string | null
-          city?: string | null
-          created_at?: string
-          latitude?: number | null
-          longitude?: number | null
-          phone_number?: string | null
-          provider_store_reference?: string | null
-          retailer_id: string
-          state?: string | null
-          store_id?: string
-          store_name: string
-          store_status?: string
-          timezone?: string | null
-          updated_at?: string
-          zip_code?: string | null
-        }
-        Update: {
-          address_line_1?: string | null
-          address_line_2?: string | null
-          city?: string | null
-          created_at?: string
-          latitude?: number | null
-          longitude?: number | null
-          phone_number?: string | null
-          provider_store_reference?: string | null
-          retailer_id?: string
-          state?: string | null
-          store_id?: string
-          store_name?: string
-          store_status?: string
-          timezone?: string | null
-          updated_at?: string
-          zip_code?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_locations_retailer_id_fkey"
-            columns: ["retailer_id"]
-            isOneToOne: false
-            referencedRelation: "retailers"
-            referencedColumns: ["retailer_id"]
-          },
-        ]
-      }
-      store_product_prices: {
-        Row: {
-          base_price: number
-          created_at: string
-          currency_code: string
-          freshness_status: string
-          in_stock: boolean | null
-          inventory_status: string | null
-          last_verified_at: string
-          loyalty_price: number | null
-          promo_text: string | null
-          raw_source_payload: Json | null
-          retailer_id: string
-          retailer_product_id: string
-          sale_price: number | null
-          source_confidence: string | null
-          source_system: string
-          store_id: string | null
-          store_price_id: string
-          unit_price: number | null
-          unit_price_basis: string | null
-          updated_at: string
-          zip_code_context: string | null
-        }
-        Insert: {
-          base_price: number
-          created_at?: string
-          currency_code?: string
-          freshness_status?: string
-          in_stock?: boolean | null
-          inventory_status?: string | null
-          last_verified_at?: string
-          loyalty_price?: number | null
-          promo_text?: string | null
-          raw_source_payload?: Json | null
-          retailer_id: string
-          retailer_product_id: string
-          sale_price?: number | null
-          source_confidence?: string | null
-          source_system: string
-          store_id?: string | null
-          store_price_id?: string
-          unit_price?: number | null
-          unit_price_basis?: string | null
-          updated_at?: string
-          zip_code_context?: string | null
-        }
-        Update: {
-          base_price?: number
-          created_at?: string
-          currency_code?: string
-          freshness_status?: string
-          in_stock?: boolean | null
-          inventory_status?: string | null
-          last_verified_at?: string
-          loyalty_price?: number | null
-          promo_text?: string | null
-          raw_source_payload?: Json | null
-          retailer_id?: string
-          retailer_product_id?: string
-          sale_price?: number | null
-          source_confidence?: string | null
-          source_system?: string
-          store_id?: string | null
-          store_price_id?: string
-          unit_price?: number | null
-          unit_price_basis?: string | null
-          updated_at?: string
-          zip_code_context?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_product_prices_retailer_id_fkey"
-            columns: ["retailer_id"]
-            isOneToOne: false
-            referencedRelation: "retailers"
-            referencedColumns: ["retailer_id"]
-          },
-          {
-            foreignKeyName: "store_product_prices_retailer_product_id_fkey"
-            columns: ["retailer_product_id"]
-            isOneToOne: false
-            referencedRelation: "retailer_products"
-            referencedColumns: ["retailer_product_id"]
-          },
-          {
-            foreignKeyName: "store_product_prices_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "store_locations"
-            referencedColumns: ["store_id"]
-          },
-        ]
       }
       support_tickets: {
         Row: {
@@ -3420,51 +2722,6 @@ export type Database = {
         }
         Relationships: []
       }
-      verification_documents: {
-        Row: {
-          admin_notes: string | null
-          created_at: string
-          document_type: string
-          document_url: string
-          eligibility_category: string
-          file_name: string
-          id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          created_at?: string
-          document_type: string
-          document_url: string
-          eligibility_category: string
-          file_name: string
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          admin_notes?: string | null
-          created_at?: string
-          document_type?: string
-          document_url?: string
-          eligibility_category?: string
-          file_name?: string
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       waitlist_signups: {
         Row: {
           created_at: string
@@ -3500,10 +2757,6 @@ export type Database = {
       create_support_ticket: {
         Args: { _message: string; _name: string; _ticket_type: string }
         Returns: string
-      }
-      deduct_snap_balance: {
-        Args: { _amount: number; _tracking_id: string }
-        Returns: number
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
