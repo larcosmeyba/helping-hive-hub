@@ -86,7 +86,7 @@ export function HowItWorksSection() {
                   zIndex: p.z,
                   filter: "drop-shadow(0 30px 40px rgba(0,0,0,0.18))",
                 }}
-                className="w-[280px] lg:w-[320px] shrink-0"
+                className={`w-[280px] lg:w-[320px] shrink-0 ${i === 0 ? "-mr-10 lg:-mr-20" : i === 2 ? "-ml-10 lg:-ml-20" : ""}`}
               >
                 <img
                   src={p.src}
