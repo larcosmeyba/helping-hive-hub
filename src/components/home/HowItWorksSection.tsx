@@ -73,7 +73,7 @@ export function HowItWorksSection() {
         {/* Phone mockups */}
         <div className="max-w-6xl mx-auto">
           {/* Desktop / tablet: overlapping */}
-          <div className="hidden md:flex items-end justify-center gap-2 lg:gap-4 mb-12 px-4">
+          <div className="hidden md:flex items-end justify-center gap-0 mb-12 px-4">
             {phones.map((p, i) => (
               <motion.div
                 key={i}
