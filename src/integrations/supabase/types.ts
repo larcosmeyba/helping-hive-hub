@@ -125,6 +125,87 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_config: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          model: string
+          notes: string | null
+          provider: string
+          system_prompt: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          notes?: string | null
+          provider?: string
+          system_prompt?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          notes?: string | null
+          provider?: string
+          system_prompt?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_request_log: {
+        Row: {
+          completion_tokens: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          metadata: Json
+          model_used: string | null
+          prompt_tokens: number | null
+          provider: string | null
+          request_type: string
+          status: string
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model_used?: string | null
+          prompt_tokens?: number | null
+          provider?: string | null
+          request_type: string
+          status?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model_used?: string | null
+          prompt_tokens?: number | null
+          provider?: string | null
+          request_type?: string
+          status?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       api_rate_limits: {
         Row: {
           call_count: number
