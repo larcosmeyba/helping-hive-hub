@@ -50,9 +50,8 @@ const captions = [
 ];
 
 const metrics = [
-  { value: "$1M+", label: "Estimated Savings" },
   { value: "100%", label: "Free To Use" },
-  { value: "Powered By", label: "Instacart" },
+  { value: "Powered By", label: "Instacart", branded: true },
 ];
 
 const trustItems = [
