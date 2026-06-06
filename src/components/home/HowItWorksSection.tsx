@@ -4,6 +4,25 @@ import todaysDashboard from "@/assets/todays-dashboard.png.asset.json";
 import mealPlanScreen from "@/assets/meal-plan-screen.png.asset.json";
 import groceryListScreen from "@/assets/grocery-list-screen.png.asset.json";
 
+function InstacartCarrot({ size = 20 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <path
+        d="M16 10c-1.6-3-4.8-4.6-8-4 .4 3.2 2.8 5.8 5.9 6.6.2.05.4.08.6.1L16 10z"
+        fill="#0AAD0A"
+      />
+      <path
+        d="M16 10c1.6-3 4.8-4.6 8-4-.4 3.2-2.8 5.8-5.9 6.6-.2.05-.4.08-.6.1L16 10z"
+        fill="#0AAD0A"
+      />
+      <path
+        d="M16 11.5c-3.9 0-7.4 2.6-8.8 6.3-1.8 4.8.7 10.7 5.2 13.5 2.2 1.3 4.9 1.3 7.1 0 4.5-2.8 7-8.7 5.2-13.5-1.4-3.7-4.9-6.3-8.8-6.3zm-2.6 5.9a1 1 0 110 2 1 1 0 010-2zm4.7 2.8a1 1 0 110 2 1 1 0 010-2zm-2.9 3.4a1 1 0 110 2 1 1 0 010-2z"
+        fill="#FF7009"
+      />
+    </svg>
+  );
+}
+
 const phones = [
   {
     src: mealPlanScreen.url,
