@@ -235,38 +235,82 @@ Deno.serve(async (req) => {
     };
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    let parsed: any;
-    try {
-      const { callOpenAI } = await import("../_shared/openaiClient.ts");
-      const ai = await callOpenAI({
-        model: "gpt-5.4-mini",
-        system: SYSTEM_PROMPT,
-        user: `Build this week's plan from this meal_plan_context:\n\n${JSON.stringify(mealPlanContext)}`,
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_meal_plan",
-            description: "Return the structured weekly meal plan and grocery list.",
-            parameters: RESPONSE_SCHEMA,
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "return_meal_plan" } },
-        log: { admin, user_id: userId, request_type: "meal_plan_generation" },
-      });
-      if (!ai.tool_arguments) {
-        return new Response(JSON.stringify({ error: "Malformed AI response", raw: ai.raw }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    console.log("[generate-meal-plan] meal_plan_context →",
+      JSON.stringify({
+        ...mealPlanContext,
+        pantry_items_count: mealPlanContext.pantry_items.length,
+        fridge_items_count: mealPlanContext.fridge_items.length,
+      }).slice(0, 4000));
+
+    const { callOpenAI } = await import("../_shared/openaiClient.ts");
+
+    async function attempt(attemptNum: number): Promise<any | null> {
+      try {
+        const ai = await callOpenAI({
+          model: "gpt-5.4-mini",
+          system: SYSTEM_PROMPT,
+          user: `Build this week's plan from this meal_plan_context. Output ONLY the structured tool call — no prose, no markdown.\n\n${JSON.stringify(mealPlanContext)}`,
+          tools: [{
+            type: "function",
+            function: {
+              name: "return_meal_plan",
+              description: "Return the structured weekly meal plan and grocery list.",
+              parameters: RESPONSE_SCHEMA,
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "return_meal_plan" } },
+          max_tokens: 8000,
+          log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
+        });
+        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`,
+          ai.raw?.choices?.[0]?.finish_reason,
+          "tool_arguments_keys=", ai.tool_arguments ? Object.keys(ai.tool_arguments) : null,
+          "raw_text_len=", ai.text?.length ?? 0);
+        const p = ai.tool_arguments as any;
+        const validationErrors: string[] = [];
+        if (!p) validationErrors.push("no tool_arguments");
+        if (p && !p.meal_plan) validationErrors.push("missing meal_plan");
+        if (p?.meal_plan && !Array.isArray(p.meal_plan.days)) validationErrors.push("meal_plan.days not array");
+        if (p?.meal_plan && Array.isArray(p.meal_plan.days) && p.meal_plan.days.length < 1) validationErrors.push("empty days");
+        if (p && !Array.isArray(p.grocery_list)) validationErrors.push("missing grocery_list");
+        if (validationErrors.length) {
+          console.warn(`[generate-meal-plan] attempt ${attemptNum} validation errors:`, validationErrors);
+          return null;
+        }
+        return p;
+      } catch (e: any) {
+        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message);
+        if (e?.status === 429 || e?.status === 402) throw e;
+        return null;
       }
-      parsed = ai.tool_arguments;
-    } catch (e: any) {
-      const status = e?.status === 429 || e?.status === 402 ? e.status : 500;
-      return new Response(JSON.stringify({ error: e?.message ?? "AI error" }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    let parsed: any = await attempt(1);
+    if (!parsed) {
+      console.warn("[generate-meal-plan] retrying once");
+      parsed = await attempt(2);
+    }
+
+    if (!parsed) {
+      console.warn("[generate-meal-plan] both attempts failed — returning mock fallback");
+      return new Response(
+        JSON.stringify({
+          fallback: true,
+          notice: "We couldn't reach the meal planner. Showing a sample plan — please regenerate when ready.",
+          ...buildMockPlanResponse(mealPlanContext),
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
     const mealPlan = parsed.meal_plan;
     const groceryList = parsed.grocery_list ?? [];
     const whyThisPlan = parsed.why_this_plan ?? {};
 
-    // admin client already created above for AI logging.
-
+    const normalized = normalizePlanForClient(mealPlan, groceryList);
+    console.log("[generate-meal-plan] normalized days=", normalized.weeklyPlan.length,
+      "grocery_items=", normalized.groceryList.length,
+      "total=", normalized.totalEstimatedCost);
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
@@ -278,7 +322,7 @@ Deno.serve(async (req) => {
       total_meals: mealPlan.total_meals,
       savings_estimate: mealPlan.savings_estimate,
       why_this_plan: whyThisPlan,
-      plan_data: parsed,
+      plan_data: { ...parsed, ...normalized },
       status: "active",
     }).select().single();
     if (planErr) throw planErr;
@@ -383,6 +427,7 @@ Deno.serve(async (req) => {
         meal_plan: parsed.meal_plan,
         grocery_list: parsed.grocery_list,
         why_this_plan: parsed.why_this_plan,
+        ...normalized,
         pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -395,3 +440,83 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+function ingredientLine(i: any): string {
+  return [i.quantity, i.unit, i.item_name].filter(Boolean).join(" ").trim();
+}
+
+function normalizePlanForClient(mealPlan: any, groceryList: any[]) {
+  const weeklyPlan = (mealPlan?.days ?? []).map((d: any) => ({
+    day: d.day_name,
+    meals: (["breakfast", "lunch", "dinner"] as const)
+      .filter((t) => d?.[t])
+      .map((t) => {
+        const m = d[t];
+        return {
+          type: t,
+          name: m.meal_name,
+          calories: m.calories_estimate ?? 0,
+          protein: m.protein_estimate ?? 0,
+          carbs: 0,
+          fats: 0,
+          estimatedCost: m.estimated_cost ?? 0,
+          costPerServing: m.estimated_cost_per_serving,
+          cookTimeMinutes: (m.cook_time_minutes ?? 0) + (m.prep_time_minutes ?? 0),
+          ingredients: [
+            ...(m.ingredients_used_from_pantry ?? []).map(ingredientLine),
+            ...(m.ingredients_to_buy ?? []).map(ingredientLine),
+          ],
+          instructions: m.instructions ?? [],
+        };
+      }),
+  }));
+
+  const groceryListOut = (groceryList ?? [])
+    .filter((g: any) => !g.already_have)
+    .map((g: any) => ({
+      name: g.item_name,
+      quantity: [g.quantity, g.unit].filter(Boolean).join(" ").trim(),
+      estimatedPrice: Number(g.estimated_price) || 0,
+      section: g.category ?? "Other",
+    }));
+
+  const totalEstimatedCost = Number(mealPlan?.estimated_total_cost)
+    || groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
+  const totalMeals = Number(mealPlan?.total_meals)
+    || weeklyPlan.reduce((s: number, d: any) => s + d.meals.length, 0) || 1;
+
+  return {
+    weeklyPlan,
+    groceryList: groceryListOut,
+    storeRecommendations: [],
+    totalEstimatedCost,
+    pantrySavings: Number(mealPlan?.savings_estimate) || 0,
+    costPerMeal: totalEstimatedCost / totalMeals,
+    taxEstimate: 0,
+  };
+}
+
+function buildMockPlanResponse(_ctx: any) {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const types = ["breakfast", "lunch", "dinner"] as const;
+  const placeholder = {
+    name: "Sample meal — regenerate when ready",
+    calories: 0, protein: 0, carbs: 0, fats: 0,
+    estimatedCost: 0, cookTimeMinutes: 0,
+    ingredients: [], instructions: ["Tap Regenerate to build your real plan."],
+  };
+  const weeklyPlan = days.map((d) => ({
+    day: d,
+    meals: types.map((t) => ({ type: t, ...placeholder })),
+  }));
+  return {
+    weeklyPlan,
+    groceryList: [],
+    storeRecommendations: [],
+    totalEstimatedCost: 0,
+    pantrySavings: 0,
+    costPerMeal: 0,
+    taxEstimate: 0,
+    pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
+  };
+}
