@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Archive, ShoppingCart, Wallet, Heart, Check } from "lucide-react";
 import { DownloadAppButtons } from "@/components/DownloadAppButtons";
-import heroBowl from "@/assets/meal-family-dinner.jpg";
+import heroBowl from "@/assets/recipe-chicken-rice.jpg";
 
 const pills = [
   { icon: Sparkles, label: "AI Meal\nPlanning", color: "text-primary" },
