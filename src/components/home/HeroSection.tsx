@@ -81,7 +81,7 @@ export function HeroSection() {
         </div>
 
         {/* RIGHT — food image */}
-        <div className="relative min-h-[320px] lg:min-h-0">
+        <div className="relative min-h-[320px] md:min-h-0">
           <img
             src={heroBowl}
             alt="Healthy family meal bowl with grilled salmon, green beans, cherry tomatoes, couscous and pesto"
@@ -90,7 +90,7 @@ export function HeroSection() {
             height={1280}
           />
           {/* Soft fade from cream into image on the left edge for seamless blend */}
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-honey-cream to-transparent pointer-events-none hidden lg:block" />
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-honey-cream to-transparent pointer-events-none hidden md:block" />
         </div>
       </div>
     </section>
