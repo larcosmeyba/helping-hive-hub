@@ -415,28 +415,6 @@ export default function MealPlanPage() {
         })}
       </AnimatePresence>
 
-      <MealPlanHistory />
-
-      {/* Sticky Grocery Bar (mobile) */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-2 pointer-events-none">
-        <div className="bg-white border border-[#EEE7DA] shadow-lg rounded-2xl p-3 flex items-center justify-between gap-3 pointer-events-auto">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-[#FFF4D6] flex items-center justify-center shrink-0">
-              <ShoppingCart className="w-4 h-4 text-[#F2A900]" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold text-[#1a1a1a] truncate">{itemCount} Items Ready</p>
-              <p className="text-[11px] text-[#6a6a6a] truncate">Est. total ~${weeklyTotal.toFixed(2)}</p>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate("/dashboard/grocery-list")}
-            className="bg-[#1F5A3D] hover:bg-[#194B33] text-white h-10 px-4 rounded-xl text-[13px] font-semibold shrink-0"
-          >
-            View Grocery List <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Button>
-        </div>
-      </div>
 
       {/* Savings breakdown dialog */}
       <Dialog open={showSavingsBreakdown} onOpenChange={setShowSavingsBreakdown}>
