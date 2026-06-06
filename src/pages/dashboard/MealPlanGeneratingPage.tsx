@@ -14,7 +14,7 @@ const ORDER = ["preparing", "generating", "saving", "done"];
 
 export default function MealPlanGeneratingPage() {
   const navigate = useNavigate();
-  const { generationStage, mealPlan, generating } = useMealPlan();
+  const { generationStage, generationStatus, mealPlan, generating } = useMealPlan();
 
   useEffect(() => {
     // If user lands here without an active generation and no plan, send to setup
@@ -30,7 +30,14 @@ export default function MealPlanGeneratingPage() {
     }
   }, [generationStage, mealPlan, navigate]);
 
+  useEffect(() => {
+    if (!generating && generationStage === "idle" && generationStatus.errorMessage && !mealPlan) {
+      navigate("/dashboard/meal-plan/setup", { replace: true });
+    }
+  }, [generationStage, generationStatus.errorMessage, generating, mealPlan, navigate]);
+
   const activeIdx = Math.max(0, ORDER.indexOf(generationStage));
+  const failureMessage = !generating && generationStage !== "done" ? generationStatus.errorMessage : null;
 
   return (
     <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-[hsl(43_100%_96%)] flex flex-col">
@@ -67,6 +74,24 @@ export default function MealPlanGeneratingPage() {
               </div>
             );
           })}
+
+          {generationStatus.currentStep && (
+            <p className="text-[12px] text-[#6b6b6b] pt-2">{generationStatus.currentStep}</p>
+          )}
+
+          {failureMessage && (
+            <div className="rounded-xl border border-[#D35F5F] bg-white px-4 py-3 text-left">
+              <p className="text-[13px] font-semibold text-[#8E2C2C]">Meal plan generation failed</p>
+              <p className="text-[12px] text-[#8E2C2C] mt-1">{failureMessage}</p>
+            </div>
+          )}
+
+          {generationStatus.fallbackUsed && (
+            <div className="rounded-xl border border-[#E6D6A8] bg-white px-4 py-3 text-left">
+              <p className="text-[13px] font-semibold text-[#7A5B00]">Showing fallback meal plan</p>
+              <p className="text-[12px] text-[#7A5B00] mt-1">We loaded a sample plan so you’re not stuck while the full generator retries next time.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
