@@ -22,7 +22,7 @@ interface Props {
   className?: string;
   variant?: InstacartCTAVariant;
   /** Approved Instacart CTA copy. */
-  label?: "Shop on Instacart" | "Shop Ingredients" | "Send to Instacart";
+  label?: "Shop on Instacart" | "Shop Ingredients" | "Send to Instacart" | "Send Selected Items to Instacart";
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;

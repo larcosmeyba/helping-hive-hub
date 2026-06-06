@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -167,17 +167,33 @@ export default function GroceryReviewPage() {
     });
   };
 
+  // Auto-select all buyable items on first load so unchecked = excluded from Instacart
+  const hasInitChecked = useRef(false);
+  useEffect(() => {
+    if (hasInitChecked.current) return;
+    const names = new Set<string>();
+    for (const it of toAdjust) names.add(it.name);
+    for (const it of toBuy) names.add(it.name);
+    for (const it of manualItems) names.add(it.name);
+    if (names.size > 0) {
+      setChecked(names);
+      hasInitChecked.current = true;
+    }
+  }, [toAdjust, toBuy, manualItems]);
+
   const sendItems: InstacartLineItem[] = useMemo(() => {
     const buyable = [...toAdjust, ...toBuy, ...manualItems];
-    return buyable.map((it) => {
-      const { unit } = parseQty(it.quantity);
-      return {
-        name: it.name,
-        quantity: getQty(it) || 1,
-        unit: unit || "each",
-      };
-    });
-  }, [toAdjust, toBuy, manualItems, qtyOverride]);
+    return buyable
+      .filter((it) => checked.has(it.name))
+      .map((it) => {
+        const { unit } = parseQty(it.quantity);
+        return {
+          name: it.name,
+          quantity: getQty(it) || 1,
+          unit: unit || "each",
+        };
+      });
+  }, [toAdjust, toBuy, manualItems, qtyOverride, checked]);
 
   const isDuplicate = (name: string) => {
     const norm = normalize(name);
@@ -270,6 +286,17 @@ export default function GroceryReviewPage() {
       return n;
     });
   };
+
+  const selectedItemsAll = [...toAdjust, ...toBuy, ...manualItems].filter((it) =>
+    checked.has(it.name)
+  );
+  const selectedCount = selectedItemsAll.length;
+  const selectedTotal = selectedItemsAll.reduce((s, it) => {
+    const ratio = parseQty(it.quantity).num
+      ? getQty(it) / parseQty(it.quantity).num
+      : 1;
+    return s + getPrice(it) * ratio;
+  }, 0);
 
   if (!allItems.length) {
     return (
@@ -367,34 +394,41 @@ export default function GroceryReviewPage() {
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
-                  className="flex items-center gap-3 px-4 py-3"
+                  className="flex items-start gap-3 px-4 py-3"
                 >
                   <button
                     onClick={() => toggleCheck(it.name)}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
+                    className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
                       isChecked ? "bg-[#1F5A3D] border-[#1F5A3D]" : "border-[#bdbdbd] bg-white"
                     }`}
                     aria-label={isChecked ? "Uncheck" : "Check"}
                   >
                     {isChecked && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </button>
-                  <span className="text-[14px] text-[#1a1a1a] font-medium flex-1 truncate">
-                    {it.name}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-medium text-[#1a1a1a] truncate">{it.name}</p>
+                    <p
+                      className={`text-[11px] mt-0.5 ${
+                        isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
+                      }`}
+                    >
+                      {isChecked ? "Added to Instacart" : "Not added"}
+                    </p>
+                  </div>
                   {isManual && (
                     <button
                       onClick={() => removeManualItem(it.name)}
-                      className="text-[11px] text-[#6b6b6b] underline shrink-0"
+                      className="text-[11px] text-[#6b6b6b] underline shrink-0 mt-0.5"
                     >
                       Remove
                     </button>
                   )}
                   {priceKnown ? (
-                    <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0">
+                    <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0 mt-0.5">
                       ${price.toFixed(2)}
                     </span>
                   ) : (
-                    <span className="text-[11px] text-[#6b6b6b] italic shrink-0 text-right">
+                    <span className="text-[11px] text-[#6b6b6b] italic shrink-0 text-right mt-0.5">
                       Price confirmed at<br />Instacart checkout
                     </span>
                   )}
@@ -451,11 +485,14 @@ export default function GroceryReviewPage() {
 
       {/* Send to Instacart (existing approved flow) */}
       <div className="mt-4 flex flex-col items-center gap-2">
+        <p className="text-[13px] text-[#6b6b6b] font-medium">
+          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated total ${selectedTotal.toFixed(2)}
+        </p>
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
           lineItems={sendItems}
-          label="Send to Instacart"
+          label="Send Selected Items to Instacart"
           fullWidth
         />
         <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
