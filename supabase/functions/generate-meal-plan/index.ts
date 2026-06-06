@@ -170,6 +170,27 @@ function freshness(item: any): string {
   return "good";
 }
 
+async function updateJob(
+  admin: ReturnType<typeof createClient>,
+  jobId: string,
+  patch: Record<string, unknown>,
+) {
+  const { error } = await admin
+    .from("meal_plan_generation_jobs")
+    .update({ ...patch, last_heartbeat_at: new Date().toISOString() })
+    .eq("id", jobId);
+  if (error) console.error("[generate-meal-plan] failed to update job", error);
+}
+
+function missingContextFields(ctx: Record<string, unknown>) {
+  const required = ["household_size", "weekly_grocery_budget", "dietary_preferences", "allergies", "pantry_items", "fridge_items", "week_start_date"];
+  return required.filter((key) => ctx[key] === undefined || ctx[key] === null);
+}
+
+function structuredError(code: GenerationErrorCode, message: string, extra?: Record<string, unknown>) {
+  return { ok: false, error: message, error_code: code, ...extra };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
