@@ -1431,7 +1431,9 @@ export type Database = {
           detected_items_json: Json | null
           id: string
           image_url: string
+          location: string | null
           scan_type: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1440,7 +1442,9 @@ export type Database = {
           detected_items_json?: Json | null
           id?: string
           image_url: string
+          location?: string | null
           scan_type?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1449,7 +1453,9 @@ export type Database = {
           detected_items_json?: Json | null
           id?: string
           image_url?: string
+          location?: string | null
           scan_type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -2653,6 +2659,65 @@ export type Database = {
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scanned_inventory_items: {
+        Row: {
+          category: string | null
+          confidence_score: number | null
+          confirmed: boolean
+          created_at: string
+          id: string
+          inventory_photo_id: string | null
+          item_name: string
+          location: string | null
+          normalized_item_name: string | null
+          quantity: string | null
+          rejected: boolean
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          confidence_score?: number | null
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          inventory_photo_id?: string | null
+          item_name: string
+          location?: string | null
+          normalized_item_name?: string | null
+          quantity?: string | null
+          rejected?: boolean
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          confidence_score?: number | null
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          inventory_photo_id?: string | null
+          item_name?: string
+          location?: string | null
+          normalized_item_name?: string | null
+          quantity?: string | null
+          rejected?: boolean
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanned_inventory_items_inventory_photo_id_fkey"
+            columns: ["inventory_photo_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_photos"
             referencedColumns: ["id"]
           },
         ]
