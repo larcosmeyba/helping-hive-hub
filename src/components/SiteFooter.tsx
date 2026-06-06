@@ -129,9 +129,6 @@ export function SiteFooter() {
             <Link to="/partnerships" className="hover:text-white/80 transition-colors underline underline-offset-2">
               Partnerships
             </Link>
-            <Link to="/press" className="hover:text-white/80 transition-colors underline underline-offset-2">
-              Press
-            </Link>
           </div>
           <div className="flex items-center gap-3 mt-4">
             <a
@@ -177,7 +174,7 @@ export function SiteFooter() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {footerColumns.map(col => (
               <FooterColumn
                 key={col.title}
