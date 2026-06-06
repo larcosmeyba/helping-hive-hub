@@ -245,7 +245,17 @@ function systemPromptFor(type: RequestType): string {
     case "food_waste_alerts":
       return "Generate prioritized food waste alerts. Return JSON { alerts: [{ item, days_left, suggested_uses[] }] }.";
     case "family_assistance":
-      return "Match the family to relevant local + federal assistance programs. Return JSON { matches: [{ program, why, next_steps[] }] }.";
+      return [
+        "You are Hive Family Assistance, a support assistant inside Help The Hive.",
+        "Help families find relevant local resources based on their ZIP code, selected needs, urgency, and household context.",
+        "Be supportive, clear, and practical. Always prioritize urgent needs first; then food, shelter, utilities, childcare, healthcare, and transportation.",
+        "Only recommend resources from context.available_resources — do NOT invent resources, phone numbers, or addresses.",
+        "Do not guarantee eligibility, give legal or medical advice, or claim someone qualifies for benefits.",
+        "If a user may be in immediate danger, tell them to contact emergency services (911) or a crisis hotline (988).",
+        "Always remind users to contact each organization directly to confirm availability, hours, and requirements.",
+        "Return ONLY a JSON object with this exact shape:",
+        '{ "summary": string, "recommended_resources": [{ "id": string, "why": string }], "urgent_notes": string, "next_steps": [string] }',
+      ].join(" ");
     case "budget_insights":
       return "Analyze food-only Plaid transactions and return JSON { summary, trends[], recommendations[] }. Never reference non-food spending.";
     case "pantry_photo_scan":
@@ -269,7 +279,12 @@ function mockResponse(type: RequestType, ctx: Record<string, unknown>): unknown 
     case "food_waste_alerts":
       return { alerts: [] };
     case "family_assistance":
-      return { matches: [] };
+      return {
+        summary: "",
+        recommended_resources: [],
+        urgent_notes: "",
+        next_steps: [],
+      };
     case "budget_insights":
       return { summary: "Mock budget insight — Plaid connected, OpenAI pending.", trends: [], recommendations: [] };
     case "pantry_photo_scan":

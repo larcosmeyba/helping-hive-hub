@@ -1,77 +1,46 @@
-# Plaid Food Budget Dashboard
+# Hive Family Assistance — Full Rebuild
 
-Build a secure, Plaid-powered budget feature scoped strictly to **food spending** (groceries, restaurants, coffee, food delivery, Instacart, other food). No income, debt, investments, or non-food data is stored or shown.
+Replace the current yes/no intake with a category-card flow, add results/detail/saved screens, and wire it to new database tables + edge functions that are OpenAI-ready but work without it.
 
-## Scope clarifications
+## 1. Database (one migration)
 
-- UI ships with **mock data** so the flow is usable today.
-- Backend is structured for **real Plaid Transactions** the moment `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV` are added as secrets.
-- Mock AI insights now; real OpenAI later (no key requested yet).
-- Not added to bottom nav. Entry point = Home page "Budget Snapshot" card under existing cards.
+New tables (with GRANTs + RLS):
 
-## Database (one migration)
+- **family_assistance_requests** — `id, user_id, zip_code, selected_categories jsonb, urgency_level, household_size, has_children, employment_status, receives_benefits, timestamps`
+- **community_resources** — `id, name, category, subcategory, description, address, city, state, zip_code, county, latitude, longitude, phone, website, email, hours, eligibility_notes, what_to_bring, emergency_available bool, source, last_verified_at, active bool, timestamps`
+- **saved_family_resources** — `id, user_id, resource_id (-> community_resources), notes, created_at` (separate from existing `saved_resources` to avoid colliding with the legacy resource hub)
+- **family_assistance_ai_recommendations** — `id, user_id, request_id, recommended_resource_ids jsonb, ai_summary, urgent_notes, next_steps jsonb, created_at`
 
-New tables (all RLS-scoped to `auth.uid() = user_id`, grants to `authenticated` + `service_role`):
+RLS: user owns own requests/saves/recs; `community_resources` readable by authenticated; admins manage.
 
-- `plaid_connections` — institution + encrypted access token + item_id + status
-- `plaid_accounts` — masked account metadata only (no full numbers)
-- `food_transactions` — only food-categorized transactions; unique on `(user_id, plaid_transaction_id)`
-- `food_budget_settings` — monthly + per-category budgets
-- `food_budget_summaries` — per-month rollup with health score + projection
-- `budget_ai_insights` — mock now, OpenAI-ready later
+## 2. Edge Functions
 
-`access_token_encrypted` is `text` (encrypted server-side before insert; plaintext never leaves edge functions).
+- `find-family-resources` — saves request, queries `community_resources` (ZIP → county → state, urgency-first, category filter), calls `process-hive-ai-request` with `request_type: "family_assistance"`, stores recommendation, returns ranked list + AI summary. Graceful fallback if AI fails.
+- `save-family-resource` — upsert into `saved_family_resources`.
+- `get-saved-family-resources` — returns saved resources joined with `community_resources`.
+- Extend `process-hive-ai-request` to handle `family_assistance` request type using the system prompt from the spec; returns `{summary, recommended_resources, urgent_notes, next_steps}`. Never invents resources — only ranks supplied candidates.
 
-## Edge Functions
+## 3. Frontend
 
-All JWT-validated via `getClaims`, CORS-enabled, food-only filters enforced server-side.
+New route tree under `/dashboard/family-assistance`:
 
-1. `create-plaid-link-token` — returns `link_token` for current user.
-2. `exchange-plaid-public-token` — exchanges public token, stores encrypted access token + accounts.
-3. `sync-plaid-transactions` — pulls `/transactions/sync`, filters to food PFC categories, upserts into `food_transactions`.
-4. `categorize-food-transactions` — maps Plaid PFC + merchant heuristics → `groceries | restaurants | coffee_drinks | food_delivery | instacart | other_food`.
-5. `calculate-budget-dashboard` — computes monthly totals, remaining, health score (0–100), projection, potential savings; upserts `food_budget_summaries`.
-6. `disconnect-plaid-account` — removes Plaid item, deletes access token, optional purge of `food_transactions`.
+- `FamilyAssistanceIntakePage.tsx` (rewrite) — Screen 1 (multi-select category cards) + urgency question + Screen 2 (ZIP, household, children, employment, benefits) as a 2-step flow. Replaces the legacy yes/no form.
+- `FamilyAssistanceResultsPage.tsx` — ranked cards, filters chip row (Food/Housing/Utilities/Baby/Healthcare/Transport/Employment/Urgent/Saved), AI summary banner, safety disclaimers, 911/crisis copy when urgent or mental_health.
+- `FamilyResourceDetailPage.tsx` — full resource detail with Call / Website / Directions / Save buttons.
+- `FamilySavedResourcesPage.tsx` — saved tab.
+- Home / hub entry: `Hive Family Assistance` card → `Find Help` routes to `/dashboard/family-assistance`; `Saved` link to saved page. Keep this fully separate from Hive AI.
 
-All six gracefully short-circuit with a clear error when Plaid secrets are not yet configured, so the mock UI still works.
+Category cards use the 11 categories from the spec, with Lucide icons and the honey-themed flat tile style already used elsewhere in the dashboard.
 
-## Frontend pages & flow
+## 4. Safety / Copy
 
-Home page gets a new **Budget Snapshot** card below "Move With Your Meal Plan":
-- Not connected → "Track Your Food Spending" + Connect button.
-- Connected → budget / spent / remaining / health score + "View Full Budget Dashboard".
+- Disclaimer on results: "Resource availability, eligibility, hours, and services can change. Please contact the organization directly before visiting."
+- Urgent banner: "If you or someone in your household is in immediate danger, call 911…"
+- Mental-health crisis block (988) when category includes mental_health or urgent.
+- AI-disabled fallback message: "AI recommendations are currently unavailable, but here are resources based on your ZIP code and selected needs."
 
-New routes under `/dashboard/budget/*`:
+## 5. Out of scope
 
-- `BudgetConnectPage` — trust points + Connect With Plaid CTA.
-- `BudgetSyncingPage` — 5-step animated sync checklist.
-- `BudgetDashboardPage` — overview: monthly budget, spent, remaining, health score, breakdown, insights, top categories, savings opportunities, recent transactions.
-- `BudgetTransactionsPage` — filterable food transactions list (All / Groceries / Restaurants / Coffee / Food Delivery / Instacart).
-- `BudgetInsightsPage` — mock insights + "Generate Savings Meal Plan" CTA → `/dashboard/meal-plan/setup` with budget prefilled.
-- `BudgetGoalsPage` — set monthly + category goals.
-- `BudgetSettingsPage` — disconnect Plaid, delete imported transactions, manage budgets, data usage copy.
-
-Privacy disclosure copy is shown on Connect, Settings, and Data Usage screens:
-> "Help The Hive only uses food-related transactions to help you understand grocery and restaurant spending. We do not display income, debt, investments, or unrelated purchases."
-
-## Meal-plan integration
-
-When `remaining_budget` drops below a threshold, dashboard shows a banner:
-"You have $X remaining in your food budget this month. Generate a low-cost meal plan?" → `/dashboard/meal-plan/setup?budget=<remaining>`.
-
-## Security
-
-- Plaid keys only in Supabase Secrets.
-- Access tokens encrypted at rest, never returned to the client.
-- RLS on every new table; service_role used by edge functions only.
-- No PII beyond what's needed (merchant, amount, date, category, plaid ids, masked account).
-
-## Mock data behavior
-
-If user has no `plaid_connections` row, frontend uses a deterministic mock summary so screenshots and the full flow render. The moment Plaid is connected, real data takes over with no UI changes.
-
-## Out of scope this pass
-
-- Real OpenAI insights (mock now; schema ready).
-- Bottom nav entry (intentionally excluded).
-- Goal automation/notifications (basic CRUD only).
+- No Plaid, no SNAP verification, no eligibility gating, no ID upload.
+- Existing `local_resources` / `FamilyAssistanceMatchesPage` legacy flow stays for now; new flow lives at `/dashboard/family-assistance/*` and is the only one linked from Home.
+- Seeding `community_resources` is not part of this change — table starts empty and resources can be added via admin/manual insert.

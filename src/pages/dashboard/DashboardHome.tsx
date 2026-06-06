@@ -105,7 +105,7 @@ export default function DashboardHome() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/dashboard/resources/intake")}
+          onClick={() => navigate("/dashboard/family-assistance")}
           className="bg-[#E63B6B] text-white text-[13px] font-semibold px-4 py-2.5 rounded-lg shrink-0"
         >
           Find Help

@@ -471,6 +471,87 @@ export type Database = {
         }
         Relationships: []
       }
+      community_resources: {
+        Row: {
+          active: boolean
+          address: string | null
+          category: string
+          city: string | null
+          county: string | null
+          created_at: string
+          description: string | null
+          eligibility_notes: string | null
+          email: string | null
+          emergency_available: boolean
+          hours: string | null
+          id: string
+          last_verified_at: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone: string | null
+          source: string | null
+          state: string | null
+          subcategory: string | null
+          updated_at: string
+          website: string | null
+          what_to_bring: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          category: string
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          description?: string | null
+          eligibility_notes?: string | null
+          email?: string | null
+          emergency_available?: boolean
+          hours?: string | null
+          id?: string
+          last_verified_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          source?: string | null
+          state?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          website?: string | null
+          what_to_bring?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          category?: string
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          description?: string | null
+          eligibility_notes?: string | null
+          email?: string | null
+          emergency_available?: boolean
+          hours?: string | null
+          id?: string
+          last_verified_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          source?: string | null
+          state?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          website?: string | null
+          what_to_bring?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -585,6 +666,47 @@ export type Database = {
         }
         Relationships: []
       }
+      family_assistance_ai_recommendations: {
+        Row: {
+          ai_summary: string | null
+          created_at: string
+          id: string
+          next_steps: Json
+          recommended_resource_ids: Json
+          request_id: string | null
+          urgent_notes: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          created_at?: string
+          id?: string
+          next_steps?: Json
+          recommended_resource_ids?: Json
+          request_id?: string | null
+          urgent_notes?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_summary?: string | null
+          created_at?: string
+          id?: string
+          next_steps?: Json
+          recommended_resource_ids?: Json
+          request_id?: string | null
+          urgent_notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_assistance_ai_recommendations_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "family_assistance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_assistance_profiles: {
         Row: {
           children_5_to_12: number | null
@@ -640,6 +762,48 @@ export type Database = {
           seniors_65_plus?: number | null
           teenagers?: number | null
           updated_at?: string
+          user_id?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      family_assistance_requests: {
+        Row: {
+          created_at: string
+          employment_status: string | null
+          has_children: boolean | null
+          household_size: number | null
+          id: string
+          receives_benefits: string | null
+          selected_categories: Json
+          updated_at: string
+          urgency_level: string
+          user_id: string
+          zip_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          employment_status?: string | null
+          has_children?: boolean | null
+          household_size?: number | null
+          id?: string
+          receives_benefits?: string | null
+          selected_categories?: Json
+          updated_at?: string
+          urgency_level?: string
+          user_id: string
+          zip_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          employment_status?: string | null
+          has_children?: boolean | null
+          household_size?: number | null
+          id?: string
+          receives_benefits?: string | null
+          selected_categories?: Json
+          updated_at?: string
+          urgency_level?: string
           user_id?: string
           zip_code?: string | null
         }
@@ -2420,6 +2584,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "resource_categories"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      saved_family_resources: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          resource_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          resource_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          resource_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_family_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "community_resources"
+            referencedColumns: ["id"]
           },
         ]
       }
