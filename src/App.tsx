@@ -58,6 +58,10 @@ const FamilyAssistanceIntakePage = lazy(() => import("./pages/dashboard/FamilyAs
 const FamilyAssistanceMatchesPage = lazy(() => import("./pages/dashboard/FamilyAssistanceMatchesPage.tsx"));
 const FamilyMatchDetailPage = lazy(() => import("./pages/dashboard/FamilyMatchDetailPage.tsx"));
 const FamilyAssistancePlanPage = lazy(() => import("./pages/dashboard/FamilyAssistancePlanPage.tsx"));
+const FamilyAssistanceHome = lazy(() => import("./pages/dashboard/FamilyAssistanceHome.tsx"));
+const FamilyAssistanceResultsPage = lazy(() => import("./pages/dashboard/FamilyAssistanceResultsPage.tsx"));
+const FamilyResourceDetailPage = lazy(() => import("./pages/dashboard/FamilyResourceDetailPage.tsx"));
+const FamilySavedResourcesPage = lazy(() => import("./pages/dashboard/FamilySavedResourcesPage.tsx"));
 const FoodWasteAlertsPage = lazy(() => import("./pages/dashboard/FoodWasteAlertsPage.tsx"));
 const HiveAiHub = lazy(() => import("./pages/dashboard/HiveAiHub.tsx"));
 const HiveAiScanPage = lazy(() => import("./pages/dashboard/HiveAiScanPage.tsx"));
