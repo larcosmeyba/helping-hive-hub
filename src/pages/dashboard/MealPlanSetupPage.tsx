@@ -507,6 +507,34 @@ function StoreSheet({
   );
 }
 
+function RetailerRow({
+  name, logoUrl, active, onSelect,
+}: {
+  name: string; logoUrl: string | null; active: boolean; onSelect: () => void;
+}) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = !!logoUrl && !logoFailed;
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-left transition-colors ${
+        active ? "bg-[#1F5A3D]/10 border-[#1F5A3D]" : "bg-white border-[#EEE7DA] hover:border-[#d9d2c4]"
+      }`}
+    >
+      {showLogo && (
+        <img
+          src={logoUrl!}
+          alt=""
+          className="w-9 h-9 rounded-md object-contain bg-white"
+          onError={() => setLogoFailed(true)}
+        />
+      )}
+      <span className="flex-1 text-[14px] font-semibold text-[#1a1a1a]">{name}</span>
+      {active && <Check className="w-5 h-5 text-[#1F5A3D]" />}
+    </button>
+  );
+}
+
 function ChipSheet({
   open, onOpenChange, title, options, selected, setSelected, saving, onSave,
 }: {
