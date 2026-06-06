@@ -478,7 +478,8 @@ export default function SampleMealPlan() {
                     <span className="text-muted-foreground">Estimated Weekly Total</span>
                     <span className="font-bold text-primary text-lg">~${weekTotal.toFixed(2)}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-2">Planning estimate. Final pricing confirmed at Instacart checkout.</p>
+                  <p className="text-[11px] text-muted-foreground mt-2">Estimated pricing for planning purposes only. Final pricing and product availability are confirmed at Instacart checkout.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Store availability varies by ZIP code and participating Instacart retailers.</p>
                 </div>
               </motion.div>
 

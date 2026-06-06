@@ -13,7 +13,7 @@ const pills = [
 
 const trustItems = [
   "Free To Use",
-  "Powered By Instacart",
+  "Shop Through Instacart",
   "AI-Powered",
   "Built For Real Families",
 ];

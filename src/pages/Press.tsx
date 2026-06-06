@@ -74,7 +74,7 @@ export default function Press() {
                 grocery budgets.
               </li>
               <li>The product is free for SNAP and WIC eligible households.</li>
-              <li>Grocery checkout is powered by Instacart for delivery and pickup.</li>
+              <li>Grocery shopping and checkout available through Instacart for delivery and pickup.</li>
               <li>Founded by Marcos Leyba.</li>
             </ul>
           </div>
