@@ -307,8 +307,10 @@ Deno.serve(async (req) => {
     const groceryList = parsed.grocery_list ?? [];
     const whyThisPlan = parsed.why_this_plan ?? {};
 
-    // admin client already created above for AI logging.
-
+    const normalized = normalizePlanForClient(mealPlan, groceryList);
+    console.log("[generate-meal-plan] normalized days=", normalized.weeklyPlan.length,
+      "grocery_items=", normalized.groceryList.length,
+      "total=", normalized.totalEstimatedCost);
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
@@ -320,7 +322,7 @@ Deno.serve(async (req) => {
       total_meals: mealPlan.total_meals,
       savings_estimate: mealPlan.savings_estimate,
       why_this_plan: whyThisPlan,
-      plan_data: parsed,
+      plan_data: { ...parsed, ...normalized },
       status: "active",
     }).select().single();
     if (planErr) throw planErr;
