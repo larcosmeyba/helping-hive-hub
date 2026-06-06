@@ -30,7 +30,7 @@ const Index = () => {
         <FeaturesSection />
         <WhoWeHelpSection />
         <MealPlanSection />
-        <RecipeShowcase />
+        <BudgetResultsSection />
         <WhyDifferentSection />
         <TrustSection />
         
