@@ -351,63 +351,72 @@ export default function MealPlanPage() {
                 </span>
               </button>
               {!collapsed && (
-                <div className="grid grid-cols-3 gap-2 md:gap-3">
+                <div className="flex flex-col gap-2">
                   {day.meals.map((originalMeal, mealIndex) => {
                     const meal = getMeal(dayIndex, mealIndex, originalMeal);
                     const cookedKey = `${dayIndex}-${mealIndex}`;
                     const isCooked = cookedMeals.has(cookedKey);
-                    const badgeClass = MEAL_BADGE_COLORS[meal.type.toLowerCase()] ?? "bg-[#F2A900] text-white";
                     return (
-                      <div key={`${day.day}-${mealIndex}`} className="bg-white rounded-2xl border border-[#EEE7DA] overflow-hidden flex flex-col">
+                      <div
+                        key={`${day.day}-${mealIndex}`}
+                        className="bg-white rounded-2xl border border-[#EEE7DA] overflow-hidden flex items-stretch"
+                      >
                         <button
                           onClick={() => setSelectedMeal(meal)}
-                          className="text-left relative"
+                          className="relative shrink-0 w-20 h-20 md:w-24 md:h-24"
+                          aria-label={`Open ${meal.name}`}
                         >
-                          <div className="relative aspect-square overflow-hidden">
-                            <MealImage meal={meal} className="w-full h-full" imgClassName="w-full h-full object-cover" />
-                            <span className={`absolute top-1.5 left-1.5 ${badgeClass} text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide`}>
-                              {meal.type}
-                            </span>
-                            {isCooked && (
-                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                <Check className="w-8 h-8 text-white" strokeWidth={3} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-2">
-                            <p className="text-[11px] md:text-[13px] font-semibold text-[#1a1a1a] line-clamp-2 leading-tight">{meal.name}</p>
-                            <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[9px] md:text-[10px] text-[#6a6a6a]">
-                              <span>{meal.calories} cal</span>
-                              <span>{meal.protein}g protein</span>
-                              <span>{meal.cookTimeMinutes} min</span>
+                          <MealImage meal={meal} className="w-full h-full" imgClassName="w-full h-full object-cover" />
+                          {isCooked && (
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <Check className="w-6 h-6 text-white" strokeWidth={3} />
                             </div>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedMeal(meal)}
+                          className="flex-1 min-w-0 text-left px-3 py-2"
+                        >
+                          <p className="text-[13px] md:text-[14px] font-semibold text-[#1a1a1a] line-clamp-1 leading-tight">
+                            {meal.name}
+                          </p>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[11px] text-[#6a6a6a]">
+                            <span>{meal.calories} cal</span>
+                            <span>·</span>
+                            <span>{meal.protein}g protein</span>
+                            <span>·</span>
+                            <span>{meal.cookTimeMinutes} min</span>
                           </div>
                         </button>
-                        <div className="flex border-t border-[#F0E8D6] text-[10px] md:text-[11px]">
+
+                        <div className="flex items-center shrink-0 pr-2 gap-1">
                           <button
                             onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
-                            className="flex-1 py-1.5 flex items-center justify-center gap-1 text-[#6a6a6a] hover:bg-[#FBF5E8]"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#6a6a6a] hover:bg-[#FBF5E8]"
+                            aria-label="Swap meal"
                           >
-                            <Shuffle className="w-3 h-3" /> Swap
+                            <Shuffle className="w-4 h-4" />
                           </button>
-                          <div className="w-px bg-[#F0E8D6]" />
                           <button
                             onClick={() => setSelectedMeal(meal)}
-                            className="flex-1 py-1.5 flex items-center justify-center gap-1 text-[#6a6a6a] hover:bg-[#FBF5E8]"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#6a6a6a] hover:bg-[#FBF5E8]"
+                            aria-label="View recipe"
                           >
-                            <BookOpen className="w-3 h-3" /> Recipe
+                            <BookOpen className="w-4 h-4" />
                           </button>
-                          <div className="w-px bg-[#F0E8D6]" />
                           <button
                             onClick={() => toggleCooked(cookedKey)}
-                            className={`flex-1 py-1.5 flex items-center justify-center gap-1 ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
+                            aria-label="Mark cooked"
                           >
-                            <Check className="w-3 h-3" strokeWidth={3} />
+                            <Check className="w-4 h-4" strokeWidth={3} />
                           </button>
                         </div>
                       </div>
                     );
                   })}
+
                 </div>
               )}
             </motion.div>
