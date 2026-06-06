@@ -427,6 +427,7 @@ Deno.serve(async (req) => {
         meal_plan: parsed.meal_plan,
         grocery_list: parsed.grocery_list,
         why_this_plan: parsed.why_this_plan,
+        ...normalized,
         pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -439,3 +440,83 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+function ingredientLine(i: any): string {
+  return [i.quantity, i.unit, i.item_name].filter(Boolean).join(" ").trim();
+}
+
+function normalizePlanForClient(mealPlan: any, groceryList: any[]) {
+  const weeklyPlan = (mealPlan?.days ?? []).map((d: any) => ({
+    day: d.day_name,
+    meals: (["breakfast", "lunch", "dinner"] as const)
+      .filter((t) => d?.[t])
+      .map((t) => {
+        const m = d[t];
+        return {
+          type: t,
+          name: m.meal_name,
+          calories: m.calories_estimate ?? 0,
+          protein: m.protein_estimate ?? 0,
+          carbs: 0,
+          fats: 0,
+          estimatedCost: m.estimated_cost ?? 0,
+          costPerServing: m.estimated_cost_per_serving,
+          cookTimeMinutes: (m.cook_time_minutes ?? 0) + (m.prep_time_minutes ?? 0),
+          ingredients: [
+            ...(m.ingredients_used_from_pantry ?? []).map(ingredientLine),
+            ...(m.ingredients_to_buy ?? []).map(ingredientLine),
+          ],
+          instructions: m.instructions ?? [],
+        };
+      }),
+  }));
+
+  const groceryListOut = (groceryList ?? [])
+    .filter((g: any) => !g.already_have)
+    .map((g: any) => ({
+      name: g.item_name,
+      quantity: [g.quantity, g.unit].filter(Boolean).join(" ").trim(),
+      estimatedPrice: Number(g.estimated_price) || 0,
+      section: g.category ?? "Other",
+    }));
+
+  const totalEstimatedCost = Number(mealPlan?.estimated_total_cost)
+    || groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
+  const totalMeals = Number(mealPlan?.total_meals)
+    || weeklyPlan.reduce((s: number, d: any) => s + d.meals.length, 0) || 1;
+
+  return {
+    weeklyPlan,
+    groceryList: groceryListOut,
+    storeRecommendations: [],
+    totalEstimatedCost,
+    pantrySavings: Number(mealPlan?.savings_estimate) || 0,
+    costPerMeal: totalEstimatedCost / totalMeals,
+    taxEstimate: 0,
+  };
+}
+
+function buildMockPlanResponse(_ctx: any) {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const types = ["breakfast", "lunch", "dinner"] as const;
+  const placeholder = {
+    name: "Sample meal — regenerate when ready",
+    calories: 0, protein: 0, carbs: 0, fats: 0,
+    estimatedCost: 0, cookTimeMinutes: 0,
+    ingredients: [], instructions: ["Tap Regenerate to build your real plan."],
+  };
+  const weeklyPlan = days.map((d) => ({
+    day: d,
+    meals: types.map((t) => ({ type: t, ...placeholder })),
+  }));
+  return {
+    weeklyPlan,
+    groceryList: [],
+    storeRecommendations: [],
+    totalEstimatedCost: 0,
+    pantrySavings: 0,
+    costPerMeal: 0,
+    taxEstimate: 0,
+    pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
+  };
+}
