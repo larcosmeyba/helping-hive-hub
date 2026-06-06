@@ -185,6 +185,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     let latestJob: GenerationJobRow | null = null;
     let pollHandle: ReturnType<typeof setInterval> | null = null;
     let stopped = false;
+    let generationFailed = false;
 
     const stopPolling = () => {
       stopped = true;
@@ -261,6 +262,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (err: any) {
+      generationFailed = true;
       await pollJob();
       setGenerationStatus((prev) => ({
         ...prev,
@@ -278,7 +280,9 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       stopPolling();
       setGenerating(false);
       setTimeout(() => {
-        setGenerationStage((prev) => (prev === "done" ? prev : "idle"));
+        if (!generationFailed) {
+          setGenerationStage((prev) => (prev === "done" ? prev : "idle"));
+        }
       }, 1200);
     }
   }, [fetchLatestGenerationJob, loadHistory, toast, user]);
