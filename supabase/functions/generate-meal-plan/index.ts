@@ -175,9 +175,12 @@ async function updateJob(
   jobId: string,
   patch: Record<string, unknown>,
 ) {
+  const cleanPatch = Object.fromEntries(
+    Object.entries({ ...patch, last_heartbeat_at: new Date().toISOString() }).filter(([, value]) => value !== undefined),
+  );
   const { error } = await admin
     .from("meal_plan_generation_jobs")
-    .update({ ...patch, last_heartbeat_at: new Date().toISOString() })
+    .update(cleanPatch)
     .eq("id", jobId);
   if (error) console.error("[generate-meal-plan] failed to update job", error);
 }
