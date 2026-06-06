@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Tag, ShoppingBag, Heart, ShieldCheck } from "lucide-react";
+import { Tag, ShoppingBag, Heart, ShieldCheck, Check } from "lucide-react";
 
 const features = [
   {
@@ -22,6 +22,13 @@ const features = [
     title: "Your Data. Your Privacy.",
     desc: "We never sell your data. Your information is always kept private and secure.",
   },
+];
+
+const trustBadges = [
+  "Powered by Instacart",
+  "Grocery Delivery Partner",
+  "EBT Supported At Participating Retailers",
+  "Available At Stores In Your Area",
 ];
 
 export function FeaturesSection() {
@@ -56,26 +63,14 @@ export function FeaturesSection() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-2xl bg-[#E6F4E6] px-5 md:px-8 py-5 md:py-6 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 justify-between"
+          className="rounded-xl bg-[#E6F4E6] px-5 md:px-8 py-3 md:py-4 flex flex-wrap items-center gap-x-6 gap-y-2 justify-center"
         >
-          <div className="flex items-start md:items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-white border border-[#1F5A2C]/15 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-[#1F5A2C]" />
+          {trustBadges.map((text) => (
+            <div key={text} className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-[#1F5A2C] shrink-0" />
+              <span className="text-sm font-medium text-[#1F5A2C]">{text}</span>
             </div>
-            <div>
-              <h4 className="font-display text-base md:text-lg font-bold text-[#1F5A2C] mb-1">
-                Trusted by families. Powered by Instacart.
-              </h4>
-              <p className="text-sm text-charcoal/80 leading-relaxed">
-                We partner with Instacart to make grocery shopping easier and more affordable.
-              </p>
-            </div>
-          </div>
-          <div className="shrink-0 flex items-center gap-2 pl-1">
-            <span className="text-xl md:text-2xl font-bold text-[#1F5A2C] tracking-tight">
-              instacart
-            </span>
-          </div>
+          ))}
         </motion.div>
       </div>
     </section>

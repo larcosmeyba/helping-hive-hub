@@ -13,7 +13,7 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
   title: string;
-  links: { label: string; slug: string }[];
+  links: { label: string; slug?: string; to?: string }[];
   isOpen: boolean;
   onToggle: () => void;
   isMobile: boolean;
@@ -31,9 +31,9 @@ function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
         {isOpen && (
           <ul className="pb-4 space-y-2.5 pl-1">
             {links.map(link => (
-              <li key={link.slug}>
+              <li key={link.slug ?? link.to}>
                 <Link
-                  to={`/page/${link.slug}`}
+                  to={link.to ?? `/page/${link.slug}`}
                   className="text-[13px] text-white/50 hover:text-white transition-colors"
                 >
                   {link.label}
@@ -51,9 +51,9 @@ function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
       <h4 className="text-sm font-semibold text-white/90 mb-4">{title}</h4>
       <ul className="space-y-2.5">
         {links.map(link => (
-          <li key={link.slug}>
+          <li key={link.slug ?? link.to}>
             <Link
-              to={`/page/${link.slug}`}
+              to={link.to ?? `/page/${link.slug}`}
               className="text-[13px] text-white/50 hover:text-white transition-colors duration-200"
             >
               {link.label}
@@ -129,9 +129,6 @@ export function SiteFooter() {
             <Link to="/partnerships" className="hover:text-white/80 transition-colors underline underline-offset-2">
               Partnerships
             </Link>
-            <Link to="/press" className="hover:text-white/80 transition-colors underline underline-offset-2">
-              Press
-            </Link>
           </div>
           <div className="flex items-center gap-3 mt-4">
             <a
@@ -177,7 +174,7 @@ export function SiteFooter() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {footerColumns.map(col => (
               <FooterColumn
                 key={col.title}
