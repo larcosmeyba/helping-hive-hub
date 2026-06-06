@@ -68,10 +68,7 @@ const captions = [
   },
 ];
 
-const metrics = [
-  { value: "100%", label: "Free To Use" },
-  { value: "Powered By", label: "Instacart", branded: true },
-];
+const metrics: { value: string; label: string; branded?: boolean }[] = [];
 
 const trustItems = [
   "Pantry-aware meal planning",
