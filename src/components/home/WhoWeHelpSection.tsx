@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { Users, GraduationCap, Leaf, Home, Heart } from "lucide-react";
+import { Users, GraduationCap, Home, Heart, Accessibility, UserCircle } from "lucide-react";
 
 const audiences = [
   {
     icon: Heart,
     title: "SNAP & WIC Families",
-    desc: "Help The Hive is free for households on food assistance. Stretch every benefit dollar further, plan meals your family will actually eat, and feel dignity at the grocery store.",
+    desc: "Designed to help families stretch every grocery dollar, including households using SNAP and EBT benefits.",
     featured: true,
   },
   {
@@ -27,9 +27,15 @@ const audiences = [
     featured: false,
   },
   {
-    icon: Leaf,
-    title: "Waste Reducers",
-    desc: "Use what you have first. Shop only for what you actually need. Reduce waste, save money.",
+    icon: Accessibility,
+    title: "Seniors",
+    desc: "Affordable meal planning for households on fixed incomes.",
+    featured: false,
+  },
+  {
+    icon: UserCircle,
+    title: "Single Adults",
+    desc: "Cook for one without overspending or wasting food.",
     featured: false,
   },
 ];
