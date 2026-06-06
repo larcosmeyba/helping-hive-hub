@@ -235,31 +235,73 @@ Deno.serve(async (req) => {
     };
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    let parsed: any;
-    try {
-      const { callOpenAI } = await import("../_shared/openaiClient.ts");
-      const ai = await callOpenAI({
-        model: "gpt-5.4-mini",
-        system: SYSTEM_PROMPT,
-        user: `Build this week's plan from this meal_plan_context:\n\n${JSON.stringify(mealPlanContext)}`,
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_meal_plan",
-            description: "Return the structured weekly meal plan and grocery list.",
-            parameters: RESPONSE_SCHEMA,
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "return_meal_plan" } },
-        log: { admin, user_id: userId, request_type: "meal_plan_generation" },
-      });
-      if (!ai.tool_arguments) {
-        return new Response(JSON.stringify({ error: "Malformed AI response", raw: ai.raw }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    console.log("[generate-meal-plan] meal_plan_context →",
+      JSON.stringify({
+        ...mealPlanContext,
+        pantry_items_count: mealPlanContext.pantry_items.length,
+        fridge_items_count: mealPlanContext.fridge_items.length,
+      }).slice(0, 4000));
+
+    const { callOpenAI } = await import("../_shared/openaiClient.ts");
+
+    async function attempt(attemptNum: number): Promise<any | null> {
+      try {
+        const ai = await callOpenAI({
+          model: "gpt-5.4-mini",
+          system: SYSTEM_PROMPT,
+          user: `Build this week's plan from this meal_plan_context. Output ONLY the structured tool call — no prose, no markdown.\n\n${JSON.stringify(mealPlanContext)}`,
+          tools: [{
+            type: "function",
+            function: {
+              name: "return_meal_plan",
+              description: "Return the structured weekly meal plan and grocery list.",
+              parameters: RESPONSE_SCHEMA,
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "return_meal_plan" } },
+          max_tokens: 8000,
+          log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
+        });
+        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`,
+          ai.raw?.choices?.[0]?.finish_reason,
+          "tool_arguments_keys=", ai.tool_arguments ? Object.keys(ai.tool_arguments) : null,
+          "raw_text_len=", ai.text?.length ?? 0);
+        const p = ai.tool_arguments as any;
+        const validationErrors: string[] = [];
+        if (!p) validationErrors.push("no tool_arguments");
+        if (p && !p.meal_plan) validationErrors.push("missing meal_plan");
+        if (p?.meal_plan && !Array.isArray(p.meal_plan.days)) validationErrors.push("meal_plan.days not array");
+        if (p?.meal_plan && Array.isArray(p.meal_plan.days) && p.meal_plan.days.length < 1) validationErrors.push("empty days");
+        if (p && !Array.isArray(p.grocery_list)) validationErrors.push("missing grocery_list");
+        if (validationErrors.length) {
+          console.warn(`[generate-meal-plan] attempt ${attemptNum} validation errors:`, validationErrors);
+          return null;
+        }
+        return p;
+      } catch (e: any) {
+        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message);
+        if (e?.status === 429 || e?.status === 402) throw e;
+        return null;
       }
-      parsed = ai.tool_arguments;
-    } catch (e: any) {
-      const status = e?.status === 429 || e?.status === 402 ? e.status : 500;
-      return new Response(JSON.stringify({ error: e?.message ?? "AI error" }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    let parsed: any = await attempt(1);
+    if (!parsed) {
+      console.warn("[generate-meal-plan] retrying once");
+      parsed = await attempt(2);
+    }
+
+    if (!parsed) {
+      console.warn("[generate-meal-plan] both attempts failed — returning mock fallback");
+      return new Response(
+        JSON.stringify({
+          fallback: true,
+          notice: "We couldn't reach the meal planner. Showing a sample plan — please regenerate when ready.",
+          ...buildMockPlanResponse(mealPlanContext),
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
     const mealPlan = parsed.meal_plan;
     const groceryList = parsed.grocery_list ?? [];
