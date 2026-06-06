@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, X,
   AlertTriangle, Check, ChefHat, Share2, Minus, Plus, ArrowRight, ArrowLeft,
-  Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper,
+  Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper, History,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -195,27 +195,54 @@ export default function MealPlanPage() {
   }));
 
   const insights = [
-    `Saves approximately $${weeklySavings} this week`,
-    `Uses pantry items you already have`,
-    `Fits your $${monthlyBudget} weekly budget`,
+    `Uses pantry items already on hand`,
+    `Fits your weekly grocery budget`,
     `Reduces food waste`,
-    `Matches your dietary preferences`,
+    `Matches household preferences`,
+    `Designed around selected store`,
   ];
 
+  const withinBudget = weeklyTotal <= monthlyBudget;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-4 pb-24 md:pb-6">
-      {/* Section 1: Weekly Overview */}
-      <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4 md:p-5">
-        <h1 className="font-display text-xl md:text-2xl font-bold text-[#1a1a1a] flex items-center gap-2 mb-3">
-          <CalendarDays className="w-5 h-5 text-[#F2A900]" /> Weekly Meal Plan
-        </h1>
-        <div className="grid grid-cols-4 gap-2">
-          <Stat label="Est. Weekly Total" value={`~$${weeklyTotal.toFixed(2)}`} sub={`of $${monthlyBudget} budget`} accent="text-[#1F5A3D]" />
-          <Stat label="Est. Daily Avg" value={`~$${dailyAvg.toFixed(2)}`} sub="per day" />
-          <Stat label="Meals This Week" value={String(totalMeals)} sub="planned" />
-          <Stat label="Weekly Savings" value={`$${weeklySavings}`} sub="using pantry" accent="text-[#1F5A3D]" />
+    <div className="max-w-6xl mx-auto space-y-4 pb-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl md:text-2xl font-bold text-[#1a1a1a] flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-[#F2A900]" /> Weekly Meal Plan
+          </h1>
         </div>
-        <p className="text-[10px] text-[#8a8a8a] mt-2">Estimates only. Final pricing confirmed at Instacart checkout.</p>
+        <button
+          onClick={() => navigate("/dashboard/meal-plan/history")}
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1F5A3D] bg-white border border-[#EEE7DA] rounded-full px-3 py-1.5 hover:bg-[#F8F4E8]"
+        >
+          <History className="w-3.5 h-3.5" /> Past Plans
+        </button>
+      </div>
+
+      {/* Section 1: Budget Summary */}
+      <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4 md:p-5">
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <p className="text-[11px] text-[#8a8a8a]">Estimated Weekly Spend</p>
+            <p className="text-[18px] md:text-[20px] font-bold text-[#1F5A3D] leading-tight">~${weeklyTotal.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-[#8a8a8a]">Weekly Budget</p>
+            <p className="text-[18px] md:text-[20px] font-bold text-[#1a1a1a] leading-tight">${monthlyBudget}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-[#8a8a8a]">Status</p>
+            <p className={`text-[15px] md:text-[16px] font-bold leading-tight flex items-center gap-1 ${withinBudget ? 'text-[#1F5A3D]' : 'text-[#C24A1F]'}`}>
+              {withinBudget ? 'Within Budget' : 'Over Budget'}
+              {withinBudget && <Check className="w-4 h-4" strokeWidth={3} />}
+            </p>
+          </div>
+        </div>
+        <p className="text-[11px] text-[#8a8a8a] mt-3 leading-snug">
+          Estimated pricing only. Final pricing and availability are confirmed at Instacart checkout.
+        </p>
       </div>
 
       {/* Section 2: Hive AI Insights */}
@@ -234,31 +261,33 @@ export default function MealPlanPage() {
         </ul>
       </div>
 
-      {/* Section 3: Weekly Progress */}
-      <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[14px] font-semibold text-[#1a1a1a]">Weekly Progress</span>
-          <span className="text-[12px] text-[#6a6a6a]">{cookedCount} of {totalMeals} meals completed</span>
+      {/* Section 3: Primary Instacart CTA (full-width) */}
+      <div className="bg-[#003D29] rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Send Grocery List To Instacart</p>
+            <p className="text-[12px] text-white/80 mt-0.5">{itemCount} Items Ready · Estimated Total: ~${weeklyTotal.toFixed(2)}</p>
+          </div>
         </div>
-        <div className="h-2 w-full bg-[#F5EBDC] rounded-full overflow-hidden">
-          <div className="h-full bg-[#F2A900] transition-all" style={{ width: `${progressPct}%` }} />
+        <div className="w-full sm:w-auto">
+          <SendToInstacartButton
+            title="Weekly Meal Plan"
+            lineItems={instacartLineItems}
+            variant="light"
+            label="Send to Instacart"
+            fullWidth
+            showExternalIcon={false}
+          />
         </div>
-        <p className="text-[11px] text-[#8a8a8a] mt-2">
-          {allComplete ? "All done — incredible work! 🎉" : "Keep going! You've got this."}
-        </p>
       </div>
+      <p className="text-[11px] text-[#8a8a8a] -mt-2 px-1">
+        Pricing and availability confirmed at Instacart checkout.
+      </p>
 
-      {/* Section 4: Quick Actions */}
-      <div className="grid grid-cols-3 gap-2">
-        <ActionCard icon={RefreshCw} label="Regenerate Plan" sub="Get new meal ideas" onClick={handleRegenerate} disabled={generating} />
-        <ActionCard icon={ShoppingCart} label="View Grocery List" sub={`${itemCount} items · ~$${weeklyTotal.toFixed(0)}`} onClick={() => navigate("/dashboard/grocery-list")} />
-        <InstacartActionCard
-          title="Weekly Meal Plan"
-          lineItems={instacartLineItems}
-        />
-      </div>
-
-      {/* Section 5: Estimated Savings */}
+      {/* Section 4: Estimated Savings */}
       <button
         onClick={() => setShowSavingsBreakdown(true)}
         className="w-full text-left bg-[#FFF4D6] border border-[#F0E1A5] rounded-2xl p-4 flex items-center justify-between gap-3 hover:bg-[#FBEEC8] transition-colors"
@@ -269,7 +298,9 @@ export default function MealPlanPage() {
           </div>
           <div className="min-w-0">
             <p className="font-bold text-[14px] text-[#1a1a1a]">Estimated Savings This Week</p>
-            <p className="text-[12px] text-[#6a6a6a] truncate">${weeklySavings} saved with pantry + waste reduction</p>
+            <p className="text-[12px] text-[#6a6a6a] truncate">
+              ~${weeklySavings} saved using pantry ingredients and budget-friendly meal recommendations.
+            </p>
           </div>
         </div>
         <span className="text-[12px] font-semibold text-[#1F5A3D] flex items-center gap-1 shrink-0">
@@ -294,19 +325,6 @@ export default function MealPlanPage() {
         );
       })()}
 
-      {/* Completion celebration */}
-      {allComplete && (
-        <div className="bg-[#F6F1DD] border border-[#F2A900]/40 rounded-2xl p-5 text-center">
-          <PartyPopper className="w-8 h-8 text-[#F2A900] mx-auto mb-2" />
-          <h3 className="font-display text-lg font-bold text-[#1a1a1a]">Great Job!</h3>
-          <p className="text-[13px] text-[#3a3a3a] mt-1">
-            You completed all {totalMeals} meals. Saved ~${weeklySavings} · Avoided {wasteAvoided} items of food waste.
-          </p>
-          <Button onClick={handleRegenerate} className="mt-3 bg-[#1F5A3D] text-white hover:bg-[#194B33] h-11 rounded-xl">
-            Generate Next Week's Plan
-          </Button>
-        </div>
-      )}
 
       {/* Section 6: Daily Meals */}
       <AnimatePresence>
@@ -397,28 +415,6 @@ export default function MealPlanPage() {
         })}
       </AnimatePresence>
 
-      <MealPlanHistory />
-
-      {/* Sticky Grocery Bar (mobile) */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-2 pointer-events-none">
-        <div className="bg-white border border-[#EEE7DA] shadow-lg rounded-2xl p-3 flex items-center justify-between gap-3 pointer-events-auto">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-[#FFF4D6] flex items-center justify-center shrink-0">
-              <ShoppingCart className="w-4 h-4 text-[#F2A900]" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold text-[#1a1a1a] truncate">{itemCount} Items Ready</p>
-              <p className="text-[11px] text-[#6a6a6a] truncate">Est. total ~${weeklyTotal.toFixed(2)}</p>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate("/dashboard/grocery-list")}
-            className="bg-[#1F5A3D] hover:bg-[#194B33] text-white h-10 px-4 rounded-xl text-[13px] font-semibold shrink-0"
-          >
-            View Grocery List <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Button>
-        </div>
-      </div>
 
       {/* Savings breakdown dialog */}
       <Dialog open={showSavingsBreakdown} onOpenChange={setShowSavingsBreakdown}>
