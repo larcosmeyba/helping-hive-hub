@@ -21,11 +21,11 @@ const trustItems = [
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-[#1a1a1a] min-h-[600px]">
-      {/* Full-bleed food image */}
+      {/* Food image — sits on the right, fully visible (no crop) */}
       <img
         src={heroBowl}
         alt="Skillet of stir-fried chicken with broccoli, peppers and snap peas"
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute top-1/2 -translate-y-1/2 right-0 md:right-4 lg:right-8 h-auto w-[90%] md:w-[55%] lg:w-[50%] max-h-[90%] object-contain"
         width={1920}
         height={1080}
       />
@@ -34,11 +34,11 @@ export function HeroSection() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(90deg, #1a1a1a 0%, rgba(26,26,26,0.92) 35%, rgba(26,26,26,0.55) 60%, rgba(26,26,26,0) 85%)",
+            "linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 30%, rgba(26,26,26,0.6) 50%, rgba(26,26,26,0) 70%)",
         }}
       />
       {/* Mobile readability overlay */}
-      <div className="absolute inset-0 bg-[#1a1a1a]/70 md:hidden pointer-events-none" />
+      <div className="absolute inset-0 bg-[#1a1a1a]/75 md:hidden pointer-events-none" />
 
       <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
         {/* LEFT — copy */}
