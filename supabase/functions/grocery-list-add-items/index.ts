@@ -12,6 +12,7 @@ type SourceType =
   | "food_waste"
   | "pantry_low_stock"
   | "manual"
+  | "manual_add"
   | "bulk_buying";
 
 interface IncomingItem {
@@ -32,6 +33,7 @@ const ALLOWED_SOURCES: SourceType[] = [
   "food_waste",
   "pantry_low_stock",
   "manual",
+  "manual_add",
   "bulk_buying",
 ];
 
