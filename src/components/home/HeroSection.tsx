@@ -21,7 +21,7 @@ const trustItems = [
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-honey-cream">
-      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
         {/* LEFT — copy */}
         <div className="relative z-10 px-6 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 flex items-center">
           <motion.div
