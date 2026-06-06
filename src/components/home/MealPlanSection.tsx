@@ -1,11 +1,18 @@
 import { motion } from "framer-motion";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Coffee, Salad, UtensilsCrossed } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import mealFamilyDinner from "@/assets/meal-family-dinner.jpg";
 import mealVariety from "@/assets/meal-variety.jpg";
 import mealSnapFriendly from "@/assets/meal-snap-friendly.jpg";
+import mealPantry from "@/assets/category-pantry-staples.jpg";
+
+const mealIcons = [
+  { icon: Coffee, label: "Breakfasts Included" },
+  { icon: Salad, label: "Lunches Included" },
+  { icon: UtensilsCrossed, label: "Dinners Included" },
+];
 
 const plans = [
   {
@@ -38,6 +45,16 @@ const plans = [
     image: mealSnapFriendly,
     note: "Eligible for SNAP purchases via Instacart",
   },
+  {
+    title: "Cook From What You Have",
+    desc: "Uses pantry ingredients before recommending new purchases.",
+    budget: "$40 / week grocery budget",
+    store: "Any",
+    tag: null,
+    slug: "cook-from-what-you-have",
+    image: mealPantry,
+    note: null as string | null,
+  },
 ];
 
 export function MealPlanSection() {
@@ -61,7 +78,7 @@ export function MealPlanSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={i}
@@ -88,7 +105,15 @@ export function MealPlanSection() {
               </div>
               <div className="p-5 flex flex-col flex-1">
                 <h3 className="font-display text-lg font-semibold text-foreground mb-2">{plan.title}</h3>
-                <p className="text-sm text-muted-foreground mb-4 flex-1">{plan.desc}</p>
+                <p className="text-sm text-muted-foreground mb-3 flex-1">{plan.desc}</p>
+                <ul className="space-y-1.5 mb-4">
+                  {mealIcons.map(({ icon: Icon, label }) => (
+                    <li key={label} className="flex items-center gap-2 text-xs text-foreground">
+                      <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ul>
                 <div className="text-sm font-medium text-primary mb-1">{plan.budget}</div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
                   <ShoppingCart className="w-3.5 h-3.5" />
@@ -98,7 +123,7 @@ export function MealPlanSection() {
                   <div className="text-[11px] text-primary font-medium mb-3">{plan.note}</div>
                 )}
                 <Button variant="heroOutline" size="lg" className="w-full h-12 text-base" asChild>
-                  <Link to={`/sample-plan/${plan.slug}`}>View Plan</Link>
+                  <Link to={`/sample-plan/${plan.slug}`}>Explore Sample Plan</Link>
                 </Button>
               </div>
             </motion.div>

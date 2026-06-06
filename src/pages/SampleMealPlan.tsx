@@ -11,6 +11,7 @@ const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
   "more-variety-75": { primary: "Sprouts", secondary: "Safeway" },
   "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
   "snap-friendly-meals": { primary: "Aldi", secondary: "WinCo" },
+  "cook-from-what-you-have": { primary: "Your Instacart store", secondary: "" },
 };
 
 const SAMPLE_PLANS: Record<string, {
@@ -253,6 +254,58 @@ const SAMPLE_PLANS: Record<string, {
       "Plan meals around weekly store sales to stretch your budget further",
     ],
   },
+  "cook-from-what-you-have": {
+    title: "Cook From What You Have",
+    budget: "$40 / week",
+    desc: "Uses pantry ingredients before recommending new purchases. Perfect for households that want to minimize waste and stretch what's already in the kitchen.",
+    tag: null,
+    servings: "4 servings",
+    meals: 21,
+    days: [
+      { day: "Monday", meals: [
+        { type: "Breakfast", name: "Oatmeal with Peanut Butter & Banana", cost: "$1.00", time: "8 min", ingredients: ["Oats", "Peanut butter", "Banana", "Cinnamon"], calories: 360, protein: 12, carbs: 52, fats: 12 },
+        { type: "Lunch", name: "Lentil & Rice Bowl", cost: "$1.40", time: "20 min", ingredients: ["Lentils", "Rice", "Onion", "Garlic", "Cumin"], calories: 400, protein: 18, carbs: 62, fats: 6 },
+        { type: "Dinner", name: "Pasta with Canned Tomatoes & Beans", cost: "$2.20", time: "25 min", ingredients: ["Pasta", "Canned tomatoes", "White beans", "Olive oil", "Garlic"], calories: 480, protein: 16, carbs: 72, fats: 10 },
+      ]},
+      { day: "Tuesday", meals: [
+        { type: "Breakfast", name: "Scrambled Eggs with Toast", cost: "$1.20", time: "8 min", ingredients: ["Eggs", "Bread", "Butter"], calories: 340, protein: 18, carbs: 30, fats: 16 },
+        { type: "Lunch", name: "Leftover Pasta Salad", cost: "$0.80", time: "5 min", ingredients: ["Leftover pasta", "Canned corn", "Olive oil", "Vinegar"], calories: 320, protein: 8, carbs: 48, fats: 10 },
+        { type: "Dinner", name: "Rice & Bean Burritos", cost: "$1.80", time: "15 min", ingredients: ["Tortillas", "Rice", "Black beans", "Cheese", "Salsa"], calories: 460, protein: 16, carbs: 62, fats: 14 },
+      ]},
+      { day: "Wednesday", meals: [
+        { type: "Breakfast", name: "Pancakes from Mix", cost: "$1.00", time: "12 min", ingredients: ["Pancake mix", "Water", "Syrup"], calories: 360, protein: 8, carbs: 62, fats: 8 },
+        { type: "Lunch", name: "Egg Salad Sandwich", cost: "$1.20", time: "10 min", ingredients: ["Eggs", "Mayo", "Bread", "Mustard"], calories: 380, protein: 18, carbs: 30, fats: 22 },
+        { type: "Dinner", name: "Potato & Veggie Hash", cost: "$2.00", time: "25 min", ingredients: ["Potatoes", "Frozen veggies", "Eggs", "Onion"], calories: 440, protein: 14, carbs: 55, fats: 16 },
+      ]},
+      { day: "Thursday", meals: [
+        { type: "Breakfast", name: "Toast with Peanut Butter & Honey", cost: "$0.80", time: "3 min", ingredients: ["Bread", "Peanut butter", "Honey"], calories: 320, protein: 10, carbs: 42, fats: 14 },
+        { type: "Lunch", name: "Canned Soup & Grilled Cheese", cost: "$1.60", time: "12 min", ingredients: ["Canned soup", "Bread", "Cheese", "Butter"], calories: 400, protein: 14, carbs: 42, fats: 18 },
+        { type: "Dinner", name: "Chickpea Stir-Fry", cost: "$2.40", time: "20 min", ingredients: ["Canned chickpeas", "Rice", "Soy sauce", "Frozen stir-fry veggies", "Garlic"], calories: 480, protein: 14, carbs: 68, fats: 12 },
+      ]},
+      { day: "Friday", meals: [
+        { type: "Breakfast", name: "Cereal with Milk", cost: "$0.90", time: "2 min", ingredients: ["Cereal", "Milk"], calories: 280, protein: 8, carbs: 48, fats: 6 },
+        { type: "Lunch", name: "Rice Cakes with Peanut Butter", cost: "$0.80", time: "2 min", ingredients: ["Rice cakes", "Peanut butter", "Banana"], calories: 300, protein: 8, carbs: 42, fats: 12 },
+        { type: "Dinner", name: "Bean & Potato Stew", cost: "$2.20", time: "35 min", ingredients: ["Potatoes", "Kidney beans", "Canned tomatoes", "Onion", "Paprika"], calories: 420, protein: 14, carbs: 72, fats: 6 },
+      ]},
+      { day: "Saturday", meals: [
+        { type: "Breakfast", name: "Banana Bread Oatmeal", cost: "$1.10", time: "10 min", ingredients: ["Oats", "Banana", "Walnuts", "Cinnamon", "Honey"], calories: 380, protein: 10, carbs: 58, fats: 12 },
+        { type: "Lunch", name: "Quesadilla with Beans", cost: "$1.40", time: "8 min", ingredients: ["Tortilla", "Refried beans", "Cheese", "Salsa"], calories: 400, protein: 14, carbs: 48, fats: 16 },
+        { type: "Dinner", name: "Fried Rice with Frozen Veggies", cost: "$2.00", time: "15 min", ingredients: ["Rice", "Eggs", "Frozen peas & carrots", "Soy sauce", "Garlic"], calories: 460, protein: 14, carbs: 62, fats: 14 },
+      ]},
+      { day: "Sunday", meals: [
+        { type: "Breakfast", name: "Yogurt with Granola", cost: "$1.20", time: "3 min", ingredients: ["Yogurt", "Granola", "Honey"], calories: 300, protein: 12, carbs: 48, fats: 8 },
+        { type: "Lunch", name: "Leftover Stew with Bread", cost: "$0.80", time: "5 min", ingredients: ["Leftover stew", "Bread"], calories: 360, protein: 10, carbs: 48, fats: 10 },
+        { type: "Dinner", name: "Homemade Pizza (Flatbread)", cost: "$2.80", time: "25 min", ingredients: ["Flatbread", "Pizza sauce", "Cheese", "Canned mushrooms", "Olives"], calories: 500, protein: 20, carbs: 58, fats: 20 },
+      ]},
+    ],
+    groceryHighlights: ["Dried lentils (2 lbs)", "Rice (5 lbs)", "Pasta (3 boxes)", "Canned beans (6 cans)", "Canned tomatoes (4 cans)", "Potatoes (5 lbs)", "Eggs (18 ct)", "Bread (2 loaves)", "Frozen veggies (2 bags)", "Peanut butter"],
+    tips: [
+      "Check your pantry before shopping — you likely have more than you think",
+      "Dried grains and legumes last months and cost pennies per serving",
+      "Turn leftover rice into fried rice or burrito filling",
+      "Canned goods are pantry heroes — stock up during sales",
+    ],
+  },
 };
 
 const SLUG_MAP: Record<string, string> = {
@@ -260,6 +313,7 @@ const SLUG_MAP: Record<string, string> = {
   "more-variety-75": "more-variety-75",
   "college-eats-35": "college-eats-35",
   "snap-friendly-meals": "snap-friendly-meals",
+  "cook-from-what-you-have": "cook-from-what-you-have",
 };
 
 const MEAL_TYPE_ICONS: Record<string, React.ReactNode> = {
