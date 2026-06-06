@@ -25,14 +25,14 @@ export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="py-16 md:py-24 bg-white scroll-mt-20">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center max-w-6xl mx-auto">
           {/* LEFT — copy */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-4"
+            className="lg:col-span-3"
           >
             <span className="inline-block mb-5 text-[11px] font-extrabold tracking-[0.18em] uppercase text-[#1F5A2C]">
               See How It Works
@@ -46,8 +46,8 @@ export function HowItWorksSection() {
           </motion.div>
 
           {/* RIGHT — 3 phones */}
-          <div className="lg:col-span-8">
-            <div className="grid grid-cols-3 gap-3 md:gap-6">
+          <div className="lg:col-span-9">
+            <div className="grid grid-cols-3 gap-1 md:gap-2">
               {phones.map((p, i) => (
                 <motion.div
                   key={i}
