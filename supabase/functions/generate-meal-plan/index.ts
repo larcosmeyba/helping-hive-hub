@@ -13,6 +13,22 @@ interface Overrides {
   meal_count?: number;
 }
 
+type JobStage = "preparing" | "generating" | "saving" | "done";
+
+type GenerationErrorCode =
+  | "missing_context"
+  | "openai_timeout"
+  | "invalid_ai_json"
+  | "database_insert_failed"
+  | "grocery_list_failed";
+
+const BACKEND_STEPS: Record<JobStage, string[]> = {
+  preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "meal_plan_context created"],
+  generating: ["OpenAI request started", "OpenAI response received"],
+  saving: ["grocery_list_items generated", "estimated totals calculated"],
+  done: ["meal_plan saved", "meal_plan_meals saved", "grocery list saved", "navigate to Meal Plan page"],
+};
+
 const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI.
 You build budget-friendly, family-sized weekly meal plans for any household.
 
