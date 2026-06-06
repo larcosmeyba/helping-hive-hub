@@ -155,6 +155,10 @@ const App = () => {
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="support" element={<SupportPage />} />
                     <Route path="resources" element={<ResourceHubHome />} />
+                    <Route path="family-assistance" element={<FamilyAssistanceHome />} />
+                    <Route path="family-assistance/results" element={<FamilyAssistanceResultsPage />} />
+                    <Route path="family-assistance/saved" element={<FamilySavedResourcesPage />} />
+                    <Route path="family-assistance/resource/:id" element={<FamilyResourceDetailPage />} />
                     <Route path="resources/intake" element={<FamilyAssistanceIntakePage />} />
                     <Route path="resources/matches" element={<FamilyAssistanceMatchesPage />} />
                     <Route path="resources/match/:id" element={<FamilyMatchDetailPage />} />
