@@ -12,6 +12,7 @@ type SourceType =
   | "food_waste"
   | "pantry_low_stock"
   | "manual"
+  | "manual_add"
   | "bulk_buying";
 
 interface IncomingItem {
@@ -32,6 +33,7 @@ const ALLOWED_SOURCES: SourceType[] = [
   "food_waste",
   "pantry_low_stock",
   "manual",
+  "manual_add",
   "bulk_buying",
 ];
 
@@ -150,8 +152,8 @@ Deno.serve(async (req) => {
       if (!name) continue;
       const key = norm(name);
 
-      // Pantry skip — unless this *is* a low-stock add
-      if (pantrySkip.has(key) && source_type !== "pantry_low_stock") {
+      // Pantry skip — unless this *is* a low-stock add or a manual user add
+      if (pantrySkip.has(key) && source_type !== "pantry_low_stock" && source_type !== "manual_add") {
         skipped.push(name);
         continue;
       }
