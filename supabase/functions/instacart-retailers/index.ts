@@ -122,9 +122,21 @@ Deno.serve(async (req) => {
       : [];
 
     CACHE.set(cacheKey, { at: Date.now(), data: list });
+    if (list.length === 0) {
+      return json({
+        retailers: [],
+        cached: false,
+        error: "No participating Instacart retailers found for this ZIP code.",
+        fallback: false,
+      });
+    }
     return json({ retailers: list, cached: false });
   } catch (e) {
     console.error("[instacart-retailers] error", e);
-    return json({ error: (e as Error).message ?? "unknown error" }, 500);
+    return json({
+      error: "Unable to load stores right now. Please try again.",
+      fallback: true,
+      retailers: [],
+    }, 200);
   }
 });
