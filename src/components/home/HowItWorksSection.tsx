@@ -46,8 +46,8 @@ export function HowItWorksSection() {
           </motion.div>
 
           {/* RIGHT — 3 phones */}
-          <div className="lg:col-span-8">
-            <div className="grid grid-cols-3 gap-3 md:gap-6">
+          <div className="lg:col-span-9">
+            <div className="grid grid-cols-3 gap-1 md:gap-2">
               {phones.map((p, i) => (
                 <motion.div
                   key={i}
