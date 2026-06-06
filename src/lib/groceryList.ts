@@ -15,6 +15,7 @@ export type GrocerySourceType =
   | "food_waste"
   | "pantry_low_stock"
   | "manual"
+  | "manual_add"
   | "bulk_buying";
 
 export interface AddGroceryItem {
