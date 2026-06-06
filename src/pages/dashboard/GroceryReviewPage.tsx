@@ -485,11 +485,14 @@ export default function GroceryReviewPage() {
 
       {/* Send to Instacart (existing approved flow) */}
       <div className="mt-4 flex flex-col items-center gap-2">
+        <p className="text-[13px] text-[#6b6b6b] font-medium">
+          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated total ${selectedTotal.toFixed(2)}
+        </p>
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
           lineItems={sendItems}
-          label="Send to Instacart"
+          label="Send Selected Items to Instacart"
           fullWidth
         />
         <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
