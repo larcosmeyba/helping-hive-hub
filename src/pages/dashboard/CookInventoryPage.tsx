@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, AlertTriangle, Loader2, Refrigerator, Package } from "lucide-react";
+import { Check, AlertTriangle, Loader2, Refrigerator, Package, Snowflake, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateRecipesFromInventory } from "@/lib/cookFromWhatIHave";
+
+type Location = "pantry" | "fridge" | "freezer";
 
 interface PantryRow {
   id: string;
@@ -20,6 +22,13 @@ function daysUntil(date: string | null): number | null {
   return Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
+function normalizeLocation(loc: string | null): Location {
+  const l = (loc || "pantry").toLowerCase();
+  if (l.includes("freezer")) return "freezer";
+  if (l.includes("fridge")) return "fridge";
+  return "pantry";
+}
+
 export default function CookInventoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -27,44 +36,50 @@ export default function CookInventoryPage() {
   const [items, setItems] = useState<PantryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [finding, setFinding] = useState(false);
+  const [addOpen, setAddOpen] = useState<Location | null>(null);
 
-  useEffect(() => {
+  const loadItems = async () => {
     if (!user) return;
-    supabase
+    const { data } = await supabase
       .from("pantry_items")
       .select("id,item_name,location,expiration_date,is_out_of_stock,is_low_stock")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        setItems((data ?? []).filter((r) => !r.is_out_of_stock) as PantryRow[]);
-        setLoading(false);
-      });
+      .eq("user_id", user.id);
+    setItems((data ?? []).filter((r) => !r.is_out_of_stock) as PantryRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const { pantry, fridge, expiring } = useMemo(() => {
+  const { pantry, fridge, freezer, expiring } = useMemo(() => {
     const p: PantryRow[] = [];
     const f: PantryRow[] = [];
+    const fz: PantryRow[] = [];
     const exp: { name: string; days: number }[] = [];
     for (const it of items) {
-      const loc = (it.location || "pantry").toLowerCase();
-      if (loc.includes("fridge") || loc.includes("freezer")) f.push(it);
+      const loc = normalizeLocation(it.location);
+      if (loc === "fridge") f.push(it);
+      else if (loc === "freezer") fz.push(it);
       else p.push(it);
       const d = daysUntil(it.expiration_date);
       if (d !== null && d >= 0 && d <= 5) exp.push({ name: it.item_name, days: d });
     }
     exp.sort((a, b) => a.days - b.days);
-    return { pantry: p, fridge: f, expiring: exp };
+    return { pantry: p, fridge: f, freezer: fz, expiring: exp };
   }, [items]);
 
   const findMeals = async () => {
     if (!items.length) {
-      toast({ title: "Add pantry items first", description: "We need something to cook with.", variant: "destructive" });
+      toast({ title: "Add items first", description: "We need something to cook with.", variant: "destructive" });
       return;
     }
     setFinding(true);
     try {
       const recipes = await generateRecipesFromInventory({ count: 3 });
       if (!recipes.length) {
-        toast({ title: "No recipes found", description: "Try adding more ingredients to your pantry.", variant: "destructive" });
+        toast({ title: "No recipes found", description: "Try adding more ingredients.", variant: "destructive" });
         return;
       }
       navigate("/dashboard/cook/recipes", { state: { recipes } });
@@ -87,20 +102,19 @@ export default function CookInventoryPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          <SectionCard title="Pantry" headerBg="#FDECEC" titleColor="#C0392B" Icon={Package}>
-            {pantry.length ? (
-              <ItemList rows={pantry} />
-            ) : (
-              <EmptyHint to="/dashboard/pantry" label="Add pantry items" />
-            )}
+          <SectionCard title="Pantry" headerBg="#FDECEC" titleColor="#C0392B" Icon={Package}
+            onAdd={() => setAddOpen("pantry")}>
+            {pantry.length ? <ItemList rows={pantry} /> : <EmptyHint label="No pantry items yet" />}
           </SectionCard>
 
-          <SectionCard title="Fridge" headerBg="#E8F0FE" titleColor="#1A56DB" Icon={Refrigerator}>
-            {fridge.length ? (
-              <ItemList rows={fridge} />
-            ) : (
-              <EmptyHint to="/dashboard/pantry" label="Add fridge items" />
-            )}
+          <SectionCard title="Fridge" headerBg="#E8F0FE" titleColor="#1A56DB" Icon={Refrigerator}
+            onAdd={() => setAddOpen("fridge")}>
+            {fridge.length ? <ItemList rows={fridge} /> : <EmptyHint label="No fridge items yet" />}
+          </SectionCard>
+
+          <SectionCard title="Freezer" headerBg="#E0F2FE" titleColor="#0369A1" Icon={Snowflake}
+            onAdd={() => setAddOpen("freezer")}>
+            {freezer.length ? <ItemList rows={freezer} /> : <EmptyHint label="No freezer items yet" />}
           </SectionCard>
 
           {expiring.length > 0 && (
@@ -131,18 +145,39 @@ export default function CookInventoryPage() {
         {finding ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
         {finding ? "Finding meals…" : "Find Meals"}
       </button>
+
+      {addOpen && (
+        <AddItemSheet
+          location={addOpen}
+          onClose={() => setAddOpen(null)}
+          onSaved={() => {
+            setAddOpen(null);
+            loadItems();
+            toast({ title: "Item added" });
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function SectionCard({
-  title, headerBg, titleColor, Icon, children,
-}: { title: string; headerBg: string; titleColor: string; Icon: typeof Package; children: React.ReactNode }) {
+  title, headerBg, titleColor, Icon, children, onAdd,
+}: { title: string; headerBg: string; titleColor: string; Icon: typeof Package; children: React.ReactNode; onAdd?: () => void }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
       <div className="px-4 py-2.5 flex items-center gap-2" style={{ backgroundColor: headerBg }}>
         <Icon className="w-4 h-4" style={{ color: titleColor }} />
-        <p className="text-[13px] font-extrabold" style={{ color: titleColor }}>{title}</p>
+        <p className="text-[13px] font-extrabold flex-1" style={{ color: titleColor }}>{title}</p>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="flex items-center gap-1 text-[12px] font-bold rounded-full px-2.5 py-1 bg-white/70"
+            style={{ color: titleColor }}
+          >
+            <Plus className="w-3.5 h-3.5" /> Add
+          </button>
+        )}
       </div>
       {children}
     </div>
@@ -164,10 +199,168 @@ function ItemList({ rows }: { rows: PantryRow[] }) {
   );
 }
 
-function EmptyHint({ to, label }: { to: string; label: string }) {
+function EmptyHint({ label }: { label: string }) {
   return (
     <div className="px-4 py-4 text-center">
-      <a href={to} className="text-[13px] text-[#5B3FBF] font-semibold underline">{label}</a>
+      <span className="text-[13px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+const CATEGORIES = ["dairy", "produce", "protein", "grains", "pantry_staples", "frozen", "canned_goods", "other"];
+
+function AddItemSheet({
+  location, onClose, onSaved,
+}: { location: Location; onClose: () => void; onSaved: () => void }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [loc, setLoc] = useState<Location>(location);
+  const [category, setCategory] = useState<string>("other");
+  const [expiration, setExpiration] = useState("");
+  const [lowStock, setLowStock] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!user || !name.trim()) {
+      toast({ title: "Item name required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("pantry_items").insert({
+      user_id: user.id,
+      item_name: name.trim(),
+      normalized_item_name: name.trim().toLowerCase(),
+      quantity: quantity || null,
+      unit: unit || null,
+      location: loc,
+      category,
+      expiration_date: expiration || null,
+      is_low_stock: lowStock,
+      manually_added: true,
+    });
+    setSaving(false);
+    if (error) {
+      toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
+      return;
+    }
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="w-full max-w-md bg-card rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[17px] font-extrabold text-foreground">Add Item</h2>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-muted">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <Field label="Item Name">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Spinach"
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              autoFocus
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Quantity">
+              <input
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="1"
+                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              />
+            </Field>
+            <Field label="Unit">
+              <input
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="bag, oz, lb…"
+                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              />
+            </Field>
+          </div>
+
+          <Field label="Location">
+            <div className="grid grid-cols-3 gap-2">
+              {(["pantry", "fridge", "freezer"] as Location[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLoc(l)}
+                  className={`h-11 rounded-xl text-[13px] font-semibold capitalize border ${
+                    loc === l
+                      ? "bg-[#5B3FBF] text-white border-[#5B3FBF]"
+                      : "bg-background text-foreground border-border"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Category">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c.replace("_", " ")}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Expiration Date">
+            <input
+              type="date"
+              value={expiration}
+              onChange={(e) => setExpiration(e.target.value)}
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+            />
+          </Field>
+
+          <label className="flex items-center justify-between py-2">
+            <span className="text-[14px] font-medium text-foreground">Low stock</span>
+            <input
+              type="checkbox"
+              checked={lowStock}
+              onChange={(e) => setLowStock(e.target.checked)}
+              className="w-5 h-5 accent-[#5B3FBF]"
+            />
+          </label>
+        </div>
+
+        <button
+          onClick={save}
+          disabled={saving}
+          className="mt-5 w-full h-[50px] rounded-2xl bg-[#5B3FBF] text-white font-bold text-[15px] disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          Save Item
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[12px] font-semibold text-muted-foreground mb-1">{label}</label>
+      {children}
     </div>
   );
 }
