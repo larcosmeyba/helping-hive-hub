@@ -14,8 +14,8 @@ const trustItems = [
   },
   {
     icon: Gift,
-    title: "Free for SNAP Families",
-    desc: "If your household receives SNAP or WIC benefits, Help The Hive is free. No trial, no credit card, no catch.",
+    title: "Free For Everyone",
+    desc: "Help The Hive is free to use. Additional budgeting tools and assistance resources are available for households using SNAP and EBT benefits.",
   },
   {
     icon: Building2,
