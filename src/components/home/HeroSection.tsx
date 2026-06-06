@@ -20,7 +20,7 @@ const trustItems = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-honey-cream">
+    <section className="relative overflow-hidden bg-[#1a1a1a]">
       <div className="grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
         {/* LEFT — copy */}
         <div className="relative z-10 px-6 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 flex items-center">
@@ -31,19 +31,18 @@ export function HeroSection() {
             className="max-w-xl w-full"
           >
             <span
-              className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[11px] font-extrabold tracking-[0.15em] uppercase rounded-full"
-              style={{ backgroundColor: "#E6F4E6", color: "#1F5A2C" }}
+              className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[11px] font-extrabold tracking-[0.15em] uppercase rounded-full bg-white/[0.08] text-white"
             >
-              <Heart className="w-3.5 h-3.5" fill="#1F5A2C" stroke="#1F5A2C" />
+              <Heart className="w-3.5 h-3.5" fill="#ffffff" stroke="#ffffff" />
               Free For Every Family
             </span>
 
-            <h1 className="font-display text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-charcoal leading-[1.05] mb-6">
+            <h1 className="font-display text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-white leading-[1.05] mb-6">
               Save Money On Groceries.{" "}
               <span className="text-primary block mt-2">Feed Your Family Smarter.</span>
             </h1>
 
-            <p className="text-base md:text-lg text-muted-foreground mb-7 leading-relaxed">
+            <p className="text-base md:text-lg text-white/75 mb-7 leading-relaxed">
               Help The Hive combines AI meal planning, pantry tracking, grocery lists, budget insights, and family assistance resources to help families spend less and waste less.
             </p>
 
@@ -52,7 +51,7 @@ export function HeroSection() {
               {pills.map(({ icon: Icon, label, color }) => (
                 <span
                   key={label}
-                  className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl bg-white border border-border shadow-sm text-[12px] font-semibold text-charcoal leading-tight whitespace-pre-line"
+                  className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-[12px] font-semibold text-white leading-tight whitespace-pre-line"
                 >
                   <Icon className={`w-4 h-4 ${color} shrink-0`} />
                   {label}
@@ -70,7 +69,7 @@ export function HeroSection() {
               {trustItems.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-charcoal"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90"
                 >
                   <Check className="w-4 h-4 text-accent" strokeWidth={3} />
                   {item}
@@ -84,13 +83,13 @@ export function HeroSection() {
         <div className="relative min-h-[320px] md:min-h-0">
           <img
             src={heroBowl}
-            alt="Healthy family meal bowl with grilled salmon, green beans, cherry tomatoes, couscous and pesto"
+            alt="Skillet of stir-fried chicken with broccoli, peppers and rice"
             className="absolute inset-0 w-full h-full object-cover"
             width={1280}
             height={1280}
           />
-          {/* Soft fade from cream into image on the left edge for seamless blend */}
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-honey-cream to-transparent pointer-events-none hidden md:block" />
+          {/* Soft fade from dark into image on the left edge for seamless blend */}
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#1a1a1a] to-transparent pointer-events-none hidden md:block" />
         </div>
       </div>
     </section>
