@@ -65,6 +65,23 @@ export async function markRecipeCooked(recipe_id: string) {
   return data as { ok: boolean; depleted: number; savings_estimate: number | null };
 }
 
+export async function addSingleIngredientToGroceryList(
+  ingredient: GeneratedRecipeIngredient,
+  source: "cook_from_what_i_have" | "food_waste" | "fridge_chef" = "cook_from_what_i_have",
+  source_ref_id?: string,
+): Promise<AddItemsResult> {
+  return addItemsToGroceryList(source, [
+    {
+      item_name: ingredient.item_name,
+      quantity: ingredient.quantity ?? undefined,
+      unit: ingredient.unit ?? undefined,
+      estimated_price: ingredient.estimated_price ?? undefined,
+      instacart_search_term: ingredient.instacart_search_term ?? ingredient.item_name,
+      source_ref_id,
+    },
+  ]);
+}
+
 export async function sendMissingIngredientsToGroceryList(
   recipe: GeneratedRecipe,
 ): Promise<AddItemsResult> {
