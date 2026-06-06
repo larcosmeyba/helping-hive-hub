@@ -12,7 +12,6 @@ const phones = [
     translateY: "40px",
     z: 10,
     scale: 0.85,
-    float: [0, -6, 0],
   },
   {
     src: todaysDashboard.url,
@@ -21,7 +20,6 @@ const phones = [
     translateY: "0px",
     z: 20,
     scale: 1.15,
-    float: [0, -10, 0],
   },
   {
     src: groceryListScreen.url,
@@ -30,7 +28,6 @@ const phones = [
     translateY: "40px",
     z: 10,
     scale: 0.85,
-    float: [0, -6, 0],
   },
 ];
 
@@ -53,7 +50,6 @@ const captions = [
 ];
 
 const metrics = [
-  { value: "50,000+", label: "Meals Generated" },
   { value: "$1M+", label: "Estimated Savings" },
   { value: "100%", label: "Free To Use" },
   { value: "Powered By", label: "Instacart" },
