@@ -1,46 +1,147 @@
-# Hive Family Assistance — Full Rebuild
+# Hybrid Meal Planning Architecture
 
-Replace the current yes/no intake with a category-card flow, add results/detail/saved screens, and wire it to new database tables + edge functions that are OpenAI-ready but work without it.
+## Recommendation
+Go with the 3-tier hybrid you described. It's the right call: the 325-recipe library gives consistency + popularity + image quality, while OpenAI keeps the flexibility users need for tight budgets, big families, and pantry-first weeks. Instacart is fully out of scope — no checkout code is touched.
 
-## 1. Database (one migration)
+## Recipe Cost Audit (current state)
+Queried `public.recipes` directly:
+- **Total recipes:** 325
+- **With `image_url`:** 325 (100%)
+- **With `serving_size`:** 325 (100%)
+- **With `cost_estimate` > 0:** **69 / 325 (21%)** ← biggest gap
+- **Missing cost:** **256 recipes**
+- **No `cost_per_serving` column** — can be derived: `cost_estimate / serving_size`
+- **No `meal_type` column** — all 325 need backfill
+- **No `budget_tier` column**
+- **Ingredients** stored as `jsonb` array on `recipes.ingredients` (no normalized `recipe_ingredients` table). Cost can be computed from ingredients only if we map each to a price source — we don't have one today, so first pass = AI-estimated cost + manual admin override.
 
-New tables (with GRANTs + RLS):
+## Effort Estimate
+- **Schema + backfill:** ~1 session (1 migration, 1 backfill edge function for cost + meal_type using gpt-5.4-mini)
+- **`generate-meal-plan` rewrite to 3-tier:** ~1 session (selector → AI ranker → AI modifier → AI creator fallback)
+- **Variety + usage tracking:** ~0.5 session
+- **Pantry-aware grocery list from recipe ingredients:** ~0.5 session
+- **Total:** ~3 focused build sessions, shippable incrementally behind the existing `meal_plan_generation_jobs` flow.
 
-- **family_assistance_requests** — `id, user_id, zip_code, selected_categories jsonb, urgency_level, household_size, has_children, employment_status, receives_benefits, timestamps`
-- **community_resources** — `id, name, category, subcategory, description, address, city, state, zip_code, county, latitude, longitude, phone, website, email, hours, eligibility_notes, what_to_bring, emergency_available bool, source, last_verified_at, active bool, timestamps`
-- **saved_family_resources** — `id, user_id, resource_id (-> community_resources), notes, created_at` (separate from existing `saved_resources` to avoid colliding with the legacy resource hub)
-- **family_assistance_ai_recommendations** — `id, user_id, request_id, recommended_resource_ids jsonb, ai_summary, urgent_notes, next_steps jsonb, created_at`
+## Impact on Existing Data
+- **Existing meal plans:** untouched. `meal_plans`, `meal_plan_days`, `meal_plan_meals` keep working. New plans get a nullable `recipe_id` on `meal_plan_meals` linking back to `recipes` when Tier 1/2 was used.
+- **Old plans without `recipe_id`:** still render via the meal name + stored ingredients — no breakage.
+- **Instacart:** **untouched.** `instacart-create-list`, `SendToInstacartButton`, the selected-for-instacart checkbox flow — none of it changes. Grocery list shape stays the same.
 
-RLS: user owns own requests/saves/recs; `community_resources` readable by authenticated; admins manage.
+---
 
-## 2. Edge Functions
+## Migration Plan (1 migration, run after approval)
 
-- `find-family-resources` — saves request, queries `community_resources` (ZIP → county → state, urgency-first, category filter), calls `process-hive-ai-request` with `request_type: "family_assistance"`, stores recommendation, returns ranked list + AI summary. Graceful fallback if AI fails.
-- `save-family-resource` — upsert into `saved_family_resources`.
-- `get-saved-family-resources` — returns saved resources joined with `community_resources`.
-- Extend `process-hive-ai-request` to handle `family_assistance` request type using the system prompt from the spec; returns `{summary, recommended_resources, urgent_notes, next_steps}`. Never invents resources — only ranks supplied candidates.
+### `recipes` — new columns
+- `meal_type text` — one of `breakfast | lunch | dinner | snack` (CHECK)
+- `estimated_recipe_cost numeric` — total cost for the full recipe
+- `cost_per_serving numeric` — generated/maintained = `estimated_recipe_cost / serving_size`
+- `budget_tier text` — `ultra_budget | budget | standard | premium` (CHECK), derived from `cost_per_serving`:
+  - ultra_budget ≤ $2, budget ≤ $4, standard ≤ $7, premium > $7
+- `source text default 'curated'` — `curated | ai_generated`
+- `created_by_user_id uuid` (nullable) — set when Tier 3 saves a new AI recipe
+- `times_used int default 0`, `avg_rating numeric` — popularity surface
 
-## 3. Frontend
+### New table `recipe_usage`
+```
+id uuid pk
+user_id uuid not null
+recipe_id uuid not null references recipes(id)
+meal_plan_id uuid
+week_start date not null
+meal_type text
+cooked_at timestamptz
+favorited boolean default false
+created_at timestamptz default now()
+```
+Indexes: `(user_id, week_start desc)`, `(recipe_id)`. RLS: users manage their own; admins read all. Grants for `authenticated` + `service_role`.
 
-New route tree under `/dashboard/family-assistance`:
+### Backfill (separate edge function, run once after migration)
+- `meal_type`: rule-based pass first (category/tags/title keywords cover ~90%), AI fallback for the rest.
+- `estimated_recipe_cost`: keep existing 69; for the other 256 use gpt-5.4-mini in batches of 20 with ingredients + servings as input.
+- `cost_per_serving` and `budget_tier`: computed from the above.
 
-- `FamilyAssistanceIntakePage.tsx` (rewrite) — Screen 1 (multi-select category cards) + urgency question + Screen 2 (ZIP, household, children, employment, benefits) as a 2-step flow. Replaces the legacy yes/no form.
-- `FamilyAssistanceResultsPage.tsx` — ranked cards, filters chip row (Food/Housing/Utilities/Baby/Healthcare/Transport/Employment/Urgent/Saved), AI summary banner, safety disclaimers, 911/crisis copy when urgent or mental_health.
-- `FamilyResourceDetailPage.tsx` — full resource detail with Call / Website / Directions / Save buttons.
-- `FamilySavedResourcesPage.tsx` — saved tab.
-- Home / hub entry: `Hive Family Assistance` card → `Find Help` routes to `/dashboard/family-assistance`; `Saved` link to saved page. Keep this fully separate from Hive AI.
+---
 
-Category cards use the 11 categories from the spec, with Lucide icons and the honey-themed flat tile style already used elsewhere in the dashboard.
+## Generation Flow (new `generate-meal-plan`)
 
-## 4. Safety / Copy
+```text
+build context (profile, pantry, fridge, freezer, allergies, budget, household, skill, last 4 weeks of recipe_usage)
+        │
+        ▼
+Tier 1: SQL select candidate recipes
+  - filter: dietary, allergies, meal_type per slot, budget_tier ≤ user cap
+  - exclude: recipe_ids used in last 4 weeks (unless favorited)
+  - boost: recipes whose ingredients overlap pantry/fridge/freezer
+  - return ~40 candidates spread across meal_type
+        │
+        ▼
+AI ranker (gpt-5.4-mini, JSON-only)
+  input: candidate list + user context + protein-variety rule
+  output: 7-day plan referencing recipe_ids, protein rotation enforced
+        │
+        ▼
+Budget check (server-side)
+  sum(cost_per_serving × household_size) ≤ weekly_budget?
+        │ yes ──────────────► persist
+        │ no
+        ▼
+Tier 2: AI modifier
+  ask gpt-5.4-mini to swap expensive ingredients per recipe
+  (steak→chicken, fresh→frozen, salmon→tuna),
+  keep concept, store as a *recipe_override* on meal_plan_meals
+  re-check budget
+        │ yes ──────────────► persist
+        │ no
+        ▼
+Tier 3: AI creator
+  generate fresh recipes for the failing slots only
+  insert into recipes (source='ai_generated', created_by_user_id=user)
+  assign Lovable AI image (gemini-2.5-flash-image) — never blank
+        │
+        ▼
+persist meal_plans + meal_plan_days + meal_plan_meals(recipe_id)
+write recipe_usage rows for the week
+build grocery list (see below)
+```
 
-- Disclaimer on results: "Resource availability, eligibility, hours, and services can change. Please contact the organization directly before visiting."
-- Urgent banner: "If you or someone in your household is in immediate danger, call 911…"
-- Mental-health crisis block (988) when category includes mental_health or urgent.
-- AI-disabled fallback message: "AI recommendations are currently unavailable, but here are resources based on your ZIP code and selected needs."
+Each stage updates `meal_plan_generation_jobs` exactly like today, so the existing 4-step UI keeps working.
 
-## 5. Out of scope
+### Variety rules (enforced server-side, not just prompted)
+- Block any `recipe_id` present in `recipe_usage` for this user where `week_start >= today - 28 days` AND `favorited = false`.
+- Protein diversity: parse primary protein tag from `recipes.tags`; cap any single protein at 2 of 7 dinners unless user opted into repetition.
 
-- No Plaid, no SNAP verification, no eligibility gating, no ID upload.
-- Existing `local_resources` / `FamilyAssistanceMatchesPage` legacy flow stays for now; new flow lives at `/dashboard/family-assistance/*` and is the only one linked from Home.
-- Seeding `community_resources` is not part of this change — table starts empty and resources can be added via admin/manual insert.
+---
+
+## Grocery List Logic (rewritten)
+Source of truth becomes `recipes.ingredients` for Tier 1/2 meals, AI-generated ingredients for Tier 3.
+
+```
+needed = union of all meal ingredients (scaled by household_size)
+        minus pantry_items (where quantity sufficient AND not low_stock)
+        minus fridge_items (same)
+        minus freezer_items (same)
+        → grocery_list_items
+```
+- Low-stock or insufficient-quantity items stay on the list.
+- Output shape into `grocery_list_items` is unchanged → **Instacart flow untouched**.
+- `selected_for_instacart = true` default, same as today.
+
+---
+
+## What OpenAI Does / Doesn't Do
+| Does | Doesn't |
+|---|---|
+| Rank library recipes for the week | Be the recipe database |
+| Adjust portions to household | Generate every meal from scratch when library covers it |
+| Swap ingredients for budget | Bypass dietary/allergy filters (server pre-filters) |
+| Create new recipes only when needed | Touch Instacart payload |
+| Write `why_this_plan` rationale | Set prices for library recipes (cached in DB) |
+
+---
+
+## Open Questions Before I Build
+1. **Budget tier thresholds** — OK with $2 / $4 / $7 cost-per-serving cutoffs, or set your own?
+2. **AI-created recipes** — save as `is_public = false` (private to that user) or `true` (added to the shared library for everyone)?
+3. **Backfill cost** — OK to spend ~1 AI call per 20 recipes (≈13 calls total) to estimate the missing 256?
+
+Reply with answers + "approved" and I'll run the migration first, then the backfill, then the generator rewrite.
