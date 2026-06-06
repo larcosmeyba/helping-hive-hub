@@ -1771,6 +1771,7 @@ export type Database = {
           meal_type: string
           prep_time_minutes: number | null
           protein_estimate: number | null
+          recipe_id: string | null
           user_id: string
         }
         Insert: {
@@ -1794,6 +1795,7 @@ export type Database = {
           meal_type: string
           prep_time_minutes?: number | null
           protein_estimate?: number | null
+          recipe_id?: string | null
           user_id: string
         }
         Update: {
@@ -1817,6 +1819,7 @@ export type Database = {
           meal_type?: string
           prep_time_minutes?: number | null
           protein_estimate?: number | null
+          recipe_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2477,15 +2480,67 @@ export type Database = {
           },
         ]
       }
+      recipe_usage: {
+        Row: {
+          cooked_at: string | null
+          created_at: string
+          favorited: boolean
+          id: string
+          meal_plan_id: string | null
+          meal_type: string | null
+          recipe_id: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          cooked_at?: string | null
+          created_at?: string
+          favorited?: boolean
+          id?: string
+          meal_plan_id?: string | null
+          meal_type?: string | null
+          recipe_id: string
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          cooked_at?: string | null
+          created_at?: string
+          favorited?: boolean
+          id?: string
+          meal_plan_id?: string | null
+          meal_type?: string | null
+          recipe_id?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_usage_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipes: {
         Row: {
+          avg_rating: number | null
+          budget_tier: string | null
           calories: number | null
           carbs_g: number | null
           category: string | null
           cook_time_minutes: number | null
           cost_estimate: number | null
+          cost_per_serving: number | null
           created_at: string
+          created_by_user_id: string | null
           description: string | null
+          estimated_recipe_cost: number | null
           fats_g: number | null
           fiber_g: number | null
           id: string
@@ -2493,20 +2548,28 @@ export type Database = {
           ingredients: Json
           instructions: Json
           is_public: boolean | null
+          meal_type: string | null
           prep_time_minutes: number | null
           protein_g: number | null
           serving_size: number | null
+          source: string
           tags: string[]
+          times_used: number
           title: string
         }
         Insert: {
+          avg_rating?: number | null
+          budget_tier?: string | null
           calories?: number | null
           carbs_g?: number | null
           category?: string | null
           cook_time_minutes?: number | null
           cost_estimate?: number | null
+          cost_per_serving?: number | null
           created_at?: string
+          created_by_user_id?: string | null
           description?: string | null
+          estimated_recipe_cost?: number | null
           fats_g?: number | null
           fiber_g?: number | null
           id?: string
@@ -2514,20 +2577,28 @@ export type Database = {
           ingredients?: Json
           instructions?: Json
           is_public?: boolean | null
+          meal_type?: string | null
           prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          source?: string
           tags?: string[]
+          times_used?: number
           title: string
         }
         Update: {
+          avg_rating?: number | null
+          budget_tier?: string | null
           calories?: number | null
           carbs_g?: number | null
           category?: string | null
           cook_time_minutes?: number | null
           cost_estimate?: number | null
+          cost_per_serving?: number | null
           created_at?: string
+          created_by_user_id?: string | null
           description?: string | null
+          estimated_recipe_cost?: number | null
           fats_g?: number | null
           fiber_g?: number | null
           id?: string
@@ -2535,10 +2606,13 @@ export type Database = {
           ingredients?: Json
           instructions?: Json
           is_public?: boolean | null
+          meal_type?: string | null
           prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          source?: string
           tags?: string[]
+          times_used?: number
           title?: string
         }
         Relationships: []
