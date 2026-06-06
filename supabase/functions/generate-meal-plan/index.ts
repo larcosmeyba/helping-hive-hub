@@ -1,6 +1,6 @@
-// Generate weekly meal plan via Lovable AI Gateway.
-// Builds a meal_plan_context from the user's profile + pantry/fridge and asks
-// the model for a structured weekly plan + grocery list, then persists it.
+// Generate weekly meal plan — HYBRID engine.
+// Flow: library candidate pool → AI ranks/assigns → AI creates only as fallback.
+// Server is the source of truth for meal data, cost, ingredients, and grocery list.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -23,79 +23,41 @@ type GenerationErrorCode =
   | "grocery_list_failed";
 
 const BACKEND_STEPS: Record<JobStage, string[]> = {
-  preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "meal_plan_context created"],
+  preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "recipe candidates fetched", "meal_plan_context created"],
   generating: ["OpenAI request started", "OpenAI response received"],
   saving: ["grocery_list_items generated", "estimated totals calculated"],
   done: ["meal_plan saved", "meal_plan_meals saved", "grocery list saved", "navigate to Meal Plan page"],
 };
 
-const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI.
-You build budget-friendly, family-sized weekly meal plans for any household.
+const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI using a HYBRID library-first strategy.
+
+You are given a pool of CURATED RECIPES (each with id, title, meal_type, cost_per_serving, brief tags).
+Your job is to SELECT recipes from the pool to fill each day's breakfast/lunch/dinner slots.
 
 STRICT RULES:
-- Output ONLY valid JSON matching the requested schema. No markdown, no prose.
-- Prices are ESTIMATES ONLY. Never claim exact pricing. Final pricing is confirmed at Instacart checkout.
-- Prioritize ingredients the user already has (pantry/fridge), especially ones marked "use_soon" or "expiring_today".
-- NEVER recommend expired ingredients. If listed expired, warn: "This item may no longer be safe to use. Please check before consuming."
+- PREFER library recipes. For each meal slot, choose a recipe from candidates_<meal_type> by returning its library_recipe_id.
+- Vary protein/cuisine across the week — don't pick the same recipe twice.
+- Only create a new_meal when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes.
+- Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
+- NEVER recommend expired ingredients.
 - Respect allergies and dietary preferences absolutely.
-- Do NOT give medical advice. Do NOT guarantee SNAP eligibility.
-- Stay within the weekly grocery budget. Lean on pantry items to do so.
-- Every grocery item must include an instacart_search_term suitable for Instacart's catalog search.
-- Use the user's preferred store if Instacart supports it.`;
+- Stay within the weekly grocery budget.
+- Output ONLY the structured tool call.`;
 
 const RESPONSE_SCHEMA = {
   type: "object",
-  required: ["meal_plan", "grocery_list", "why_this_plan"],
+  required: ["days", "why_this_plan"],
   properties: {
-    meal_plan: {
-      type: "object",
-      required: [
-        "week_start_date",
-        "estimated_total_cost",
-        "estimated_daily_average",
-        "estimated_cost_per_serving",
-        "total_meals",
-        "savings_estimate",
-        "why_this_plan",
-        "days",
-      ],
-      properties: {
-        week_start_date: { type: "string" },
-        estimated_total_cost: { type: "number" },
-        estimated_daily_average: { type: "number" },
-        estimated_cost_per_serving: { type: "number" },
-        total_meals: { type: "integer" },
-        savings_estimate: { type: "number" },
-        why_this_plan: { type: "string" },
-        days: {
-          type: "array",
-          items: {
-            type: "object",
-            required: ["day_name", "breakfast", "lunch", "dinner"],
-            properties: {
-              day_name: { type: "string" },
-              breakfast: { $ref: "#/$defs/meal" },
-              lunch: { $ref: "#/$defs/meal" },
-              dinner: { $ref: "#/$defs/meal" },
-            },
-          },
-        },
-      },
-    },
-    grocery_list: {
+    days: {
       type: "array",
       items: {
         type: "object",
-        required: ["item_name", "quantity", "unit", "category", "estimated_price", "already_have", "instacart_search_term"],
+        required: ["day_name"],
         properties: {
-          item_name: { type: "string" },
-          quantity: { type: "string" },
-          unit: { type: "string" },
-          category: { type: "string" },
-          estimated_price: { type: "number" },
-          already_have: { type: "boolean" },
-          needed_for_meals: { type: "array", items: { type: "string" } },
-          instacart_search_term: { type: "string" },
+          day_name: { type: "string" },
+          breakfast: { $ref: "#/$defs/slot" },
+          lunch: { $ref: "#/$defs/slot" },
+          dinner: { $ref: "#/$defs/slot" },
         },
       },
     },
@@ -107,52 +69,33 @@ const RESPONSE_SCHEMA = {
         reduces_food_waste: { type: "boolean" },
         matches_dietary_preferences: { type: "boolean" },
         fits_household_size: { type: "boolean" },
-        available_at_store: { type: "boolean" },
+        summary: { type: "string" },
       },
     },
   },
   $defs: {
-    meal: {
+    slot: {
       type: "object",
-      required: ["meal_name", "meal_type", "description", "estimated_cost", "ingredients_used_from_pantry", "ingredients_to_buy", "instructions"],
       properties: {
-        meal_name: { type: "string" },
-        meal_type: { type: "string" },
-        description: { type: "string" },
-        ingredients_used_from_pantry: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              item_name: { type: "string" },
-              quantity: { type: "string" },
-              unit: { type: "string" },
-            },
+        library_recipe_id: { type: "string", description: "UUID of a recipe from the provided candidate pool. Prefer this." },
+        new_meal: {
+          type: "object",
+          description: "Only when no candidate fits.",
+          properties: {
+            meal_name: { type: "string" },
+            description: { type: "string" },
+            ingredients: { type: "array", items: { type: "string" } },
+            instructions: { type: "array", items: { type: "string" } },
+            estimated_cost_per_serving: { type: "number" },
+            calories_estimate: { type: "integer" },
+            protein_estimate: { type: "number" },
+            prep_time_minutes: { type: "integer" },
+            cook_time_minutes: { type: "integer" },
+            difficulty: { type: "string" },
+            tags: { type: "array", items: { type: "string" } },
           },
         },
-        ingredients_to_buy: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              item_name: { type: "string" },
-              quantity: { type: "string" },
-              unit: { type: "string" },
-              estimated_price: { type: "number" },
-              instacart_search_term: { type: "string" },
-            },
-          },
-        },
-        estimated_cost: { type: "number" },
-        estimated_cost_per_serving: { type: "number" },
-        calories_estimate: { type: "integer" },
-        protein_estimate: { type: "number" },
-        prep_time_minutes: { type: "integer" },
-        cook_time_minutes: { type: "integer" },
-        difficulty: { type: "string" },
-        instructions: { type: "array", items: { type: "string" } },
-        food_waste_reason: { type: "string" },
-        instacart_ready_ingredients: { type: "array", items: { type: "string" } },
+        reason: { type: "string", description: "Brief reason for choice." },
       },
     },
   },
@@ -194,6 +137,49 @@ function structuredError(code: GenerationErrorCode, message: string, extra?: Rec
   return { ok: false, error: message, error_code: code, ...extra };
 }
 
+function normalizeName(name: string): string {
+  return (name || "")
+    .toLowerCase()
+    .replace(/\d+(\.\d+)?/g, "")
+    .replace(/\b(cup|cups|tbsp|tsp|oz|lb|lbs|g|kg|ml|l|can|cans|cloves?|inch|inches|pkg|package|small|medium|large|fresh|frozen|chopped|diced|minced|sliced|grated|drained|cooked|raw)\b/g, "")
+    .replace(/[(),./]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseIngredientString(raw: string): { display: string; normalized: string; quantity: string; item: string } {
+  const display = raw.trim();
+  const qtyMatch = display.match(/^([\d/.\s]+\s*(?:cup|cups|tbsp|tsp|oz|lb|lbs|g|kg|ml|l|can|cans|cloves?|inch|inches|pkg|package)?)\s+(.*)$/i);
+  const quantity = qtyMatch ? qtyMatch[1].trim() : "";
+  const item = qtyMatch ? qtyMatch[2].trim() : display;
+  return { display, normalized: normalizeName(item), quantity, item };
+}
+
+function pantryHas(normalizedIngredient: string, pantryNormalized: Set<string>): boolean {
+  if (!normalizedIngredient) return false;
+  for (const p of pantryNormalized) {
+    if (!p) continue;
+    if (normalizedIngredient.includes(p) || p.includes(normalizedIngredient)) return true;
+  }
+  return false;
+}
+
+const STAPLE_KEYWORDS = ["salt", "pepper", "olive oil", "water", "oil"];
+
+function categorizeIngredient(name: string): string {
+  const n = name.toLowerCase();
+  if (/(chicken|beef|pork|turkey|salmon|fish|shrimp|tofu|tempeh|bacon|sausage|egg)/.test(n)) return "Protein";
+  if (/(milk|cheese|yogurt|butter|cream)/.test(n)) return "Dairy";
+  if (/(lettuce|tomato|onion|garlic|pepper|carrot|spinach|broccoli|kale|cucumber|avocado|potato|celery|mushroom|zucchini|cabbage|asparagus)/.test(n)) return "Produce";
+  if (/(apple|banana|orange|berry|berries|grape|lemon|lime|fruit|peach|mango|pineapple)/.test(n)) return "Produce";
+  if (/(rice|pasta|bread|oats|flour|tortilla|noodle|quinoa|cereal)/.test(n)) return "Pantry";
+  if (/(can|beans|lentil|chickpea|soup|sauce|broth|stock)/.test(n)) return "Pantry";
+  if (/(salt|pepper|spice|herb|seasoning|cumin|paprika|oregano|basil|cinnamon|garlic powder)/.test(n)) return "Spices";
+  if (/(oil|vinegar|soy sauce|ketchup|mayo|mustard|dressing|honey|syrup)/.test(n)) return "Condiments";
+  if (/(frozen)/.test(n)) return "Frozen";
+  return "Other";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -228,14 +214,14 @@ Deno.serve(async (req) => {
         current_stage: "preparing",
         current_step: BACKEND_STEPS.preparing[0],
         status_message: "Reviewing your profile & pantry",
-        metadata: { source: "generate-meal-plan" },
+        metadata: { source: "generate-meal-plan", engine: "hybrid_v1" },
       })
       .select("id")
       .single();
     if (jobErr || !jobRow?.id) {
       throw new Error(jobErr?.message || "Unable to start meal plan generation job.");
     }
-    const jobId = jobRow.id;
+    const jobId = jobRow.id as string;
     const completedSteps: string[] = [];
 
     const advance = async (stage: JobStage, step: string, statusMessage?: string, extra?: Record<string, unknown>) => {
@@ -278,13 +264,14 @@ Deno.serve(async (req) => {
       expiration_date: p.expiration_date,
       freshness_status: p.freshness_status ?? freshness(p),
       location: p.location ?? "pantry",
+      normalized_name: p.normalized_item_name ?? normalizeName(p.item_name),
     }));
 
     const fridgeItems = pantryItems.filter((i) => i.location === "fridge");
     const pantryOnly = pantryItems.filter((i) => i.location !== "fridge");
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
-    const lowStock = pantryItems.filter((i) => i.freshness_status === "low_stock" || (i as any).is_low_stock);
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
+    const pantryNormalized = new Set(pantryItems.map((i) => i.normalized_name).filter(Boolean));
     const homeStore = homeStoreRes.data;
 
     await advance("preparing", "pantry_items loaded", "Reviewing your profile & pantry", {
@@ -294,34 +281,143 @@ Deno.serve(async (req) => {
       fridge_items_count: fridgeItems.length,
     });
 
+    const householdSize = overrides.household_size ?? profile.household_size ?? 2;
+    const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
+    const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
+    const allergies: string[] = (profile.allergies ?? []) as string[];
+    const mealCount = overrides.meal_count ?? 18;
+    const daysCount = 6; // 6-day batch cook
+    const mealsPerType = Math.max(1, Math.ceil(mealCount / 3));
+
+    // Budget tier preference based on per-serving budget
+    const targetCostPerServing = weeklyBudget / (mealCount * Math.max(1, householdSize));
+    let preferredTiers: string[];
+    if (targetCostPerServing <= 1.5) preferredTiers = ["ultra_budget"];
+    else if (targetCostPerServing <= 3) preferredTiers = ["ultra_budget", "budget"];
+    else if (targetCostPerServing <= 5) preferredTiers = ["ultra_budget", "budget", "standard"];
+    else preferredTiers = ["ultra_budget", "budget", "standard", "premium"];
+
+    // Variety: exclude recipes used in last 4 weeks unless favorited
+    const fourWeeksAgo = new Date(); fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    const { data: recentUsage } = await admin
+      .from("recipe_usage")
+      .select("recipe_id, favorited")
+      .eq("user_id", userId)
+      .gte("week_start", fourWeeksAgo.toISOString().slice(0, 10));
+    const excludeIds = new Set<string>(
+      (recentUsage ?? []).filter((r: any) => !r.favorited).map((r: any) => r.recipe_id),
+    );
+
+    // Fetch candidate pool per meal type
+    async function fetchCandidates(mealType: "breakfast" | "lunch" | "dinner"): Promise<any[]> {
+      // Pull a broad pool; we'll filter dietary/budget client-side for flexibility
+      const { data, error } = await admin
+        .from("recipes")
+        .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes, avg_rating, times_used, source, created_by_user_id")
+        .eq("meal_type", mealType)
+        .or(`is_public.eq.true,created_by_user_id.eq.${userId}`)
+        .limit(120);
+      if (error) {
+        console.error("[generate-meal-plan] candidate fetch failed", mealType, error);
+        return [];
+      }
+      let pool = (data ?? []).filter((r: any) => !excludeIds.has(r.id));
+
+      // Allergy filter (hard)
+      if (allergies.length) {
+        const allergyRe = new RegExp(`\\b(${allergies.map((a) => a.toLowerCase().trim()).filter(Boolean).join("|")})\\b`, "i");
+        pool = pool.filter((r: any) => !(Array.isArray(r.ingredients) && r.ingredients.some((i: any) => typeof i === "string" && allergyRe.test(i))));
+      }
+
+      // Dietary preference filter (soft — only apply if it leaves enough)
+      if (dietaryPrefs.length) {
+        const prefsLower = dietaryPrefs.map((p) => p.toLowerCase());
+        const matched = pool.filter((r: any) => {
+          const tags = (r.tags ?? []).map((t: string) => t.toLowerCase());
+          return prefsLower.some((p) => tags.includes(p));
+        });
+        if (matched.length >= mealsPerType * 2) pool = matched;
+      }
+
+      // Budget tier preference (soft)
+      const tierMatched = pool.filter((r: any) => !r.budget_tier || preferredTiers.includes(r.budget_tier));
+      if (tierMatched.length >= mealsPerType * 2) pool = tierMatched;
+
+      // Rank: rating desc, times_used asc, then shuffle stable-ish
+      pool.sort((a: any, b: any) => {
+        const ra = Number(a.avg_rating ?? 0);
+        const rb = Number(b.avg_rating ?? 0);
+        if (rb !== ra) return rb - ra;
+        return (a.times_used ?? 0) - (b.times_used ?? 0);
+      });
+
+      return pool.slice(0, 12);
+    }
+
+    const [breakfastCandidates, lunchCandidates, dinnerCandidates] = await Promise.all([
+      fetchCandidates("breakfast"),
+      fetchCandidates("lunch"),
+      fetchCandidates("dinner"),
+    ]);
+
+    await advance("preparing", "recipe candidates fetched", "Picking from your recipe library", {
+      breakfast_candidates: breakfastCandidates.length,
+      lunch_candidates: lunchCandidates.length,
+      dinner_candidates: dinnerCandidates.length,
+    });
+
+    const candidatesById = new Map<string, any>();
+    for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates]) candidatesById.set(r.id, r);
+
+    function compactCandidate(r: any) {
+      // Identify pantry-overlap count for AI signal
+      const ings = Array.isArray(r.ingredients) ? r.ingredients : [];
+      let pantryOverlap = 0;
+      for (const ing of ings) {
+        if (typeof ing !== "string") continue;
+        const norm = parseIngredientString(ing).normalized;
+        if (pantryHas(norm, pantryNormalized)) pantryOverlap++;
+      }
+      return {
+        id: r.id,
+        title: r.title,
+        cost_per_serving: r.cost_per_serving,
+        budget_tier: r.budget_tier,
+        tags: r.tags ?? [],
+        prep_min: r.prep_time_minutes,
+        cook_min: r.cook_time_minutes,
+        ingredients_preview: ings.slice(0, 4),
+        pantry_overlap: pantryOverlap,
+      };
+    }
+
     const mealPlanContext = {
       user_id: userId,
-      household_size: overrides.household_size ?? profile.household_size ?? 1,
-      children_under_5: profile.children_under_5 ?? 0,
-      children_5_to_12: profile.children_5_to_12 ?? 0,
-      teenagers: profile.teenagers ?? 0,
-      seniors_65_plus: profile.seniors_65_plus ?? 0,
-      weekly_grocery_budget: overrides.budget ?? profile.weekly_budget ?? 75,
+      household_size: householdSize,
+      weekly_grocery_budget: weeklyBudget,
       zip_code: profile.zip_code ?? null,
       preferred_store: overrides.store ?? homeStore?.retailer_name ?? profile.home_store ?? null,
-      preferred_store_id: homeStore?.retailer_key ?? profile.preferred_store_id ?? null,
-      dietary_preferences: overrides.dietary_preferences ?? profile.dietary_preferences ?? [],
-      allergies: profile.allergies ?? [],
-      cooking_confidence: profile.cooking_confidence ?? profile.cooking_time_preference ?? "medium",
-      pantry_items: pantryOnly,
-      fridge_items: fridgeItems,
+      dietary_preferences: dietaryPrefs,
+      allergies,
+      cooking_confidence: profile.cooking_confidence ?? "medium",
+      pantry_items: pantryOnly.slice(0, 50),
+      fridge_items: fridgeItems.slice(0, 30),
       expiring_soon_items: expiringSoon,
-      low_stock_items: lowStock,
       expired_items: expired,
-      meals_already_cooked_this_week: [],
-      disliked_foods: [],
-      preferred_meal_count: overrides.meal_count ?? 18,
-      pricing_estimate_mode: "instacart_estimates",
-      instacart_supported_store: !!homeStore,
+      preferred_meal_count: mealCount,
+      meals_per_type: mealsPerType,
+      days_count: daysCount,
       week_start_date: new Date().toISOString().slice(0, 10),
+      candidates_breakfast: breakfastCandidates.map(compactCandidate),
+      candidates_lunch: lunchCandidates.map(compactCandidate),
+      candidates_dinner: dinnerCandidates.map(compactCandidate),
     };
 
-    const missingFields = missingContextFields(mealPlanContext as Record<string, unknown>);
+    const missingFields = missingContextFields({
+      ...mealPlanContext,
+      household_size: mealPlanContext.household_size,
+      weekly_grocery_budget: mealPlanContext.weekly_grocery_budget,
+    } as Record<string, unknown>);
     if (missingFields.length) {
       const message = `Missing required meal plan context: ${missingFields.join(", ")}`;
       await failJob("missing_context", message, { missing_fields: missingFields });
@@ -331,17 +427,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await advance("preparing", "meal_plan_context created", "Reviewing your profile & pantry", {
-      pantry_items_count: mealPlanContext.pantry_items.length,
-      fridge_items_count: mealPlanContext.fridge_items.length,
-    });
-
-    console.log("[generate-meal-plan] meal_plan_context →",
-      JSON.stringify({
-        ...mealPlanContext,
-        pantry_items_count: mealPlanContext.pantry_items.length,
-        fridge_items_count: mealPlanContext.fridge_items.length,
-      }).slice(0, 4000));
+    await advance("preparing", "meal_plan_context created", "Reviewing your profile & pantry");
 
     const { callOpenAI } = await import("../_shared/openaiClient.ts");
     let lastAttemptError: { code: GenerationErrorCode; message: string; details?: Record<string, unknown> } | null = null;
@@ -352,60 +438,43 @@ Deno.serve(async (req) => {
         const ai = await callOpenAI({
           model: "gpt-5.4-mini",
           system: SYSTEM_PROMPT,
-          user: `Build this week's plan from this meal_plan_context. Output ONLY the structured tool call — no prose, no markdown.\n\n${JSON.stringify(mealPlanContext)}`,
+          user: `Select recipes from candidates_breakfast / candidates_lunch / candidates_dinner to fill ${daysCount} days. Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
           tools: [{
             type: "function",
             function: {
               name: "return_meal_plan",
-              description: "Return the structured weekly meal plan and grocery list.",
+              description: "Return the day-by-day meal plan referencing library recipes.",
               parameters: RESPONSE_SCHEMA,
             },
           }],
           tool_choice: { type: "function", function: { name: "return_meal_plan" } },
-          max_tokens: 8000,
+          max_tokens: 5000,
           timeout_ms: 45000,
           log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
         });
 
         const finishReason = ai.raw?.choices?.[0]?.finish_reason;
-        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`, finishReason, "tool_arguments_keys=", ai.tool_arguments ? Object.keys(ai.tool_arguments) : null, "raw_text_len=", ai.text?.length ?? 0);
+        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`, finishReason);
 
         if (finishReason === "length") {
-          lastAttemptError = {
-            code: "invalid_ai_json",
-            message: "The meal planner response was cut off before completion.",
-            details: { attempt: attemptNum, finish_reason: finishReason },
-          };
+          lastAttemptError = { code: "invalid_ai_json", message: "Meal planner response was cut off.", details: { attempt: attemptNum } };
           return null;
         }
 
         const p = ai.tool_arguments as any;
-        const validationErrors: string[] = [];
-        if (!p) validationErrors.push("no tool_arguments");
-        if (p && !p.meal_plan) validationErrors.push("missing meal_plan");
-        if (p?.meal_plan && !Array.isArray(p.meal_plan.days)) validationErrors.push("meal_plan.days not array");
-        if (p?.meal_plan && Array.isArray(p.meal_plan.days) && p.meal_plan.days.length < 1) validationErrors.push("empty days");
-        if (p && !Array.isArray(p.grocery_list)) validationErrors.push("missing grocery_list");
-        if (validationErrors.length) {
-          console.warn(`[generate-meal-plan] attempt ${attemptNum} validation errors:`, validationErrors);
-          lastAttemptError = {
-            code: "invalid_ai_json",
-            message: "The meal planner returned invalid data.",
-            details: { attempt: attemptNum, validation_errors: validationErrors },
-          };
+        if (!p?.days || !Array.isArray(p.days) || p.days.length < 1) {
+          lastAttemptError = { code: "invalid_ai_json", message: "Meal planner returned invalid data.", details: { attempt: attemptNum } };
           return null;
         }
 
         await advance("generating", "OpenAI response received", "Building your weekly meal plan", { attempt: attemptNum });
         return p;
       } catch (e: any) {
-        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message, e?.code);
+        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message);
         if (e?.status === 429 || e?.status === 402) throw e;
         lastAttemptError = {
           code: e?.code === "openai_timeout" ? "openai_timeout" : "invalid_ai_json",
-          message: e?.code === "openai_timeout"
-            ? "The meal planner timed out while building your plan."
-            : (e?.message || "The meal planner failed to return a valid response."),
+          message: e?.code === "openai_timeout" ? "The meal planner timed out." : (e?.message || "AI response invalid."),
           details: { attempt: attemptNum },
         };
         return null;
@@ -413,200 +482,285 @@ Deno.serve(async (req) => {
     }
 
     let parsed: any = await attempt(1);
-    if (!parsed) {
-      console.warn("[generate-meal-plan] retrying once");
-      parsed = await attempt(2);
-    }
+    if (!parsed) parsed = await attempt(2);
 
     if (!parsed) {
-      const fallback = buildMockPlanResponse(mealPlanContext);
-      const errorCode = lastAttemptError?.code ?? "invalid_ai_json";
-      const errorMessage = lastAttemptError?.message ?? "We couldn't generate your meal plan right now.";
-      await updateJob(admin, jobId, {
-        status: "completed_with_fallback",
-        current_stage: "done",
-        current_step: "navigate to Meal Plan page",
-        completed_steps: [...completedSteps, ...BACKEND_STEPS.done],
-        status_message: "Showing fallback meal plan",
-        error_code: errorCode,
-        error_message: errorMessage,
-        fallback_used: true,
-        completed_at: new Date().toISOString(),
-        metadata: { ...(lastAttemptError?.details ?? {}), fallback_notice: true },
-      });
-      console.warn("[generate-meal-plan] both attempts failed — returning mock fallback");
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          job_id: jobId,
-          fallback: true,
-          notice: "We couldn't build your full meal plan right now. Showing a fallback sample plan so you aren't stuck.",
-          error_code: errorCode,
-          error_message: errorMessage,
-          ...fallback,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const mealPlan = parsed.meal_plan;
-    const groceryList = parsed.grocery_list ?? [];
-    const whyThisPlan = parsed.why_this_plan ?? {};
-
-    await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
-      grocery_items_count: groceryList.length,
-    });
-
-    const normalized = normalizePlanForClient(mealPlan, groceryList);
-    console.log("[generate-meal-plan] normalized days=", normalized.weeklyPlan.length,
-      "grocery_items=", normalized.groceryList.length,
-      "total=", normalized.totalEstimatedCost);
-
-    await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
-      estimated_total_cost: normalized.totalEstimatedCost,
-    });
-
-    const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
-      user_id: userId,
-      week_start: mealPlan.week_start_date,
-      week_start_date: mealPlan.week_start_date,
-      total_estimated_cost: mealPlan.estimated_total_cost,
-      estimated_daily_average: mealPlan.estimated_daily_average,
-      estimated_cost_per_serving: mealPlan.estimated_cost_per_serving,
-      total_meals: mealPlan.total_meals,
-      savings_estimate: mealPlan.savings_estimate,
-      why_this_plan: whyThisPlan,
-      plan_data: { ...parsed, ...normalized },
-      status: "active",
-    }).select().single();
-    if (planErr) {
-      await failJob("database_insert_failed", planErr.message, { table: "meal_plans" });
-      return new Response(JSON.stringify(structuredError("database_insert_failed", planErr.message, { job_id: jobId })), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const planId = planRow.id;
-    await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
-
-    for (let i = 0; i < (mealPlan.days ?? []).length; i++) {
-      const day = mealPlan.days[i];
-      const { data: dayRow, error: dayErr } = await admin.from("meal_plan_days").insert({
-        meal_plan_id: planId,
-        user_id: userId,
-        day_name: day.day_name,
-        sort_order: i,
-      }).select().single();
-      if (dayErr) {
-        await failJob("database_insert_failed", dayErr.message, { table: "meal_plan_days" });
-        return new Response(JSON.stringify(structuredError("database_insert_failed", dayErr.message, { job_id: jobId })), {
+      // Server-side fallback: just pick top candidates ourselves
+      console.warn("[generate-meal-plan] AI failed both attempts — using server-side library fallback");
+      parsed = buildServerFallback(daysCount, breakfastCandidates, lunchCandidates, dinnerCandidates);
+      if (!parsed.days.length) {
+        const errorCode = lastAttemptError?.code ?? "invalid_ai_json";
+        const errorMessage = lastAttemptError?.message ?? "We couldn't generate your meal plan.";
+        await failJob(errorCode, errorMessage, lastAttemptError?.details);
+        return new Response(JSON.stringify(structuredError(errorCode, errorMessage, { job_id: jobId })), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    }
 
+    // ===== RESOLVE meals into server-truth data =====
+    // For each day/slot: if library_recipe_id → load from recipes table.
+    // Else if new_meal → insert a private recipe row owned by user.
+    const resolvedDays: Array<{
+      day_name: string;
+      meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner"; recipe: any; reason?: string }>;
+    }> = [];
+
+    for (const day of parsed.days.slice(0, daysCount)) {
+      const dayMeals: any[] = [];
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-        const meal = day[mealType];
-        if (!meal) continue;
-        const { data: mealRow, error: mealErr } = await admin.from("meal_plan_meals").insert({
-          meal_plan_id: planId,
-          day_id: dayRow.id,
-          user_id: userId,
-          meal_type: mealType,
-          meal_name: meal.meal_name,
-          description: meal.description,
-          estimated_cost: meal.estimated_cost,
-          estimated_cost_per_serving: meal.estimated_cost_per_serving,
-          calories_estimate: meal.calories_estimate,
-          protein_estimate: meal.protein_estimate,
-          prep_time_minutes: meal.prep_time_minutes,
-          cook_time_minutes: meal.cook_time_minutes,
-          difficulty: meal.difficulty,
-          instructions: meal.instructions ?? [],
-          food_waste_reason: meal.food_waste_reason,
-        }).select().single();
-        if (mealErr) {
-          await failJob("database_insert_failed", mealErr.message, { table: "meal_plan_meals" });
-          return new Response(JSON.stringify(structuredError("database_insert_failed", mealErr.message, { job_id: jobId })), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        const slot = day[mealType];
+        if (!slot) continue;
+
+        let recipe: any = null;
+        if (slot.library_recipe_id && candidatesById.has(slot.library_recipe_id)) {
+          recipe = candidatesById.get(slot.library_recipe_id);
+        } else if (slot.new_meal) {
+          // Insert AI-generated recipe (private to this user)
+          const nm = slot.new_meal;
+          const cost = Number(nm.estimated_cost_per_serving) || null;
+          const servings = householdSize;
+          const { data: inserted, error: insErr } = await admin
+            .from("recipes")
+            .insert({
+              title: String(nm.meal_name || "Custom meal").slice(0, 200),
+              description: nm.description ?? null,
+              meal_type: mealType,
+              ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
+              instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
+              calories: nm.calories_estimate ?? null,
+              protein_g: nm.protein_estimate ?? null,
+              prep_time_minutes: nm.prep_time_minutes ?? null,
+              cook_time_minutes: nm.cook_time_minutes ?? null,
+              serving_size: servings,
+              estimated_recipe_cost: cost ? cost * servings : null,
+              source: "ai_generated",
+              is_public: false,
+              created_by_user_id: userId,
+              tags: Array.isArray(nm.tags) ? nm.tags : [],
+            })
+            .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
+            .single();
+          if (insErr) {
+            console.error("[generate-meal-plan] failed to insert AI recipe", insErr);
+            continue;
+          }
+          recipe = inserted;
+        } else {
+          // Slot empty — skip
+          continue;
         }
 
-        const ingredientRows = [
-          ...(meal.ingredients_used_from_pantry ?? []).map((ing: any) => ({
-            meal_id: mealRow.id,
-            user_id: userId,
-            item_name: ing.item_name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            source: "pantry",
-            already_have: true,
-          })),
-          ...(meal.ingredients_to_buy ?? []).map((ing: any) => ({
-            meal_id: mealRow.id,
-            user_id: userId,
-            item_name: ing.item_name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            source: "purchase",
-            already_have: false,
-            estimated_price: ing.estimated_price,
-            instacart_search_term: ing.instacart_search_term,
-          })),
-        ];
-        if (ingredientRows.length) {
-          const { error: ingErr } = await admin.from("meal_ingredients").insert(ingredientRows);
-          if (ingErr) {
-            await failJob("database_insert_failed", ingErr.message, { table: "meal_ingredients" });
-            return new Response(JSON.stringify(structuredError("database_insert_failed", ingErr.message, { job_id: jobId })), {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
+        dayMeals.push({ meal_type: mealType, recipe, reason: slot.reason });
+      }
+      resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
+    }
+
+    // ===== Build grocery list from chosen recipes (server-side, pantry-aware) =====
+    const groceryAgg = new Map<string, {
+      ingredient_name: string;
+      quantity: string;
+      category: string;
+      estimated_price: number;
+      already_have: boolean;
+      needed_for_meals: string[];
+      instacart_search_term: string;
+    }>();
+
+    for (const day of resolvedDays) {
+      for (const meal of day.meals) {
+        const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
+        const costPerIng = meal.recipe.cost_per_serving
+          ? (Number(meal.recipe.cost_per_serving) * householdSize) / Math.max(1, ings.length)
+          : 1.5;
+        for (const raw of ings) {
+          if (typeof raw !== "string") continue;
+          const parsed = parseIngredientString(raw);
+          if (!parsed.normalized) continue;
+          const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
+          const alreadyHave = pantryHas(parsed.normalized, pantryNormalized) || isStaple;
+
+          const existing = groceryAgg.get(parsed.normalized);
+          if (existing) {
+            if (!existing.needed_for_meals.includes(meal.recipe.title)) {
+              existing.needed_for_meals.push(meal.recipe.title);
+            }
+          } else {
+            groceryAgg.set(parsed.normalized, {
+              ingredient_name: parsed.item || parsed.display,
+              quantity: parsed.quantity || "1",
+              category: categorizeIngredient(parsed.item),
+              estimated_price: Math.round(costPerIng * 100) / 100,
+              already_have: alreadyHave,
+              needed_for_meals: [meal.recipe.title],
+              instacart_search_term: parsed.item,
             });
           }
         }
       }
     }
 
-    await advance("done", "meal_plan_meals saved", "Finalizing your plan", { meal_plan_id: planId });
+    const groceryList = Array.from(groceryAgg.values());
+    const buyItems = groceryList.filter((g) => !g.already_have);
+    const estimatedTotalCost = buyItems.reduce((s, g) => s + g.estimated_price, 0);
+    const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
+    const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
+    await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
+      grocery_items_count: groceryList.length,
+    });
+    await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
+      estimated_total_cost: estimatedTotalCost,
+    });
+
+    // ===== Persist meal_plan =====
+    const weekStart = new Date().toISOString().slice(0, 10);
+    const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
+
+    const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
+      user_id: userId,
+      week_start: weekStart,
+      week_start_date: weekStart,
+      total_estimated_cost: estimatedTotalCost,
+      estimated_daily_average: estimatedTotalCost / Math.max(1, daysCount),
+      estimated_cost_per_serving: estimatedCostPerServing,
+      total_meals: totalMeals,
+      savings_estimate: 0,
+      why_this_plan: parsed.why_this_plan ?? {},
+      plan_data: { engine: "hybrid_v1", ...normalized, why_this_plan: parsed.why_this_plan ?? {} },
+      status: "active",
+    }).select().single();
+    if (planErr) {
+      await failJob("database_insert_failed", planErr.message, { table: "meal_plans" });
+      return new Response(JSON.stringify(structuredError("database_insert_failed", planErr.message, { job_id: jobId })), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const planId = planRow.id;
+    await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
+
+    // Persist days + meals + recipe_usage
+    const usageRows: any[] = [];
+    const usedRecipeIds: string[] = [];
+    for (let i = 0; i < resolvedDays.length; i++) {
+      const day = resolvedDays[i];
+      const { data: dayRow, error: dayErr } = await admin.from("meal_plan_days").insert({
+        meal_plan_id: planId, user_id: userId, day_name: day.day_name, sort_order: i,
+      }).select().single();
+      if (dayErr) {
+        await failJob("database_insert_failed", dayErr.message, { table: "meal_plan_days" });
+        return new Response(JSON.stringify(structuredError("database_insert_failed", dayErr.message, { job_id: jobId })), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      for (const meal of day.meals) {
+        const r = meal.recipe;
+        const costForMeal = r.cost_per_serving ? Number(r.cost_per_serving) * householdSize : null;
+        const { data: mealRow, error: mealErr } = await admin.from("meal_plan_meals").insert({
+          meal_plan_id: planId,
+          day_id: dayRow.id,
+          user_id: userId,
+          meal_type: meal.meal_type,
+          meal_name: r.title,
+          description: r.description,
+          recipe_id: r.id,
+          image_url: r.image_url,
+          estimated_cost: costForMeal,
+          estimated_cost_per_serving: r.cost_per_serving,
+          calories_estimate: r.calories,
+          protein_estimate: r.protein_g,
+          prep_time_minutes: r.prep_time_minutes,
+          cook_time_minutes: r.cook_time_minutes,
+          instructions: Array.isArray(r.instructions) ? r.instructions : [],
+        }).select().single();
+        if (mealErr) {
+          await failJob("database_insert_failed", mealErr.message, { table: "meal_plan_meals" });
+          return new Response(JSON.stringify(structuredError("database_insert_failed", mealErr.message, { job_id: jobId })), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // meal_ingredients
+        const ings = Array.isArray(r.ingredients) ? r.ingredients : [];
+        const ingRows = ings.filter((s: any) => typeof s === "string").map((raw: string) => {
+          const p = parseIngredientString(raw);
+          const alreadyHave = pantryHas(p.normalized, pantryNormalized) || STAPLE_KEYWORDS.some((s) => p.normalized.includes(s));
+          return {
+            meal_id: mealRow.id,
+            user_id: userId,
+            item_name: p.item || p.display,
+            quantity: p.quantity || "1",
+            unit: null,
+            source: alreadyHave ? "pantry" : "purchase",
+            already_have: alreadyHave,
+            instacart_search_term: p.item,
+          };
+        });
+        if (ingRows.length) {
+          const { error: ingErr } = await admin.from("meal_ingredients").insert(ingRows);
+          if (ingErr) console.error("[generate-meal-plan] meal_ingredients insert failed", ingErr);
+        }
+
+        usageRows.push({
+          user_id: userId,
+          recipe_id: r.id,
+          meal_plan_id: planId,
+          week_start: weekStart,
+          meal_type: meal.meal_type,
+        });
+        usedRecipeIds.push(r.id);
+      }
+    }
+    await advance("done", "meal_plan_meals saved", "Finalizing your plan");
+
+    // recipe_usage + bump times_used
+    if (usageRows.length) {
+      const { error: usageErr } = await admin.from("recipe_usage").insert(usageRows);
+      if (usageErr) console.error("[generate-meal-plan] recipe_usage insert failed", usageErr);
+    }
+    // Bump times_used in batch
+    for (const rid of new Set(usedRecipeIds)) {
+      const count = usedRecipeIds.filter((x) => x === rid).length;
+      const cur = candidatesById.get(rid)?.times_used ?? 0;
+      await admin.from("recipes").update({ times_used: cur + count }).eq("id", rid);
+    }
+
+    // grocery_lists + items
     const { data: glRow, error: glErr } = await admin.from("grocery_lists").insert({
       user_id: userId,
       meal_plan_id: planId,
       store_name: mealPlanContext.preferred_store,
-      estimated_total: groceryList.reduce((s: number, i: any) => s + (Number(i.estimated_price) || 0), 0),
+      estimated_total: estimatedTotalCost,
       status: "active",
     }).select().single();
     if (glErr) {
       await failJob("grocery_list_failed", glErr.message, { table: "grocery_lists" });
       return new Response(JSON.stringify(structuredError("grocery_list_failed", glErr.message, { job_id: jobId })), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (groceryList.length) {
-      const items = groceryList.map((g: any) => ({
+      const items = groceryList.map((g) => ({
         user_id: userId,
         grocery_list_id: glRow.id,
         meal_plan_id: planId,
-        ingredient_name: g.item_name,
-        quantity: g.quantity ?? "",
-        unit: g.unit,
+        ingredient_name: g.ingredient_name,
+        quantity: g.quantity,
         category: g.category,
         store_section: g.category,
         estimated_price: g.estimated_price,
-        already_have: g.already_have ?? false,
+        already_have: g.already_have,
         instacart_search_term: g.instacart_search_term,
-        needed_for_meals: g.needed_for_meals ?? [],
+        needed_for_meals: g.needed_for_meals,
       }));
       const { error: itemsErr } = await admin.from("grocery_list_items").insert(items);
       if (itemsErr) {
         await failJob("grocery_list_failed", itemsErr.message, { table: "grocery_list_items" });
         return new Response(JSON.stringify(structuredError("grocery_list_failed", itemsErr.message, { job_id: jobId })), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
@@ -620,7 +774,12 @@ Deno.serve(async (req) => {
       status_message: "Your meal plan is ready",
       meal_plan_id: planId,
       completed_at: new Date().toISOString(),
-      metadata: { grocery_list_id: glRow.id },
+      metadata: {
+        grocery_list_id: glRow.id,
+        engine: "hybrid_v1",
+        library_picks: usedRecipeIds.filter((id) => candidatesById.has(id)).length,
+        ai_generated_picks: usedRecipeIds.filter((id) => !candidatesById.has(id)).length,
+      },
     });
 
     return new Response(
@@ -629,10 +788,8 @@ Deno.serve(async (req) => {
         job_id: jobId,
         meal_plan_id: planId,
         grocery_list_id: glRow.id,
-        meal_plan: parsed.meal_plan,
-        grocery_list: parsed.grocery_list,
-        why_this_plan: parsed.why_this_plan,
         ...normalized,
+        why_this_plan: parsed.why_this_plan ?? {},
         pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -640,88 +797,72 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("generate-meal-plan error", err);
     return new Response(JSON.stringify({ ok: false, error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
 
 function ingredientLine(i: any): string {
+  if (typeof i === "string") return i;
   return [i.quantity, i.unit, i.item_name].filter(Boolean).join(" ").trim();
 }
 
-function normalizePlanForClient(mealPlan: any, groceryList: any[]) {
-  const weeklyPlan = (mealPlan?.days ?? []).map((d: any) => ({
+function normalizePlanForClient(
+  resolvedDays: Array<{ day_name: string; meals: Array<{ meal_type: string; recipe: any }> }>,
+  groceryList: any[],
+  householdSize: number,
+) {
+  const weeklyPlan = resolvedDays.map((d) => ({
     day: d.day_name,
-    meals: (["breakfast", "lunch", "dinner"] as const)
-      .filter((t) => d?.[t])
-      .map((t) => {
-        const m = d[t];
-        return {
-          type: t,
-          name: m.meal_name,
-          calories: m.calories_estimate ?? 0,
-          protein: m.protein_estimate ?? 0,
-          carbs: 0,
-          fats: 0,
-          estimatedCost: m.estimated_cost ?? 0,
-          costPerServing: m.estimated_cost_per_serving,
-          cookTimeMinutes: (m.cook_time_minutes ?? 0) + (m.prep_time_minutes ?? 0),
-          ingredients: [
-            ...(m.ingredients_used_from_pantry ?? []).map(ingredientLine),
-            ...(m.ingredients_to_buy ?? []).map(ingredientLine),
-          ],
-          instructions: m.instructions ?? [],
-        };
-      }),
+    meals: d.meals.map((m) => ({
+      type: m.meal_type,
+      name: m.recipe.title,
+      recipe_id: m.recipe.id,
+      image_url: m.recipe.image_url,
+      calories: m.recipe.calories ?? 0,
+      protein: Number(m.recipe.protein_g) ?? 0,
+      carbs: 0,
+      fats: 0,
+      estimatedCost: m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) * householdSize : 0,
+      costPerServing: m.recipe.cost_per_serving,
+      cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
+      ingredients: (Array.isArray(m.recipe.ingredients) ? m.recipe.ingredients : []).map(ingredientLine),
+      instructions: Array.isArray(m.recipe.instructions) ? m.recipe.instructions : [],
+    })),
   }));
 
-  const groceryListOut = (groceryList ?? [])
-    .filter((g: any) => !g.already_have)
-    .map((g: any) => ({
-      name: g.item_name,
-      quantity: [g.quantity, g.unit].filter(Boolean).join(" ").trim(),
-      estimatedPrice: Number(g.estimated_price) || 0,
-      section: g.category ?? "Other",
+  const groceryListOut = groceryList
+    .filter((g) => !g.already_have)
+    .map((g) => ({
+      name: g.ingredient_name,
+      quantity: g.quantity,
+      estimatedPrice: g.estimated_price,
+      section: g.category,
     }));
 
-  const totalEstimatedCost = Number(mealPlan?.estimated_total_cost)
-    || groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
-  const totalMeals = Number(mealPlan?.total_meals)
-    || weeklyPlan.reduce((s: number, d: any) => s + d.meals.length, 0) || 1;
+  const totalEstimatedCost = groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
+  const totalMeals = weeklyPlan.reduce((s, d) => s + d.meals.length, 0) || 1;
 
   return {
     weeklyPlan,
     groceryList: groceryListOut,
     storeRecommendations: [],
     totalEstimatedCost,
-    pantrySavings: Number(mealPlan?.savings_estimate) || 0,
+    pantrySavings: groceryList.filter((g) => g.already_have).reduce((s, g) => s + g.estimated_price, 0),
     costPerMeal: totalEstimatedCost / totalMeals,
     taxEstimate: 0,
   };
 }
 
-function buildMockPlanResponse(_ctx: any) {
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const types = ["breakfast", "lunch", "dinner"] as const;
-  const placeholder = {
-    name: "Sample meal — regenerate when ready",
-    calories: 0, protein: 0, carbs: 0, fats: 0,
-    estimatedCost: 0, cookTimeMinutes: 0,
-    ingredients: [], instructions: ["Tap Regenerate to build your real plan."],
-  };
-  const weeklyPlan = days.map((d) => ({
-    day: d,
-    meals: types.map((t) => ({ type: t, ...placeholder })),
-  }));
-  return {
-    weeklyPlan,
-    groceryList: [],
-    storeRecommendations: [],
-    totalEstimatedCost: 0,
-    pantrySavings: 0,
-    costPerMeal: 0,
-    taxEstimate: 0,
-    pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
-  };
+function buildServerFallback(daysCount: number, b: any[], l: any[], d: any[]) {
+  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const days: any[] = [];
+  for (let i = 0; i < daysCount; i++) {
+    const day: any = { day_name: dayNames[i] || `Day ${i + 1}` };
+    if (b[i % b.length]) day.breakfast = { library_recipe_id: b[i % b.length].id };
+    if (l[i % l.length]) day.lunch = { library_recipe_id: l[i % l.length].id };
+    if (d[i % d.length]) day.dinner = { library_recipe_id: d[i % d.length].id };
+    days.push(day);
+  }
+  return { days, why_this_plan: { summary: "Server-picked from library because AI was unavailable." } };
 }
