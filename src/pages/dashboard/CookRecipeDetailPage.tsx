@@ -156,19 +156,46 @@ export default function CookRecipeDetailPage() {
       {missing.length > 0 && (
         <Section title="Missing" headerBg="#FDECEC" titleColor="#C0392B">
           <ul className="divide-y divide-border">
-            {missing.map((i) => (
-              <li key={i.item_name} className="flex items-center px-4 py-3">
-                <div className="w-5 h-5 rounded-full bg-[#C0392B] flex items-center justify-center shrink-0 mr-3">
-                  <X className="w-3 h-3 text-white" strokeWidth={3} />
-                </div>
-                <span className="text-[14px] text-[#1a1a1a] font-medium flex-1">{i.item_name}</span>
-                {i.estimated_price ? (
-                  <span className="text-[13px] text-[#6b6b6b] font-semibold">
-                    ${Number(i.estimated_price).toFixed(2)}
-                  </span>
-                ) : null}
-              </li>
-            ))}
+            {missing.map((i) => {
+              const key = i.id ?? i.item_name;
+              const isAdded = addedRows.has(key);
+              const isLoading = addingRow === key;
+              return (
+                <li key={key} className="flex items-center px-4 py-3 gap-3">
+                  <div className="w-5 h-5 rounded-full bg-[#C0392B] flex items-center justify-center shrink-0">
+                    <X className="w-3 h-3 text-white" strokeWidth={3} />
+                  </div>
+                  <span className="text-[14px] text-[#1a1a1a] font-medium flex-1">{i.item_name}</span>
+                  {i.estimated_price ? (
+                    <span className="text-[13px] text-[#6b6b6b] font-semibold">
+                      ${Number(i.estimated_price).toFixed(2)}
+                    </span>
+                  ) : null}
+                  <button
+                    onClick={() => handleAddOne(i)}
+                    disabled={isLoading || isAdded}
+                    aria-label={isAdded ? "Added to grocery list" : "Add ingredient to grocery list"}
+                    className={`h-8 px-3 rounded-full text-[12px] font-bold inline-flex items-center gap-1 transition-colors ${
+                      isAdded
+                        ? "bg-[#E8F3E4] text-[#2E7D32]"
+                        : "bg-[#5B3FBF] text-white disabled:opacity-60"
+                    }`}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isAdded ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" strokeWidth={3} /> Added
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" strokeWidth={3} /> Add
+                      </>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </Section>
       )}
