@@ -313,6 +313,7 @@ const SLUG_MAP: Record<string, string> = {
   "more-variety-75": "more-variety-75",
   "college-eats-35": "college-eats-35",
   "snap-friendly-meals": "snap-friendly-meals",
+  "cook-from-what-you-have": "cook-from-what-you-have",
 };
 
 const MEAL_TYPE_ICONS: Record<string, React.ReactNode> = {
