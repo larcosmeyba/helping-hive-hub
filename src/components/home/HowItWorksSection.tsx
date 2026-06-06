@@ -4,6 +4,25 @@ import todaysDashboard from "@/assets/todays-dashboard.png.asset.json";
 import mealPlanScreen from "@/assets/meal-plan-screen.png.asset.json";
 import groceryListScreen from "@/assets/grocery-list-screen.png.asset.json";
 
+function InstacartCarrot({ size = 20 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <path
+        d="M16 10c-1.6-3-4.8-4.6-8-4 .4 3.2 2.8 5.8 5.9 6.6.2.05.4.08.6.1L16 10z"
+        fill="#0AAD0A"
+      />
+      <path
+        d="M16 10c1.6-3 4.8-4.6 8-4-.4 3.2-2.8 5.8-5.9 6.6-.2.05-.4.08-.6.1L16 10z"
+        fill="#0AAD0A"
+      />
+      <path
+        d="M16 11.5c-3.9 0-7.4 2.6-8.8 6.3-1.8 4.8.7 10.7 5.2 13.5 2.2 1.3 4.9 1.3 7.1 0 4.5-2.8 7-8.7 5.2-13.5-1.4-3.7-4.9-6.3-8.8-6.3zm-2.6 5.9a1 1 0 110 2 1 1 0 010-2zm4.7 2.8a1 1 0 110 2 1 1 0 010-2zm-2.9 3.4a1 1 0 110 2 1 1 0 010-2z"
+        fill="#FF7009"
+      />
+    </svg>
+  );
+}
+
 const phones = [
   {
     src: mealPlanScreen.url,
@@ -50,9 +69,8 @@ const captions = [
 ];
 
 const metrics = [
-  { value: "$1M+", label: "Estimated Savings" },
   { value: "100%", label: "Free To Use" },
-  { value: "Powered By", label: "Instacart" },
+  { value: "Powered By", label: "Instacart", branded: true },
 ];
 
 const trustItems = [
@@ -88,16 +106,30 @@ export function HowItWorksSection() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto mb-12 md:mb-10"
+          className="grid grid-cols-2 gap-4 md:gap-6 max-w-2xl mx-auto mb-12 md:mb-10"
         >
           {metrics.map((m, i) => (
             <div key={i} className="text-center">
-              <div className="font-display text-2xl md:text-3xl font-bold text-primary">
-                {m.value}
-              </div>
-              <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
-                {m.label}
-              </div>
+              {m.branded ? (
+                <>
+                  <div className="inline-flex items-center gap-2 font-display text-2xl md:text-3xl font-bold" style={{ color: "#0AAD0A" }}>
+                    <InstacartCarrot size={22} />
+                    {m.label}
+                  </div>
+                  <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                    {m.value}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="font-display text-2xl md:text-3xl font-bold text-primary">
+                    {m.value}
+                  </div>
+                  <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                    {m.label}
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </motion.div>
