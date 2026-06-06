@@ -287,6 +287,17 @@ export default function GroceryReviewPage() {
     });
   };
 
+  const selectedItemsAll = [...toAdjust, ...toBuy, ...manualItems].filter((it) =>
+    checked.has(it.name)
+  );
+  const selectedCount = selectedItemsAll.length;
+  const selectedTotal = selectedItemsAll.reduce((s, it) => {
+    const ratio = parseQty(it.quantity).num
+      ? getQty(it) / parseQty(it.quantity).num
+      : 1;
+    return s + getPrice(it) * ratio;
+  }, 0);
+
   if (!allItems.length) {
     return (
       <div className="max-w-md mx-auto px-4 pt-8 text-center">
