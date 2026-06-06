@@ -20,10 +20,29 @@ const trustItems = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-[#1a1a1a]">
-      <div className="grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
+    <section className="relative overflow-hidden bg-[#1a1a1a] min-h-[600px]">
+      {/* Full-bleed food image */}
+      <img
+        src={heroBowl}
+        alt="Skillet of stir-fried chicken with broccoli, peppers and snap peas"
+        className="absolute inset-0 w-full h-full object-cover"
+        width={1920}
+        height={1080}
+      />
+      {/* Dark fade overlay: opaque on the left, fades to transparent on the right */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(90deg, #1a1a1a 0%, rgba(26,26,26,0.92) 35%, rgba(26,26,26,0.55) 60%, rgba(26,26,26,0) 85%)",
+        }}
+      />
+      {/* Mobile readability overlay */}
+      <div className="absolute inset-0 bg-[#1a1a1a]/70 md:hidden pointer-events-none" />
+
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
         {/* LEFT — copy */}
-        <div className="relative z-10 px-6 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 flex items-center">
+        <div className="px-6 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 flex items-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -42,7 +61,7 @@ export function HeroSection() {
               <span className="text-primary block mt-2">Feed Your Family Smarter.</span>
             </h1>
 
-            <p className="text-base md:text-lg text-white/75 mb-7 leading-relaxed">
+            <p className="text-base md:text-lg text-white/80 mb-7 leading-relaxed">
               Help The Hive combines AI meal planning, pantry tracking, grocery lists, budget insights, and family assistance resources to help families spend less and waste less.
             </p>
 
@@ -51,7 +70,7 @@ export function HeroSection() {
               {pills.map(({ icon: Icon, label, color }) => (
                 <span
                   key={label}
-                  className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-[12px] font-semibold text-white leading-tight whitespace-pre-line"
+                  className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl bg-white/[0.08] border border-white/15 backdrop-blur-sm text-[12px] font-semibold text-white leading-tight whitespace-pre-line"
                 >
                   <Icon className={`w-4 h-4 ${color} shrink-0`} />
                   {label}
@@ -78,20 +97,10 @@ export function HeroSection() {
             </div>
           </motion.div>
         </div>
-
-        {/* RIGHT — food image */}
-        <div className="relative min-h-[320px] md:min-h-0">
-          <img
-            src={heroBowl}
-            alt="Skillet of stir-fried chicken with broccoli, peppers and rice"
-            className="absolute inset-0 w-full h-full object-cover"
-            width={1280}
-            height={1280}
-          />
-          {/* Soft fade from dark into image on the left edge for seamless blend */}
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#1a1a1a] to-transparent pointer-events-none hidden md:block" />
-        </div>
+        {/* RIGHT — intentionally empty so the image shows through */}
+        <div aria-hidden />
       </div>
     </section>
+
   );
 }
