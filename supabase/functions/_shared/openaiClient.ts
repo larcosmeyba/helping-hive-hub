@@ -29,6 +29,7 @@ export interface CallOpenAIArgs {
   response_format?: { type: "json_object" } | { type: "text" };
   temperature?: number;
   max_tokens?: number;
+  timeout_ms?: number;
   // Optional logging context — when provided, a row is written to ai_request_log.
   log?: {
     admin: SupabaseClient;
@@ -71,7 +72,10 @@ export async function callOpenAI(args: CallOpenAIArgs): Promise<OpenAICallResult
   if (args.tool_choice) body.tool_choice = args.tool_choice;
   if (args.response_format) body.response_format = args.response_format;
   if (typeof args.temperature === "number") body.temperature = args.temperature;
-  if (typeof args.max_tokens === "number") body.max_tokens = args.max_tokens;
+  if (typeof args.max_tokens === "number") {
+    if (model.startsWith("gpt-5")) body.max_completion_tokens = args.max_tokens;
+    else body.max_tokens = args.max_tokens;
+  }
 
   let logId: string | null = null;
   if (args.log) {
@@ -90,6 +94,8 @@ export async function callOpenAI(args: CallOpenAIArgs): Promise<OpenAICallResult
   }
 
   let res: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort("openai_timeout"), args.timeout_ms ?? 45000);
   try {
     res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -97,11 +103,18 @@ export async function callOpenAI(args: CallOpenAIArgs): Promise<OpenAICallResult
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
+      signal: controller.signal,
       body: JSON.stringify(body),
     });
   } catch (err) {
-    await finalizeLog(args.log, logId, "error", Date.now() - started, (err as Error).message);
-    throw err;
+    const isTimeout = err instanceof DOMException && err.name === "AbortError";
+    const message = isTimeout ? "openai_timeout" : (err as Error).message;
+    await finalizeLog(args.log, logId, "error", Date.now() - started, message);
+    const wrapped = new Error(isTimeout ? "The meal planner took too long to respond." : message) as Error & { code?: string };
+    if (isTimeout) wrapped.code = "openai_timeout";
+    throw wrapped;
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (!res.ok) {

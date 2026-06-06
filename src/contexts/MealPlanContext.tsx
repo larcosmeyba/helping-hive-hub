@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GeneratedMealPlan } from "@/types/mealPlan";
+import type { Database } from "@/integrations/supabase/types";
 
 export interface MealPlanHistoryEntry {
   id: string;
@@ -13,6 +14,17 @@ export interface MealPlanHistoryEntry {
 }
 
 type GenerationStage = "idle" | "preparing" | "generating" | "saving" | "done";
+type GenerationJobRow = Database["public"]["Tables"]["meal_plan_generation_jobs"]["Row"];
+
+interface GenerationStatus {
+  jobId: string | null;
+  currentStep: string | null;
+  completedSteps: string[];
+  statusMessage: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  fallbackUsed: boolean;
+}
 
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
@@ -20,6 +32,7 @@ interface MealPlanContextType {
   loading: boolean;
   generating: boolean;
   generationStage: GenerationStage;
+  generationStatus: GenerationStatus;
   generate: () => Promise<void>;
   history: MealPlanHistoryEntry[];
   historyLoading: boolean;
@@ -27,8 +40,22 @@ interface MealPlanContextType {
 }
 
 const MealPlanContext = createContext<MealPlanContextType | undefined>(undefined);
-
 const STORAGE_KEY = "hive_meal_plan";
+
+const EMPTY_GENERATION_STATUS: GenerationStatus = {
+  jobId: null,
+  currentStep: null,
+  completedSteps: [],
+  statusMessage: null,
+  errorCode: null,
+  errorMessage: null,
+  fallbackUsed: false,
+};
+
+function normalizeGenerationStage(stage: string | null | undefined): GenerationStage {
+  if (stage === "preparing" || stage === "generating" || stage === "saving" || stage === "done") return stage;
+  return "preparing";
+}
 
 export function MealPlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -37,22 +64,26 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generationStage, setGenerationStage] = useState<GenerationStage>("idle");
+  const [generationStatus, setGenerationStatus] = useState<GenerationStatus>(EMPTY_GENERATION_STATUS);
   const [history, setHistory] = useState<MealPlanHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Persist to localStorage for quick reloads
   useEffect(() => {
-    if (mealPlan) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mealPlan));
+    if (!mealPlan) return;
+    if (generationStatus.fallbackUsed) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
     }
-  }, [mealPlan]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mealPlan));
+  }, [mealPlan, generationStatus.fallbackUsed]);
 
-  // Load saved meal plan from database on mount
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -72,9 +103,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
 
         if (!error && data?.plan_data) {
           const savedPlan = data.plan_data as unknown as GeneratedMealPlan;
-          if (savedPlan?.weeklyPlan) {
-            setMealPlan(savedPlan);
-          }
+          if (savedPlan?.weeklyPlan) setMealPlan(savedPlan);
         }
       } catch (err) {
         console.error("Failed to load saved meal plan:", err);
@@ -85,6 +114,38 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
 
     loadSavedPlan();
   }, [user]);
+
+  const applyGenerationJob = useCallback((job: GenerationJobRow | null) => {
+    if (!job) return;
+    setGenerationStage(normalizeGenerationStage(job.current_stage));
+    setGenerationStatus({
+      jobId: job.id,
+      currentStep: job.current_step,
+      completedSteps: job.completed_steps ?? [],
+      statusMessage: job.status_message,
+      errorCode: job.error_code,
+      errorMessage: job.error_message,
+      fallbackUsed: job.fallback_used,
+    });
+  }, []);
+
+  const fetchLatestGenerationJob = useCallback(async (startedAfter?: string) => {
+    if (!user) return null;
+    const baseQuery = supabase
+      .from("meal_plan_generation_jobs")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const result = startedAfter
+      ? await baseQuery.gte("started_at", startedAfter).maybeSingle()
+      : await baseQuery.maybeSingle();
+
+    if (result.error) throw result.error;
+    if (result.data) applyGenerationJob(result.data);
+    return result.data;
+  }, [applyGenerationJob, user]);
 
   const loadHistory = useCallback(async () => {
     if (!user) return;
@@ -107,7 +168,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
               createdAt: row.created_at,
               totalEstimatedCost: row.total_estimated_cost,
               plan: row.plan_data as unknown as GeneratedMealPlan,
-            }))
+            })),
         );
       }
     } catch (err) {
@@ -119,46 +180,128 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
 
   const generate = useCallback(async () => {
     if (!user) return;
+
+    const startedAt = new Date().toISOString();
+    let latestJob: GenerationJobRow | null = null;
+    let pollHandle: ReturnType<typeof setInterval> | null = null;
+    let stopped = false;
+    let generationFailed = false;
+
+    const stopPolling = () => {
+      stopped = true;
+      if (pollHandle) clearInterval(pollHandle);
+      pollHandle = null;
+    };
+
+    const pollJob = async () => {
+      if (stopped) return latestJob;
+      try {
+        latestJob = await fetchLatestGenerationJob(startedAt);
+        if (latestJob?.status && latestJob.status !== "processing" && latestJob.status !== "queued") {
+          stopPolling();
+        }
+      } catch (err) {
+        console.warn("[MealPlan] generation job polling failed", err);
+      }
+      return latestJob;
+    };
+
     setGenerating(true);
     setGenerationStage("preparing");
+    setGenerationStatus(EMPTY_GENERATION_STATUS);
+
     try {
-      // Brief delay so "preparing" is visible
-      await new Promise(r => setTimeout(r, 300));
-      setGenerationStage("generating");
+      await pollJob();
+      pollHandle = setInterval(() => {
+        void pollJob();
+      }, 1200);
+
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
         body: {},
       });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+
+      await pollJob();
+
+      if (error) {
+        throw new Error(latestJob?.error_message || error.message);
+      }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       if (!data || typeof data !== "object" || !Array.isArray((data as any).weeklyPlan)) {
         throw new Error("Meal plan response was incomplete. Please try again.");
       }
-      setGenerationStage("saving");
+
       setMealPlan(data as GeneratedMealPlan);
       setGenerationStage("done");
-      toast({ title: "Meal plan generated!", description: "Your personalized weekly plan is ready." });
-      loadHistory();
-      // In-app notification
-      supabase.from("notifications").insert({
-        user_id: user.id,
-        type: "meal_plan_ready",
-        title: "Your weekly meal plan is ready",
-        body: "Tap to view your meals and grocery list.",
-        link: "/dashboard/meal-plan",
-      }).then(({ error: notifErr }) => {
-        if (notifErr) console.warn("[MealPlan] notification insert failed", notifErr);
-      });
+      setGenerationStatus((prev) => ({
+        ...prev,
+        fallbackUsed: Boolean((data as any).fallback),
+        errorCode: (data as any).error_code ?? prev.errorCode,
+        errorMessage: (data as any).error_message ?? prev.errorMessage,
+        statusMessage: (data as any).fallback ? "Showing fallback meal plan" : "Your meal plan is ready",
+      }));
+
+      if ((data as any).fallback) {
+        toast({
+          title: "Showing fallback meal plan",
+          description: (data as any).notice || "We loaded a sample plan so you are not stuck.",
+        });
+      } else {
+        toast({ title: "Meal plan generated!", description: "Your personalized weekly plan is ready." });
+        loadHistory();
+        supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "meal_plan_ready",
+          title: "Your weekly meal plan is ready",
+          body: "Tap to view your meals and grocery list.",
+          link: "/dashboard/meal-plan",
+        }).then(({ error: notifErr }) => {
+          if (notifErr) console.warn("[MealPlan] notification insert failed", notifErr);
+        });
+      }
     } catch (err: any) {
-      toast({ title: "Error", description: err?.message || "Failed to generate meal plan", variant: "destructive" });
+      generationFailed = true;
+      await pollJob();
+      setGenerationStatus((prev) => ({
+        ...prev,
+        errorCode: latestJob?.error_code ?? prev.errorCode,
+        errorMessage: latestJob?.error_message ?? err?.message ?? "Failed to generate meal plan",
+        statusMessage: latestJob?.status_message ?? prev.statusMessage,
+      }));
+      toast({
+        title: "Meal plan generation failed",
+        description: latestJob?.error_message ?? err?.message ?? "Failed to generate meal plan",
+        variant: "destructive",
+      });
+      setGenerationStage(latestJob ? normalizeGenerationStage(latestJob.current_stage) : "idle");
     } finally {
+      stopPolling();
       setGenerating(false);
-      setTimeout(() => setGenerationStage("idle"), 500);
+      setTimeout(() => {
+        if (!generationFailed) {
+          setGenerationStage((prev) => (prev === "done" ? prev : "idle"));
+        }
+      }, 1200);
     }
-  }, [user, toast, loadHistory]);
+  }, [fetchLatestGenerationJob, loadHistory, toast, user]);
 
   return (
-    <MealPlanContext.Provider value={{ mealPlan, setMealPlan, loading, generating, generationStage, generate, history, historyLoading, loadHistory }}>
+    <MealPlanContext.Provider
+      value={{
+        mealPlan,
+        setMealPlan,
+        loading,
+        generating,
+        generationStage,
+        generationStatus,
+        generate,
+        history,
+        historyLoading,
+        loadHistory,
+      }}
+    >
       {children}
     </MealPlanContext.Provider>
   );

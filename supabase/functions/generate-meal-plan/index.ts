@@ -13,6 +13,22 @@ interface Overrides {
   meal_count?: number;
 }
 
+type JobStage = "preparing" | "generating" | "saving" | "done";
+
+type GenerationErrorCode =
+  | "missing_context"
+  | "openai_timeout"
+  | "invalid_ai_json"
+  | "database_insert_failed"
+  | "grocery_list_failed";
+
+const BACKEND_STEPS: Record<JobStage, string[]> = {
+  preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "meal_plan_context created"],
+  generating: ["OpenAI request started", "OpenAI response received"],
+  saving: ["grocery_list_items generated", "estimated totals calculated"],
+  done: ["meal_plan saved", "meal_plan_meals saved", "grocery list saved", "navigate to Meal Plan page"],
+};
+
 const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI.
 You build budget-friendly, family-sized weekly meal plans for any household.
 
@@ -154,6 +170,30 @@ function freshness(item: any): string {
   return "good";
 }
 
+async function updateJob(
+  admin: ReturnType<typeof createClient>,
+  jobId: string,
+  patch: Record<string, unknown>,
+) {
+  const cleanPatch = Object.fromEntries(
+    Object.entries({ ...patch, last_heartbeat_at: new Date().toISOString() }).filter(([, value]) => value !== undefined),
+  );
+  const { error } = await admin
+    .from("meal_plan_generation_jobs")
+    .update(cleanPatch)
+    .eq("id", jobId);
+  if (error) console.error("[generate-meal-plan] failed to update job", error);
+}
+
+function missingContextFields(ctx: Record<string, unknown>) {
+  const required = ["household_size", "weekly_grocery_budget", "dietary_preferences", "allergies", "pantry_items", "fridge_items", "week_start_date"];
+  return required.filter((key) => ctx[key] === undefined || ctx[key] === null);
+}
+
+function structuredError(code: GenerationErrorCode, message: string, extra?: Record<string, unknown>) {
+  return { ok: false, error: message, error_code: code, ...extra };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -176,15 +216,56 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const body = await req.json().catch(() => ({}));
     const overrides: Overrides = body.overrides ?? body ?? {};
 
-    // Fetch profile, pantry, home store, latest grocery list in parallel
-    const [profileRes, pantryRes, homeStoreRes, groceryRes] = await Promise.all([
+    const { data: jobRow, error: jobErr } = await admin
+      .from("meal_plan_generation_jobs")
+      .insert({
+        user_id: userId,
+        status: "processing",
+        current_stage: "preparing",
+        current_step: BACKEND_STEPS.preparing[0],
+        status_message: "Reviewing your profile & pantry",
+        metadata: { source: "generate-meal-plan" },
+      })
+      .select("id")
+      .single();
+    if (jobErr || !jobRow?.id) {
+      throw new Error(jobErr?.message || "Unable to start meal plan generation job.");
+    }
+    const jobId = jobRow.id;
+    const completedSteps: string[] = [];
+
+    const advance = async (stage: JobStage, step: string, statusMessage?: string, extra?: Record<string, unknown>) => {
+      if (!completedSteps.includes(step)) completedSteps.push(step);
+      await updateJob(admin, jobId, {
+        status: "processing",
+        current_stage: stage,
+        current_step: step,
+        completed_steps: completedSteps,
+        status_message: statusMessage ?? step,
+        metadata: extra ? { ...extra } : undefined,
+      });
+    };
+
+    const failJob = async (code: GenerationErrorCode, message: string, extra?: Record<string, unknown>) => {
+      await updateJob(admin, jobId, {
+        status: "failed",
+        error_code: code,
+        error_message: message,
+        completed_at: new Date().toISOString(),
+        metadata: extra ? { ...extra } : undefined,
+      });
+    };
+
+    await advance("preparing", "profile loaded", "Reviewing your profile & pantry");
+
+    const [profileRes, pantryRes, homeStoreRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("pantry_items").select("*").eq("user_id", userId),
       supabase.from("instacart_home_store").select("*").eq("user_id", userId).maybeSingle(),
-      supabase.from("grocery_lists").select("estimated_total, status").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
     const profile = profileRes.data ?? {};
@@ -204,8 +285,14 @@ Deno.serve(async (req) => {
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
     const lowStock = pantryItems.filter((i) => i.freshness_status === "low_stock" || (i as any).is_low_stock);
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
-
     const homeStore = homeStoreRes.data;
+
+    await advance("preparing", "pantry_items loaded", "Reviewing your profile & pantry", {
+      pantry_items_count: pantryOnly.length,
+    });
+    await advance("preparing", "fridge_items loaded", "Reviewing your profile & pantry", {
+      fridge_items_count: fridgeItems.length,
+    });
 
     const mealPlanContext = {
       user_id: userId,
@@ -234,7 +321,20 @@ Deno.serve(async (req) => {
       week_start_date: new Date().toISOString().slice(0, 10),
     };
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const missingFields = missingContextFields(mealPlanContext as Record<string, unknown>);
+    if (missingFields.length) {
+      const message = `Missing required meal plan context: ${missingFields.join(", ")}`;
+      await failJob("missing_context", message, { missing_fields: missingFields });
+      return new Response(JSON.stringify(structuredError("missing_context", message, { job_id: jobId })), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    await advance("preparing", "meal_plan_context created", "Reviewing your profile & pantry", {
+      pantry_items_count: mealPlanContext.pantry_items.length,
+      fridge_items_count: mealPlanContext.fridge_items.length,
+    });
 
     console.log("[generate-meal-plan] meal_plan_context →",
       JSON.stringify({
@@ -244,8 +344,10 @@ Deno.serve(async (req) => {
       }).slice(0, 4000));
 
     const { callOpenAI } = await import("../_shared/openaiClient.ts");
+    let lastAttemptError: { code: GenerationErrorCode; message: string; details?: Record<string, unknown> } | null = null;
 
     async function attempt(attemptNum: number): Promise<any | null> {
+      await advance("generating", "OpenAI request started", "Building your weekly meal plan", { attempt: attemptNum });
       try {
         const ai = await callOpenAI({
           model: "gpt-5.4-mini",
@@ -261,12 +363,22 @@ Deno.serve(async (req) => {
           }],
           tool_choice: { type: "function", function: { name: "return_meal_plan" } },
           max_tokens: 8000,
+          timeout_ms: 45000,
           log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
         });
-        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`,
-          ai.raw?.choices?.[0]?.finish_reason,
-          "tool_arguments_keys=", ai.tool_arguments ? Object.keys(ai.tool_arguments) : null,
-          "raw_text_len=", ai.text?.length ?? 0);
+
+        const finishReason = ai.raw?.choices?.[0]?.finish_reason;
+        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`, finishReason, "tool_arguments_keys=", ai.tool_arguments ? Object.keys(ai.tool_arguments) : null, "raw_text_len=", ai.text?.length ?? 0);
+
+        if (finishReason === "length") {
+          lastAttemptError = {
+            code: "invalid_ai_json",
+            message: "The meal planner response was cut off before completion.",
+            details: { attempt: attemptNum, finish_reason: finishReason },
+          };
+          return null;
+        }
+
         const p = ai.tool_arguments as any;
         const validationErrors: string[] = [];
         if (!p) validationErrors.push("no tool_arguments");
@@ -276,12 +388,26 @@ Deno.serve(async (req) => {
         if (p && !Array.isArray(p.grocery_list)) validationErrors.push("missing grocery_list");
         if (validationErrors.length) {
           console.warn(`[generate-meal-plan] attempt ${attemptNum} validation errors:`, validationErrors);
+          lastAttemptError = {
+            code: "invalid_ai_json",
+            message: "The meal planner returned invalid data.",
+            details: { attempt: attemptNum, validation_errors: validationErrors },
+          };
           return null;
         }
+
+        await advance("generating", "OpenAI response received", "Building your weekly meal plan", { attempt: attemptNum });
         return p;
       } catch (e: any) {
-        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message);
+        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message, e?.code);
         if (e?.status === 429 || e?.status === 402) throw e;
+        lastAttemptError = {
+          code: e?.code === "openai_timeout" ? "openai_timeout" : "invalid_ai_json",
+          message: e?.code === "openai_timeout"
+            ? "The meal planner timed out while building your plan."
+            : (e?.message || "The meal planner failed to return a valid response."),
+          details: { attempt: attemptNum },
+        };
         return null;
       }
     }
@@ -293,24 +419,52 @@ Deno.serve(async (req) => {
     }
 
     if (!parsed) {
+      const fallback = buildMockPlanResponse(mealPlanContext);
+      const errorCode = lastAttemptError?.code ?? "invalid_ai_json";
+      const errorMessage = lastAttemptError?.message ?? "We couldn't generate your meal plan right now.";
+      await updateJob(admin, jobId, {
+        status: "completed_with_fallback",
+        current_stage: "done",
+        current_step: "navigate to Meal Plan page",
+        completed_steps: [...completedSteps, ...BACKEND_STEPS.done],
+        status_message: "Showing fallback meal plan",
+        error_code: errorCode,
+        error_message: errorMessage,
+        fallback_used: true,
+        completed_at: new Date().toISOString(),
+        metadata: { ...(lastAttemptError?.details ?? {}), fallback_notice: true },
+      });
       console.warn("[generate-meal-plan] both attempts failed — returning mock fallback");
       return new Response(
         JSON.stringify({
+          ok: true,
+          job_id: jobId,
           fallback: true,
-          notice: "We couldn't reach the meal planner. Showing a sample plan — please regenerate when ready.",
-          ...buildMockPlanResponse(mealPlanContext),
+          notice: "We couldn't build your full meal plan right now. Showing a fallback sample plan so you aren't stuck.",
+          error_code: errorCode,
+          error_message: errorMessage,
+          ...fallback,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
     const mealPlan = parsed.meal_plan;
     const groceryList = parsed.grocery_list ?? [];
     const whyThisPlan = parsed.why_this_plan ?? {};
+
+    await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
+      grocery_items_count: groceryList.length,
+    });
 
     const normalized = normalizePlanForClient(mealPlan, groceryList);
     console.log("[generate-meal-plan] normalized days=", normalized.weeklyPlan.length,
       "grocery_items=", normalized.groceryList.length,
       "total=", normalized.totalEstimatedCost);
+
+    await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
+      estimated_total_cost: normalized.totalEstimatedCost,
+    });
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
@@ -325,11 +479,17 @@ Deno.serve(async (req) => {
       plan_data: { ...parsed, ...normalized },
       status: "active",
     }).select().single();
-    if (planErr) throw planErr;
+    if (planErr) {
+      await failJob("database_insert_failed", planErr.message, { table: "meal_plans" });
+      return new Response(JSON.stringify(structuredError("database_insert_failed", planErr.message, { job_id: jobId })), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const planId = planRow.id;
+    await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
 
-    // Insert days + meals + ingredients
     for (let i = 0; i < (mealPlan.days ?? []).length; i++) {
       const day = mealPlan.days[i];
       const { data: dayRow, error: dayErr } = await admin.from("meal_plan_days").insert({
@@ -338,7 +498,13 @@ Deno.serve(async (req) => {
         day_name: day.day_name,
         sort_order: i,
       }).select().single();
-      if (dayErr) throw dayErr;
+      if (dayErr) {
+        await failJob("database_insert_failed", dayErr.message, { table: "meal_plan_days" });
+        return new Response(JSON.stringify(structuredError("database_insert_failed", dayErr.message, { job_id: jobId })), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
         const meal = day[mealType];
@@ -360,7 +526,13 @@ Deno.serve(async (req) => {
           instructions: meal.instructions ?? [],
           food_waste_reason: meal.food_waste_reason,
         }).select().single();
-        if (mealErr) throw mealErr;
+        if (mealErr) {
+          await failJob("database_insert_failed", mealErr.message, { table: "meal_plan_meals" });
+          return new Response(JSON.stringify(structuredError("database_insert_failed", mealErr.message, { job_id: jobId })), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         const ingredientRows = [
           ...(meal.ingredients_used_from_pantry ?? []).map((ing: any) => ({
@@ -386,12 +558,19 @@ Deno.serve(async (req) => {
         ];
         if (ingredientRows.length) {
           const { error: ingErr } = await admin.from("meal_ingredients").insert(ingredientRows);
-          if (ingErr) throw ingErr;
+          if (ingErr) {
+            await failJob("database_insert_failed", ingErr.message, { table: "meal_ingredients" });
+            return new Response(JSON.stringify(structuredError("database_insert_failed", ingErr.message, { job_id: jobId })), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
         }
       }
     }
 
-    // Persist grocery list (create a parent grocery_lists row + items linked to plan)
+    await advance("done", "meal_plan_meals saved", "Finalizing your plan", { meal_plan_id: planId });
+
     const { data: glRow, error: glErr } = await admin.from("grocery_lists").insert({
       user_id: userId,
       meal_plan_id: planId,
@@ -399,7 +578,13 @@ Deno.serve(async (req) => {
       estimated_total: groceryList.reduce((s: number, i: any) => s + (Number(i.estimated_price) || 0), 0),
       status: "active",
     }).select().single();
-    if (glErr) throw glErr;
+    if (glErr) {
+      await failJob("grocery_list_failed", glErr.message, { table: "grocery_lists" });
+      return new Response(JSON.stringify(structuredError("grocery_list_failed", glErr.message, { job_id: jobId })), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (groceryList.length) {
       const items = groceryList.map((g: any) => ({
@@ -417,11 +602,31 @@ Deno.serve(async (req) => {
         needed_for_meals: g.needed_for_meals ?? [],
       }));
       const { error: itemsErr } = await admin.from("grocery_list_items").insert(items);
-      if (itemsErr) throw itemsErr;
+      if (itemsErr) {
+        await failJob("grocery_list_failed", itemsErr.message, { table: "grocery_list_items" });
+        return new Response(JSON.stringify(structuredError("grocery_list_failed", itemsErr.message, { job_id: jobId })), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
+
+    await advance("done", "grocery list saved", "Finalizing your plan", { grocery_list_id: glRow.id });
+    await updateJob(admin, jobId, {
+      status: "completed",
+      current_stage: "done",
+      current_step: "navigate to Meal Plan page",
+      completed_steps: [...completedSteps, "navigate to Meal Plan page"],
+      status_message: "Your meal plan is ready",
+      meal_plan_id: planId,
+      completed_at: new Date().toISOString(),
+      metadata: { grocery_list_id: glRow.id },
+    });
 
     return new Response(
       JSON.stringify({
+        ok: true,
+        job_id: jobId,
         meal_plan_id: planId,
         grocery_list_id: glRow.id,
         meal_plan: parsed.meal_plan,
@@ -434,7 +639,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("generate-meal-plan error", err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
+    return new Response(JSON.stringify({ ok: false, error: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

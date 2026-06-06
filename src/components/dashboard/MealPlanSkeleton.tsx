@@ -10,17 +10,18 @@ const STAGE_CONFIG = {
   done: { label: "Done!", progress: 100, icon: CheckCircle2 },
 } as const;
 
-export function MealPlanSkeleton({ stage = "idle" }: { stage?: keyof typeof STAGE_CONFIG }) {
-  const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG.idle;
+export function MealPlanSkeleton({ stage = "idle" }: { stage?: keyof typeof STAGE_CONFIG | "idle" }) {
+  const safeStage = stage in STAGE_CONFIG ? (stage as keyof typeof STAGE_CONFIG) : "idle";
+  const cfg = STAGE_CONFIG[safeStage] || STAGE_CONFIG.idle;
   const Icon = cfg.icon;
-  const isActive = stage !== "idle";
+  const isActive = safeStage !== "idle";
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {isActive && (
         <div className="flex flex-col items-center gap-3 py-8">
           {Icon && (
-            <Icon className={`h-8 w-8 text-primary ${stage === "done" ? "" : "animate-pulse"}`} />
+            <Icon className={`h-8 w-8 text-primary ${safeStage === "done" ? "" : "animate-pulse"}`} />
           )}
           <p className="text-sm font-medium text-foreground">{cfg.label}</p>
           <div className="w-full max-w-xs">
