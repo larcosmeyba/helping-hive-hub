@@ -58,8 +58,11 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const postal = (url.searchParams.get("postal_code") ?? "").trim();
     const country = (url.searchParams.get("country_code") ?? "US").trim().toUpperCase();
+    // Default to "development" — matches existing Instacart checkout flow
+    // (SendToInstacartButton sends environment: "development"). Production
+    // key currently returns 403 from Instacart; dev key is the working creds.
     const envParam = url.searchParams.get("environment");
-    const env = envParam === "development" ? "development" : "production";
+    const env = envParam === "production" ? "production" : "development";
 
     if (!/^\d{5}$/.test(postal)) {
       return json({ error: "postal_code must be a 5-digit US ZIP" }, 400);
@@ -71,14 +74,13 @@ Deno.serve(async (req) => {
       return json({ retailers: hit.data, cached: true });
     }
 
-    const apiKey =
-      env === "development"
-        ? Deno.env.get("Instacart_API_KEY_DEVELOPMENT") ??
-          Deno.env.get("INSTACART_API_KEY_DEVELOPMENT") ??
-          Deno.env.get("INSTACART_API_KEY")
-        : Deno.env.get("INSTACART_API_KEY");
+    const devKey =
+      Deno.env.get("Instacart_API_KEY_DEVELOPMENT") ??
+      Deno.env.get("INSTACART_API_KEY_DEVELOPMENT");
+    const prodKey = Deno.env.get("INSTACART_API_KEY");
+    const apiKey = env === "development" ? (devKey ?? prodKey) : (prodKey ?? devKey);
     if (!apiKey) {
-      return json({ error: `Instacart API key not configured for ${env}` }, 500);
+      return json({ error: "Unable to load stores right now. Please try again.", fallback: true, retailers: [] }, 200);
     }
 
     const base = env === "production" ? PROD_BASE : DEV_BASE;
@@ -93,7 +95,14 @@ Deno.serve(async (req) => {
     const text = await res.text();
     if (!res.ok) {
       console.error("[instacart-retailers] upstream error", res.status, text);
-      return json({ error: "Instacart retailers lookup failed", status: res.status, detail: text }, 502);
+      // Return 200 with a structured error so the frontend can show a clean
+      // message instead of crashing on a 5xx. fallback=true means "try again".
+      return json({
+        error: "Unable to load stores right now. Please try again.",
+        fallback: true,
+        upstream_status: res.status,
+        retailers: [],
+      }, 200);
     }
 
     let parsed: unknown;
@@ -113,9 +122,21 @@ Deno.serve(async (req) => {
       : [];
 
     CACHE.set(cacheKey, { at: Date.now(), data: list });
+    if (list.length === 0) {
+      return json({
+        retailers: [],
+        cached: false,
+        error: "No participating Instacart retailers found for this ZIP code.",
+        fallback: false,
+      });
+    }
     return json({ retailers: list, cached: false });
   } catch (e) {
     console.error("[instacart-retailers] error", e);
-    return json({ error: (e as Error).message ?? "unknown error" }, 500);
+    return json({
+      error: "Unable to load stores right now. Please try again.",
+      fallback: true,
+      retailers: [],
+    }, 200);
   }
 });

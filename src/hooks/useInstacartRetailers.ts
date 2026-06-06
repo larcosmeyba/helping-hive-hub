@@ -50,10 +50,17 @@ export function useInstacartRetailers(zip: string | null | undefined): State {
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setState({ retailers: [], loading: false, error: body?.error ?? "Lookup failed" });
+          setState({ retailers: [], loading: false, error: body?.error ?? "Unable to load stores right now. Please try again." });
           return;
         }
         const list: InstacartRetailer[] = Array.isArray(body?.retailers) ? body.retailers : [];
+        // Function returns 200 with an error message when no retailers are
+        // available or when the upstream call failed (fallback=true).
+        const msg = typeof body?.error === "string" ? body.error : null;
+        if (list.length === 0 && msg) {
+          setState({ retailers: [], loading: false, error: msg });
+          return;
+        }
         cache.set(clean, list);
         setState({ retailers: list, loading: false, error: null });
       } catch (e) {
