@@ -31,9 +31,9 @@ function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
         {isOpen && (
           <ul className="pb-4 space-y-2.5 pl-1">
             {links.map(link => (
-              <li key={link.slug}>
+              <li key={link.slug ?? link.to}>
                 <Link
-                  to={`/page/${link.slug}`}
+                  to={link.to ?? `/page/${link.slug}`}
                   className="text-[13px] text-white/50 hover:text-white transition-colors"
                 >
                   {link.label}
@@ -51,9 +51,9 @@ function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
       <h4 className="text-sm font-semibold text-white/90 mb-4">{title}</h4>
       <ul className="space-y-2.5">
         {links.map(link => (
-          <li key={link.slug}>
+          <li key={link.slug ?? link.to}>
             <Link
-              to={`/page/${link.slug}`}
+              to={link.to ?? `/page/${link.slug}`}
               className="text-[13px] text-white/50 hover:text-white transition-colors duration-200"
             >
               {link.label}
