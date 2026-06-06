@@ -195,11 +195,11 @@ export default function MealPlanPage() {
   }));
 
   const insights = [
-    `Saves approximately $${weeklySavings} this week`,
-    `Uses pantry items you already have`,
-    `Fits your $${monthlyBudget} weekly budget`,
+    `Uses pantry items already on hand`,
+    `Fits your weekly grocery budget`,
     `Reduces food waste`,
-    `Matches your dietary preferences`,
+    `Matches household preferences`,
+    `Designed around selected store`,
   ];
 
   const withinBudget = weeklyTotal <= monthlyBudget;
