@@ -197,7 +197,7 @@ export function SiteFooter() {
       {/* Disclaimer */}
       <div className="container mx-auto px-4 py-8">
         <p className="text-center text-[11px] text-white/40 leading-relaxed max-w-3xl mx-auto mb-4">
-          Grocery checkout powered by Instacart. Help The Hive is an independent service and is not owned or operated by Instacart.
+          Grocery shopping and checkout available through Instacart. Help The Hive is an independent service and is not owned or operated by Instacart.
         </p>
         <div className="flex items-center justify-center gap-3 mb-4">
           <p className="text-xs text-white/30">
