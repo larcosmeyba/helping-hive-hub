@@ -1689,6 +1689,66 @@ export type Database = {
           },
         ]
       }
+      meal_plan_generation_jobs: {
+        Row: {
+          completed_at: string | null
+          completed_steps: string[]
+          created_at: string
+          current_stage: string
+          current_step: string | null
+          error_code: string | null
+          error_message: string | null
+          fallback_used: boolean
+          id: string
+          last_heartbeat_at: string
+          meal_plan_id: string | null
+          metadata: Json
+          started_at: string
+          status: string
+          status_message: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_steps?: string[]
+          created_at?: string
+          current_stage?: string
+          current_step?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          fallback_used?: boolean
+          id?: string
+          last_heartbeat_at?: string
+          meal_plan_id?: string | null
+          metadata?: Json
+          started_at?: string
+          status?: string
+          status_message?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_steps?: string[]
+          created_at?: string
+          current_stage?: string
+          current_step?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          fallback_used?: boolean
+          id?: string
+          last_heartbeat_at?: string
+          meal_plan_id?: string | null
+          metadata?: Json
+          started_at?: string
+          status?: string
+          status_message?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_plan_meals: {
         Row: {
           calories_estimate: number | null
