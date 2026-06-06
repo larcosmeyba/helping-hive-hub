@@ -106,16 +106,30 @@ export function HowItWorksSection() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto mb-12 md:mb-10"
+          className="grid grid-cols-2 gap-4 md:gap-6 max-w-2xl mx-auto mb-12 md:mb-10"
         >
           {metrics.map((m, i) => (
             <div key={i} className="text-center">
-              <div className="font-display text-2xl md:text-3xl font-bold text-primary">
-                {m.value}
-              </div>
-              <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
-                {m.label}
-              </div>
+              {m.branded ? (
+                <>
+                  <div className="inline-flex items-center gap-2 font-display text-2xl md:text-3xl font-bold" style={{ color: "#0AAD0A" }}>
+                    <InstacartCarrot size={22} />
+                    {m.label}
+                  </div>
+                  <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                    {m.value}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="font-display text-2xl md:text-3xl font-bold text-primary">
+                    {m.value}
+                  </div>
+                  <div className="text-xs md:text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                    {m.label}
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </motion.div>
