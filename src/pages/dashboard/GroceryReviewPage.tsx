@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { useToast } from "@/hooks/use-toast";
+import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 
 function normalize(name: string) {
@@ -19,9 +21,72 @@ function parseQty(q: string): { num: number; unit: string } {
 
 const ADJUST_SECTIONS = ["protein", "meat", "produce", "vegetable", "fruit", "seafood"];
 
+const NON_FOOD_KEYWORDS = [
+  "phone", "laptop", "computer", "tv", "tablet", "camera", "headphone", "speaker",
+  "charger", "cable", "battery", "electronics",
+  "shoe", "shirt", "pants", "dress", "jacket", "sock", "underwear", "hat", "glove",
+  "furniture", "chair", "table", "desk", "couch", "sofa", "bed", "mattress", "lamp",
+  "toy", "doll", "action figure", "board game", "video game", "console",
+  "tool", "hammer", "screwdriver", "drill", "saw", "wrench", "pliers",
+  "motor oil", "windshield wiper", "car part", "tire",
+  "book", "magazine", "notebook", "journal", "pen", "pencil", "marker", "stapler",
+  "toilet paper", "paper towel", "facial tissue", "napkin",
+  "laundry detergent", "fabric softener", "bleach", "all-purpose cleaner",
+  "disinfectant", "glass cleaner",
+  "shampoo", "conditioner", "body wash", "hand soap", "bar soap", "face wash",
+  "toothpaste", "toothbrush", "mouthwash", "floss", "deodorant", "antiperspirant",
+  "razor", "shaving cream", "hair dye", "nail polish", "makeup", "cosmetic",
+  "lotion", "moisturizer", "sunscreen", "lip balm", "cotton ball", "cotton swab",
+  "diaper", "baby wipe", "pull-up",
+  "pad", "tampon", "menstrual",
+  "trash bag", "garbage bag", "storage bag", "plastic wrap", "foil", "parchment paper",
+  "air freshener", "candle", "incense",
+  "pet food", "dog food", "cat food", "bird seed", "fish food",
+];
+
+function isFoodItem(name: string): boolean {
+  const lower = name.toLowerCase();
+  return !NON_FOOD_KEYWORDS.some((k) => lower.includes(k));
+}
+
+function guessCategory(name: string): string {
+  const lower = name.toLowerCase();
+  if (/\b(milk|cheese|yogurt|butter|egg|cream)\b/.test(lower)) return "Dairy & Eggs";
+  if (/\b(chicken|beef|pork|turkey|fish|salmon|shrimp|meat|steak|sausage|bacon|ham)\b/.test(lower))
+    return "Meat & Protein";
+  if (/\b(rice|pasta|bread|noodle|cereal|oat|flour|grain|tortilla|cracker)\b/.test(lower))
+    return "Grains & Bread";
+  if (/\b(apple|banana|orange|grape|strawberry|fruit|berry|melon|mango|peach|pear|plum)\b/.test(lower))
+    return "Fruits";
+  if (/\b(carrot|potato|onion|tomato|lettuce|spinach|broccoli|vegetable|pepper|cucumber|celery)\b/.test(lower))
+    return "Vegetables";
+  if (/\b(canned|soup|bean|lentil|chickpea|tuna|corn|green bean|broth)\b/.test(lower))
+    return "Canned & Pantry";
+  if (/\b(oil|vinegar|sauce|condiment|spice|salt|sugar|honey|syrup|mayo|ketchup|mustard)\b/.test(lower))
+    return "Oils & Condiments";
+  if (/\b(frozen|ice cream|pizza|fries|nugget)\b/.test(lower)) return "Frozen";
+  if (/\b(water|juice|soda|coffee|tea|sports drink|energy drink)\b/.test(lower))
+    return "Beverages";
+  if (/\b(chip|cracker|cookie|candy|snack|chocolate|popcorn|pretzel|nut|granola bar)\b/.test(lower))
+    return "Snacks";
+  return "Other";
+}
+
+const QUICK_ADDS: { name: string; quantity: string; category: string; estimatedPrice: number }[] = [
+  { name: "Milk", quantity: "1 gallon", category: "Dairy & Eggs", estimatedPrice: 4.5 },
+  { name: "Eggs", quantity: "1 dozen", category: "Dairy & Eggs", estimatedPrice: 4.0 },
+  { name: "Bread", quantity: "1 loaf", category: "Grains & Bread", estimatedPrice: 3.5 },
+  { name: "Rice", quantity: "2 lb", category: "Grains & Bread", estimatedPrice: 3.0 },
+  { name: "Chicken", quantity: "2 lb", category: "Meat & Protein", estimatedPrice: 8.0 },
+  { name: "Fruit", quantity: "3 lb", category: "Produce", estimatedPrice: 6.0 },
+  { name: "Vegetables", quantity: "3 lb", category: "Produce", estimatedPrice: 5.0 },
+  { name: "Snacks", quantity: "1 bag", category: "Snacks", estimatedPrice: 4.0 },
+];
+
 export default function GroceryReviewPage() {
   const { mealPlan } = useMealPlan();
   const { user, profile } = useAuth();
+  const { toast } = useToast();
   const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "";
 
   const allItems: GroceryItem[] = mealPlan?.groceryList ?? [];
@@ -31,6 +96,13 @@ export default function GroceryReviewPage() {
   const [alreadyHaveOverride, setAlreadyHaveOverride] = useState<Set<string>>(new Set());
   const [qtyOverride, setQtyOverride] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState<Set<string>>(new Set());
+
+  // Manual add state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [manualItems, setManualItems] = useState<GroceryItem[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+
+  const manualNames = useMemo(() => new Set(manualItems.map((m) => m.name)), [manualItems]);
 
   useEffect(() => {
     if (!user) return;
@@ -77,13 +149,15 @@ export default function GroceryReviewPage() {
     (it.storePrices?.[store] ?? it.estimatedPrice ?? 0);
 
   const total = useMemo(() => {
-    return [...toAdjust, ...toBuy].reduce((s, it) => {
+    const mealPlanTotal = [...toAdjust, ...toBuy].reduce((s, it) => {
       const ratio = parseQty(it.quantity).num
         ? getQty(it) / parseQty(it.quantity).num
         : 1;
       return s + getPrice(it) * ratio;
     }, 0);
-  }, [toAdjust, toBuy, qtyOverride, store]);
+    const manualTotal = manualItems.reduce((s, it) => s + (it.estimatedPrice || 0), 0);
+    return mealPlanTotal + manualTotal;
+  }, [toAdjust, toBuy, qtyOverride, store, manualItems]);
 
   const toggleCheck = (name: string) => {
     setChecked((p) => {
@@ -94,7 +168,7 @@ export default function GroceryReviewPage() {
   };
 
   const sendItems: InstacartLineItem[] = useMemo(() => {
-    const buyable = [...toAdjust, ...toBuy];
+    const buyable = [...toAdjust, ...toBuy, ...manualItems];
     return buyable.map((it) => {
       const { unit } = parseQty(it.quantity);
       return {
@@ -103,7 +177,99 @@ export default function GroceryReviewPage() {
         unit: unit || "each",
       };
     });
-  }, [toAdjust, toBuy, qtyOverride]);
+  }, [toAdjust, toBuy, manualItems, qtyOverride]);
+
+  const isDuplicate = (name: string) => {
+    const norm = normalize(name);
+    return allItems.some((it) => normalize(it.name) === norm);
+  };
+
+  const persistManualItem = async (item: GroceryItem) => {
+    if (!user) return;
+    try {
+      await addItemsToGroceryList("manual_add", [
+        {
+          item_name: item.name,
+          quantity: item.quantity,
+          unit: parseQty(item.quantity).unit,
+          category: item.section,
+          estimated_price: item.estimatedPrice || undefined,
+          instacart_search_term: item.name,
+        },
+      ]);
+    } catch (err) {
+      console.error("Failed to persist manual item:", err);
+      // Still show in UI; persistence failure is non-blocking for the review flow
+    }
+  };
+
+  const addFromSearch = async () => {
+    const name = searchQuery.trim();
+    if (!name) return;
+    if (!isFoodItem(name)) {
+      toast({
+        title: "Not a food item",
+        description: "Please add grocery or food items only.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isDuplicate(name)) {
+      toast({ title: "Already in list", description: `${name} is already in your grocery list.` });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const category = guessCategory(name);
+      const item: GroceryItem = {
+        name,
+        quantity: "1 each",
+        estimatedPrice: 0,
+        section: category,
+      };
+      await persistManualItem(item);
+      setManualItems((prev) => [...prev, item]);
+      setChecked((p) => new Set([...p, name]));
+      setSearchQuery("");
+    } catch (e) {
+      toast({ title: "Failed to add item", description: String(e), variant: "destructive" });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const addQuickItem = async (quick: (typeof QUICK_ADDS)[0]) => {
+    if (isDuplicate(quick.name)) {
+      toast({ title: "Already in list", description: `${quick.name} is already in your grocery list.` });
+      return;
+    }
+    setIsAdding(true);
+    try {
+      const item: GroceryItem = {
+        name: quick.name,
+        quantity: quick.quantity,
+        estimatedPrice: quick.estimatedPrice,
+        section: quick.category,
+      };
+      await persistManualItem(item);
+      setManualItems((prev) => [...prev, item]);
+      setChecked((p) => new Set([...p, quick.name]));
+    } catch (e) {
+      toast({ title: "Failed to add item", description: String(e), variant: "destructive" });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const removeManualItem = (name: string) => {
+    setManualItems((prev) => prev.filter((m) => m.name !== name));
+    setChecked((p) => {
+      const n = new Set(p);
+      n.delete(name);
+      return n;
+    });
+  };
 
   if (!allItems.length) {
     return (
@@ -112,6 +278,8 @@ export default function GroceryReviewPage() {
       </div>
     );
   }
+
+  const combinedToBuy = [...toBuy, ...manualItems];
 
   return (
     <div className="max-w-md mx-auto px-4 pt-3 pb-32">
@@ -188,14 +356,19 @@ export default function GroceryReviewPage() {
       )}
 
       {/* To Buy */}
-      {toBuy.length > 0 && (
+      {combinedToBuy.length > 0 && (
         <Section title="To Buy" headerBg="#E8F0FE" titleColor="#1A56DB">
           <ul className="divide-y divide-border">
-            {toBuy.map((it) => {
+            {combinedToBuy.map((it) => {
               const price = getPrice(it);
               const isChecked = checked.has(it.name);
+              const isManual = manualNames.has(it.name);
+              const priceKnown = isManual ? it.estimatedPrice > 0 : true;
               return (
-                <li key={it.name} className="flex items-center gap-3 px-4 py-3">
+                <li
+                  key={`${it.name}-${isManual ? "manual" : "plan"}`}
+                  className="flex items-center gap-3 px-4 py-3"
+                >
                   <button
                     onClick={() => toggleCheck(it.name)}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
@@ -208,15 +381,67 @@ export default function GroceryReviewPage() {
                   <span className="text-[14px] text-[#1a1a1a] font-medium flex-1 truncate">
                     {it.name}
                   </span>
-                  <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0">
-                    ${price.toFixed(2)}
-                  </span>
+                  {isManual && (
+                    <button
+                      onClick={() => removeManualItem(it.name)}
+                      className="text-[11px] text-[#6b6b6b] underline shrink-0"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  {priceKnown ? (
+                    <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0">
+                      ${price.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-[#6b6b6b] italic shrink-0 text-right">
+                      Price confirmed at<br />Instacart checkout
+                    </span>
+                  )}
                 </li>
               );
             })}
           </ul>
         </Section>
       )}
+
+      {/* Add More Food Items */}
+      <Section title="Add More Food Items" headerBg="#FFF8E1" titleColor="#B8860B">
+        <div className="px-4 pt-3 pb-2 flex gap-2">
+          <input
+            type="text"
+            placeholder="Search food item…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addFromSearch();
+              }
+            }}
+            className="flex-1 h-10 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <button
+            onClick={addFromSearch}
+            disabled={!searchQuery.trim() || isAdding}
+            className="h-10 px-4 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            + Add Food Item
+          </button>
+        </div>
+        <div className="px-4 pb-3 flex flex-wrap gap-2">
+          {QUICK_ADDS.map((q) => (
+            <button
+              key={q.name}
+              onClick={() => addQuickItem(q)}
+              disabled={isAdding || isDuplicate(q.name)}
+              className="px-3 py-1.5 rounded-full border border-border bg-background text-[13px] text-[#1a1a1a] font-medium hover:border-primary/50 transition-colors disabled:opacity-40"
+            >
+              {q.name}
+            </button>
+          ))}
+        </div>
+      </Section>
 
       {/* Estimated total */}
       <div className="mt-5 flex items-center justify-between px-1">
