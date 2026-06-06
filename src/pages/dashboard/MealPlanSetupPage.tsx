@@ -475,33 +475,63 @@ function StoreSheet({
           {cleanZip && !loading && !error && retailers.length === 0 && (
             <p className="text-[12px] text-[#6b6b6b] mt-2">No Instacart stores found for this ZIP.</p>
           )}
+          {cleanZip && !loading && !error && retailers.length > 0 && (
+            <p className="text-[12px] text-[#6b6b6b] mt-2">
+              Stores shown are available through Instacart in your ZIP code.
+            </p>
+          )}
           <div className="mt-2 space-y-2">
-            {retailers.map((r) => {
-              const active = homeStore === r.name;
-              return (
-                <button
-                  key={r.retailer_key}
-                  onClick={() => { setHomeStore(r.name); setHomeStoreKey(r.retailer_key); }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition-colors ${
-                    active ? "bg-[#1F5A3D]/10 border-[#1F5A3D]" : "bg-white border-[#EEE7DA]"
-                  }`}
-                >
-                  {r.retailer_logo_url ? (
-                    <img src={r.retailer_logo_url} alt="" className="w-9 h-9 rounded-md object-contain bg-white" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-md bg-[#F2A900]/20 flex items-center justify-center">
-                      <Store className="w-4 h-4 text-[#A56A00]" />
-                    </div>
-                  )}
-                  <span className="flex-1 text-[14px] font-semibold text-[#1a1a1a]">{r.name}</span>
-                  {active && <Check className="w-5 h-5 text-[#1F5A3D]" />}
-                </button>
-              );
-            })}
+            {[...retailers]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .sort((a, b) => {
+                if (homeStore === a.name) return -1;
+                if (homeStore === b.name) return 1;
+                return 0;
+              })
+              .map((r) => {
+                const active = homeStore === r.name;
+                return (
+                  <RetailerRow
+                    key={r.retailer_key}
+                    name={r.name}
+                    logoUrl={r.retailer_logo_url ?? null}
+                    active={active}
+                    onSelect={() => { setHomeStore(r.name); setHomeStoreKey(r.retailer_key); }}
+                  />
+                );
+              })}
           </div>
         </div>
       </div>
     </SheetShell>
+  );
+}
+
+function RetailerRow({
+  name, logoUrl, active, onSelect,
+}: {
+  name: string; logoUrl: string | null; active: boolean; onSelect: () => void;
+}) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = !!logoUrl && !logoFailed;
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-left transition-colors ${
+        active ? "bg-[#1F5A3D]/10 border-[#1F5A3D]" : "bg-white border-[#EEE7DA] hover:border-[#d9d2c4]"
+      }`}
+    >
+      {showLogo && (
+        <img
+          src={logoUrl!}
+          alt=""
+          className="w-9 h-9 rounded-md object-contain bg-white"
+          onError={() => setLogoFailed(true)}
+        />
+      )}
+      <span className="flex-1 text-[14px] font-semibold text-[#1a1a1a]">{name}</span>
+      {active && <Check className="w-5 h-5 text-[#1F5A3D]" />}
+    </button>
   );
 }
 
