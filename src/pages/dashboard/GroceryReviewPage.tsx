@@ -167,17 +167,33 @@ export default function GroceryReviewPage() {
     });
   };
 
+  // Auto-select all buyable items on first load so unchecked = excluded from Instacart
+  const hasInitChecked = useRef(false);
+  useEffect(() => {
+    if (hasInitChecked.current) return;
+    const names = new Set<string>();
+    for (const it of toAdjust) names.add(it.name);
+    for (const it of toBuy) names.add(it.name);
+    for (const it of manualItems) names.add(it.name);
+    if (names.size > 0) {
+      setChecked(names);
+      hasInitChecked.current = true;
+    }
+  }, [toAdjust, toBuy, manualItems]);
+
   const sendItems: InstacartLineItem[] = useMemo(() => {
     const buyable = [...toAdjust, ...toBuy, ...manualItems];
-    return buyable.map((it) => {
-      const { unit } = parseQty(it.quantity);
-      return {
-        name: it.name,
-        quantity: getQty(it) || 1,
-        unit: unit || "each",
-      };
-    });
-  }, [toAdjust, toBuy, manualItems, qtyOverride]);
+    return buyable
+      .filter((it) => checked.has(it.name))
+      .map((it) => {
+        const { unit } = parseQty(it.quantity);
+        return {
+          name: it.name,
+          quantity: getQty(it) || 1,
+          unit: unit || "each",
+        };
+      });
+  }, [toAdjust, toBuy, manualItems, qtyOverride, checked]);
 
   const isDuplicate = (name: string) => {
     const norm = normalize(name);
