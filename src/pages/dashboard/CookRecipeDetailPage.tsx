@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Check, X, ChefHat, Loader2 } from "lucide-react";
+import { Check, X, ChefHat, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
+  addSingleIngredientToGroceryList,
   markRecipeCooked,
   sendMissingIngredientsToGroceryList,
   type GeneratedRecipe,
+  type GeneratedRecipeIngredient,
 } from "@/lib/cookFromWhatIHave";
 
 export default function CookRecipeDetailPage() {
