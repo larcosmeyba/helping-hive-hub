@@ -25,7 +25,7 @@ export function HeroSection() {
       <img
         src={heroBowl}
         alt="Skillet of stir-fried chicken with broccoli, peppers and snap peas"
-        className="absolute inset-12 md:inset-20 lg:inset-28 object-contain rounded-2xl"
+        className="absolute inset-0 w-full h-full object-contain"
         width={1920}
         height={1080}
       />
