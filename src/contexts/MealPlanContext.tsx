@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GeneratedMealPlan } from "@/types/mealPlan";
+import type { Database } from "@/integrations/supabase/types";
 
 export interface MealPlanHistoryEntry {
   id: string;
@@ -14,12 +15,25 @@ export interface MealPlanHistoryEntry {
 
 type GenerationStage = "idle" | "preparing" | "generating" | "saving" | "done";
 
+type GenerationJobRow = Database["public"]["Tables"]["meal_plan_generation_jobs"]["Row"];
+
+interface GenerationStatus {
+  jobId: string | null;
+  currentStep: string | null;
+  completedSteps: string[];
+  statusMessage: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  fallbackUsed: boolean;
+}
+
 interface MealPlanContextType {
   mealPlan: GeneratedMealPlan | null;
   setMealPlan: (plan: GeneratedMealPlan | null) => void;
   loading: boolean;
   generating: boolean;
   generationStage: GenerationStage;
+  generationStatus: GenerationStatus;
   generate: () => Promise<void>;
   history: MealPlanHistoryEntry[];
   historyLoading: boolean;
@@ -29,6 +43,16 @@ interface MealPlanContextType {
 const MealPlanContext = createContext<MealPlanContextType | undefined>(undefined);
 
 const STORAGE_KEY = "hive_meal_plan";
+
+const EMPTY_GENERATION_STATUS: GenerationStatus = {
+  jobId: null,
+  currentStep: null,
+  completedSteps: [],
+  statusMessage: null,
+  errorCode: null,
+  errorMessage: null,
+  fallbackUsed: false,
+};
 
 export function MealPlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
