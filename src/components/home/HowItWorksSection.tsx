@@ -120,20 +120,11 @@ export function HowItWorksSection() {
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 40 }}
-                  whileInView={{
-                    opacity: 1,
-                    y: p.float,
-                  }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{
                     opacity: { delay: i * 0.12, duration: 0.6 },
-                    y: {
-                      delay: i * 0.12,
-                      duration: 4 + i * 0.3,
-                      repeat: Infinity,
-                      repeatType: "loop",
-                      ease: "easeInOut",
-                    },
+                    y: { delay: i * 0.12, duration: 0.6, ease: "easeOut" },
                   }}
                   style={{
                     transform: `translateY(${p.translateY}) rotate(${p.rotate}) scale(${p.scale})`,
