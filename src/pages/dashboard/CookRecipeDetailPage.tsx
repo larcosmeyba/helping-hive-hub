@@ -22,6 +22,8 @@ export default function CookRecipeDetailPage() {
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(initial ?? null);
   const [loading, setLoading] = useState(!initial);
   const [adding, setAdding] = useState(false);
+  const [addingRow, setAddingRow] = useState<string | null>(null);
+  const [addedRows, setAddedRows] = useState<Set<string>>(new Set());
   const [cooking, setCooking] = useState(false);
 
   useEffect(() => {
