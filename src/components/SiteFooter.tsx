@@ -13,7 +13,7 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 function FooterColumn({ title, links, isOpen, onToggle, isMobile }: {
   title: string;
-  links: { label: string; slug: string }[];
+  links: { label: string; slug?: string; to?: string }[];
   isOpen: boolean;
   onToggle: () => void;
   isMobile: boolean;

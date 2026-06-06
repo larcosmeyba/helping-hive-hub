@@ -1383,76 +1383,32 @@ export const footerColumns = [
   {
     title: "Company",
     links: [
-      { label: "About Help the Hive", slug: "about" },
-      { label: "How It Works", slug: "how-it-works" },
+      { label: "About", slug: "about" },
       { label: "Contact", slug: "contact" },
-      { label: "Careers", slug: "careers" },
-      { label: "Press", slug: "press" },
+      { label: "Partnerships", to: "/partnerships" },
     ]
   },
   {
     title: "Legal",
     links: [
-      { label: "Terms of Service", slug: "terms" },
       { label: "Privacy Policy", slug: "privacy" },
-      { label: "Cookie Policy", slug: "cookies" },
-      { label: "Acceptable Use Policy", slug: "acceptable-use" },
-      { label: "Arbitration & Dispute Resolution", slug: "arbitration" },
+      { label: "Terms of Service", slug: "terms" },
+    ]
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "How To Apply For SNAP", slug: "apply-for-snap" },
+      { label: "How To Apply For EBT", slug: "apply-for-ebt" },
+      { label: "Housing Assistance", slug: "housing-assistance" },
+      { label: "Food Assistance", slug: "food-assistance" },
     ]
   },
   {
     title: "Support",
     links: [
       { label: "Help Center", slug: "help-center" },
-      { label: "Report an Issue", slug: "report-issue" },
-      { label: "Account Support", slug: "account-support" },
-      { label: "Security Disclosure", slug: "security-disclosure" },
-      { label: "Contact Support", slug: "contact-support" },
+      { label: "Report An Issue", slug: "report-issue" },
     ]
   },
-  {
-    title: "Resources",
-    links: [
-      { label: "How to Apply for SNAP Benefits", slug: "apply-for-snap" },
-      { label: "How to Apply for EBT", slug: "apply-for-ebt" },
-      { label: "Housing Assistance Resources", slug: "housing-assistance" },
-      { label: "Food Assistance Resources", slug: "food-assistance" },
-      { label: "Utility Assistance Resources", slug: "utility-assistance" },
-      { label: "Community Support Programs", slug: "community-support" },
-    ]
-  },
-  {
-    title: "Trust & Safety",
-    links: [
-      { label: "Responsible AI Policy", slug: "responsible-ai" },
-      { label: "Accessibility Statement", slug: "accessibility" },
-      { label: "Community Guidelines", slug: "community-guidelines" },
-      { label: "Platform Integrity Policy", slug: "platform-integrity" },
-      { label: "Anti-Fraud Policy", slug: "anti-fraud" },
-    ]
-  },
-  {
-    title: "Platform",
-    links: [
-      { label: "Meal Planner", slug: "meal-planner" },
-      { label: "Pantry Manager", slug: "pantry-manager" },
-      { label: "Grocery Lists", slug: "grocery-lists" },
-      { label: "Budget Insights", slug: "budget-insights" },
-      { label: "Recipe Recommendations", slug: "recipe-recommendations" },
-      { label: "Household Profile", slug: "household-profile" },
-    ]
-  },
-  {
-    title: "Compliance",
-    links: [
-      { label: "DMCA Policy", slug: "dmca" },
-      { label: "Data Retention Policy", slug: "data-retention" },
-      { label: "Intellectual Property Policy", slug: "intellectual-property" },
-      { label: "Export Compliance", slug: "export-compliance" },
-      { label: "Third-Party Services Disclosure", slug: "third-party-services" },
-      { label: "Government Program Disclaimer", slug: "government-disclaimer" },
-      { label: "Apple App Store Compliance", slug: "apple-app-store" },
-      { label: "Google Play Store Compliance", slug: "google-play-store" },
-    ]
-  }
 ];
