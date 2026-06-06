@@ -76,6 +76,31 @@ export default function CookRecipeDetailPage() {
     }
   };
 
+  const handleAddOne = async (i: GeneratedRecipeIngredient) => {
+    const key = i.id ?? i.item_name;
+    setAddingRow(key);
+    try {
+      const res = await addSingleIngredientToGroceryList(
+        i,
+        recipe.source_type === "food_waste" ? "food_waste" : "cook_from_what_i_have",
+        recipe.id,
+      );
+      setAddedRows((prev) => new Set(prev).add(key));
+      toast({
+        title: res.merged ? "Updated in grocery list" : "Added to grocery list",
+        description: i.item_name,
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't add ingredient",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setAddingRow(null);
+    }
+  };
+
   const handleCook = async () => {
     setCooking(true);
     try {
