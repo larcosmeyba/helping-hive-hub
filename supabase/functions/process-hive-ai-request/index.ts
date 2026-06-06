@@ -39,7 +39,8 @@ type RequestType =
   | "food_waste_alerts"
   | "family_assistance"
   | "budget_insights"
-  | "pantry_photo_scan";
+  | "pantry_photo_scan"
+  | "inventory_photo_scan";
 
 const SUPPORTED: RequestType[] = [
   "meal_plan_generation",
@@ -51,6 +52,7 @@ const SUPPORTED: RequestType[] = [
   "family_assistance",
   "budget_insights",
   "pantry_photo_scan",
+  "inventory_photo_scan",
 ];
 
 Deno.serve(async (req) => {
@@ -260,6 +262,17 @@ function systemPromptFor(type: RequestType): string {
       return "Analyze food-only Plaid transactions and return JSON { summary, trends[], recommendations[] }. Never reference non-food spending.";
     case "pantry_photo_scan":
       return "Identify pantry items in an image. Return JSON { detected_items: [{ item_name, quantity?, unit?, category?, location? }] }. Do not assume — user will confirm.";
+    case "inventory_photo_scan":
+      return [
+        "You identify visible food items in a user's photo of their pantry, fridge, freezer, or grocery receipt.",
+        "Detect ONLY items you can actually see. Do NOT guess or invent items.",
+        "Return ONLY valid JSON in this exact shape:",
+        '{ "detected_items": [{ "item_name": string, "estimated_quantity": number, "unit": string, "category": string, "location": string, "confidence_score": number }] }',
+        "category must be one of: produce, protein, dairy, grains, pantry_staples, frozen, canned_goods, household, other.",
+        "location must be one of: pantry, fridge, freezer — infer from scan_type when given.",
+        "confidence_score is 0-1.",
+        "Never guarantee expiration dates, nutrition, or medical advice. Never auto-save or add to grocery list.",
+      ].join(" ");
   }
 }
 
@@ -289,6 +302,17 @@ function mockResponse(type: RequestType, ctx: Record<string, unknown>): unknown 
       return { summary: "Mock budget insight — Plaid connected, OpenAI pending.", trends: [], recommendations: [] };
     case "pantry_photo_scan":
       return { detected_items: [] };
+    case "inventory_photo_scan": {
+      const loc = (ctx?.location as string) || (ctx?.scan_type as string) || "pantry";
+      return {
+        detected_items: [
+          { item_name: "Spinach", estimated_quantity: 1, unit: "bag", category: "produce", location: loc, confidence_score: 0.8 },
+          { item_name: "Eggs", estimated_quantity: 12, unit: "count", category: "dairy", location: loc, confidence_score: 0.85 },
+          { item_name: "Chicken Breast", estimated_quantity: 1, unit: "lb", category: "protein", location: loc, confidence_score: 0.78 },
+        ],
+        mocked: true,
+      };
+    }
     case "meal_plan_generation":
     case "meal_swap":
       return { note: "Existing generate-meal-plan / swap-meal functions remain authoritative until OpenAI is enabled.", context_keys: Object.keys(ctx) };
