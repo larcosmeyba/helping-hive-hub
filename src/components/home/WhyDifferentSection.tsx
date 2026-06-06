@@ -6,9 +6,12 @@ const comparisons = [
   { feature: "Practical grocery list with pricing", us: true, them: false },
   { feature: "Pantry-aware meal suggestions", us: true, them: false },
   { feature: "Household size and dietary personalization", us: true, them: true },
-  { feature: "Store-specific pricing data", us: true, them: false },
+  { feature: "Store-based grocery planning", us: true, them: false },
   { feature: "Designed for budget-conscious households", us: true, them: false },
-  { feature: "Recipe collection", us: true, them: true },
+  { feature: "Family assistance resources", us: true, them: false },
+  { feature: "Food assistance resources", us: true, them: false },
+  { feature: "Housing resources", us: true, them: false },
+  { feature: "Utility assistance resources", us: true, them: false },
 ];
 
 export function WhyDifferentSection() {
