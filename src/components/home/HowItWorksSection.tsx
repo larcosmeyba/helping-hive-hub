@@ -49,8 +49,6 @@ const captions = [
   },
 ];
 
-const metrics: { value: string; label: string; branded?: boolean }[] = [];
-
 const trustItems = [
   "Pantry-aware meal planning",
   "Grocery lists organized automatically",
