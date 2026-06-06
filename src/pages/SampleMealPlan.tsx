@@ -11,6 +11,7 @@ const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
   "more-variety-75": { primary: "Sprouts", secondary: "Safeway" },
   "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
   "snap-friendly-meals": { primary: "Aldi", secondary: "WinCo" },
+  "cook-from-what-you-have": { primary: "Your Instacart store", secondary: "" },
 };
 
 const SAMPLE_PLANS: Record<string, {
