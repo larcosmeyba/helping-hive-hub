@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Download, Brain, BarChart3, Trash2, Loader2 } from "lucide-react";
+import { ShieldCheck, Brain, BarChart3, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -59,28 +59,6 @@ export function PrivacyDataControls() {
     }
   };
 
-  const handleExport = async () => {
-    if (!user) return;
-    setBusy("export");
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-user-data`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `helpthehive-data-${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast({ title: "Download started", description: "Your data export is downloading." });
-    } catch (e) {
-      toast({ title: "Export failed", description: e instanceof Error ? e.message : "Try again later", variant: "destructive" });
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const handleDelete = async () => {
     if (!user) return;
@@ -141,12 +119,6 @@ export function PrivacyDataControls() {
         </div>
         <Switch checked={analyticsOptIn} onCheckedChange={(v) => updateToggle("analytics_opt_in", v)} />
       </div>
-
-      {/* Export */}
-      <Button variant="outline" className="w-full" onClick={handleExport} disabled={busy !== null}>
-        {busy === "export" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-        Download My Data (JSON)
-      </Button>
 
       {/* Immediate delete */}
       <AlertDialog>
