@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
     }
 
     const data = JSON.parse(text);
-    return json({ ...data, environment: env, endpoint: path });
+    return json({ ...data, environment: env, endpoint: path, truncated: truncatedCount });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("instacart-create-list error:", msg);
