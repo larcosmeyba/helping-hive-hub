@@ -8,7 +8,7 @@ import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
-import { sanitizeForInstacart } from "@/lib/instacartSanitizer";
+import { sanitizeForInstacart, toDisplayProduct } from "@/lib/instacartSanitizer";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -90,7 +90,16 @@ export default function GroceryReviewPage() {
   const { toast } = useToast();
   const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "";
 
-  const allItems: GroceryItem[] = mealPlan?.groceryList ?? [];
+  // Normalize raw recipe ingredients into purchasable grocery products and
+  // drop recipe headers / sub-recipe labels BEFORE rendering. The list shown
+  // to the user now matches the Instacart payload exactly.
+  const allItems: GroceryItem[] = (mealPlan?.groceryList ?? [])
+    .map((i) => {
+      const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
+      if (!d) return null;
+      return { ...i, name: d.displayName, quantity: d.displayQuantity };
+    })
+    .filter((x): x is GroceryItem => x !== null);
 
   // Already-have set: items overlapping with user's pantry (by normalized name).
   const [pantryNames, setPantryNames] = useState<Set<string>>(new Set());

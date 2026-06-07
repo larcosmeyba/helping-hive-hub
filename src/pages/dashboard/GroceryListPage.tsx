@@ -16,7 +16,7 @@ import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { useAdminRole } from "@/hooks/useAdminRole";
-import { sanitizeForInstacart } from "@/lib/instacartSanitizer";
+import { sanitizeForInstacart, toDisplayProduct } from "@/lib/instacartSanitizer";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -134,7 +134,18 @@ export default function GroceryListPage() {
     );
   }
 
-  const groceryItems = mealPlan.groceryList;
+  // Normalize raw recipe ingredients into purchasable grocery products
+  // BEFORE rendering. This filters out recipe headers ("salmon marinade:"),
+  // sub-recipe labels, and pure prep instructions, and maps lines like
+  // "garlic clove, crushed" → "Garlic Bulb · 1 each". The displayed list now
+  // matches the payload sent to Instacart exactly.
+  const groceryItems = (mealPlan.groceryList ?? [])
+    .map((i) => {
+      const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
+      if (!d) return null;
+      return { ...i, name: d.displayName, quantity: d.displayQuantity };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
