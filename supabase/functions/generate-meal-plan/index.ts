@@ -819,6 +819,7 @@ function normalizePlanForClient(
       name: m.recipe.title,
       recipe_id: m.recipe.id,
       image_url: m.recipe.image_url,
+      imageUrl: m.recipe.image_url,
       calories: m.recipe.calories ?? 0,
       protein: Number(m.recipe.protein_g) ?? 0,
       carbs: 0,
