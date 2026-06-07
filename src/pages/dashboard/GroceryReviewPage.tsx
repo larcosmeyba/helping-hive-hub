@@ -8,6 +8,7 @@ import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
+import { sanitizeForInstacart } from "@/lib/instacartSanitizer";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -183,16 +184,17 @@ export default function GroceryReviewPage() {
 
   const sendItems: InstacartLineItem[] = useMemo(() => {
     const buyable = [...toAdjust, ...toBuy, ...manualItems];
-    return buyable
+    // Sanitize recipe-portion strings into purchasable products before
+    // sending to Instacart. UI continues to display the original recipe
+    // text and the user-adjusted recipe quantity.
+    const sourceItems = buyable
       .filter((it) => checked.has(it.name))
-      .map((it) => {
-        const { unit } = parseQty(it.quantity);
-        return {
-          name: it.name,
-          quantity: getQty(it) || 1,
-          unit: unit || "each",
-        };
-      });
+      .map((it) => ({ name: it.name, rawQuantity: String(it.quantity ?? "") }));
+    return sanitizeForInstacart(sourceItems).map((s) => ({
+      name: s.name,
+      quantity: s.quantity,
+      unit: s.unit,
+    }));
   }, [toAdjust, toBuy, manualItems, qtyOverride, checked]);
 
   const isDuplicate = (name: string) => {

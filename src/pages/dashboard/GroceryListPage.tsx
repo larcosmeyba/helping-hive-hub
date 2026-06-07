@@ -296,17 +296,35 @@ export default function GroceryListPage() {
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
           lineItems={(() => {
-            const all: InstacartLineItem[] = [
-              ...groceryItems.map<InstacartLineItem>((i) => ({
-                name: i.name,
-                quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
-                unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
-              })),
-              ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
-            ];
-            if (checked.size === 0) return all;
-            const selected = all.filter((li) => checked.has(li.name));
-            return selected.length > 0 ? selected : all;
+            // Sanitize recipe-portion strings ("1 tbsp olive oil") into
+            // purchasable grocery products ("olive oil bottle") before sending
+            // anything to Instacart. The on-screen list still shows the recipe
+            // text; only the wire payload is normalized.
+            const sourceItems = (() => {
+              if (checked.size === 0) {
+                return [
+                  ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
+                  ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
+                ];
+              }
+              const selectedGrocery = groceryItems
+                .filter((i) => checked.has(i.name))
+                .map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") }));
+              const selectedExtras = extraItems
+                .filter((e) => checked.has(e.name))
+                .map((e) => ({ name: e.name, rawQuantity: "" }));
+              const picked = [...selectedGrocery, ...selectedExtras];
+              if (picked.length > 0) return picked;
+              return [
+                ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
+                ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
+              ];
+            })();
+            return sanitizeForInstacart(sourceItems).map<InstacartLineItem>((s) => ({
+              name: s.name,
+              quantity: s.quantity,
+              unit: s.unit,
+            }));
           })()}
           label="Send to Instacart"
           fullWidth
