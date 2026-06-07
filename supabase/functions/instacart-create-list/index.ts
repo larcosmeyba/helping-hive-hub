@@ -80,8 +80,8 @@ Deno.serve(async (req) => {
     const isRecipe = linkType === "recipe";
 
     // Validate the right items array depending on link type.
-    const items = isRecipe ? body.ingredients : body.line_items;
-    if (!Array.isArray(items) || items.length === 0) {
+    const rawItems = isRecipe ? body.ingredients : body.line_items;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
       return json(
         {
           error: isRecipe
@@ -91,8 +91,15 @@ Deno.serve(async (req) => {
         400,
       );
     }
-    if (items.length > 100) {
-      return json({ error: "items may not exceed 100 entries" }, 400);
+    // Instacart IDP caps a single link at 100 items. Truncate gracefully
+    // instead of failing — the user can send the remainder in a follow-up.
+    const MAX_ITEMS = 100;
+    const truncatedCount = Math.max(0, rawItems.length - MAX_ITEMS);
+    const items = rawItems.slice(0, MAX_ITEMS);
+    if (truncatedCount > 0) {
+      console.warn(
+        `[instacart-create-list] Truncated ${truncatedCount} of ${rawItems.length} items (max ${MAX_ITEMS}).`,
+      );
     }
 
     const base = env === "production" ? PROD_BASE : DEV_BASE;
