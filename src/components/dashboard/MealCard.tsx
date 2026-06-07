@@ -122,7 +122,7 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 title={meal.name}
                 ingredients={meal.ingredients}
                 instructions={meal.instructions}
-                imageUrl={meal.imageUrl}
+                imageUrl={meal.imageUrl ?? meal.image_url}
                 label="Shop Ingredients"
                 fullWidth
               />
