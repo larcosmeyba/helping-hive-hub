@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Plus, ChefHat, Package, ArrowRight, Sparkles, DollarSign, Calendar, Salad, Wand2 } from "lucide-react";
+import { AlertTriangle, Camera, Plus, ChefHat, Package, ArrowRight, Sparkles, DollarSign } from "lucide-react";
 import { fetchFoodWasteAlerts, createFoodWasteAlerts } from "@/lib/hiveAi";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 const STARTERS = [
   { icon: DollarSign, label: "What can I cook for under $15?", to: "/dashboard/cook/recipes?q=under-15" },
-  { icon: Calendar, label: "Build a weekly meal plan", to: "/dashboard/meal-plan/setup" },
-  { icon: Wand2, label: "Reduce my grocery spending", to: "/dashboard/budget-insights" },
-  { icon: Salad, label: "Give me healthy dinner ideas", to: "/dashboard/cook/recipes?q=healthy-dinner" },
 ];
 
 export default function HiveAiHub() {
