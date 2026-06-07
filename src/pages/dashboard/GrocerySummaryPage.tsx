@@ -4,6 +4,8 @@ import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Load
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { GroceryItem } from "@/types/mealPlan";
+import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
+import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 
 const CATEGORY_META: Record<string, { label: string; Icon: typeof Leaf; iconBg: string; iconColor: string; match: string[] }> = {
   produce: { label: "Produce", Icon: Leaf, iconBg: "#E6F4E6", iconColor: "#2E7D32", match: ["produce", "fruit", "vegetable"] },
@@ -38,6 +40,11 @@ export default function GrocerySummaryPage() {
       return s + p;
     }, 0);
   }, [items, store]);
+
+  const range = useMemo(
+    () => computeGroceryRange(items, total, mealPlan?.pricingConfidence),
+    [items, total, mealPlan?.pricingConfidence],
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<string, GroceryItem[]>();
