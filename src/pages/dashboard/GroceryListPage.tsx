@@ -14,6 +14,8 @@ import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedB
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -68,10 +70,12 @@ export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { role: adminRole } = useAdminRole();
   const homeStore = profile?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
+  
   
 
   // Sync selected store to home store when profile loads
