@@ -16,6 +16,7 @@ import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { sanitizeForInstacart } from "@/lib/instacartSanitizer";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
