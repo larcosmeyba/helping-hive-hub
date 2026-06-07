@@ -6,14 +6,16 @@ import type { MealPlanMeal } from "@/types/mealPlan";
 
 /**
  * Returns an image URL when the meal has one, otherwise null.
- * Verified images are preferred but unverified URLs from the generator
- * are still rendered so users see real food photography on their cards.
+ * Accepts both camelCase (`imageUrl`) and snake_case (`image_url`)
+ * because the meal-plan edge function and stored `plan_data` JSON
+ * still emit snake_case keys.
  */
 export function getVerifiedMealImage(
-  meal: Pick<MealPlanMeal, "imageUrl" | "imageVerified">
+  meal: Pick<MealPlanMeal, "imageUrl" | "image_url" | "imageVerified">
 ): string | null {
-  if (meal.imageUrl && meal.imageUrl.trim().length > 0) {
-    return meal.imageUrl;
+  const url = meal.imageUrl ?? meal.image_url;
+  if (url && typeof url === "string" && url.trim().length > 0) {
+    return url;
   }
   return null;
 }
