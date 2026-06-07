@@ -96,8 +96,13 @@ export default function GrocerySummaryPage() {
               Estimated Total
             </p>
             <p className="text-[24px] font-extrabold text-[#1F5A3D] leading-none mt-1">
-              ~${total.toFixed(2)}
+              {formatRange(range)}
             </p>
+            {range.showRange && (
+              <p className="text-[10px] text-[#3a3a3a]/70 mt-1 italic">
+                Range shown — final price confirmed at Instacart checkout
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-[11px] uppercase tracking-wide text-[#2E7D32] font-semibold">
@@ -109,6 +114,7 @@ export default function GrocerySummaryPage() {
         <p className="text-[12px] text-[#3a3a3a] mt-2">
           {items.length} item{items.length === 1 ? "" : "s"}
         </p>
+        <InstacartDisclaimer variant="inline" className="text-[10px] mt-2" />
       </div>
 
       {/* Category tiles */}
