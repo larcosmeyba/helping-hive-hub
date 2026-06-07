@@ -201,6 +201,7 @@ export default function GroceryListPage() {
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
   const checkedCount = checked.size;
+  const basketRange = computeGroceryRange(groceryItems, subtotal, pricingConf);
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
@@ -329,9 +330,22 @@ export default function GroceryListPage() {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-base md:text-lg font-bold text-primary">~${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
-            <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">estimated basket</p>
+            <p className="text-base md:text-lg font-bold text-primary">{formatRange(basketRange)}</p>
+            <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">
+              {basketRange.showRange ? "estimated range — final price at Instacart checkout" : "estimated basket"}
+            </p>
           </div>
+        </div>
+      )}
+
+      {adminRole && (
+        <div className="text-right -mt-1">
+          <Link
+            to="/dashboard/grocery-list/debug"
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Open pricing debug →
+          </Link>
         </div>
       )}
 
