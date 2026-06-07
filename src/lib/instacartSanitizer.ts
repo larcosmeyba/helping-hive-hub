@@ -331,6 +331,93 @@ export function sanitizeForInstacart(
   return Array.from(merged.values());
 }
 
+// ---------------------------------------------------------------------------
+// Display-side helpers — used by the grocery list & review UI so users see
+// the SAME purchasable products that get sent to Instacart, not raw recipe
+// strings like "garlic clove, crushed" or "salmon marinade:".
+// ---------------------------------------------------------------------------
+
+// Words that mark a line as a recipe sub-section header or prep instruction
+// rather than a real grocery item. If a line is dominated by these and does
+// NOT map cleanly to a purchasable product, it gets dropped from the UI.
+const RECIPE_HEADER_WORDS = [
+  "marinade", "dressing", "topping", "garnish", "glaze", "rub",
+  "for serving", "for garnish", "for the", "to taste", "optional",
+];
+
+// Whitelist of "sauce"-style products that are real grocery items even
+// though they could look like recipe sub-sections.
+const SAUCE_PRODUCT_WHITELIST = [
+  "hot sauce", "soy sauce", "tomato sauce", "fish sauce", "bbq sauce",
+  "pasta sauce", "tartar sauce", "worcestershire", "tamari",
+];
+
+/**
+ * Returns false for lines that are clearly recipe headers, sub-recipe labels,
+ * or pure preparation instructions and should NEVER appear as a grocery item.
+ */
+export function isValidGroceryLine(rawName: string): boolean {
+  if (!rawName) return false;
+  const trimmed = rawName.trim();
+  if (!trimmed) return false;
+  // Recipe section headers always end with a colon ("salmon marinade:")
+  if (trimmed.endsWith(":")) return false;
+  const lower = trimmed.toLowerCase();
+
+  // Real sauce products bypass the header word check
+  if (SAUCE_PRODUCT_WHITELIST.some((w) => lower.includes(w))) return true;
+
+  // Lines that mention prep-section header words and don't map to a product
+  if (RECIPE_HEADER_WORDS.some((w) => lower.includes(w))) {
+    const product = toPurchasableProduct(cleanIngredientName(trimmed));
+    if (!product || product === cleanIngredientName(trimmed)) {
+      // Couldn't normalize to a purchasable product — treat as instruction.
+      return false;
+    }
+  }
+  return true;
+}
+
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const DISPLAY_UNIT_HINTS = [
+  "bottle", "jar", "bag", "can", "carton", "container", "loaf", "dozen",
+  "bunch", "bulb", "stick", "sticks", "grinder", "gallon", "box",
+];
+
+/**
+ * Convert a raw recipe ingredient into the display pair `{ displayName,
+ * displayQuantity }` that should appear on the grocery list. Returns null
+ * when the line should be filtered out entirely (e.g. recipe headers).
+ *
+ * Output mirrors what `sanitizeForInstacart` sends to Instacart so the two
+ * stay in sync — user sees exactly what gets shopped for.
+ */
+export function toDisplayProduct(item: InstacartLineItemInput): {
+  displayName: string;
+  displayQuantity: string;
+} | null {
+  if (!isValidGroceryLine(item.name)) return null;
+  const cleaned = cleanIngredientName(item.name);
+  if (!cleaned) return null;
+  const product = toPurchasableProduct(cleaned);
+  if (!product || product.length < 2) return null;
+
+  const qty = parseRetailQuantity(item.rawQuantity);
+  const lowerProduct = product.toLowerCase();
+  const unitHint = DISPLAY_UNIT_HINTS.find((u) =>
+    new RegExp(`\\b${u}\\b`).test(lowerProduct),
+  );
+  const displayUnit = unitHint ?? "each";
+
+  return {
+    displayName: titleCase(product),
+    displayQuantity: `${qty} ${displayUnit}`,
+  };
+}
+
 /**
  * Diagnostic helper used by the debug screen. Returns the full
  * raw → cleaned → product → payload pipeline for a single ingredient.
