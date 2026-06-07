@@ -14,6 +14,8 @@ import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedB
 import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -68,10 +70,12 @@ export default function GroceryListPage() {
   const { mealPlan, generating, generate } = useMealPlan();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { role: adminRole } = useAdminRole();
   const homeStore = profile?.home_store ?? "";
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
+  
   
 
   // Sync selected store to home store when profile loads
@@ -197,6 +201,7 @@ export default function GroceryListPage() {
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
   const checkedCount = checked.size;
+  const basketRange = computeGroceryRange(groceryItems, subtotal, pricingConf);
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
@@ -325,9 +330,22 @@ export default function GroceryListPage() {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-base md:text-lg font-bold text-primary">~${getStoreTotalFromItems(activeStore).toFixed(2)}</p>
-            <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">estimated basket</p>
+            <p className="text-base md:text-lg font-bold text-primary">{formatRange(basketRange)}</p>
+            <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">
+              {basketRange.showRange ? "estimated range — final price at Instacart checkout" : "estimated basket"}
+            </p>
           </div>
+        </div>
+      )}
+
+      {adminRole && (
+        <div className="text-right -mt-1">
+          <Link
+            to="/dashboard/grocery-list/debug"
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Open pricing debug →
+          </Link>
         </div>
       )}
 
