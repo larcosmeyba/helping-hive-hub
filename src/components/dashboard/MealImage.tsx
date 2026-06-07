@@ -4,7 +4,7 @@ import { getVerifiedMealImage } from "@/utils/mealImages";
 import type { MealPlanMeal } from "@/types/mealPlan";
 
 interface Props {
-  meal: Pick<MealPlanMeal, "name" | "imageUrl" | "imageVerified">;
+  meal: Pick<MealPlanMeal, "name" | "imageUrl" | "image_url" | "imageVerified">;
   className?: string;
   imgClassName?: string;
 }
