@@ -270,7 +270,7 @@ export default function GroceryDebugPage() {
         </div>
       </div>
 
-      <InstacartDisclaimer variant="block" className="text-xs" />
+      <InstacartDisclaimer variant="inline" className="text-xs" />
     </div>
   );
 }
