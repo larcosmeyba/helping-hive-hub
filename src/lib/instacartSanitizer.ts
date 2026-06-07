@@ -217,7 +217,7 @@ export function cleanIngredientName(raw: string): string {
 
   // Replace fraction glyphs with ASCII fractions
   for (const [glyph, asc] of Object.entries(FRACTION_CHARS)) {
-    s = s.replaceAll(glyph, asc);
+    s = s.split(glyph).join(asc);
   }
 
   // Remove parentheticals e.g. "(150g)", "(about 2 cups)"
