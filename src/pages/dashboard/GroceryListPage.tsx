@@ -143,7 +143,16 @@ export default function GroceryListPage() {
     .map((i) => {
       const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
       if (!d) return null;
-      return { ...i, name: d.displayName, quantity: d.displayQuantity };
+      // Overwrite name/quantity AND clear the stale recipe-text fields
+      // (productDescription, storeProducts) so the UI renders the sanitized
+      // grocery product name, not the raw recipe instruction.
+      return {
+        ...i,
+        name: d.displayName,
+        quantity: d.displayQuantity,
+        productDescription: d.displayName,
+        storeProducts: undefined,
+      };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
   const stores = mealPlan.storeRecommendations || [];
