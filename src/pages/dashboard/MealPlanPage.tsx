@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
 import { MealPlanGroceryInsights } from "@/components/dashboard/MealPlanGroceryInsights";
+import { SavingsBreakdownPlaid } from "@/components/dashboard/SavingsBreakdownPlaid";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
@@ -415,19 +416,10 @@ export default function MealPlanPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
-              <span>💰</span> Savings Breakdown
+              <span>💰</span> Grocery Spending Breakdown
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-[14px]">
-            <Row label="Pantry items used" value={`$${(weeklySavings * 0.55).toFixed(2)}`} />
-            <Row label="Food waste avoided" value={`$${(weeklySavings * 0.25).toFixed(2)}`} />
-            <Row label="Smarter meal planning" value={`$${(weeklySavings * 0.20).toFixed(2)}`} />
-            <div className="border-t border-[#EEE7DA] pt-3 flex justify-between font-bold">
-              <span>Total saved</span>
-              <span className="text-[#1F5A3D]">${weeklySavings}</span>
-            </div>
-            <p className="text-[11px] text-[#8a8a8a]">Estimates based on pantry inventory and average regional grocery prices.</p>
-          </div>
+          <SavingsBreakdownPlaid />
         </DialogContent>
       </Dialog>
 
