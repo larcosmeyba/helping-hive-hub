@@ -237,6 +237,84 @@ function deepLinks(category: string, zip: string, state?: string): Resource[] {
   return links[category] ?? [];
 }
 
+async function openaiLocalResources(
+  category: string,
+  zip: string,
+  loc: { city?: string; state?: string } | null,
+): Promise<Resource[]> {
+  const key = Deno.env.get("OPENAI_API_KEY");
+  if (!key) return [];
+  const area = loc?.city && loc?.state ? `${loc.city}, ${loc.state} (ZIP ${zip})` : `ZIP ${zip}`;
+  const categoryLabels: Record<string, string> = {
+    "food-bank": "food banks, food pantries, and free meal programs",
+    "snap-wic": "SNAP/WIC offices and SNAP-accepting grocery stores",
+    "diapers-formula-clothing": "diaper banks, baby supply pantries, and free clothing closets",
+    "clean-water": "water bill assistance and clean water programs",
+    "shelter-housing": "homeless shelters, emergency housing, and rapid rehousing programs",
+    "soup-kitchens": "soup kitchens and free community meals",
+    "healthcare": "free or sliding-scale clinics and federally qualified health centers",
+    "mental-health": "mental health clinics, counseling, and crisis services",
+    "employment": "job centers, workforce programs, and apprenticeships",
+    "transportation": "transportation assistance and senior rides",
+    "student-family": "family services, Head Start, after-school programs",
+    "senior": "senior centers, eldercare, and Meals on Wheels",
+    "emergency": "emergency assistance and crisis hotlines",
+  };
+  const desc = categoryLabels[category] ?? category;
+
+  const prompt = `List up to 8 real, currently operating ${desc} serving ${area}. Return ONLY valid JSON in this exact shape:
+{"resources":[{"name":"","address":"","city":"","state":"","phone":"","website":"","about":"","tags":[]}]}
+Rules:
+- Only include real, well-known organizations you have high confidence operate in this area. Skip anything you're unsure exists.
+- Prefer named local nonprofits, county agencies, and church/community pantries near ${area}.
+- "about" = one short sentence (max 140 chars) describing services.
+- "tags" = 1-3 short labels.
+- If you can't confidently list any, return {"resources":[]}.`;
+
+  try {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "You are a U.S. social-services resource finder. Only return organizations you have high confidence exist in the requested area. Never fabricate phone numbers or addresses; leave fields blank if unsure." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!r.ok) {
+      console.error("openai resources error", r.status, await r.text().catch(() => ""));
+      return [];
+    }
+    const j = await r.json();
+    const content = j?.choices?.[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+    const arr: any[] = Array.isArray(parsed?.resources) ? parsed.resources : [];
+    return arr.slice(0, 8).map((x, i) => ({
+      id: `ai-${category}-${i}-${String(x.name || "").slice(0, 24)}`,
+      name: String(x.name || "").trim(),
+      address: x.address || null,
+      city: x.city || loc?.city || null,
+      state: x.state || loc?.state || null,
+      phone: x.phone || null,
+      website: x.website || null,
+      about: x.about || null,
+      tags: Array.isArray(x.tags) ? x.tags.slice(0, 3).map(String) : [],
+      is_national: false,
+      is_link: false,
+    } as Resource)).filter((r) => r.name);
+  } catch (e) {
+    console.error("openai resources exception", e);
+    return [];
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -245,19 +323,34 @@ Deno.serve(async (req) => {
     if (!category || typeof category !== "string") return json({ error: "category required" }, 400);
 
     const loc = await geocodeZip(String(zip));
-    let live: Resource[] = [];
-    if (loc) {
-      if (category === "healthcare") live = await hrsaHealthCenters(loc);
-      else if (category === "snap-wic") live = await snapRetailers(loc);
-      else if (category === "mental-health") live = await samhsaTreatment(loc);
-    }
+    const [live, ai] = await Promise.all([
+      (async (): Promise<Resource[]> => {
+        if (!loc) return [];
+        if (category === "healthcare") return await hrsaHealthCenters(loc);
+        if (category === "snap-wic") return await snapRetailers(loc);
+        if (category === "mental-health") return await samhsaTreatment(loc);
+        return [];
+      })(),
+      openaiLocalResources(String(category), String(zip), loc),
+    ]);
 
     const links = deepLinks(category, String(zip), loc?.state);
+
+    // Dedupe by lowercased name
+    const seen = new Set<string>();
+    const merged: Resource[] = [];
+    for (const r of [...ai, ...live, ...links]) {
+      const k = (r.name || "").toLowerCase().trim();
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      merged.push(r);
+    }
 
     return json({
       location: loc,
       live_count: live.length,
-      resources: [...live, ...links],
+      ai_count: ai.length,
+      resources: merged,
     });
   } catch (e) {
     console.error("find-resources error", e);
