@@ -407,7 +407,11 @@ export default function GroceryReviewPage() {
               const price = getPrice(it);
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
-              const priceKnown = isManual ? it.estimatedPrice > 0 : true;
+              // Item-level prices are estimates only — per product spec we
+              // hide them entirely and show "Price confirmed at Instacart
+              // checkout" so users aren't anchored to a fake number. We only
+              // show a price for manual items the user typed in themselves.
+              const priceKnown = isManual && it.estimatedPrice > 0;
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
