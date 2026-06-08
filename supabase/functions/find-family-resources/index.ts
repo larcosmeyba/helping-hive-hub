@@ -178,19 +178,41 @@ Deno.serve(async (req) => {
     const byId = new Map(ranked.map((r) => [r.id, r] as const));
     const finalResources = aiOrderedIds
       .map((id) => byId.get(id))
-      .filter(Boolean);
+      .filter(Boolean) as any[];
+
+    // 5. Ask OpenAI to generate additional ZIP-specific local resources
+    //    that may not yet be in our community_resources DB.
+    const aiLocalResources = await generateLocalResourcesWithOpenAI({
+      zip_code,
+      selected_categories,
+      urgency_level,
+      household_size,
+      has_children,
+    });
+
+    // Merge: AI-generated local resources first, then ranked DB results.
+    // Dedupe by lowercased name.
+    const seenNames = new Set<string>();
+    const mergedResources: any[] = [];
+    for (const r of [...aiLocalResources, ...finalResources]) {
+      const key = String(r?.name || "").toLowerCase().trim();
+      if (!key || seenNames.has(key)) continue;
+      seenNames.add(key);
+      mergedResources.push(r);
+    }
 
     return new Response(
       JSON.stringify({
         ok: true,
         request_id,
-        ai_enabled: !mocked,
+        ai_enabled: !mocked || aiLocalResources.length > 0,
         ai_summary: aiSummary,
         urgent_notes: urgentNotes,
         next_steps: nextSteps,
-        resources: finalResources,
+        resources: mergedResources,
+        ai_local_count: aiLocalResources.length,
         disclaimer: SAFETY_DISCLAIMER,
-        fallback_message: mocked ? FALLBACK_MESSAGE : null,
+        fallback_message: mocked && aiLocalResources.length === 0 ? FALLBACK_MESSAGE : null,
       }),
       { headers: { ...cors, "Content-Type": "application/json" } },
     );
