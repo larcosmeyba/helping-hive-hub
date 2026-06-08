@@ -233,8 +233,6 @@ export default function GroceryListPage() {
   // store + state multipliers. Loaded once per (items × store × state).
   const stateCode = (profile?.state as string | undefined) ?? undefined;
   const storeCodeForPricing = activeStore || undefined;
-  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
-  const [pricesLoading, setPricesLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
