@@ -99,7 +99,7 @@ export default function GroceryReviewPage() {
     for (const i of mealPlan?.groceryList ?? []) {
       const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
       if (!d) continue;
-      const key = d.displayName.toLowerCase().trim();
+      const key = dedupeKey(d.displayName);
       if (seen.has(key)) continue;
       seen.set(key, { ...i, name: d.displayName, quantity: d.displayQuantity });
     }
