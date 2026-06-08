@@ -256,6 +256,41 @@ export function estimateBasketRange(
   return { low, high };
 }
 
+/**
+ * DB-backed basket estimator. Looks up each item in grocery_price_reference
+ * (fuzzy match) and applies store/state multipliers. Items not found fall
+ * back to category averages so we still return a meaningful range.
+ */
+export async function estimateBasketRangeFromDB(
+  items: GroceryItem[],
+  opts: { storeCode?: string; stateCode?: string } = {},
+): Promise<{ low: number; high: number } | null> {
+  if (!items?.length) return null;
+  const [storeMult, stateMult] = await Promise.all([
+    getStoreMultiplier(opts.storeCode),
+    getStateMultiplier(opts.stateCode),
+  ]);
+  const mult = storeMult * stateMult;
+
+  let low = 0;
+  let high = 0;
+  await Promise.all(
+    items.map(async (item) => {
+      const ing = await getIngredientPrice(item.name, { minSimilarity: 0.3 });
+      if (ing) {
+        low += (ing.lowPrice ?? ing.avgPrice * 0.9) * mult;
+        high += (ing.highPrice ?? ing.avgPrice * 1.1) * mult;
+      } else {
+        const avg = (CATEGORY_AVG[categoryFor(item)] ?? CATEGORY_AVG.other) * mult;
+        low += avg * 0.85;
+        high += avg * 1.15;
+        logMissingIngredient(item.name, opts).catch(() => {});
+      }
+    }),
+  );
+  return { low: Math.max(0, Math.round(low)), high: Math.round(high) };
+}
+
 export function formatBasketRange(
   range: { low: number; high: number } | null,
 ): string {
