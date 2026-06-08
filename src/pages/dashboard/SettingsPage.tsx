@@ -371,14 +371,27 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <Label>Wellness goals (Apollo Reborn)</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {APOLLO_GOALS.map((opt) => (
-              <button key={opt.key} onClick={() => toggleMap(goals, setGoals, opt.key)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${goals[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
-                {opt.label}
-              </button>
-            ))}
+          <Label>Move with your meals</Label>
+          <div className="mt-2 rounded-xl border border-[#EEE7DA] bg-[#F8F3E2]/50 p-4">
+            <p className="text-sm font-semibold text-foreground mb-1">
+              Looking to improve your health and fitness?
+            </p>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              Pair your meal plan with Apollo Reborn for guided workouts and wellness.
+            </p>
+            <a
+              href={
+                typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent)
+                  ? "https://apps.apple.com/us/app/apollo-reborn/id6761779680"
+                  : "https://play.google.com/store/apps/details?id=com.apollonation.app"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 bg-[#5B3FBF] hover:bg-[#4A33A0] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
+            >
+              Move With Your Meals
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
         </div>
 
