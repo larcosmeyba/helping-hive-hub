@@ -76,21 +76,17 @@ export default function HiveAiHub() {
         </div>
       )}
 
-      {hasItems && (
+      {hasItems && alerts.length > 0 && (
         <div className="rounded-2xl bg-[#FEECEC] p-4 mb-5">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-5 h-5 text-[#D64545]" />
             <span className="font-bold text-[15px] text-[#1a1a1a]">Food Waste Alert</span>
           </div>
-          {alerts.length === 0 ? (
-            <p className="text-[13px] text-[#6b6b6b]">No items expiring soon. Great job!</p>
-          ) : (
-            <ul className="text-[13px] text-[#3a3a3a] space-y-1 mb-2">
-              {alerts.slice(0, 3).map((a) => (
-                <li key={a.id}>• {a.message || a.alert_type}</li>
-              ))}
-            </ul>
-          )}
+          <ul className="text-[13px] text-[#3a3a3a] space-y-1 mb-2">
+            {alerts.slice(0, 3).map((a) => (
+              <li key={a.id}>• {a.message || a.alert_type}</li>
+            ))}
+          </ul>
           {savings > 0 && (
             <p className="text-[13px] font-semibold text-[#1F5A3D] mt-1">
               Potential Savings: ${savings.toFixed(0)} 💰
