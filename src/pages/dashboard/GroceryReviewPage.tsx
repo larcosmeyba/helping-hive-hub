@@ -8,7 +8,7 @@ import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
-import { sanitizeForInstacart, toDisplayProduct } from "@/lib/instacartSanitizer";
+import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
