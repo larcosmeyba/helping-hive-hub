@@ -221,9 +221,60 @@ export default function GroceryListPage() {
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
   const checkedCount = checked.size;
-  // Phase 1 pricing: category-average range, no precise totals shown.
+  // Phase 1 fallback: category-average range (used until DB prices load).
   const basketRange = estimateBasketRange(groceryItems);
   const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
+
+  // Phase 2: per-item DB pricing from grocery_price_reference, adjusted by
+  // store + state multipliers. Loaded once per (items × store × state).
+  const stateCode = (profile?.state as string | undefined) ?? undefined;
+  const storeCodeForPricing = activeStore || undefined;
+  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  const [pricesLoading, setPricesLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!groceryItems.length) return;
+    setPricesLoading(true);
+    (async () => {
+      const entries = await Promise.all(
+        groceryItems.map(async (item) => {
+          try {
+            const p = await calculateEstimatedPrice(item.name, {
+              storeCode: storeCodeForPricing,
+              stateCode,
+            });
+            return [item.name, p] as const;
+          } catch {
+            return [item.name, null] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<string, EstimatedPrice | null> = {};
+      for (const [name, p] of entries) map[name] = p;
+      setItemPrices(map);
+      setPricesLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groceryItems.length, storeCodeForPricing, stateCode]);
+
+  // DB-backed basket totals (sum of per-item estimates). Falls back to the
+  // category-average range when no items resolved yet.
+  const pricedItems = groceryItems.map((i) => itemPrices[i.name]).filter(Boolean) as EstimatedPrice[];
+  const dbBasket = pricedItems.length
+    ? {
+        estimate: Math.round(pricedItems.reduce((s, p) => s + p.estimate, 0)),
+        low: Math.round(pricedItems.reduce((s, p) => s + p.low, 0)),
+        high: Math.round(pricedItems.reduce((s, p) => s + p.high, 0)),
+      }
+    : null;
+  const totalRangeLabel = dbBasket
+    ? `$${dbBasket.low} – $${dbBasket.high}`
+    : formatBasketRange(basketRange);
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
