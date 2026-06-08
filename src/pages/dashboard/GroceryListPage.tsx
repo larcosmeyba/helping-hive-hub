@@ -340,7 +340,16 @@ export default function GroceryListPage() {
                 ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
               ];
             })();
-            return sanitizeForInstacart(sourceItems).map<InstacartLineItem>((s) => ({
+            const sanitized = sanitizeForInstacart(sourceItems);
+            // TEMP DIAGNOSTIC — verify grocery cleanup end-to-end.
+            // eslint-disable-next-line no-console
+            console.log("[DIAG] Instacart CTA (top)", {
+              rawCount: sourceItems.length,
+              sanitizedCount: sanitized.length,
+              rawSample: sourceItems.slice(0, 20).map((s) => s.name),
+              sanitizedSample: sanitized.slice(0, 20).map((s) => s.name),
+            });
+            return sanitized.map<InstacartLineItem>((s) => ({
               name: s.name,
               quantity: s.quantity,
               unit: s.unit,
