@@ -148,7 +148,7 @@ export default function GroceryReviewPage() {
       else if (ADJUST_SECTIONS.some((s) => (it.section || "").toLowerCase().includes(s))) adj.push(it);
       else buy.push(it);
     }
-    return { alreadyHave: ah, toAdjust: adj.slice(0, 6), toBuy: [...adj.slice(6), ...buy] };
+    return { alreadyHave: ah, toAdjust: [] as GroceryItem[], toBuy: [...adj, ...buy] };
   }, [allItems, pantryNames, alreadyHaveOverride]);
 
   const getQty = (it: GroceryItem) => {
