@@ -252,6 +252,9 @@ Prioritize items expiring soon. Include food_waste_reason naming the rescued ite
     const norm = (s: string) => (s || "").trim().toLowerCase();
     const pantryByName = new Map<string, any>();
     for (const p of inventory) pantryByName.set(norm(p.item_name), p);
+    const ownedNames = new Set<string>(pantryByName.keys());
+    for (const g of (groceryItems ?? []) as any[]) ownedNames.add(norm(g.ingredient_name));
+    for (const g of purchasedItems) ownedNames.add(norm(g.ingredient_name));
 
     for (const r of recipes) {
       const { data: rec, error: recErr } = await admin
