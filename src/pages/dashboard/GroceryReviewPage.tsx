@@ -447,42 +447,92 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total — RANGE only */}
-      {(() => {
-        const allBuyable = [...toAdjust, ...toBuy, ...manualItems];
-        const totalRange = estimateBasketRange(allBuyable);
-        const selectedRange = estimateBasketRange(selectedItemsAll);
-        return (
-          <>
-            <div className="mt-5 flex items-center justify-between px-1">
-              <div>
-                <span className="block text-[14px] text-[#6b6b6b]">Estimated Weekly Grocery Cost</span>
-                <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
-              </div>
-              <span className="text-[18px] font-extrabold text-[#1a1a1a]">{formatBasketRange(totalRange)}</span>
-            </div>
+      {/* Estimated total — DB-backed RANGE only */}
+      <EstimatedTotal
+        allItems={[...toAdjust, ...toBuy, ...manualItems]}
+        selectedItems={selectedItemsAll}
+        selectedCount={selectedCount}
+        storeCode={store || undefined}
+        stateCode={(profile as any)?.state || undefined}
+        instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+        sendItems={sendItems}
+      />
+    </div>
+  );
+}
 
-            <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">
-              {PRICING_DISCLAIMER}
-            </p>
+function EstimatedTotal({
+  allItems,
+  selectedItems,
+  selectedCount,
+  storeCode,
+  stateCode,
+  instacartTitle,
+  sendItems,
+}: {
+  allItems: GroceryItem[];
+  selectedItems: GroceryItem[];
+  selectedCount: number;
+  storeCode?: string;
+  stateCode?: string;
+  instacartTitle: string;
+  sendItems: InstacartLineItem[];
+}) {
+  const [totalRange, setTotalRange] = useState<{ low: number; high: number } | null>(
+    estimateBasketRange(allItems),
+  );
+  const [selectedRange, setSelectedRange] = useState<{ low: number; high: number } | null>(
+    estimateBasketRange(selectedItems),
+  );
 
-            {/* Send to Instacart */}
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <p className="text-[13px] text-[#6b6b6b] font-medium">
-                {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated {formatBasketRange(selectedRange)}
-              </p>
-              <SendToInstacartButton
-                title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-                linkType="shopping_list"
-                lineItems={sendItems}
-                label="Send Selected Items to Instacart"
-                fullWidth
-              />
-              <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
-            </div>
-          </>
-        );
-      })()}
+  useEffect(() => {
+    let cancelled = false;
+    estimateBasketRangeFromDB(allItems, { storeCode, stateCode }).then((r) => {
+      if (!cancelled) setTotalRange(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [allItems.map((i) => i.name).join("|"), storeCode, stateCode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    estimateBasketRangeFromDB(selectedItems, { storeCode, stateCode }).then((r) => {
+      if (!cancelled) setSelectedRange(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItems.map((i) => i.name).join("|"), storeCode, stateCode]);
+
+  return (
+    <>
+      <div className="mt-5 flex items-center justify-between px-1">
+        <div>
+          <span className="block text-[14px] text-[#6b6b6b]">Estimated Weekly Grocery Cost</span>
+          <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
+        </div>
+        <span className="text-[18px] font-extrabold text-[#1a1a1a]">{formatBasketRange(totalRange)}</span>
+      </div>
+
+      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">{PRICING_DISCLAIMER}</p>
+
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <p className="text-[13px] text-[#6b6b6b] font-medium">
+          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated {formatBasketRange(selectedRange)}
+        </p>
+        <SendToInstacartButton
+          title={instacartTitle}
+          linkType="shopping_list"
+          lineItems={sendItems}
+          label="Send Selected Items to Instacart"
+          fullWidth
+        />
+        <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
+      </div>
+    </>
+  );
+}
     </div>
   );
 }
