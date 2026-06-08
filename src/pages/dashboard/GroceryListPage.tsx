@@ -16,7 +16,7 @@ import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { useAdminRole } from "@/hooks/useAdminRole";
-import { sanitizeForInstacart, toDisplayProduct } from "@/lib/instacartSanitizer";
+import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -138,23 +138,26 @@ export default function GroceryListPage() {
   // BEFORE rendering. This filters out recipe headers ("salmon marinade:"),
   // sub-recipe labels, and pure prep instructions, and maps lines like
   // "garlic clove, crushed" → "Garlic Bulb · 1 each". The displayed list now
-  // matches the payload sent to Instacart exactly.
-  const groceryItems = (mealPlan.groceryList ?? [])
-    .map((i) => {
+  // matches the payload sent to Instacart exactly. Items are then deduped
+  // by normalized product name so the same product never renders twice.
+  const groceryItems = (() => {
+    const seen = new Map<string, GroceryItem>();
+    for (const i of mealPlan.groceryList ?? []) {
       const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
-      if (!d) return null;
-      // Overwrite name/quantity AND clear the stale recipe-text fields
-      // (productDescription, storeProducts) so the UI renders the sanitized
-      // grocery product name, not the raw recipe instruction.
-      return {
+      if (!d) continue;
+      const key = dedupeKey(d.displayName);
+      if (seen.has(key)) continue;
+      seen.set(key, {
         ...i,
         name: d.displayName,
         quantity: d.displayQuantity,
         productDescription: d.displayName,
         storeProducts: undefined,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+      });
+    }
+    return Array.from(seen.values());
+  })();
+
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
@@ -440,9 +443,11 @@ export default function GroceryListPage() {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
+                    <span className="text-[10px] text-muted-foreground/80 italic leading-tight">
+                      Price at<br />Instacart checkout
+                    </span>
                   </div>
+
                 </label>
               );
             })}

@@ -36,6 +36,10 @@ export interface SanitizedInstacartLineItem {
 }
 
 // Units that have no retail meaning at Instacart — strip and ignore.
+// Includes weights/volumes that frequently leak through from recipe text
+// (e.g. "4 oz sundried tomatoes" → after the numeric qty is removed the
+// leading "oz" must also be stripped so we don't ship "Oz Sundried Tomatoes"
+// to Instacart).
 const RECIPE_ONLY_UNITS = new Set([
   "tbsp", "tablespoon", "tablespoons", "tbsps", "tbs", "tb",
   "tsp", "teaspoon", "teaspoons", "tsps",
@@ -54,10 +58,15 @@ const RECIPE_ONLY_UNITS = new Set([
   "drop", "drops",
   "splash", "splashes",
   "ml", "milliliter", "milliliters",
-  "g", "gram", "grams",
-  // "oz" is intentionally NOT here — it's ambiguous and sometimes IS the
-  // package size (e.g. "16 oz can"). We handle it contextually below.
+  "l", "liter", "liters", "litre", "litres",
+  "g", "gram", "grams", "kg", "kilogram", "kilograms",
+  "oz", "ounce", "ounces",
+  "lb", "lbs", "pound", "pounds",
+  "qt", "quart", "quarts",
+  "pt", "pint", "pints",
+  "fl", // strays from "fl oz"
 ]);
+
 
 // Adjective / preparation words to drop when building the search term.
 const ADJECTIVES_TO_STRIP = [
@@ -223,17 +232,32 @@ export function cleanIngredientName(raw: string): string {
   // Remove parentheticals e.g. "(150g)", "(about 2 cups)"
   s = s.replace(/\([^)]*\)/g, " ");
 
-  // Strip leading quantity + optional unit
-  // matches: "1 ", "1.5 ", "1/2 ", "1 1/2 ", "1-2 "
-  s = s.replace(/^\s*\d+(?:[./]\d+)?(?:\s*-\s*\d+(?:[./]\d+)?)?(?:\s+\d+\/\d+)?\s*/, "");
-
-  // Drop a leading recipe unit word if present
-  const firstWord = s.split(/\s+/)[0]?.replace(/[.,]/g, "");
-  if (firstWord && RECIPE_ONLY_UNITS.has(firstWord)) {
-    s = s.slice(firstWord.length).trim();
-    // and drop a possible "of"
-    s = s.replace(/^of\s+/, "");
+  // Strip leading quantity + unit pairs repeatedly. Recipe ingredients can
+  // chain them ("4 oz 1 cup sun-dried tomatoes") so we loop until stable.
+  for (let i = 0; i < 4; i++) {
+    const before = s;
+    s = s.replace(/^\s*\d+(?:[./]\d+)?(?:\s*-\s*\d+(?:[./]\d+)?)?(?:\s+\d+\/\d+)?\s*/, "");
+    // Match leading unit token together with any trailing punctuation so we
+    // don't leave behind a stray "." (e.g. "oz. sundried tomatoes").
+    const m = s.match(/^([a-z]+)[.,]?\s*/i);
+    const firstWord = m ? m[1].toLowerCase() : "";
+    if (firstWord && RECIPE_ONLY_UNITS.has(firstWord)) {
+      s = s.slice(m![0].length);
+      s = s.replace(/^of\s+/, "");
+    }
+    if (s === before) break;
   }
+
+
+  // Also strip any of these unit words that survive mid-string with a
+  // trailing period (e.g. "oz. sundried tomatoes"). We only target an
+  // explicit unit-token shape so we don't accidentally chew real product
+  // words.
+  s = s.replace(
+    /\b(tbsp|tablespoons?|tsp|teaspoons?|cups?|cloves?|oz|ounces?|lbs?|pounds?|grams?|kg|ml|milliliters?|liters?|litres?|qt|quarts?|pt|pints?|fl)\.?\b/gi,
+    " ",
+  );
+
 
   // Drop adjectives anywhere (word-bounded)
   for (const adj of ADJECTIVES_TO_STRIP) {
@@ -297,6 +321,24 @@ function parseRetailQuantity(rawQty?: string): number {
 }
 
 /**
+ * Build a robust dedupe key from a product name. Lowercase, collapse
+ * whitespace, and singularize trailing 's' so "Banana"/"Bananas" and
+ * "Tomato"/"Tomatoes" merge into a single grocery line.
+ */
+export function dedupeKey(product: string): string {
+  let k = product.toLowerCase().replace(/\s+/g, " ").trim();
+  // Naive singularization — sufficient for grocery product names.
+  k = k.replace(/\b(\w+?)(ies)\b/g, "$1y"); // berries -> berry
+  k = k.replace(/\b(\w+?)(es)\b/g, (_m, stem) => {
+    // tomatoes -> tomato, peaches -> peach, but not "fillets" (-> fillet)
+    if (/(s|x|z|ch|sh|o)$/.test(stem)) return stem;
+    return stem + "e";
+  });
+  k = k.replace(/\b(\w+?)s\b/g, "$1"); // bananas -> banana, eggs -> egg
+  return k;
+}
+
+/**
  * Main entry point. Takes the raw grocery list items (with their recipe-portion
  * quantity strings) and returns the deduplicated Instacart payload.
  */
@@ -312,7 +354,7 @@ export function sanitizeForInstacart(
     if (!product) continue;
     const qty = parseRetailQuantity(item.rawQuantity);
 
-    const key = product.toLowerCase();
+    const key = dedupeKey(product);
     const existing = merged.get(key);
     if (existing) {
       // Same product appears in multiple recipes — keep quantity = max

@@ -8,7 +8,7 @@ import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
-import { sanitizeForInstacart, toDisplayProduct } from "@/lib/instacartSanitizer";
+import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -91,15 +91,21 @@ export default function GroceryReviewPage() {
   const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "";
 
   // Normalize raw recipe ingredients into purchasable grocery products and
-  // drop recipe headers / sub-recipe labels BEFORE rendering. The list shown
-  // to the user now matches the Instacart payload exactly.
-  const allItems: GroceryItem[] = (mealPlan?.groceryList ?? [])
-    .map((i) => {
+  // drop recipe headers / sub-recipe labels BEFORE rendering. Items are
+  // deduped by normalized product name so the same item never appears twice
+  // (e.g. "Banana" showing up multiple times from different recipes).
+  const allItems: GroceryItem[] = (() => {
+    const seen = new Map<string, GroceryItem>();
+    for (const i of mealPlan?.groceryList ?? []) {
       const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
-      if (!d) return null;
-      return { ...i, name: d.displayName, quantity: d.displayQuantity };
-    })
-    .filter((x): x is GroceryItem => x !== null);
+      if (!d) continue;
+      const key = dedupeKey(d.displayName);
+      if (seen.has(key)) continue;
+      seen.set(key, { ...i, name: d.displayName, quantity: d.displayQuantity });
+    }
+    return Array.from(seen.values());
+  })();
+
 
   // Already-have set: items overlapping with user's pantry (by normalized name).
   const [pantryNames, setPantryNames] = useState<Set<string>>(new Set());
@@ -401,7 +407,11 @@ export default function GroceryReviewPage() {
               const price = getPrice(it);
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
-              const priceKnown = isManual ? it.estimatedPrice > 0 : true;
+              // Item-level prices are estimates only — per product spec we
+              // hide them entirely and show "Price confirmed at Instacart
+              // checkout" so users aren't anchored to a fake number. We only
+              // show a price for manual items the user typed in themselves.
+              const priceKnown = isManual && it.estimatedPrice > 0;
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
