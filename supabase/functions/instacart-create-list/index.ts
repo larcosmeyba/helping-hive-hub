@@ -158,6 +158,16 @@ Deno.serve(async (req) => {
       payload.landing_page_configuration = body.landing_page_configuration;
     }
 
+    // === DIAGNOSTIC: full outgoing payload =================================
+    console.log("[DIAG] instacart-create-list outgoing payload", JSON.stringify({
+      title: payload.title,
+      link_type: payload.link_type,
+      itemCount: enrichedItems.length,
+      payload,
+    }));
+    // =======================================================================
+
+
     // Single retry on 429 honoring Retry-After (capped at 5s) for resilience.
     const callIdp = () =>
       fetch(url, {
