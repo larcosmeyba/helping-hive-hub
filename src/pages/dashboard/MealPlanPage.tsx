@@ -17,6 +17,7 @@ import { MealImage } from "@/components/dashboard/MealImage";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
+import { MealPlanGroceryInsights } from "@/components/dashboard/MealPlanGroceryInsights";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
