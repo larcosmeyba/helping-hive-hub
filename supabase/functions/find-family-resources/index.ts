@@ -224,3 +224,80 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// ---------- OpenAI: area-specific resource generator ----------
+async function generateLocalResourcesWithOpenAI(args: {
+  zip_code: string | null;
+  selected_categories: string[];
+  urgency_level: "urgent" | "normal";
+  household_size: number | null;
+  has_children: boolean | null;
+}): Promise<any[]> {
+  const key = Deno.env.get("OPENAI_API_KEY");
+  if (!key || !args.zip_code) return [];
+
+  const categoriesText = args.selected_categories.length > 0
+    ? args.selected_categories.join(", ")
+    : "food, housing, healthcare, utilities, childcare";
+
+  const prompt = `List up to 6 real, currently operating local assistance organizations serving ZIP code ${args.zip_code} in the U.S.
+Family context: household of ${args.household_size ?? "unknown"} people${args.has_children ? " with children" : ""}. Urgency: ${args.urgency_level}.
+Needs: ${categoriesText}.
+
+Return ONLY valid JSON in this shape:
+{"resources":[{"id":"","name":"","category":"","description":"","address":"","city":"","state":"","phone":"","website":"","emergency_available":false,"tags":[]}]}
+
+Rules:
+- Only include real, well-known organizations you have high confidence operate at or near this ZIP.
+- Prefer named local nonprofits, county/state agencies, churches, and community pantries.
+- "id" = short slug like "ai-foodbank-<short-name>".
+- "description" = one sentence (max 160 chars).
+- Never fabricate phone numbers or addresses; leave blank if unsure.
+- If you cannot confidently list any, return {"resources":[]}.`;
+
+  try {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "You are a U.S. family-assistance resource finder. Only return organizations you have high confidence operate in the requested area. Never invent contact details — leave fields blank when unsure." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!r.ok) {
+      console.error("[find-family-resources] OpenAI error", r.status, await r.text().catch(() => ""));
+      return [];
+    }
+    const j = await r.json();
+    const content = j?.choices?.[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+    const arr: any[] = Array.isArray(parsed?.resources) ? parsed.resources : [];
+    return arr.slice(0, 6).map((x, i) => ({
+      id: String(x.id || `ai-fam-${i}-${String(x.name || "").slice(0, 20)}`),
+      name: String(x.name || "").trim(),
+      category: String(x.category || (args.selected_categories[0] ?? "general")),
+      description: x.description || null,
+      address: x.address || null,
+      city: x.city || null,
+      state: x.state || null,
+      zip_code: args.zip_code,
+      phone: x.phone || null,
+      website: x.website || null,
+      emergency_available: Boolean(x.emergency_available),
+      tags: Array.isArray(x.tags) ? x.tags.slice(0, 4).map(String) : [],
+      source: "ai_generated",
+      active: true,
+    })).filter((r) => r.name);
+  } catch (e) {
+    console.error("[find-family-resources] OpenAI exception", e);
+    return [];
+  }
+}
