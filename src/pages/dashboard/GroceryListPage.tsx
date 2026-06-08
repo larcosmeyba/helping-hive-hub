@@ -443,9 +443,11 @@ export default function GroceryListPage() {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-bold text-foreground">${price.toFixed(2)}</span>
-                    <p className="text-[10px] text-muted-foreground/70 italic">estimated</p>
+                    <span className="text-[10px] text-muted-foreground/80 italic leading-tight">
+                      Price at<br />Instacart checkout
+                    </span>
                   </div>
+
                 </label>
               );
             })}
