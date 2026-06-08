@@ -379,9 +379,9 @@ export default function GroceryListPage() {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-base md:text-lg font-bold text-primary">{formatRange(basketRange)}</p>
+            <p className="text-base md:text-lg font-bold text-primary">{formatBasketRange(basketRange)}</p>
             <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">
-              {basketRange.showRange ? "estimated range — final price at Instacart checkout" : "estimated basket"}
+              estimated range — final price at checkout
             </p>
           </div>
         </div>
