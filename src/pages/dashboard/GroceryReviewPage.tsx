@@ -362,43 +362,6 @@ export default function GroceryReviewPage() {
         </Section>
       )}
 
-      {/* Adjust Quantities */}
-      {toAdjust.length > 0 && (
-        <Section title="Adjust Quantities" headerBg="#FDECEC" titleColor="#C0392B">
-          <ul className="divide-y divide-border">
-            {toAdjust.map((it) => {
-              const { unit } = parseQty(it.quantity);
-              const qty = getQty(it);
-              return (
-                <li key={it.name} className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-[#1a1a1a] truncate">{it.name}</p>
-                    <p className="text-[12px] text-[#6b6b6b] mt-0.5">
-                      {qty} {unit}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => adjustQty(it, -1)}
-                      className="w-8 h-8 rounded-full border border-border flex items-center justify-center active:scale-95"
-                      aria-label="Decrease"
-                    >
-                      <Minus className="w-4 h-4 text-[#1a1a1a]" />
-                    </button>
-                    <button
-                      onClick={() => adjustQty(it, 1)}
-                      className="w-8 h-8 rounded-full bg-[#1F5A3D] flex items-center justify-center active:scale-95"
-                      aria-label="Increase"
-                    >
-                      <Plus className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Section>
-      )}
 
       {/* To Buy */}
       {combinedToBuy.length > 0 && (
