@@ -336,7 +336,7 @@ export function sanitizeForInstacart(
     if (!product) continue;
     const qty = parseRetailQuantity(item.rawQuantity);
 
-    const key = product.toLowerCase();
+    const key = dedupeKey(product);
     const existing = merged.get(key);
     if (existing) {
       // Same product appears in multiple recipes — keep quantity = max
