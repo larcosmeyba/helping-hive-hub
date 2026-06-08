@@ -226,29 +226,6 @@ export default function MealPlanPage() {
       <MealPlanGroceryInsights />
 
       
-      {/* Section 1: Budget Summary */}
-      <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4 md:p-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="text-[11px] text-[#8a8a8a]">Estimated Weekly Spend</p>
-            <p className="text-[18px] md:text-[20px] font-bold text-[#1F5A3D] leading-tight">~${weeklyTotal.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-[11px] text-[#8a8a8a]">Weekly Budget</p>
-            <p className="text-[18px] md:text-[20px] font-bold text-[#1a1a1a] leading-tight">${monthlyBudget}</p>
-          </div>
-          <div>
-            <p className="text-[11px] text-[#8a8a8a]">Status</p>
-            <p className={`text-[15px] md:text-[16px] font-bold leading-tight flex items-center gap-1 ${withinBudget ? 'text-[#1F5A3D]' : 'text-[#C24A1F]'}`}>
-              {withinBudget ? 'Within Budget' : 'Over Budget'}
-              {withinBudget && <Check className="w-4 h-4" strokeWidth={3} />}
-            </p>
-          </div>
-        </div>
-        <p className="text-[11px] text-[#8a8a8a] mt-3 leading-snug">
-          Estimated pricing only. Final pricing and availability are confirmed at Instacart checkout.
-        </p>
-      </div>
 
       {/* Section 2: Hive AI Insights */}
       <div className="bg-[#F6F1DD] border border-[#E8DFC0] rounded-2xl p-4">
