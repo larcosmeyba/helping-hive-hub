@@ -17,6 +17,7 @@ import { MealImage } from "@/components/dashboard/MealImage";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
+import { MealPlanGroceryInsights } from "@/components/dashboard/MealPlanGroceryInsights";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
@@ -220,7 +221,10 @@ export default function MealPlanPage() {
           <History className="w-3.5 h-3.5" /> Past Plans
         </button>
       </div>
+      {/* Plaid-powered grocery spending insights (real data, not estimates) */}
+      <MealPlanGroceryInsights />
 
+      
       {/* Section 1: Budget Summary */}
       <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4 md:p-5">
         <div className="grid grid-cols-3 gap-3">
@@ -287,26 +291,7 @@ export default function MealPlanPage() {
         Pricing and availability confirmed at Instacart checkout.
       </p>
 
-      {/* Section 4: Estimated Savings */}
-      <button
-        onClick={() => setShowSavingsBreakdown(true)}
-        className="w-full text-left bg-[#FFF4D6] border border-[#F0E1A5] rounded-2xl p-4 flex items-center justify-between gap-3 hover:bg-[#FBEEC8] transition-colors"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0">
-            <span className="text-xl">💰</span>
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-[14px] text-[#1a1a1a]">Estimated Savings This Week</p>
-            <p className="text-[12px] text-[#6a6a6a] truncate">
-              ~${weeklySavings} saved using pantry ingredients and budget-friendly meal recommendations.
-            </p>
-          </div>
-        </div>
-        <span className="text-[12px] font-semibold text-[#1F5A3D] flex items-center gap-1 shrink-0">
-          See breakdown <ArrowRight className="w-3 h-3" />
-        </span>
-      </button>
+      {/* Estimated Savings card removed — replaced by Plaid grocery insights at top */}
 
       {/* Swap cost impact */}
       {Object.keys(swappedMeals).length > 0 && (() => {
