@@ -237,13 +237,17 @@ export function cleanIngredientName(raw: string): string {
   for (let i = 0; i < 4; i++) {
     const before = s;
     s = s.replace(/^\s*\d+(?:[./]\d+)?(?:\s*-\s*\d+(?:[./]\d+)?)?(?:\s+\d+\/\d+)?\s*/, "");
-    const firstWord = s.split(/\s+/)[0]?.replace(/[.,]/g, "");
+    // Match leading unit token together with any trailing punctuation so we
+    // don't leave behind a stray "." (e.g. "oz. sundried tomatoes").
+    const m = s.match(/^([a-z]+)[.,]?\s*/i);
+    const firstWord = m ? m[1].toLowerCase() : "";
     if (firstWord && RECIPE_ONLY_UNITS.has(firstWord)) {
-      s = s.slice(firstWord.length).trim();
+      s = s.slice(m![0].length);
       s = s.replace(/^of\s+/, "");
     }
     if (s === before) break;
   }
+
 
   // Also strip any of these unit words that survive mid-string with a
   // trailing period (e.g. "oz. sundried tomatoes"). We only target an
