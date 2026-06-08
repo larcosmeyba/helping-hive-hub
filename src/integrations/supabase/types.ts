@@ -1956,6 +1956,42 @@ export type Database = {
         }
         Relationships: []
       }
+      missing_ingredient_log: {
+        Row: {
+          first_seen_at: string
+          id: string
+          ingredient_name: string
+          last_seen_at: string
+          last_state_code: string | null
+          last_store_code: string | null
+          last_user_id: string | null
+          normalized_name: string
+          occurrence_count: number
+        }
+        Insert: {
+          first_seen_at?: string
+          id?: string
+          ingredient_name: string
+          last_seen_at?: string
+          last_state_code?: string | null
+          last_store_code?: string | null
+          last_user_id?: string | null
+          normalized_name: string
+          occurrence_count?: number
+        }
+        Update: {
+          first_seen_at?: string
+          id?: string
+          ingredient_name?: string
+          last_seen_at?: string
+          last_state_code?: string | null
+          last_store_code?: string | null
+          last_user_id?: string | null
+          normalized_name?: string
+          occurrence_count?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -3287,6 +3323,24 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      log_missing_ingredient: {
+        Args: { _name: string; _state_code?: string; _store_code?: string }
+        Returns: undefined
+      }
+      lookup_ingredient_price: {
+        Args: { _query: string }
+        Returns: {
+          avg_price: number
+          category: string
+          display_name: string
+          high_price: number
+          id: string
+          ingredient_key: string
+          low_price: number
+          similarity: number
+          unit: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -3305,6 +3359,8 @@ export type Database = {
           read_ct: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "owner" | "admin" | "content_manager" | "moderator"
