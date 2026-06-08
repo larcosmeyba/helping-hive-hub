@@ -102,6 +102,33 @@ Deno.serve(async (req) => {
       );
     }
 
+    // === DIAGNOSTIC LOGGING (temp) =========================================
+    // Inspect what the client actually sends post-sanitization so we can
+    // verify the cleanup is working end-to-end.
+    try {
+      const names = (items as Array<{ name?: string }>).map((i) => String(i?.name ?? ""));
+      const dedupedCount = new Set(names.map((n) => n.toLowerCase().trim())).size;
+
+      const RISKY = /\b(tbsp|tablespoon|tsp|teaspoon|cup|cups|clove|cloves|sliced|minced|chopped|diced|crushed|grated|shredded|ground|pinch|dash|sprig|handful|marinade|sauce:|dressing:|topping:|garnish|to taste|for serving)\b/i;
+      const HEADER = /:\s*$/;
+      const risky = names.filter((n) => RISKY.test(n));
+      const headersLike = names.filter((n) => HEADER.test(n));
+
+      console.log("[DIAG] instacart-create-list incoming items", JSON.stringify({
+        rawCountReceived: rawItems.length,
+        afterTruncate: items.length,
+        uniqueByName: dedupedCount,
+        riskyCount: risky.length,
+        headerLikeCount: headersLike.length,
+        risky: risky.slice(0, 25),
+        headersLike: headersLike.slice(0, 10),
+        sampleNames: names.slice(0, 40),
+      }));
+    } catch (e) {
+      console.warn("[DIAG] logging failed:", e);
+    }
+    // =======================================================================
+
     const base = env === "production" ? PROD_BASE : DEV_BASE;
     const path = isRecipe
       ? "/idp/v1/products/recipe"
@@ -109,9 +136,6 @@ Deno.serve(async (req) => {
     const url = `${base}${path}`;
 
     // Best-effort UPC enrichment for greater Instacart match accuracy.
-    // Looks up canonical_products by name (and aliases) and attaches `upcs`
-    // when a GTIN/UPC is on file. Silent no-op if the DB has no UPCs yet
-    // or if the lookup fails — never blocks the IDP call.
     const enrichedItems = await enrichWithUpcs(items as Array<ShoppingLineItem | RecipeIngredient>);
     const upcMatched = enrichedItems.filter((i) => i.upcs && i.upcs.length > 0).length;
     if (upcMatched > 0) {
