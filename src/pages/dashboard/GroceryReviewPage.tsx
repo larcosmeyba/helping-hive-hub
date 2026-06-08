@@ -405,14 +405,8 @@ export default function GroceryReviewPage() {
         <Section title="To Buy" headerBg="#E8F0FE" titleColor="#1A56DB">
           <ul className="divide-y divide-border">
             {combinedToBuy.map((it) => {
-              const price = getPrice(it);
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
-              // Item-level prices are estimates only — per product spec we
-              // hide them entirely and show "Price confirmed at Instacart
-              // checkout" so users aren't anchored to a fake number. We only
-              // show a price for manual items the user typed in themselves.
-              const priceKnown = isManual && it.estimatedPrice > 0;
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
@@ -434,7 +428,7 @@ export default function GroceryReviewPage() {
                         isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
                       }`}
                     >
-                      {isChecked ? "Added to Instacart" : "Not added"}
+                      {isChecked ? "Added to Instacart" : "Price varies by store"}
                     </p>
                   </div>
                   {isManual && (
@@ -444,15 +438,6 @@ export default function GroceryReviewPage() {
                     >
                       Remove
                     </button>
-                  )}
-                  {priceKnown ? (
-                    <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0 mt-0.5">
-                      ${price.toFixed(2)}
-                    </span>
-                  ) : (
-                    <span className="text-[11px] text-[#6b6b6b] italic shrink-0 text-right mt-0.5">
-                      Price confirmed at<br />Instacart checkout
-                    </span>
                   )}
                 </li>
               );
