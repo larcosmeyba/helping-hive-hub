@@ -414,8 +414,6 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item, idx) => {
-              const priceInfo = getItemPriceInfo(item);
-              const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
@@ -433,22 +431,16 @@ export default function GroceryListPage() {
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
-                      {item.pricingSource === 'internal_estimate' && (
-                        <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
-                      )}
                     </div>
+                    <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
+                      Price varies by store
+                    </p>
                     {isChecked && (
                       <p className="text-[11px] font-bold text-primary mt-1">
                         added
                       </p>
                     )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-muted-foreground/80 italic leading-tight">
-                      Price at<br />Instacart checkout
-                    </span>
-                  </div>
-
                 </label>
               );
             })}
