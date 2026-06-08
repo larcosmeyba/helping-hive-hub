@@ -232,17 +232,28 @@ export function cleanIngredientName(raw: string): string {
   // Remove parentheticals e.g. "(150g)", "(about 2 cups)"
   s = s.replace(/\([^)]*\)/g, " ");
 
-  // Strip leading quantity + optional unit
-  // matches: "1 ", "1.5 ", "1/2 ", "1 1/2 ", "1-2 "
-  s = s.replace(/^\s*\d+(?:[./]\d+)?(?:\s*-\s*\d+(?:[./]\d+)?)?(?:\s+\d+\/\d+)?\s*/, "");
-
-  // Drop a leading recipe unit word if present
-  const firstWord = s.split(/\s+/)[0]?.replace(/[.,]/g, "");
-  if (firstWord && RECIPE_ONLY_UNITS.has(firstWord)) {
-    s = s.slice(firstWord.length).trim();
-    // and drop a possible "of"
-    s = s.replace(/^of\s+/, "");
+  // Strip leading quantity + unit pairs repeatedly. Recipe ingredients can
+  // chain them ("4 oz 1 cup sun-dried tomatoes") so we loop until stable.
+  for (let i = 0; i < 4; i++) {
+    const before = s;
+    s = s.replace(/^\s*\d+(?:[./]\d+)?(?:\s*-\s*\d+(?:[./]\d+)?)?(?:\s+\d+\/\d+)?\s*/, "");
+    const firstWord = s.split(/\s+/)[0]?.replace(/[.,]/g, "");
+    if (firstWord && RECIPE_ONLY_UNITS.has(firstWord)) {
+      s = s.slice(firstWord.length).trim();
+      s = s.replace(/^of\s+/, "");
+    }
+    if (s === before) break;
   }
+
+  // Also strip any of these unit words that survive mid-string with a
+  // trailing period (e.g. "oz. sundried tomatoes"). We only target an
+  // explicit unit-token shape so we don't accidentally chew real product
+  // words.
+  s = s.replace(
+    /\b(tbsp|tablespoons?|tsp|teaspoons?|cups?|cloves?|oz|ounces?|lbs?|pounds?|grams?|kg|ml|milliliters?|liters?|litres?|qt|quarts?|pt|pints?|fl)\.?\b/gi,
+    " ",
+  );
+
 
   // Drop adjectives anywhere (word-bounded)
   for (const adj of ADJECTIVES_TO_STRIP) {
