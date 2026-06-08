@@ -601,7 +601,7 @@ export default function GroceryListPage() {
               <p className="text-[10px] text-muted-foreground italic mt-0.5">range, not exact</p>
             </div>
             <span className="font-bold text-2xl text-primary">
-              {formatBasketRange(basketRange)}
+              {totalRangeLabel}
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
