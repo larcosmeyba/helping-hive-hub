@@ -138,23 +138,26 @@ export default function GroceryListPage() {
   // BEFORE rendering. This filters out recipe headers ("salmon marinade:"),
   // sub-recipe labels, and pure prep instructions, and maps lines like
   // "garlic clove, crushed" → "Garlic Bulb · 1 each". The displayed list now
-  // matches the payload sent to Instacart exactly.
-  const groceryItems = (mealPlan.groceryList ?? [])
-    .map((i) => {
+  // matches the payload sent to Instacart exactly. Items are then deduped
+  // by normalized product name so the same product never renders twice.
+  const groceryItems = (() => {
+    const seen = new Map<string, GroceryItem>();
+    for (const i of mealPlan.groceryList ?? []) {
       const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
-      if (!d) return null;
-      // Overwrite name/quantity AND clear the stale recipe-text fields
-      // (productDescription, storeProducts) so the UI renders the sanitized
-      // grocery product name, not the raw recipe instruction.
-      return {
+      if (!d) continue;
+      const key = d.displayName.toLowerCase().trim();
+      if (seen.has(key)) continue;
+      seen.set(key, {
         ...i,
         name: d.displayName,
         quantity: d.displayQuantity,
         productDescription: d.displayName,
         storeProducts: undefined,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+      });
+    }
+    return Array.from(seen.values());
+  })();
+
   const stores = mealPlan.storeRecommendations || [];
   const activeStore = selectedStore || stores[0]?.store || "";
   const pricingConf = mealPlan.pricingConfidence as PricingConfidenceSummary | undefined;
