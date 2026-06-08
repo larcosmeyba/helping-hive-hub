@@ -396,11 +396,10 @@ export default function PantryPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <StatCard icon={<Package className="w-3.5 h-3.5 text-[#2F7A36]" />} label="Pantry Items" value={stats.total} suffix="items" />
         <StatCard icon={<Clock className="w-3.5 h-3.5 text-[#A56A00]" />} label="Expiring Soon" value={stats.expiringSoon} suffix="items" valueClass="text-[#A56A00]" />
         <StatCard icon={<AlertTriangle className="w-3.5 h-3.5 text-orange-600" />} label="Low Stock" value={stats.lowStock} suffix="items" valueClass="text-orange-600" />
-        <StatCard icon={<DollarSign className="w-3.5 h-3.5 text-emerald-700" />} label="Est. Savings" value={`$${stats.savings}`} suffix="this week" valueClass="text-emerald-700" />
       </div>
 
       {/* Reduce Waste banner */}
