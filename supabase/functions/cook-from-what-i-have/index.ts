@@ -183,7 +183,32 @@ Deno.serve(async (req) => {
       },
     ];
 
-    const sysPrompt = `You are a thrifty home-cook assistant for Help The Hive. Generate ${maxRecipes} recipes that maximize use of what the user ALREADY has, prioritizing items that may expire soon. Mark each ingredient already_have=true if it's in the inventory, false (and source_location='grocery_needed') if it must be bought. Keep recipes realistic for the household size and cooking confidence. Always include a short food_waste_reason that names which expiring items the recipe rescues. Estimate USD prices for any grocery_needed items.`;
+    const availableExtras = [
+      ...((groceryItems ?? []) as any[]).map((g) => ({
+        item_name: g.ingredient_name,
+        quantity: g.quantity,
+        unit: g.unit,
+        source: g.is_checked ? "grocery_list_checked" : "grocery_list",
+      })),
+      ...purchasedItems.map((g: any) => ({
+        item_name: g.ingredient_name,
+        quantity: g.quantity,
+        unit: g.unit,
+        source: "previously_purchased",
+      })),
+    ];
+
+    const sysPrompt = `You are a thrifty home-cook assistant for Help The Hive. The user wants to cook using ONLY what they already have — do NOT recommend buying groceries.
+
+Treat any item present in inventory, available_grocery_list, or previously_purchased as ALREADY OWNED (already_have=true).
+
+Generate up to ${maxRecipes} recipes. STRONGLY PREFER recipes where EVERY ingredient is already owned. If fewer than ${maxRecipes} fully-makeable recipes exist, return only the fully-makeable ones — do not pad with recipes requiring purchases.
+
+Common pantry staples (salt, pepper, water, basic cooking oil) may be assumed available and marked already_have=true.
+
+Mark already_have=false ONLY for ingredients the user truly does not have. Recipes with any already_have=false items will be shown to the user under a separate "Missing Ingredients" section — never as ready-to-cook.
+
+Prioritize items expiring soon. Include food_waste_reason naming the rescued items. Keep recipes realistic for household size and cooking confidence.`;
 
     const userPrompt = JSON.stringify({
       household_size: profile?.household_size ?? 2,
@@ -193,6 +218,8 @@ Deno.serve(async (req) => {
       weekly_budget: profile?.weekly_budget ?? 75,
       source_type: sourceType,
       inventory,
+      available_grocery_list: availableExtras.filter((x) => x.source !== "previously_purchased"),
+      previously_purchased: availableExtras.filter((x) => x.source === "previously_purchased"),
     });
 
     let parsed: any;
