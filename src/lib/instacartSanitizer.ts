@@ -321,6 +321,24 @@ function parseRetailQuantity(rawQty?: string): number {
 }
 
 /**
+ * Build a robust dedupe key from a product name. Lowercase, collapse
+ * whitespace, and singularize trailing 's' so "Banana"/"Bananas" and
+ * "Tomato"/"Tomatoes" merge into a single grocery line.
+ */
+function dedupeKey(product: string): string {
+  let k = product.toLowerCase().replace(/\s+/g, " ").trim();
+  // Naive singularization — sufficient for grocery product names.
+  k = k.replace(/\b(\w+?)(ies)\b/g, "$1y"); // berries -> berry
+  k = k.replace(/\b(\w+?)(es)\b/g, (_m, stem) => {
+    // tomatoes -> tomato, peaches -> peach, but not "fillets" (-> fillet)
+    if (/(s|x|z|ch|sh|o)$/.test(stem)) return stem;
+    return stem + "e";
+  });
+  k = k.replace(/\b(\w+?)s\b/g, "$1"); // bananas -> banana, eggs -> egg
+  return k;
+}
+
+/**
  * Main entry point. Takes the raw grocery list items (with their recipe-portion
  * quantity strings) and returns the deduplicated Instacart payload.
  */
