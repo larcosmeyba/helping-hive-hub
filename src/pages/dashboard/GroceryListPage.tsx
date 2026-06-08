@@ -557,17 +557,21 @@ export default function GroceryListPage() {
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
           lineItems={(() => {
-            const all: InstacartLineItem[] = [
-              ...groceryItems.map<InstacartLineItem>((i) => ({
-                name: i.name,
-                quantity: i.quantity ? Number(String(i.quantity).match(/[\d.]+/)?.[0]) || 1 : 1,
-                unit: typeof i.quantity === "string" ? (i.quantity.replace(/[\d.\s]+/g, "").trim() || "each") : "each",
-              })),
-              ...extraItems.map<InstacartLineItem>((e) => ({ name: e.name, quantity: 1, unit: "each" })),
-            ];
-            if (checked.size === 0) return all;
-            const selected = all.filter((li) => checked.has(li.name));
-            return selected.length > 0 ? selected : all;
+            // Same sanitizer path as the top CTA — keep both buttons in sync.
+            const sourceItems = (() => {
+              const all = [
+                ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
+                ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
+              ];
+              if (checked.size === 0) return all;
+              const picked = all.filter((i) => checked.has(i.name));
+              return picked.length > 0 ? picked : all;
+            })();
+            return sanitizeForInstacart(sourceItems).map<InstacartLineItem>((s) => ({
+              name: s.name,
+              quantity: s.quantity,
+              unit: s.unit,
+            }));
           })()}
           label="Send to Instacart"
           fullWidth
