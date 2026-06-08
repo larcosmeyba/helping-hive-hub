@@ -91,6 +91,10 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const { status: locationStatus } = useLocation();
 
+  // Per-item DB pricing (must be declared before any early return).
+  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  const [pricesLoading, setPricesLoading] = useState(false);
+
   // Instacart return-flow handler — detect ?from=instacart and welcome user back
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
