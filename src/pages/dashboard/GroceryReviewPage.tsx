@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
+import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -404,14 +405,8 @@ export default function GroceryReviewPage() {
         <Section title="To Buy" headerBg="#E8F0FE" titleColor="#1A56DB">
           <ul className="divide-y divide-border">
             {combinedToBuy.map((it) => {
-              const price = getPrice(it);
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
-              // Item-level prices are estimates only — per product spec we
-              // hide them entirely and show "Price confirmed at Instacart
-              // checkout" so users aren't anchored to a fake number. We only
-              // show a price for manual items the user typed in themselves.
-              const priceKnown = isManual && it.estimatedPrice > 0;
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
@@ -433,7 +428,7 @@ export default function GroceryReviewPage() {
                         isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
                       }`}
                     >
-                      {isChecked ? "Added to Instacart" : "Not added"}
+                      {isChecked ? "Added to Instacart" : "Price varies by store"}
                     </p>
                   </div>
                   {isManual && (
@@ -443,15 +438,6 @@ export default function GroceryReviewPage() {
                     >
                       Remove
                     </button>
-                  )}
-                  {priceKnown ? (
-                    <span className="text-[14px] font-bold text-[#1a1a1a] shrink-0 mt-0.5">
-                      ${price.toFixed(2)}
-                    </span>
-                  ) : (
-                    <span className="text-[11px] text-[#6b6b6b] italic shrink-0 text-right mt-0.5">
-                      Price confirmed at<br />Instacart checkout
-                    </span>
                   )}
                 </li>
               );
@@ -498,26 +484,42 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total */}
-      <div className="mt-5 flex items-center justify-between px-1">
-        <span className="text-[14px] text-[#6b6b6b]">Estimated Total</span>
-        <span className="text-[18px] font-extrabold text-[#1a1a1a]">~${total.toFixed(2)}</span>
-      </div>
+      {/* Estimated total — RANGE only */}
+      {(() => {
+        const allBuyable = [...toAdjust, ...toBuy, ...manualItems];
+        const totalRange = estimateBasketRange(allBuyable);
+        const selectedRange = estimateBasketRange(selectedItemsAll);
+        return (
+          <>
+            <div className="mt-5 flex items-center justify-between px-1">
+              <div>
+                <span className="block text-[14px] text-[#6b6b6b]">Estimated Weekly Grocery Cost</span>
+                <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
+              </div>
+              <span className="text-[18px] font-extrabold text-[#1a1a1a]">{formatBasketRange(totalRange)}</span>
+            </div>
 
-      {/* Send to Instacart (existing approved flow) */}
-      <div className="mt-4 flex flex-col items-center gap-2">
-        <p className="text-[13px] text-[#6b6b6b] font-medium">
-          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated total ${selectedTotal.toFixed(2)}
-        </p>
-        <SendToInstacartButton
-          title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          linkType="shopping_list"
-          lineItems={sendItems}
-          label="Send Selected Items to Instacart"
-          fullWidth
-        />
-        <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
-      </div>
+            <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">
+              {PRICING_DISCLAIMER}
+            </p>
+
+            {/* Send to Instacart */}
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <p className="text-[13px] text-[#6b6b6b] font-medium">
+                {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated {formatBasketRange(selectedRange)}
+              </p>
+              <SendToInstacartButton
+                title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+                linkType="shopping_list"
+                lineItems={sendItems}
+                label="Send Selected Items to Instacart"
+                fullWidth
+              />
+              <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

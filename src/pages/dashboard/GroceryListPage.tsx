@@ -15,6 +15,7 @@ import { SendToInstacartButton, type InstacartLineItem } from "@/components/dash
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
+import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 
@@ -219,13 +220,10 @@ export default function GroceryListPage() {
   // GroceryItemImage component falls back to its flat icon tile.
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
-  // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
-  const subtotal = getStoreTotalFromItems(activeStore);
-  const taxRate = mealPlan.taxEstimate && mealPlan.totalEstimatedCost ? mealPlan.taxEstimate / mealPlan.totalEstimatedCost : 0.03;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
   const checkedCount = checked.size;
-  const basketRange = computeGroceryRange(groceryItems, subtotal, pricingConf);
+  // Phase 1 pricing: category-average range, no precise totals shown.
+  const basketRange = estimateBasketRange(groceryItems);
+  const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
@@ -381,9 +379,9 @@ export default function GroceryListPage() {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-base md:text-lg font-bold text-primary">{formatRange(basketRange)}</p>
+            <p className="text-base md:text-lg font-bold text-primary">{formatBasketRange(basketRange)}</p>
             <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">
-              {basketRange.showRange ? "estimated range — final price at Instacart checkout" : "estimated basket"}
+              estimated range — final price at checkout
             </p>
           </div>
         </div>
@@ -413,8 +411,6 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item, idx) => {
-              const priceInfo = getItemPriceInfo(item);
-              const price = priceInfo.price;
               const isChecked = checked.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
@@ -432,22 +428,16 @@ export default function GroceryListPage() {
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
-                      {item.pricingSource === 'internal_estimate' && (
-                        <span className="text-[9px] text-muted-foreground/70 italic">est.</span>
-                      )}
                     </div>
+                    <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
+                      Price varies by store
+                    </p>
                     {isChecked && (
                       <p className="text-[11px] font-bold text-primary mt-1">
                         added
                       </p>
                     )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-muted-foreground/80 italic leading-tight">
-                      Price at<br />Instacart checkout
-                    </span>
-                  </div>
-
                 </label>
               );
             })}
@@ -521,40 +511,26 @@ export default function GroceryListPage() {
         )}
       </div>
 
-      {/* Estimated Totals */}
+      {/* Estimated Totals — range only, no precise per-item prices */}
       <div className="bg-card rounded-2xl border border-border shadow-card p-6">
         <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Estimated Subtotal ({activeStore || "Average"})</span>
-            <span className="text-foreground font-medium">~${subtotal.toFixed(2)}</span>
-          </div>
           {extraItems.length > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Additional Items ({extraItems.length})</span>
-              <span className="text-foreground font-medium">~${extraItems.reduce((s, i) => s + i.price, 0).toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Estimated Tax ({(taxRate * 100).toFixed(1)}%)</span>
-            <span className="text-foreground">~${((subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate).toFixed(2)}</span>
-          </div>
-          {mealPlan.pantrySavings > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pantry Savings</span>
-              <span className="text-accent font-semibold">-~${mealPlan.pantrySavings.toFixed(2)}</span>
+              <span className="text-foreground font-medium">~${extrasTotal.toFixed(2)}</span>
             </div>
           )}
           <div className="border-t border-border pt-3 flex justify-between items-baseline">
             <div>
-              <span className="font-semibold text-foreground text-base">Estimated Grocery Total</span>
-              <p className="text-[10px] text-muted-foreground italic mt-0.5">approximate budget</p>
+              <span className="font-semibold text-foreground text-base">Estimated Weekly Grocery Cost</span>
+              <p className="text-[10px] text-muted-foreground italic mt-0.5">range, not exact</p>
             </div>
             <span className="font-bold text-2xl text-primary">
-              ~${(subtotal + extraItems.reduce((s, i) => s + i.price, 0) + (subtotal + extraItems.reduce((s, i) => s + i.price, 0)) * taxRate - (mealPlan.pantrySavings || 0)).toFixed(2)}
+              {formatBasketRange(basketRange)}
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
-            These are planning estimates. Final pricing and availability are confirmed at Instacart checkout.
+            {PRICING_DISCLAIMER}
           </p>
           {mealPlan.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">

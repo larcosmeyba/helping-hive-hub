@@ -1259,6 +1259,51 @@ export type Database = {
           },
         ]
       }
+      grocery_price_reference: {
+        Row: {
+          avg_price: number | null
+          category: string | null
+          created_at: string
+          display_name: string | null
+          high_price: number | null
+          id: string
+          ingredient_key: string
+          low_price: number | null
+          notes: string | null
+          source: string | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          avg_price?: number | null
+          category?: string | null
+          created_at?: string
+          display_name?: string | null
+          high_price?: number | null
+          id?: string
+          ingredient_key: string
+          low_price?: number | null
+          notes?: string | null
+          source?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avg_price?: number | null
+          category?: string | null
+          created_at?: string
+          display_name?: string | null
+          high_price?: number | null
+          id?: string
+          ingredient_key?: string
+          low_price?: number | null
+          notes?: string | null
+          source?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       household_store_preferences: {
         Row: {
           address_line_1: string | null
@@ -2936,6 +2981,66 @@ export type Database = {
           publish_status?: string
           seasonal_tag?: string | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      state_price_multipliers: {
+        Row: {
+          created_at: string
+          id: string
+          multiplier: number
+          notes: string | null
+          state_code: string
+          state_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          multiplier?: number
+          notes?: string | null
+          state_code: string
+          state_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          multiplier?: number
+          notes?: string | null
+          state_code?: string
+          state_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_price_multipliers: {
+        Row: {
+          created_at: string
+          id: string
+          multiplier: number
+          notes: string | null
+          store_code: string
+          store_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          multiplier?: number
+          notes?: string | null
+          store_code: string
+          store_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          multiplier?: number
+          notes?: string | null
+          store_code?: string
+          store_name?: string | null
           updated_at?: string
         }
         Relationships: []
