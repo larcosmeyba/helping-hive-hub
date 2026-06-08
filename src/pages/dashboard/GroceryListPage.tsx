@@ -220,13 +220,10 @@ export default function GroceryListPage() {
   // GroceryItemImage component falls back to its flat icon tile.
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
-  // Use getStoreTotalFromItems for subtotal so it matches store card totals exactly
-  const subtotal = getStoreTotalFromItems(activeStore);
-  const taxRate = mealPlan.taxEstimate && mealPlan.totalEstimatedCost ? mealPlan.taxEstimate / mealPlan.totalEstimatedCost : 0.03;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
   const checkedCount = checked.size;
-  const basketRange = computeGroceryRange(groceryItems, subtotal, pricingConf);
+  // Phase 1 pricing: category-average range, no precise totals shown.
+  const basketRange = estimateBasketRange(groceryItems);
+  const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
