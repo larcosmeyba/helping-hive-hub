@@ -480,9 +480,33 @@ export default function GroceryListPage() {
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-muted-foreground">{item.quantity}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
-                      Price varies by store
-                    </p>
+                    {(() => {
+                      const p = itemPrices[item.name];
+                      if (pricesLoading && !p) {
+                        return (
+                          <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
+                            Loading estimate…
+                          </p>
+                        );
+                      }
+                      if (!p) {
+                        return (
+                          <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
+                            Price varies by store
+                          </p>
+                        );
+                      }
+                      const range =
+                        p.low === p.high
+                          ? `$${p.estimate.toFixed(2)}`
+                          : `$${p.low.toFixed(2)} – $${p.high.toFixed(2)}`;
+                      return (
+                        <p className="text-[11px] font-semibold text-primary mt-0.5">
+                          {range}
+                          <span className="text-muted-foreground font-normal ml-1">est.</span>
+                        </p>
+                      );
+                    })()}
                     {isChecked && (
                       <p className="text-[11px] font-bold text-primary mt-1">
                         added
