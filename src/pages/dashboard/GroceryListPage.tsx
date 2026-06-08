@@ -576,7 +576,15 @@ export default function GroceryListPage() {
               const picked = all.filter((i) => checked.has(i.name));
               return picked.length > 0 ? picked : all;
             })();
-            return sanitizeForInstacart(sourceItems).map<InstacartLineItem>((s) => ({
+            const sanitized = sanitizeForInstacart(sourceItems);
+            // eslint-disable-next-line no-console
+            console.log("[DIAG] Instacart CTA (bottom)", {
+              rawCount: sourceItems.length,
+              sanitizedCount: sanitized.length,
+              rawSample: sourceItems.slice(0, 20).map((s) => s.name),
+              sanitizedSample: sanitized.slice(0, 20).map((s) => s.name),
+            });
+            return sanitized.map<InstacartLineItem>((s) => ({
               name: s.name,
               quantity: s.quantity,
               unit: s.unit,
