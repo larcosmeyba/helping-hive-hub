@@ -533,9 +533,6 @@ function EstimatedTotal({
     </>
   );
 }
-    </div>
-  );
-}
 
 function Section({
   title,
