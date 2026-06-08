@@ -15,6 +15,7 @@ import { SendToInstacartButton, type InstacartLineItem } from "@/components/dash
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
+import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 
