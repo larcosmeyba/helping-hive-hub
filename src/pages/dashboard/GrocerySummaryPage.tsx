@@ -104,12 +104,6 @@ export default function GrocerySummaryPage() {
               </p>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-wide text-[#2E7D32] font-semibold">
-              Store
-            </p>
-            <p className="text-[15px] font-bold text-[#1a1a1a] mt-1">{store}</p>
-          </div>
         </div>
         <p className="text-[12px] text-[#3a3a3a] mt-2">
           {items.length} item{items.length === 1 ? "" : "s"}
