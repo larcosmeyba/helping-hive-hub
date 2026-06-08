@@ -2,10 +2,8 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Loader2 } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { useAuth } from "@/contexts/AuthContext";
 import type { GroceryItem } from "@/types/mealPlan";
-import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
-import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
 
 const CATEGORY_META: Record<string, { label: string; Icon: typeof Leaf; iconBg: string; iconColor: string; match: string[] }> = {
   produce: { label: "Produce", Icon: Leaf, iconBg: "#E6F4E6", iconColor: "#2E7D32", match: ["produce", "fruit", "vegetable"] },
@@ -29,22 +27,10 @@ function bucketFor(section: string): string {
 export default function GrocerySummaryPage() {
   const navigate = useNavigate();
   const { mealPlan, generating, generate } = useMealPlan();
-  const { profile } = useAuth();
-  const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "Your Store";
 
   const items = mealPlan?.groceryList ?? [];
 
-  const total = useMemo(() => {
-    return items.reduce((s, i: GroceryItem) => {
-      const p = i.storePrices?.[store] ?? i.estimatedPrice ?? 0;
-      return s + p;
-    }, 0);
-  }, [items, store]);
-
-  const range = useMemo(
-    () => computeGroceryRange(items, total, mealPlan?.pricingConfidence),
-    [items, total, mealPlan?.pricingConfidence],
-  );
+  const range = useMemo(() => estimateBasketRange(items), [items]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, GroceryItem[]>();
