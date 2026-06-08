@@ -325,7 +325,7 @@ function parseRetailQuantity(rawQty?: string): number {
  * whitespace, and singularize trailing 's' so "Banana"/"Bananas" and
  * "Tomato"/"Tomatoes" merge into a single grocery line.
  */
-function dedupeKey(product: string): string {
+export function dedupeKey(product: string): string {
   let k = product.toLowerCase().replace(/\s+/g, " ").trim();
   // Naive singularization — sufficient for grocery product names.
   k = k.replace(/\b(\w+?)(ies)\b/g, "$1y"); // berries -> berry
