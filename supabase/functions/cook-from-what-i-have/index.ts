@@ -291,9 +291,10 @@ Prioritize items expiring soon. Include food_waste_reason naming the rescued ite
           normalized_item_name: k,
           quantity: ing.quantity ?? null,
           unit: ing.unit ?? null,
-          already_have: !!ing.already_have || !!matched,
+          already_have: !!ing.already_have || !!matched || ownedNames.has(k),
           source_location:
-            ing.source_location ?? (matched ? matched.location : "grocery_needed"),
+            ing.source_location ??
+            (matched ? matched.location : ownedNames.has(k) ? "pantry" : "grocery_needed"),
           pantry_item_id: matched?.id ?? null,
           estimated_price: ing.estimated_price ?? null,
           instacart_search_term: ing.item_name,
