@@ -430,7 +430,7 @@ export default function GroceryListPage() {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-base md:text-lg font-bold text-primary">{formatBasketRange(basketRange)}</p>
+            <p className="text-base md:text-lg font-bold text-primary">{totalRangeLabel}</p>
             <p className="text-[9px] text-muted-foreground/80 italic -mt-0.5">
               estimated range — final price at checkout
             </p>
