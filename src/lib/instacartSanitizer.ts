@@ -36,6 +36,10 @@ export interface SanitizedInstacartLineItem {
 }
 
 // Units that have no retail meaning at Instacart — strip and ignore.
+// Includes weights/volumes that frequently leak through from recipe text
+// (e.g. "4 oz sundried tomatoes" → after the numeric qty is removed the
+// leading "oz" must also be stripped so we don't ship "Oz Sundried Tomatoes"
+// to Instacart).
 const RECIPE_ONLY_UNITS = new Set([
   "tbsp", "tablespoon", "tablespoons", "tbsps", "tbs", "tb",
   "tsp", "teaspoon", "teaspoons", "tsps",
@@ -54,10 +58,15 @@ const RECIPE_ONLY_UNITS = new Set([
   "drop", "drops",
   "splash", "splashes",
   "ml", "milliliter", "milliliters",
-  "g", "gram", "grams",
-  // "oz" is intentionally NOT here — it's ambiguous and sometimes IS the
-  // package size (e.g. "16 oz can"). We handle it contextually below.
+  "l", "liter", "liters", "litre", "litres",
+  "g", "gram", "grams", "kg", "kilogram", "kilograms",
+  "oz", "ounce", "ounces",
+  "lb", "lbs", "pound", "pounds",
+  "qt", "quart", "quarts",
+  "pt", "pint", "pints",
+  "fl", // strays from "fl oz"
 ]);
+
 
 // Adjective / preparation words to drop when building the search term.
 const ADJECTIVES_TO_STRIP = [
