@@ -62,7 +62,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const [{ data: pantry }, { data: profile }] = await Promise.all([
+    const [
+      { data: pantry },
+      { data: profile },
+      { data: groceryItems },
+      { data: purchasedLists },
+    ] = await Promise.all([
       admin.from("pantry_items").select("*").eq("user_id", userId),
       admin
         .from("profiles")
@@ -71,7 +76,28 @@ Deno.serve(async (req) => {
         )
         .eq("user_id", userId)
         .maybeSingle(),
+      admin
+        .from("grocery_list_items")
+        .select("ingredient_name, quantity, unit, is_checked")
+        .eq("user_id", userId),
+      admin
+        .from("grocery_lists")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "purchased")
+        .order("updated_at", { ascending: false })
+        .limit(5),
     ]);
+
+    let purchasedItems: any[] = [];
+    const purchasedIds = (purchasedLists ?? []).map((l: any) => l.id);
+    if (purchasedIds.length) {
+      const { data } = await admin
+        .from("grocery_list_items")
+        .select("ingredient_name, quantity, unit")
+        .in("grocery_list_id", purchasedIds);
+      purchasedItems = data ?? [];
+    }
 
     const inventory = (pantry ?? [])
       .map((p: any) => ({
