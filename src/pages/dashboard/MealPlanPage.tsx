@@ -221,7 +221,10 @@ export default function MealPlanPage() {
           <History className="w-3.5 h-3.5" /> Past Plans
         </button>
       </div>
+      {/* Plaid-powered grocery spending insights (real data, not estimates) */}
+      <MealPlanGroceryInsights />
 
+      
       {/* Section 1: Budget Summary */}
       <div className="bg-white border border-[#EEE7DA] rounded-2xl p-4 md:p-5">
         <div className="grid grid-cols-3 gap-3">
