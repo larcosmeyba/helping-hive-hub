@@ -418,6 +418,8 @@ export default function GroceryReviewPage() {
             {combinedToBuy.map((it) => {
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
+              const priceObj = itemPrices[it.name];
+              const priceLabel = formatItemPrice(priceObj);
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
@@ -439,17 +441,33 @@ export default function GroceryReviewPage() {
                         isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
                       }`}
                     >
-                      {isChecked ? "Added to Instacart" : "Price varies by store"}
+                      {isChecked ? "Added to Instacart" : "Tap to add to Instacart"}
                     </p>
                   </div>
-                  {isManual && (
-                    <button
-                      onClick={() => removeManualItem(it.name)}
-                      className="text-[11px] text-[#6b6b6b] underline shrink-0 mt-0.5"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="flex flex-col items-end shrink-0 ml-2 min-w-[72px]">
+                    {priceLabel ? (
+                      <>
+                        <span className="text-[13px] font-bold text-[#1a1a1a] leading-tight">
+                          {priceLabel}
+                        </span>
+                        <span className="text-[10px] text-[#9e9e9e] leading-tight">Est.</span>
+                      </>
+                    ) : pricesLoading ? (
+                      <span className="text-[11px] text-[#9e9e9e] italic">…</span>
+                    ) : (
+                      <span className="text-[11px] text-[#9e9e9e] italic text-right leading-tight">
+                        Price<br />unavailable
+                      </span>
+                    )}
+                    {isManual && (
+                      <button
+                        onClick={() => removeManualItem(it.name)}
+                        className="text-[10px] text-[#6b6b6b] underline mt-1"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
