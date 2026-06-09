@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
-import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
+import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -316,6 +316,54 @@ export default function GroceryReviewPage() {
     return s + getPrice(it) * ratio;
   }, 0);
 
+  // Per-item DB pricing from grocery_price_reference (normalized fuzzy match).
+  // Matches "Garlic Bulb" → garlic, "Medium Banana" → banana, etc.
+  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  const [pricesLoading, setPricesLoading] = useState(false);
+  const buyableNamesKey = useMemo(
+    () => [...toBuy, ...manualItems].map((i) => i.name).join("|"),
+    [toBuy, manualItems],
+  );
+  const stateCode = (profile as any)?.state || undefined;
+  const storeCodeForPricing = store || undefined;
+
+  useEffect(() => {
+    const items = [...toBuy, ...manualItems];
+    if (!items.length) return;
+    let cancelled = false;
+    setPricesLoading(true);
+    (async () => {
+      const entries = await Promise.all(
+        items.map(async (it) => {
+          try {
+            const p = await calculateEstimatedPrice(it.name, {
+              storeCode: storeCodeForPricing,
+              stateCode,
+            });
+            return [it.name, p] as const;
+          } catch {
+            return [it.name, null] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<string, EstimatedPrice | null> = {};
+      for (const [name, p] of entries) map[name] = p;
+      setItemPrices(map);
+      setPricesLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyableNamesKey, storeCodeForPricing, stateCode]);
+
+  const formatItemPrice = (p: EstimatedPrice | null | undefined): string | null => {
+    if (!p) return null;
+    if (p.low === p.high) return `$${p.estimate.toFixed(2)}`;
+    return `$${p.low.toFixed(2)} – $${p.high.toFixed(2)}`;
+  };
+
   if (!allItems.length) {
     return (
       <div className="max-w-md mx-auto px-4 pt-8 text-center">
@@ -370,6 +418,8 @@ export default function GroceryReviewPage() {
             {combinedToBuy.map((it) => {
               const isChecked = checked.has(it.name);
               const isManual = manualNames.has(it.name);
+              const priceObj = itemPrices[it.name];
+              const priceLabel = formatItemPrice(priceObj);
               return (
                 <li
                   key={`${it.name}-${isManual ? "manual" : "plan"}`}
@@ -391,17 +441,33 @@ export default function GroceryReviewPage() {
                         isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
                       }`}
                     >
-                      {isChecked ? "Added to Instacart" : "Price varies by store"}
+                      {isChecked ? "Added to Instacart" : "Tap to add to Instacart"}
                     </p>
                   </div>
-                  {isManual && (
-                    <button
-                      onClick={() => removeManualItem(it.name)}
-                      className="text-[11px] text-[#6b6b6b] underline shrink-0 mt-0.5"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="flex flex-col items-end shrink-0 ml-2 min-w-[72px]">
+                    {priceLabel ? (
+                      <>
+                        <span className="text-[13px] font-bold text-[#1a1a1a] leading-tight">
+                          {priceLabel}
+                        </span>
+                        <span className="text-[10px] text-[#9e9e9e] leading-tight">Est.</span>
+                      </>
+                    ) : pricesLoading ? (
+                      <span className="text-[11px] text-[#9e9e9e] italic">…</span>
+                    ) : (
+                      <span className="text-[11px] text-[#9e9e9e] italic text-right leading-tight">
+                        Price<br />unavailable
+                      </span>
+                    )}
+                    {isManual && (
+                      <button
+                        onClick={() => removeManualItem(it.name)}
+                        className="text-[10px] text-[#6b6b6b] underline mt-1"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -516,6 +582,9 @@ function EstimatedTotal({
       </div>
 
       <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">{PRICING_DISCLAIMER}</p>
+      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-1 px-1 font-medium">
+        Final pricing and availability are confirmed at Instacart checkout.
+      </p>
 
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
