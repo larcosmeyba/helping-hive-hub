@@ -537,6 +537,8 @@ function EstimatedTotal({
   selectedCount,
   storeCode,
   stateCode,
+  weeklyBudget,
+  budgetExceeded,
   instacartTitle,
   sendItems,
 }: {
@@ -545,6 +547,8 @@ function EstimatedTotal({
   selectedCount: number;
   storeCode?: string;
   stateCode?: string;
+  weeklyBudget?: number | null;
+  budgetExceeded?: boolean;
   instacartTitle: string;
   sendItems: InstacartLineItem[];
 }) {
@@ -575,20 +579,56 @@ function EstimatedTotal({
     };
   }, [selectedItems.map((i) => i.name).join("|"), storeCode, stateCode]);
 
+  // Point estimate used for the Budget / Remaining math. Use the low end of
+  // the range so we never display "over budget" on a basket the engine
+  // already capped at the budget.
+  const estimateForBudget = totalRange ? totalRange.low : 0;
+  const hasBudget = typeof weeklyBudget === "number" && weeklyBudget > 0;
+  const remaining = hasBudget ? Math.max(0, (weeklyBudget as number) - estimateForBudget) : null;
+  const overBudget = hasBudget && (estimateForBudget > (weeklyBudget as number) || budgetExceeded);
+
   return (
     <>
-      <div className="mt-5 flex items-center justify-between px-1">
-        <div>
-          <span className="block text-[14px] text-[#6b6b6b]">Estimated Weekly Grocery Cost</span>
-          <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
+      <div className="mt-5 rounded-2xl border border-border bg-card px-4 py-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="block text-[13px] text-[#6b6b6b]">Estimated Grocery Total</span>
+            <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
+          </div>
+          <span className="text-[18px] font-extrabold text-[#1a1a1a]">
+            {formatBasketRange(totalRange)}
+          </span>
         </div>
-        <span className="text-[18px] font-extrabold text-[#1a1a1a]">{formatBasketRange(totalRange)}</span>
+        {hasBudget && (
+          <>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-[#6b6b6b]">Budget</span>
+              <span className="font-semibold text-[#1a1a1a]">${(weeklyBudget as number).toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-[#6b6b6b]">Remaining</span>
+              <span
+                className={`font-semibold ${overBudget ? "text-[#B91C1C]" : "text-[#1F5A3D]"}`}
+              >
+                {overBudget ? "Over budget" : `$${(remaining as number).toFixed(2)}`}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
-      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">{PRICING_DISCLAIMER}</p>
-      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-1 px-1 font-medium">
-        Final pricing and availability are confirmed at Instacart checkout.
-      </p>
+      {hasBudget && !overBudget && (
+        <p className="text-[11px] text-[#1F5A3D] leading-relaxed mt-2 px-1 font-medium">
+          Your meal plan was built to stay within your grocery budget. Final pricing and availability are confirmed at Instacart checkout.
+        </p>
+      )}
+      {overBudget && (
+        <p className="text-[11px] text-[#B91C1C] leading-relaxed mt-2 px-1 font-medium">
+          This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at Instacart checkout.
+        </p>
+      )}
+
+      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-2 px-1">{PRICING_DISCLAIMER}</p>
 
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
