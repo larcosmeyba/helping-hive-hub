@@ -649,9 +649,12 @@ Deno.serve(async (req) => {
     for (const day of resolvedDays) {
       for (const meal of day.meals) {
         const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
+        // Conservative per-ingredient fallback when recipe cost is missing —
+        // err on the high side so we never under-estimate the basket and
+        // accidentally exceed the user's weekly budget.
         const costPerIng = meal.recipe.cost_per_serving
           ? (Number(meal.recipe.cost_per_serving) * householdSize) / Math.max(1, ings.length)
-          : 1.5;
+          : 2.5;
         for (const raw of ings) {
           if (typeof raw !== "string") continue;
           const parsed = parseIngredientString(raw);
