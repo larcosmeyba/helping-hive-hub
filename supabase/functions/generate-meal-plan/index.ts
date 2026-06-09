@@ -698,6 +698,11 @@ Deno.serve(async (req) => {
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
     const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
+    // Expose budget context to the client so the Grocery screen can show
+    // Budget / Remaining without an extra round-trip.
+    (normalized as any).weeklyBudget = weeklyBudget;
+    (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
+    (normalized as any).budgetExceeded = overBudgetAfterAdjust;
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
