@@ -520,6 +520,10 @@ export default function GroceryReviewPage() {
         selectedCount={selectedCount}
         storeCode={store || undefined}
         stateCode={(profile as any)?.state || undefined}
+        weeklyBudget={
+          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+        }
+        budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
         instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
         sendItems={sendItems}
       />
