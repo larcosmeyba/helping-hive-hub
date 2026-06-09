@@ -582,6 +582,9 @@ function EstimatedTotal({
       </div>
 
       <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-3 px-1">{PRICING_DISCLAIMER}</p>
+      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-1 px-1 font-medium">
+        Final pricing and availability are confirmed at Instacart checkout.
+      </p>
 
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
