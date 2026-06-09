@@ -557,6 +557,84 @@ Deno.serve(async (req) => {
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
+    // ===== Budget enforcement (hard cap) =====
+    // The estimated grocery total must NEVER exceed the user's weekly budget.
+    // Swap the most expensive selected meals with the cheapest unused candidate
+    // of the same meal_type until projected cost <= budget, or no swap helps.
+    const candidatesByType: Record<string, any[]> = {
+      breakfast: breakfastCandidates,
+      lunch: lunchCandidates,
+      dinner: dinnerCandidates,
+    };
+    const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
+    const mealCost = (r: any): number =>
+      (Number(r?.cost_per_serving) || FALLBACK_COST_PER_SERVING) * householdSize;
+    const projectedTotal = () =>
+      resolvedDays.reduce((s, d) => s + d.meals.reduce((s2, m) => s2 + mealCost(m.recipe), 0), 0);
+
+    const usedRecipeIdSet = new Set<string>();
+    for (const d of resolvedDays) for (const m of d.meals) if (m.recipe?.id) usedRecipeIdSet.add(m.recipe.id);
+
+    let swapGuard = 0;
+    while (projectedTotal() > weeklyBudget && swapGuard < 24) {
+      swapGuard++;
+      // Find most expensive meal in plan that has a cheaper unused alternative.
+      let bestSwap: {
+        dayIdx: number;
+        mealIdx: number;
+        replacement: any;
+        delta: number;
+      } | null = null;
+
+      for (let di = 0; di < resolvedDays.length; di++) {
+        const day = resolvedDays[di];
+        for (let mi = 0; mi < day.meals.length; mi++) {
+          const meal = day.meals[mi];
+          const pool = candidatesByType[meal.meal_type] || [];
+          const currentCost = mealCost(meal.recipe);
+          for (const cand of pool) {
+            if (usedRecipeIdSet.has(cand.id)) continue;
+            const candCost = mealCost(cand);
+            const delta = currentCost - candCost; // positive = savings
+            if (delta <= 0) continue;
+            if (!bestSwap || delta > bestSwap.delta) {
+              bestSwap = { dayIdx: di, mealIdx: mi, replacement: cand, delta };
+            }
+          }
+        }
+      }
+
+      if (!bestSwap) break; // no cheaper option available
+      const old = resolvedDays[bestSwap.dayIdx].meals[bestSwap.mealIdx];
+      if (old.recipe?.id) usedRecipeIdSet.delete(old.recipe.id);
+      usedRecipeIdSet.add(bestSwap.replacement.id);
+      resolvedDays[bestSwap.dayIdx].meals[bestSwap.mealIdx] = {
+        meal_type: old.meal_type,
+        recipe: bestSwap.replacement,
+        reason: "Swapped to keep your plan within your weekly grocery budget.",
+      };
+    }
+
+    // If still over budget (no swap could fix it), drop the most expensive
+    // meal(s) until under budget. We'd rather show a smaller plan than an
+    // over-budget one. Keep at least one meal per day if possible.
+    let dropGuard = 0;
+    while (projectedTotal() > weeklyBudget && dropGuard < 24) {
+      dropGuard++;
+      let worst: { dayIdx: number; mealIdx: number; cost: number } | null = null;
+      for (let di = 0; di < resolvedDays.length; di++) {
+        const day = resolvedDays[di];
+        if (day.meals.length <= 1) continue;
+        for (let mi = 0; mi < day.meals.length; mi++) {
+          const c = mealCost(day.meals[mi].recipe);
+          if (!worst || c > worst.cost) worst = { dayIdx: di, mealIdx: mi, cost: c };
+        }
+      }
+      if (!worst) break;
+      resolvedDays[worst.dayIdx].meals.splice(worst.mealIdx, 1);
+    }
+    const overBudgetAfterAdjust = projectedTotal() > weeklyBudget;
+
     // ===== Build grocery list from chosen recipes (server-side, pantry-aware) =====
     const groceryAgg = new Map<string, {
       ingredient_name: string;
@@ -571,9 +649,12 @@ Deno.serve(async (req) => {
     for (const day of resolvedDays) {
       for (const meal of day.meals) {
         const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
+        // Conservative per-ingredient fallback when recipe cost is missing —
+        // err on the high side so we never under-estimate the basket and
+        // accidentally exceed the user's weekly budget.
         const costPerIng = meal.recipe.cost_per_serving
           ? (Number(meal.recipe.cost_per_serving) * householdSize) / Math.max(1, ings.length)
-          : 1.5;
+          : 2.5;
         for (const raw of ings) {
           if (typeof raw !== "string") continue;
           const parsed = parseIngredientString(raw);
@@ -617,6 +698,11 @@ Deno.serve(async (req) => {
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
     const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
+    // Expose budget context to the client so the Grocery screen can show
+    // Budget / Remaining without an extra round-trip.
+    (normalized as any).weeklyBudget = weeklyBudget;
+    (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
+    (normalized as any).budgetExceeded = overBudgetAfterAdjust;
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,

@@ -72,4 +72,10 @@ export interface GeneratedMealPlan {
   costOfLivingMultiplier?: number;
   pricingConfidence?: PricingConfidenceSummary;
   savingsSummary?: SavingsSummary;
+  /** Weekly grocery budget enforced when this plan was generated. */
+  weeklyBudget?: number;
+  /** Budget − totalEstimatedCost, rounded to 2dp, floored at 0. */
+  budgetRemaining?: number;
+  /** True if the engine could not bring the plan under budget. */
+  budgetExceeded?: boolean;
 }
