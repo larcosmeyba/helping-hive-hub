@@ -348,7 +348,7 @@ export default function Questionnaire() {
         dietary_preferences: dietaryPrefs,
         assistance_count: Object.values(assistanceCols).filter(Boolean).length,
         apollo_goals_count: Object.values(goalCols).filter(Boolean).length,
-        plaid_interest: plaidInterest,
+        
       });
 
       clearProgress();
