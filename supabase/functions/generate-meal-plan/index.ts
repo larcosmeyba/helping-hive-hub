@@ -34,13 +34,17 @@ const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI using a HYBRID l
 You are given a pool of CURATED RECIPES (each with id, title, meal_type, cost_per_serving, brief tags).
 Your job is to SELECT recipes from the pool to fill each day's breakfast/lunch/dinner slots.
 
-STRICT RULES:
+ABSOLUTE SAFETY RULES — VIOLATION CAN HARM THE USER:
+- The user's "allergies" array lists ingredients they CANNOT eat. NEVER select or create a meal containing ANY allergen — including derivatives (e.g. "nuts" forbids almond, walnut, pecan, peanut, cashew, hazelnut, pistachio, macadamia, brazil nut, pine nut, nut butter; "dairy" forbids milk, cheese, butter, yogurt, cream, whey; "gluten" forbids wheat, flour, bread, pasta, barley, rye).
+- The user's "dietary_preferences" array is BINDING. "vegan" = NO meat, poultry, fish, seafood, eggs, dairy, honey, gelatin. "vegetarian" = NO meat, poultry, fish, seafood, gelatin. "pescatarian" = NO meat or poultry. Pot roast, beef, chicken, pork, bacon, etc. are FORBIDDEN for vegan/vegetarian users.
+- If a recipe's title, description, or any ingredient could violate these rules, SKIP IT. Better to return fewer meals than to harm the user.
+
+OTHER RULES:
 - PREFER library recipes. For each meal slot, choose a recipe from candidates_<meal_type> by returning its library_recipe_id.
 - Vary protein/cuisine across the week — don't pick the same recipe twice.
-- Only create a new_meal when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes.
+- Only create a new_meal when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes — and must also follow every allergy and dietary rule above.
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
-- Respect allergies and dietary preferences absolutely.
 - Stay within the weekly grocery budget.
 - Output ONLY the structured tool call.`;
 
@@ -100,6 +104,63 @@ const RESPONSE_SCHEMA = {
     },
   },
 } as const;
+
+// ===== Allergy + dietary safety helpers =====
+const ALLERGY_EXPANSIONS: Record<string, string[]> = {
+  nuts: ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline"],
+  "tree nuts": ["almond", "walnut", "pecan", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut"],
+  peanuts: ["peanut", "peanuts", "peanut butter", "groundnut"],
+  dairy: ["milk", "cheese", "butter", "yogurt", "yoghurt", "cream", "whey", "casein", "lactose", "ghee", "parmesan", "mozzarella", "cheddar", "feta", "ricotta"],
+  milk: ["milk", "cheese", "butter", "yogurt", "cream", "whey", "casein", "lactose"],
+  gluten: ["wheat", "flour", "bread", "pasta", "barley", "rye", "couscous", "semolina", "farro", "spelt", "bulgur", "seitan", "soy sauce"],
+  wheat: ["wheat", "flour", "bread", "pasta", "couscous", "semolina"],
+  eggs: ["egg", "eggs", "mayonnaise", "mayo", "meringue"],
+  soy: ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce", "tamari"],
+  shellfish: ["shrimp", "prawn", "crab", "lobster", "crawfish", "crayfish", "scallop", "clam", "mussel", "oyster"],
+  fish: ["fish", "salmon", "tuna", "cod", "tilapia", "trout", "anchovy", "sardine", "halibut", "mackerel"],
+  sesame: ["sesame", "tahini"],
+};
+const DIET_FORBIDDEN: Record<string, string[]> = {
+  vegan: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "milk", "cheese", "butter", "yogurt", "cream", "whey", "casein", "egg", "eggs", "honey", "gelatin", "lard", "tallow", "ghee", "parmesan", "mozzarella", "cheddar", "feta"],
+  vegetarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "gelatin", "lard", "tallow"],
+  pescatarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "gelatin", "lard", "tallow"],
+};
+export function expandAllergies(allergies: string[]): string[] {
+  const out = new Set<string>();
+  for (const a of allergies || []) {
+    const k = (a || "").toLowerCase().trim();
+    if (!k) continue;
+    out.add(k);
+    for (const term of ALLERGY_EXPANSIONS[k] || []) out.add(term);
+  }
+  return Array.from(out);
+}
+export function forbiddenForDiets(prefs: string[]): string[] {
+  const out = new Set<string>();
+  for (const p of prefs || []) {
+    const k = (p || "").toLowerCase().trim();
+    for (const term of DIET_FORBIDDEN[k] || []) out.add(term);
+  }
+  return Array.from(out);
+}
+export function recipeContainsAny(recipe: any, terms: string[]): boolean {
+  if (!terms.length) return false;
+  const haystacks: string[] = [];
+  if (recipe?.title) haystacks.push(String(recipe.title));
+  if (recipe?.description) haystacks.push(String(recipe.description));
+  if (Array.isArray(recipe?.ingredients)) {
+    for (const i of recipe.ingredients) {
+      if (typeof i === "string") haystacks.push(i);
+      else if (i?.item_name) haystacks.push(String(i.item_name));
+    }
+  }
+  const hay = haystacks.join(" \n ").toLowerCase();
+  return terms.some((t) => {
+    const term = t.toLowerCase();
+    const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+    return re.test(hay);
+  });
+}
 
 function freshness(item: any): string {
   if (!item.expiration_date) return item.is_low_stock ? "low_stock" : "good";
@@ -323,14 +384,19 @@ Deno.serve(async (req) => {
       }
       let pool = (data ?? []).filter((r: any) => !excludeIds.has(r.id));
 
-      // Allergy filter (hard)
-      if (allergies.length) {
-        const allergyRe = new RegExp(`\\b(${allergies.map((a) => a.toLowerCase().trim()).filter(Boolean).join("|")})\\b`, "i");
-        pool = pool.filter((r: any) => !(Array.isArray(r.ingredients) && r.ingredients.some((i: any) => typeof i === "string" && allergyRe.test(i))));
+      // Allergy filter (HARD — checks title, description, ingredients)
+      const allergyTerms = expandAllergies(allergies);
+      if (allergyTerms.length) {
+        pool = pool.filter((r: any) => !recipeContainsAny(r, allergyTerms));
       }
 
-      // Dietary preference filter (soft — only apply if it leaves enough)
-      if (dietaryPrefs.length) {
+      // Dietary preference filter (HARD for vegan/vegetarian/pescatarian — safety)
+      const dietForbidden = forbiddenForDiets(dietaryPrefs);
+      if (dietForbidden.length) {
+        pool = pool.filter((r: any) => !recipeContainsAny(r, dietForbidden));
+      }
+      // Soft tag-match preference for non-restrictive prefs
+      if (dietaryPrefs.length && !dietForbidden.length) {
         const prefsLower = dietaryPrefs.map((p) => p.toLowerCase());
         const matched = pool.filter((r: any) => {
           const tags = (r.tags ?? []).map((t: string) => t.toLowerCase());
@@ -507,6 +573,21 @@ Deno.serve(async (req) => {
       meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner"; recipe: any; reason?: string }>;
     }> = [];
 
+    const allergyTerms = expandAllergies(allergies);
+    const dietForbidden = forbiddenForDiets(dietaryPrefs);
+    const safetyTerms = [...allergyTerms, ...dietForbidden];
+
+    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
+      const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+      for (const c of pool) {
+        if (usedIds.has(c.id)) continue;
+        if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
+        return c;
+      }
+      return null;
+    }
+
+    const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
@@ -514,45 +595,61 @@ Deno.serve(async (req) => {
         if (!slot) continue;
 
         let recipe: any = null;
+        let reason: string | undefined = slot.reason;
+
         if (slot.library_recipe_id && candidatesById.has(slot.library_recipe_id)) {
-          recipe = candidatesById.get(slot.library_recipe_id);
-        } else if (slot.new_meal) {
-          // Insert AI-generated recipe (private to this user)
-          const nm = slot.new_meal;
-          const cost = Number(nm.estimated_cost_per_serving) || null;
-          const servings = householdSize;
-          const { data: inserted, error: insErr } = await admin
-            .from("recipes")
-            .insert({
-              title: String(nm.meal_name || "Custom meal").slice(0, 200),
-              description: nm.description ?? null,
-              meal_type: mealType,
-              ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
-              instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
-              calories: nm.calories_estimate ?? null,
-              protein_g: nm.protein_estimate ?? null,
-              prep_time_minutes: nm.prep_time_minutes ?? null,
-              cook_time_minutes: nm.cook_time_minutes ?? null,
-              serving_size: servings,
-              estimated_recipe_cost: cost ? cost * servings : null,
-              source: "ai_generated",
-              is_public: false,
-              created_by_user_id: userId,
-              tags: Array.isArray(nm.tags) ? nm.tags : [],
-            })
-            .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
-            .single();
-          if (insErr) {
-            console.error("[generate-meal-plan] failed to insert AI recipe", insErr);
-            continue;
+          const cand = candidatesById.get(slot.library_recipe_id);
+          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) {
+            console.warn("[generate-meal-plan] AI chose unsafe library recipe — replacing", cand.title);
+            recipe = findSafeCandidate(mealType, usedIds);
+            reason = "Swapped to honor your dietary preferences and allergies.";
+          } else {
+            recipe = cand;
           }
-          recipe = inserted;
+        } else if (slot.new_meal) {
+          const nm = slot.new_meal;
+          const pseudo = { title: nm.meal_name, description: nm.description, ingredients: nm.ingredients };
+          if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) {
+            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nm.meal_name);
+            recipe = findSafeCandidate(mealType, usedIds);
+            reason = "Swapped to honor your dietary preferences and allergies.";
+          } else {
+            const cost = Number(nm.estimated_cost_per_serving) || null;
+            const servings = householdSize;
+            const { data: inserted, error: insErr } = await admin
+              .from("recipes")
+              .insert({
+                title: String(nm.meal_name || "Custom meal").slice(0, 200),
+                description: nm.description ?? null,
+                meal_type: mealType,
+                ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
+                instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
+                calories: nm.calories_estimate ?? null,
+                protein_g: nm.protein_estimate ?? null,
+                prep_time_minutes: nm.prep_time_minutes ?? null,
+                cook_time_minutes: nm.cook_time_minutes ?? null,
+                serving_size: servings,
+                estimated_recipe_cost: cost ? cost * servings : null,
+                source: "ai_generated",
+                is_public: false,
+                created_by_user_id: userId,
+                tags: Array.isArray(nm.tags) ? nm.tags : [],
+              })
+              .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
+              .single();
+            if (insErr) {
+              console.error("[generate-meal-plan] failed to insert AI recipe", insErr);
+              continue;
+            }
+            recipe = inserted;
+          }
         } else {
-          // Slot empty — skip
           continue;
         }
 
-        dayMeals.push({ meal_type: mealType, recipe, reason: slot.reason });
+        if (!recipe) continue; // no safe substitute available — skip slot rather than serve unsafe food
+        if (recipe.id) usedIds.add(recipe.id);
+        dayMeals.push({ meal_type: mealType, recipe, reason });
       }
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
