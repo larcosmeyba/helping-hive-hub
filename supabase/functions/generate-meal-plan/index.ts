@@ -573,6 +573,21 @@ Deno.serve(async (req) => {
       meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner"; recipe: any; reason?: string }>;
     }> = [];
 
+    const allergyTerms = expandAllergies(allergies);
+    const dietForbidden = forbiddenForDiets(dietaryPrefs);
+    const safetyTerms = [...allergyTerms, ...dietForbidden];
+
+    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
+      const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+      for (const c of pool) {
+        if (usedIds.has(c.id)) continue;
+        if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
+        return c;
+      }
+      return null;
+    }
+
+    const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
@@ -580,45 +595,61 @@ Deno.serve(async (req) => {
         if (!slot) continue;
 
         let recipe: any = null;
+        let reason: string | undefined = slot.reason;
+
         if (slot.library_recipe_id && candidatesById.has(slot.library_recipe_id)) {
-          recipe = candidatesById.get(slot.library_recipe_id);
-        } else if (slot.new_meal) {
-          // Insert AI-generated recipe (private to this user)
-          const nm = slot.new_meal;
-          const cost = Number(nm.estimated_cost_per_serving) || null;
-          const servings = householdSize;
-          const { data: inserted, error: insErr } = await admin
-            .from("recipes")
-            .insert({
-              title: String(nm.meal_name || "Custom meal").slice(0, 200),
-              description: nm.description ?? null,
-              meal_type: mealType,
-              ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
-              instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
-              calories: nm.calories_estimate ?? null,
-              protein_g: nm.protein_estimate ?? null,
-              prep_time_minutes: nm.prep_time_minutes ?? null,
-              cook_time_minutes: nm.cook_time_minutes ?? null,
-              serving_size: servings,
-              estimated_recipe_cost: cost ? cost * servings : null,
-              source: "ai_generated",
-              is_public: false,
-              created_by_user_id: userId,
-              tags: Array.isArray(nm.tags) ? nm.tags : [],
-            })
-            .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
-            .single();
-          if (insErr) {
-            console.error("[generate-meal-plan] failed to insert AI recipe", insErr);
-            continue;
+          const cand = candidatesById.get(slot.library_recipe_id);
+          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) {
+            console.warn("[generate-meal-plan] AI chose unsafe library recipe — replacing", cand.title);
+            recipe = findSafeCandidate(mealType, usedIds);
+            reason = "Swapped to honor your dietary preferences and allergies.";
+          } else {
+            recipe = cand;
           }
-          recipe = inserted;
+        } else if (slot.new_meal) {
+          const nm = slot.new_meal;
+          const pseudo = { title: nm.meal_name, description: nm.description, ingredients: nm.ingredients };
+          if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) {
+            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nm.meal_name);
+            recipe = findSafeCandidate(mealType, usedIds);
+            reason = "Swapped to honor your dietary preferences and allergies.";
+          } else {
+            const cost = Number(nm.estimated_cost_per_serving) || null;
+            const servings = householdSize;
+            const { data: inserted, error: insErr } = await admin
+              .from("recipes")
+              .insert({
+                title: String(nm.meal_name || "Custom meal").slice(0, 200),
+                description: nm.description ?? null,
+                meal_type: mealType,
+                ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
+                instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
+                calories: nm.calories_estimate ?? null,
+                protein_g: nm.protein_estimate ?? null,
+                prep_time_minutes: nm.prep_time_minutes ?? null,
+                cook_time_minutes: nm.cook_time_minutes ?? null,
+                serving_size: servings,
+                estimated_recipe_cost: cost ? cost * servings : null,
+                source: "ai_generated",
+                is_public: false,
+                created_by_user_id: userId,
+                tags: Array.isArray(nm.tags) ? nm.tags : [],
+              })
+              .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
+              .single();
+            if (insErr) {
+              console.error("[generate-meal-plan] failed to insert AI recipe", insErr);
+              continue;
+            }
+            recipe = inserted;
+          }
         } else {
-          // Slot empty — skip
           continue;
         }
 
-        dayMeals.push({ meal_type: mealType, recipe, reason: slot.reason });
+        if (!recipe) continue; // no safe substitute available — skip slot rather than serve unsafe food
+        if (recipe.id) usedIds.add(recipe.id);
+        dayMeals.push({ meal_type: mealType, recipe, reason });
       }
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
