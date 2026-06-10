@@ -386,17 +386,6 @@ export default function MealPlanPage() {
       </AnimatePresence>
 
 
-      {/* Savings breakdown dialog */}
-      <Dialog open={showSavingsBreakdown} onOpenChange={setShowSavingsBreakdown}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <span>💰</span> Grocery Spending Breakdown
-            </DialogTitle>
-          </DialogHeader>
-          <SavingsBreakdownPlaid />
-        </DialogContent>
-      </Dialog>
 
       {/* Recipe Dialog */}
       <Dialog open={!!selectedMeal} onOpenChange={() => setSelectedMeal(null)}>
