@@ -328,8 +328,6 @@ export default function Questionnaire() {
         // Food waste
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        // Plaid
-        plaid_interest: plaidInterest || null,
         // Apollo
         ...goalCols,
         // Onboarding
