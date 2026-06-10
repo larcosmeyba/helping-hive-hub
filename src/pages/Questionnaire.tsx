@@ -229,7 +229,7 @@ export default function Questionnaire() {
     householdSize, childrenUnder5, children5to12, teenagers, seniors65plus,
     weeklyBudget, budgetTouched, zipCode, locationCity, locationState,
     homeStore, assistance, dietary, cookingConfidence, pantryStarter,
-    foodWasteAlerts, foodWasteSuggestions, plaidInterest, goals,
+    foodWasteAlerts, foodWasteSuggestions, goals,
   ]);
 
   const toggleBool = (map: BoolMap, key: string, setter: (m: BoolMap) => void) => {
