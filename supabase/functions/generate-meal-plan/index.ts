@@ -267,12 +267,15 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // Rate limit: 10 full meal-plan generations per user per hour (very expensive).
+    // fail-closed: if the limiter RPC itself errors, reject with 429 rather than
+    // let the most expensive endpoint flood the DB during pressure.
     const rl = await enforceRateLimit({
       admin,
       userId,
       endpoint: "generate-meal-plan",
       maxPerHour: 10,
       corsHeaders,
+      failClosed: true,
     });
     if (rl) return rl;
 
