@@ -123,7 +123,7 @@ export default function CookInventoryPage() {
                 {expiring.map((e) => (
                   <li key={e.name} className="flex items-center px-4 py-3">
                     <AlertTriangle className="w-4 h-4 text-[#E67E22] mr-3 shrink-0" />
-                    <span className="text-[14px] font-semibold text-[#1a1a1a] flex-1 truncate">
+                    <span className="text-base font-semibold text-[#1a1a1a] flex-1 truncate">
                       {e.name}
                     </span>
                     <span className="text-[12px] text-[#B26A00] font-semibold">
@@ -192,7 +192,7 @@ function ItemList({ rows }: { rows: PantryRow[] }) {
           <div className="w-5 h-5 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0 mr-3">
             <Check className="w-3 h-3 text-white" strokeWidth={3} />
           </div>
-          <span className="text-[14px] text-[#1a1a1a] font-medium truncate">{r.item_name}</span>
+          <span className="text-base text-[#1a1a1a] font-medium truncate">{r.item_name}</span>
         </li>
       ))}
     </ul>
@@ -268,7 +268,7 @@ function AddItemSheet({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Spinach"
-              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-base"
               autoFocus
             />
           </Field>
@@ -279,7 +279,7 @@ function AddItemSheet({
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="1"
-                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-base"
               />
             </Field>
             <Field label="Unit">
@@ -287,7 +287,7 @@ function AddItemSheet({
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 placeholder="bag, oz, lb…"
-                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+                className="w-full h-11 px-3 rounded-xl border border-border bg-background text-base"
               />
             </Field>
           </div>
@@ -315,7 +315,7 @@ function AddItemSheet({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-base"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c.replace("_", " ")}</option>
@@ -328,12 +328,12 @@ function AddItemSheet({
               type="date"
               value={expiration}
               onChange={(e) => setExpiration(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-[14px]"
+              className="w-full h-11 px-3 rounded-xl border border-border bg-background text-base"
             />
           </Field>
 
           <label className="flex items-center justify-between py-2">
-            <span className="text-[14px] font-medium text-foreground">Low stock</span>
+            <span className="text-base font-medium text-foreground">Low stock</span>
             <input
               type="checkbox"
               checked={lowStock}

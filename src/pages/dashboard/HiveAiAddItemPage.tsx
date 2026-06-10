@@ -56,7 +56,7 @@ export default function HiveAiAddItemPage() {
 
   return (
     <div className="max-w-md mx-auto px-1 pb-32">
-      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-[14px] text-[#1a1a1a]">
+      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-base text-[#1a1a1a]">
         <ArrowLeft className="w-4 h-4" />
       </button>
       <h1 className="text-center text-[18px] font-extrabold text-[#1a1a1a] mb-4">Add Item</h1>
