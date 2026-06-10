@@ -102,12 +102,16 @@ Deno.serve(async (req) => {
       pantry_photo_scan: 30,
       inventory_photo_scan: 30,
     };
+    // fail-closed ONLY for the heaviest action (full meal-plan generation via
+    // this router). All other actions stay fail-open so transient DB hiccups
+    // don't block chat/swap/analysis.
     const rl = await enforceRateLimit({
       admin,
       userId: user.id,
       endpoint: `process-hive-ai:${request_type}`,
       maxPerHour: RATE_LIMITS[request_type] ?? 30,
       corsHeaders: cors,
+      failClosed: request_type === "meal_plan_generation",
     });
     if (rl) return rl;
 
