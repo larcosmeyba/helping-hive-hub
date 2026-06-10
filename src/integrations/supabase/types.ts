@@ -2264,6 +2264,24 @@ export type Database = {
         }
         Relationships: []
       }
+      plaid_link_sessions: {
+        Row: {
+          created_at: string
+          link_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          link_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          link_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string | null
