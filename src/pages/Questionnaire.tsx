@@ -672,9 +672,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 12 — Section 11: Apollo goals + finish */}
-      {step === 12 && (
-        <QuestionnaireStep step={12} totalSteps={TOTAL_STEPS}
+      {/* STEP 11 — Section 10: Apollo goals + finish */}
+      {step === 11 && (
+        <QuestionnaireStep step={11} totalSteps={TOTAL_STEPS}
           title="Any wellness goals?"
           subtitle="Optional — Apollo Reborn uses these for personalized recommendations."
           onNext={handleSubmit} onBack={back}
