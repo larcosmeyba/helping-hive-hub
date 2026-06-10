@@ -80,7 +80,7 @@ export default function SettingsPage() {
   const [goals, setGoals] = useState<Record<string, boolean>>({});
   const [foodWasteAlerts, setFoodWasteAlerts] = useState(true);
   const [foodWasteSuggestions, setFoodWasteSuggestions] = useState(true);
-  const [plaidInterest, setPlaidInterest] = useState("");
+  
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
   const [showMacros, setShowMacros] = useShowMacros();
