@@ -171,7 +171,6 @@ export default function SettingsPage() {
         ...goalCols,
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        plaid_interest: plaidInterest || null,
       }).eq("user_id", user.id);
       if (error) throw error;
       await refreshProfile?.();
