@@ -1,27 +1,36 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { plaidFetch, getPlaidConfig } from "../_shared/plaid.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = buildCorsHeaders(req);
+  const pf = handlePreflight(req);
+  if (pf) return pf;
   try {
     const auth = req.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: auth } },
     });
-    const { data: claims, error } = await sb.auth.getClaims(auth.replace("Bearer ", ""));
-    if (error || !claims?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: userRes, error: userErr } = await sb.auth.getUser();
+    if (userErr || !userRes?.user) {
+      console.error("[create-plaid-link-token] auth failed", userErr);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
-    const userId = claims.claims.sub;
+    const userId = userRes.user.id;
 
     if (!getPlaidConfig()) {
       return new Response(JSON.stringify({ error: "PLAID_NOT_CONFIGURED" }), {
         status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -48,10 +57,39 @@ Deno.serve(async (req) => {
       };
     }
 
-    const result = await plaidFetch("/link/token/create", params);
+    let result: any;
+    try {
+      result = await plaidFetch("/link/token/create", params);
+    } catch (plaidErr) {
+      console.error("[create-plaid-link-token] Plaid error (hosted=" + hosted + "):", plaidErr);
+      // If hosted fails (e.g. Plaid Dashboard doesn't have hosted_link enabled,
+      // or completion_redirect_uri isn't whitelisted), fall back to a plain
+      // link_token. The native client can open Plaid's hosted Link page via
+      // cdn.plaid.com using the token directly.
+      if (hosted) {
+        delete params.hosted_link;
+        try {
+          result = await plaidFetch("/link/token/create", params);
+          console.warn("[create-plaid-link-token] hosted fallback to plain link_token succeeded");
+        } catch (plaidErr2) {
+          console.error("[create-plaid-link-token] fallback also failed:", plaidErr2);
+          return new Response(
+            JSON.stringify({ error: String((plaidErr2 as Error).message ?? plaidErr2) }),
+            { status: 502, headers: { ...cors, "Content-Type": "application/json" } },
+          );
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ error: String((plaidErr as Error).message ?? plaidErr) }),
+          { status: 502, headers: { ...cors, "Content-Type": "application/json" } },
+        );
+      }
+    }
 
-    // For hosted flow, persist link_token → user mapping so the webhook can resolve user.
-    if (hosted && result.link_token) {
+    // Persist link_token → user mapping so the webhook can resolve user on
+    // SESSION_FINISHED. This works for both hosted_link and the plain
+    // link.html fallback (Plaid sends webhooks for both flows).
+    if (result?.link_token) {
       const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       await admin.from("plaid_link_sessions").upsert(
         { link_token: result.link_token, user_id: userId },
@@ -59,17 +97,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // If hosted_link wasn't returned, synthesize a hosted URL via cdn.plaid.com.
+    // This is Plaid's mobile-friendly hosted Link page, which works inside
+    // Capacitor's in-app browser.
+    const hostedUrl = result?.hosted_link_url
+      ?? (hosted && result?.link_token
+        ? `https://cdn.plaid.com/link/v2/stable/link.html?isWebview=true&token=${encodeURIComponent(result.link_token)}`
+        : null);
+
     return new Response(JSON.stringify({
       link_token: result.link_token,
       expiration: result.expiration,
-      hosted_link_url: result.hosted_link_url ?? null,
+      hosted_link_url: hostedUrl,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("[create-plaid-link-token] unexpected error:", e);
     return new Response(JSON.stringify({ error: String((e as Error).message ?? e) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });
