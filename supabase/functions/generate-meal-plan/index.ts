@@ -562,8 +562,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    let parsed: any = await attempt(1);
-    if (!parsed) parsed = await attempt(2);
+    // Load-test stub: bypass the AI call entirely when the request opts in AND
+    // the environment explicitly allows it (staging only). Everything else —
+    // auth, rate limit, DB inserts, grocery list generation — still runs.
+    // NEVER set LOADTEST_STUB_ALLOWED=true in production.
+    const stubAllowed = Deno.env.get("LOADTEST_STUB_ALLOWED") === "true";
+    const stubRequested = req.headers.get("x-loadtest-stub") === "true";
+    let parsed: any;
+    if (stubAllowed && stubRequested) {
+      await advance("generating", "OpenAI response received", "Building your weekly meal plan (loadtest stub)", { stub: true });
+      parsed = buildServerFallback(daysCount, breakfastCandidates, lunchCandidates, dinnerCandidates);
+    } else {
+      parsed = await attempt(1);
+      if (!parsed) parsed = await attempt(2);
+    }
 
     if (!parsed) {
       // Server-side fallback: just pick top candidates ourselves
