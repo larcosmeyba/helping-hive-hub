@@ -8,8 +8,10 @@ import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
 import { BudgetSnapshotCard } from "@/components/dashboard/home/BudgetSnapshotCard";
-import apolloLogo from "@/assets/apollo-logo.png.asset.json";
-import apolloMarcos from "@/assets/apollo-marcos.png.asset.json";
+// Bundled in /public so the native (Capacitor) app can load them locally.
+// CDN pointers under /__l5e/ only resolve on Lovable web hosts.
+const apolloLogo = { url: "/apollo/apollo-logo.png" };
+const apolloMarcos = { url: "/apollo/apollo-marcos.png" };
 
 export default function DashboardHome() {
   const { profile } = useAuth();
