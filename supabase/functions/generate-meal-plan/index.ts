@@ -754,9 +754,100 @@ Deno.serve(async (req) => {
       Frozen: 4.0,
       Other: 3.0,
     };
-    // 1.15 mirrors the client's high-end range multiplier. We enforce against
-    // the HIGH end so the displayed range never exceeds the user's budget.
+    // 1.15 mirrors the client's high-end range multiplier when no DB price
+    // is hit. We enforce against the HIGH end so the displayed range never
+    // exceeds the user's budget.
     const HIGH_MULT = 1.15;
+
+    // ---- DB-pricing parity with the client ----
+    // The Grocery screen calls estimateBasketRangeFromDB which sums per-item
+    // prices from grocery_price_reference × store/state multipliers. If we
+    // enforce the budget against category averages instead, the server will
+    // happily declare a plan "within budget" while the UI renders a much
+    // higher range and shows "Over budget" — the exact bug just reported.
+    // We mirror the client's lookup here so the cap = what the user sees.
+    const storeCodeForPricing: string | null =
+      (homeStore?.retailer_name as string | undefined) ??
+      ((profile as any).home_store as string | undefined) ??
+      null;
+    const stateCodeForPricing: string | null =
+      ((profile as any).state as string | undefined) ?? null;
+
+    let cachedStoreMult: number | null = null;
+    let cachedStateMult: number | null = null;
+    async function getMultipliers(): Promise<number> {
+      if (cachedStoreMult === null) {
+        if (storeCodeForPricing) {
+          const { data } = await admin
+            .from("store_price_multipliers")
+            .select("multiplier")
+            .ilike("store_code", storeCodeForPricing.trim().toLowerCase())
+            .maybeSingle();
+          cachedStoreMult = data?.multiplier != null ? Number(data.multiplier) : 1.0;
+        } else {
+          cachedStoreMult = 1.0;
+        }
+      }
+      if (cachedStateMult === null) {
+        if (stateCodeForPricing) {
+          const { data } = await admin
+            .from("state_price_multipliers")
+            .select("multiplier")
+            .ilike("state_code", stateCodeForPricing.trim().toLowerCase())
+            .maybeSingle();
+          cachedStateMult = data?.multiplier != null ? Number(data.multiplier) : 1.0;
+        } else {
+          cachedStateMult = 1.0;
+        }
+      }
+      return (cachedStoreMult ?? 1) * (cachedStateMult ?? 1);
+    }
+
+    const dbPriceCache = new Map<string, { avg: number; low: number | null; high: number | null } | null>();
+    async function lookupItemPrice(name: string) {
+      const key = (name || "").trim().toLowerCase();
+      if (!key) return null;
+      if (dbPriceCache.has(key)) return dbPriceCache.get(key)!;
+      try {
+        const { data } = await admin.rpc("lookup_ingredient_price", { _query: key });
+        if (!Array.isArray(data) || data.length === 0) {
+          dbPriceCache.set(key, null);
+          return null;
+        }
+        const top: any = data[0];
+        if (Number(top.similarity ?? 0) < 0.3) {
+          dbPriceCache.set(key, null);
+          return null;
+        }
+        const entry = {
+          avg: Number(top.avg_price),
+          low: top.low_price != null ? Number(top.low_price) : null,
+          high: top.high_price != null ? Number(top.high_price) : null,
+        };
+        dbPriceCache.set(key, entry);
+        return entry;
+      } catch {
+        dbPriceCache.set(key, null);
+        return null;
+      }
+    }
+
+    async function computeBasketHighFromDB(buy: any[]): Promise<number> {
+      const mult = await getMultipliers();
+      let high = 0;
+      await Promise.all(
+        buy.map(async (g) => {
+          const priced = await lookupItemPrice(g.ingredient_name);
+          if (priced) {
+            high += (priced.high ?? priced.avg * 1.1) * mult;
+          } else {
+            const catAvg = CATEGORY_AVG[g.category] ?? CATEGORY_AVG.Other;
+            high += catAvg * mult * HIGH_MULT;
+          }
+        }),
+      );
+      return high;
+    }
 
     function buildGroceryListAndBasket(days: typeof resolvedDays) {
       const agg = new Map<string, {
@@ -789,8 +880,6 @@ Deno.serve(async (req) => {
                 ingredient_name: parsed.item || parsed.display,
                 quantity: parsed.quantity || "1",
                 category,
-                // Use category average so the client-side basket math
-                // reconciles with our server-side enforcement.
                 estimated_price: Math.round(catAvg * 100) / 100,
                 already_have: alreadyHave,
                 needed_for_meals: [meal.recipe.title],
@@ -802,17 +891,12 @@ Deno.serve(async (req) => {
       }
       const list = Array.from(agg.values());
       const buy = list.filter((g) => !g.already_have);
-      // Basket HIGH end = sum of (category_avg × 1.15). Matches the UI's
-      // estimateBasketRangeFromDB high bound when no DB pricing is hit.
-      const high = buy.reduce(
-        (s, g) => s + (CATEGORY_AVG[g.category] ?? CATEGORY_AVG.Other) * HIGH_MULT,
-        0,
-      );
-      return { list, buy, high };
+      return { list, buy };
     }
 
-    let { list: groceryList, buy: buyItems, high: basketHigh } =
+    let { list: groceryList, buy: buyItems } =
       buildGroceryListAndBasket(resolvedDays);
+    let basketHigh = await computeBasketHighFromDB(buyItems);
 
     // Hard-cap enforcement against the basket HIGH end. Drop the most
     // expensive remaining meal until the displayed range fits the budget,
@@ -831,8 +915,8 @@ Deno.serve(async (req) => {
       }
       if (!worst) break;
       resolvedDays[worst.dayIdx].meals.splice(worst.mealIdx, 1);
-      ({ list: groceryList, buy: buyItems, high: basketHigh } =
-        buildGroceryListAndBasket(resolvedDays));
+      ({ list: groceryList, buy: buyItems } = buildGroceryListAndBasket(resolvedDays));
+      basketHigh = await computeBasketHighFromDB(buyItems);
     }
 
     const overBudgetAfterAdjust = basketHigh > weeklyBudget;
