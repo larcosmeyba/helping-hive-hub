@@ -678,6 +678,26 @@ Deno.serve(async (req) => {
         if (recipe.id) usedIds.add(recipe.id);
         dayMeals.push({ meal_type: mealType, recipe, reason });
       }
+      // Backfill missing meal slots — families need a full 3 meals per day.
+      // If the AI returned fewer than 3 slots (or omitted a meal_type), pull
+      // the next safe unused candidate of the missing type from the pool.
+      const present = new Set(dayMeals.map((m) => m.meal_type));
+      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+        if (present.has(mealType)) continue;
+        const fill = findSafeCandidate(mealType, usedIds);
+        if (!fill) continue;
+        usedIds.add(fill.id);
+        dayMeals.push({
+          meal_type: mealType,
+          recipe: fill,
+          reason: "Added to round out your day with breakfast, lunch, and dinner.",
+        });
+      }
+      // Keep meals in canonical breakfast → lunch → dinner order.
+      dayMeals.sort((a, b) => {
+        const order = { breakfast: 0, lunch: 1, dinner: 2 } as Record<string, number>;
+        return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
+      });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
@@ -898,26 +918,13 @@ Deno.serve(async (req) => {
       buildGroceryListAndBasket(resolvedDays);
     let basketHigh = await computeBasketHighFromDB(buyItems);
 
-    // Hard-cap enforcement against the basket HIGH end. Drop the most
-    // expensive remaining meal until the displayed range fits the budget,
-    // preserving at least one meal per day where possible.
-    let basketDropGuard = 0;
-    while (basketHigh > weeklyBudget && basketDropGuard < 40) {
-      basketDropGuard++;
-      let worst: { dayIdx: number; mealIdx: number; cost: number } | null = null;
-      for (let di = 0; di < resolvedDays.length; di++) {
-        const day = resolvedDays[di];
-        if (day.meals.length <= 1) continue;
-        for (let mi = 0; mi < day.meals.length; mi++) {
-          const c = mealCost(day.meals[mi].recipe);
-          if (!worst || c > worst.cost) worst = { dayIdx: di, mealIdx: mi, cost: c };
-        }
-      }
-      if (!worst) break;
-      resolvedDays[worst.dayIdx].meals.splice(worst.mealIdx, 1);
-      ({ list: groceryList, buy: buyItems } = buildGroceryListAndBasket(resolvedDays));
-      basketHigh = await computeBasketHighFromDB(buyItems);
-    }
+    // Budget guard: NEVER drop meals to fit the budget. Families need a full
+    // 3-meals-per-day plan even when the basket exceeds the cap — we already
+    // ran a swap-to-cheaper pass above. If the basket still comes in high,
+    // we flag budget_exceeded and let the UI show the over-budget banner so
+    // the user can raise the budget, swap meals manually, or pick a cheaper
+    // home store. Removing meals here was producing 1-meal/day plans.
+
 
     const overBudgetAfterAdjust = basketHigh > weeklyBudget;
     // Persist the basket-high number (what the UI shows) so Budget/Remaining
