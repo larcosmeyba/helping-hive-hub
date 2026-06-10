@@ -253,7 +253,8 @@ function AddItemSheet({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
       <div
         className="w-full max-w-md bg-card rounded-t-3xl sm:rounded-3xl p-4 sm:p-5 max-h-[85dvh] overflow-y-auto overscroll-contain"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 96px)" }}
+
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
