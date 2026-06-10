@@ -56,7 +56,7 @@ export default function HiveAiAddItemPage() {
 
   return (
     <div className="max-w-md mx-auto px-1 pb-32">
-      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-[14px] text-[#1a1a1a]">
+      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-base text-[#1a1a1a]">
         <ArrowLeft className="w-4 h-4" />
       </button>
       <h1 className="text-center text-[18px] font-extrabold text-[#1a1a1a] mb-4">Add Item</h1>
@@ -67,7 +67,7 @@ export default function HiveAiAddItemPage() {
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPicked(null); }}
           placeholder="Search for an item"
-          className="w-full rounded-xl border border-[#E5E5E5] pl-9 pr-3 py-3 text-[14px] bg-white"
+          className="w-full rounded-xl border border-[#E5E5E5] pl-9 pr-3 py-3 text-base bg-white"
         />
       </div>
 
@@ -92,7 +92,7 @@ export default function HiveAiAddItemPage() {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="e.g. 1 lb, 2 boxes"
-            className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2.5 text-[14px] bg-white"
+            className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2.5 text-base bg-white"
           />
         </Field>
         <Field label="Location">
@@ -115,7 +115,7 @@ export default function HiveAiAddItemPage() {
             type="date"
             value={expiration}
             onChange={(e) => setExpiration(e.target.value)}
-            className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2.5 text-[14px] bg-white"
+            className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2.5 text-base bg-white"
           />
         </Field>
       </div>
