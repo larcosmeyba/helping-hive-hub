@@ -115,7 +115,7 @@ export default function SettingsPage() {
       setGoals(g);
       setFoodWasteAlerts(d.food_waste_alerts_enabled ?? true);
       setFoodWasteSuggestions(d.food_waste_recipe_suggestions_enabled ?? true);
-      setPlaidInterest(d.plaid_interest ?? "");
+      
       const prefs = (d.notification_preferences as Record<string, boolean> | null) ?? {};
       setNotifPrefs({
         meal_plan_reminders: prefs.meal_plan_reminders ?? true,
