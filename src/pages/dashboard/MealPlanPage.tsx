@@ -55,7 +55,7 @@ export default function MealPlanPage() {
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
   const [previousPlan, setPreviousPlan] = useState<GeneratedMealPlan | null>(null);
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
-  const [showSavingsBreakdown, setShowSavingsBreakdown] = useState(false);
+  
   const [cookedMeals, setCookedMeals] = useState<Set<string>>(() => {
     try {
       const raw = safeGetItem("cooked_meals");
