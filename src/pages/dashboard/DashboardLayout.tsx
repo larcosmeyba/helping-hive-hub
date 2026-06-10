@@ -88,12 +88,7 @@ export default function DashboardLayout() {
             </main>
           </div>
 
-          {isMobile && (
-            <>
-              <NotificationBell />
-              <BottomNavBar />
-            </>
-          )}
+          {isMobile && <BottomNavBar />}
           
         </div>
       </SidebarProvider>
