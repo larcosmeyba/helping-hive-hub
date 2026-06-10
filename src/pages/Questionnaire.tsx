@@ -17,7 +17,7 @@ import { useZipValidation } from "@/hooks/useZipValidation";
 import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
 // 1 welcome + 11 onboarding sections
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 11;
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
