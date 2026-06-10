@@ -250,8 +250,7 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
       });
     }
 
-    const { expandAllergies, forbiddenForDiets, recipeContainsAny } = await import("../generate-meal-plan/index.ts").catch(() => ({} as any));
-    // Inline copies (avoid cross-function import issues)
+    // Safety filter: enforce allergies + dietary preferences server-side.
     const ALLERGY_MAP: Record<string, string[]> = {
       nuts: ["nut","nuts","almond","walnut","pecan","peanut","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut","nut butter"],
       "tree nuts": ["almond","walnut","pecan","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut"],
