@@ -627,6 +627,13 @@ function EstimatedTotal({
           This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at Instacart checkout.
         </p>
       )}
+      {/* Universal Instacart cost-saving tip — every user sees how to trim
+          their cart at checkout without leaving the app. */}
+      <div className="mt-3 rounded-xl bg-[#FFF8E1] border border-[#F2D88A] px-3 py-2">
+        <p className="text-[11px] text-[#7A5A00] leading-relaxed">
+          <span className="font-semibold">Tip:</span> If your Instacart cart comes in over budget, open the cart, tap “Replace with best match” on pricier items, and pick a cheaper option to lower your total for the week.
+        </p>
+      </div>
 
       <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-2 px-1">{PRICING_DISCLAIMER}</p>
 
