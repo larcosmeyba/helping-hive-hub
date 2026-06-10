@@ -210,7 +210,7 @@ export default function Questionnaire() {
       assistance, dietary,
       cookingConfidence, pantryStarter,
       foodWasteAlerts, foodWasteSuggestions,
-      plaidInterest, goals,
+      goals,
     };
     saveLocalProgress(progress);
     if (!user || !hydrated) return;
