@@ -26,6 +26,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { buildMealPlanContext } from "../_shared/mealPlanContext.ts";
 import { buildHiveAiContext } from "../_shared/hiveAiContext.ts";
 import { buildFamilyAssistanceContext } from "../_shared/familyAssistanceContext.ts";
@@ -87,6 +88,28 @@ Deno.serve(async (req) => {
     if (!request_type || !SUPPORTED.includes(request_type)) {
       return json({ ok: false, error: `Unsupported request_type. Supported: ${SUPPORTED.join(", ")}` }, 400, cors);
     }
+
+    // Per-request-type hourly rate limits. Heavier endpoints get tighter caps.
+    const RATE_LIMITS: Record<RequestType, number> = {
+      meal_plan_generation: 10,
+      meal_swap: 30,
+      hive_ai_chat: 60,
+      cook_from_what_i_have: 20,
+      pantry_analysis: 30,
+      food_waste_alerts: 30,
+      family_assistance: 30,
+      budget_insights: 30,
+      pantry_photo_scan: 30,
+      inventory_photo_scan: 30,
+    };
+    const rl = await enforceRateLimit({
+      admin,
+      userId: user.id,
+      endpoint: `process-hive-ai:${request_type}`,
+      maxPerHour: RATE_LIMITS[request_type] ?? 30,
+      corsHeaders: cors,
+    });
+    if (rl) return rl;
 
     // Load AI config (enabled flag + model)
     const { data: config } = await admin

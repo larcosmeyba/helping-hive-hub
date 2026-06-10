@@ -4,6 +4,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 // OpenAI access is via _shared/openaiClient.ts (gpt-5.4-mini).
 
@@ -61,6 +62,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // Rate limit: 20 cook-from-what-i-have requests per user per hour.
+    const rl = await enforceRateLimit({
+      admin,
+      userId,
+      endpoint: "cook-from-what-i-have",
+      maxPerHour: 20,
+      corsHeaders,
+    });
+    if (rl) return rl;
 
     const [
       { data: pantry },
