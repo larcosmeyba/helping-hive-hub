@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Shield, Lock, Eye, Unlink, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePlaidLink } from "react-plaid-link";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -10,6 +11,61 @@ export default function BudgetConnectPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [exchanging, setExchanging] = useState(false);
+
+  // Check if already connected — skip straight to dashboard.
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("plaid_connections")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (data) navigate("/dashboard/budget-snapshot", { replace: true });
+    })();
+  }, [user, navigate]);
+
+  const onSuccess = useCallback(
+    async (public_token: string) => {
+      setExchanging(true);
+      try {
+        const { error } = await supabase.functions.invoke("exchange-plaid-public-token", {
+          body: { public_token },
+        });
+        if (error) throw error;
+        navigate("/dashboard/budget-snapshot/syncing");
+      } catch (e) {
+        toast({
+          title: "Connection failed",
+          description: String((e as Error).message),
+          variant: "destructive",
+        });
+        setExchanging(false);
+      }
+    },
+    [navigate],
+  );
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess,
+    onExit: (err) => {
+      setLinkToken(null);
+      if (err) {
+        toast({
+          title: "Plaid Link closed",
+          description: err.display_message || err.error_message || "You can try again anytime.",
+        });
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (linkToken && ready) open();
+  }, [linkToken, ready, open]);
 
   async function handleConnect() {
     if (!user) return;
@@ -19,19 +75,20 @@ export default function BudgetConnectPage() {
         body: { user_id: user.id },
       });
       if (error || !data?.link_token) {
-        // Plaid not configured yet — go straight to mock sync flow.
         toast({
-          title: "Demo mode",
-          description: "Plaid keys aren't live yet. Showing a demo budget so you can preview the flow.",
+          title: "Plaid unavailable",
+          description: "Could not start a secure session. Please try again in a moment.",
+          variant: "destructive",
         });
-        navigate("/dashboard/budget-snapshot/syncing?demo=1");
         return;
       }
-      // TODO: open Plaid Link with link_token on mobile + web (react-plaid-link).
-      // For now, route to the syncing screen which will call sync + calculate.
-      navigate(`/dashboard/budget-snapshot/syncing?token=${encodeURIComponent(data.link_token)}`);
+      setLinkToken(data.link_token);
     } catch (e) {
-      toast({ title: "Could not start Plaid", description: String((e as Error).message), variant: "destructive" });
+      toast({
+        title: "Could not start Plaid",
+        description: String((e as Error).message),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -49,7 +106,7 @@ export default function BudgetConnectPage() {
         </div>
         <h1 className="text-[22px] font-extrabold text-[#1a1a1a]">Connect Your Accounts</h1>
         <p className="text-[13px] text-[#6b6b6b] mt-2">
-          Securely connect your bank account with Plaid to track food spending.
+          Securely connect your bank account with Plaid to track food spending. Connect once — we'll remember it.
         </p>
       </div>
 
@@ -66,11 +123,21 @@ export default function BudgetConnectPage() {
 
       <button
         onClick={handleConnect}
-        disabled={loading}
+        disabled={loading || exchanging || (!!linkToken && !ready)}
         className="w-full bg-[#1F5A3D] text-white font-semibold py-3.5 rounded-xl disabled:opacity-60"
       >
-        {loading ? "Starting Plaid…" : "Connect With Plaid"}
+        {exchanging
+          ? "Finishing connection…"
+          : loading
+            ? "Starting Plaid…"
+            : linkToken && !ready
+              ? "Opening Plaid…"
+              : "Connect With Plaid"}
       </button>
+
+      <p className="text-[11px] text-[#9a9a9a] text-center mt-3">
+        Sandbox mode: use <strong>user_good</strong> / <strong>pass_good</strong> at any bank.
+      </p>
     </div>
   );
 }
