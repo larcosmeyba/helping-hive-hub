@@ -20,6 +20,11 @@ export interface RateLimitOptions {
   failClosed?: boolean;
 }
 
+// Fixed back-off window for infra-error fail-closed responses. Hourly bucket
+// math doesn't apply here (the limiter itself failed), so we ask clients to
+// retry in ~45s instead of "seconds-to-next-hour" or 0.
+const INFRA_ERROR_RETRY_AFTER_SECONDS = 45;
+
 function buildRateLimitedResponse(
   endpoint: string,
   currentCount: number,
@@ -27,10 +32,15 @@ function buildRateLimitedResponse(
   corsHeaders: Record<string, string>,
   reason: "exceeded" | "infra_error" = "exceeded",
 ): Response {
-  const now = new Date();
-  const nextHour = new Date(now);
-  nextHour.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
-  const retryAfter = Math.max(1, Math.ceil((nextHour.getTime() - now.getTime()) / 1000));
+  let retryAfter: number;
+  if (reason === "infra_error") {
+    retryAfter = INFRA_ERROR_RETRY_AFTER_SECONDS;
+  } else {
+    const now = new Date();
+    const nextHour = new Date(now);
+    nextHour.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
+    retryAfter = Math.max(1, Math.ceil((nextHour.getTime() - now.getTime()) / 1000));
+  }
 
   const message = reason === "infra_error"
     ? "We're protecting the service while it's under heavy load. Please try again shortly."
