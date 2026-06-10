@@ -4,6 +4,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 interface Overrides {
   budget?: number;
@@ -264,6 +265,17 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub as string;
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Rate limit: 10 full meal-plan generations per user per hour (very expensive).
+    const rl = await enforceRateLimit({
+      admin,
+      userId,
+      endpoint: "generate-meal-plan",
+      maxPerHour: 10,
+      corsHeaders,
+    });
+    if (rl) return rl;
+
     const body = await req.json().catch(() => ({}));
     const overrides: Overrides = body.overrides ?? body ?? {};
 
