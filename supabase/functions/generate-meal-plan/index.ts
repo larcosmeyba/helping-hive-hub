@@ -898,26 +898,13 @@ Deno.serve(async (req) => {
       buildGroceryListAndBasket(resolvedDays);
     let basketHigh = await computeBasketHighFromDB(buyItems);
 
-    // Hard-cap enforcement against the basket HIGH end. Drop the most
-    // expensive remaining meal until the displayed range fits the budget,
-    // preserving at least one meal per day where possible.
-    let basketDropGuard = 0;
-    while (basketHigh > weeklyBudget && basketDropGuard < 40) {
-      basketDropGuard++;
-      let worst: { dayIdx: number; mealIdx: number; cost: number } | null = null;
-      for (let di = 0; di < resolvedDays.length; di++) {
-        const day = resolvedDays[di];
-        if (day.meals.length <= 1) continue;
-        for (let mi = 0; mi < day.meals.length; mi++) {
-          const c = mealCost(day.meals[mi].recipe);
-          if (!worst || c > worst.cost) worst = { dayIdx: di, mealIdx: mi, cost: c };
-        }
-      }
-      if (!worst) break;
-      resolvedDays[worst.dayIdx].meals.splice(worst.mealIdx, 1);
-      ({ list: groceryList, buy: buyItems } = buildGroceryListAndBasket(resolvedDays));
-      basketHigh = await computeBasketHighFromDB(buyItems);
-    }
+    // Budget guard: NEVER drop meals to fit the budget. Families need a full
+    // 3-meals-per-day plan even when the basket exceeds the cap — we already
+    // ran a swap-to-cheaper pass above. If the basket still comes in high,
+    // we flag budget_exceeded and let the UI show the over-budget banner so
+    // the user can raise the budget, swap meals manually, or pick a cheaper
+    // home store. Removing meals here was producing 1-meal/day plans.
+
 
     const overBudgetAfterAdjust = basketHigh > weeklyBudget;
     // Persist the basket-high number (what the UI shows) so Budget/Remaining
