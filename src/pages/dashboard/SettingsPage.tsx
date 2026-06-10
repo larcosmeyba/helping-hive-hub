@@ -54,11 +54,8 @@ const COOKING_OPTIONS = [
   { value: "advanced", label: "Advanced" },
 ];
 
-const PLAID_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "later", label: "Maybe later" },
-  { value: "skip", label: "No thanks" },
-];
+
+
 
 export default function SettingsPage() {
   const { user, signOut, refreshProfile } = useAuth();
