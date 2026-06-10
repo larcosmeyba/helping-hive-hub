@@ -353,18 +353,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div>
-          <Label>Budget tracking (Plaid)</Label>
-          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Connect your bank later for grocery spend insights.</p>
-          <div className="flex flex-wrap gap-2">
-            {PLAID_OPTIONS.map((opt) => (
-              <button key={opt.value} onClick={() => setPlaidInterest(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${plaidInterest === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <div>
           <Label>Move with your meals</Label>
