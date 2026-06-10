@@ -173,7 +173,15 @@ Deno.serve(async (req) => {
     let status = "ok";
     let errorMessage: string | null = null;
 
-    if (apiKey) {
+    // Load-test stub: when the caller sends `x-loadtest-stub: true` AND the env
+    // explicitly allows it (staging only), skip the real model call and return
+    // a mock — but still run auth, rate limit, context enrichment, and DB
+    // logging. NEVER set LOADTEST_STUB_ALLOWED=true in production.
+    const stubAllowed = Deno.env.get("LOADTEST_STUB_ALLOWED") === "true";
+    const stubRequested = req.headers.get("x-loadtest-stub") === "true";
+    const useStub = stubAllowed && stubRequested;
+
+    if (apiKey && !useStub) {
       try {
         data = await callOpenAI({ apiKey, model, request_type, context: enrichedContext, prompt, options });
         mocked = false;
@@ -185,6 +193,7 @@ Deno.serve(async (req) => {
       }
     } else {
       data = mockResponse(request_type, enrichedContext);
+      if (useStub) mocked = true;
     }
 
     const latency_ms = Date.now() - startedAt;
