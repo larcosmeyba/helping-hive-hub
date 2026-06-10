@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,8 +15,6 @@ const STEPS = [
 export default function BudgetSyncingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [search] = useSearchParams();
-  const demo = search.get("demo") === "1";
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -26,13 +24,12 @@ export default function BudgetSyncingPage() {
         await new Promise((r) => setTimeout(r, 700));
         if (cancelled) return;
         setStep(i + 1);
-        // Trigger real sync + calc partway through if Plaid is wired up.
-        if (!demo && user && i === 2) {
+        if (user && i === 2) {
           try {
             await supabase.functions.invoke("sync-plaid-transactions", { body: {} });
             await supabase.functions.invoke("calculate-budget-dashboard", { body: {} });
           } catch {
-            // Ignore; we'll fall back to mock data on the dashboard.
+            // Surface on dashboard if it fails.
           }
         }
       }
@@ -44,7 +41,7 @@ export default function BudgetSyncingPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate, user, demo]);
+  }, [navigate, user]);
 
   return (
     <div className="max-w-md mx-auto px-4 pt-8 pb-10">
