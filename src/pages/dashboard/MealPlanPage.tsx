@@ -17,8 +17,6 @@ import { MealImage } from "@/components/dashboard/MealImage";
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
-import { MealPlanGroceryInsights } from "@/components/dashboard/MealPlanGroceryInsights";
-import { SavingsBreakdownPlaid } from "@/components/dashboard/SavingsBreakdownPlaid";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
@@ -57,7 +55,7 @@ export default function MealPlanPage() {
   const [swappedMeals, setSwappedMeals] = useState<Record<string, MealPlanMeal>>({});
   const [previousPlan, setPreviousPlan] = useState<GeneratedMealPlan | null>(null);
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
-  const [showSavingsBreakdown, setShowSavingsBreakdown] = useState(false);
+  
   const [cookedMeals, setCookedMeals] = useState<Set<string>>(() => {
     try {
       const raw = safeGetItem("cooked_meals");
@@ -222,8 +220,8 @@ export default function MealPlanPage() {
           <History className="w-3.5 h-3.5" /> Past Plans
         </button>
       </div>
-      {/* Plaid-powered grocery spending insights (real data, not estimates) */}
-      <MealPlanGroceryInsights />
+
+
 
       
 
@@ -388,17 +386,6 @@ export default function MealPlanPage() {
       </AnimatePresence>
 
 
-      {/* Savings breakdown dialog */}
-      <Dialog open={showSavingsBreakdown} onOpenChange={setShowSavingsBreakdown}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <span>💰</span> Grocery Spending Breakdown
-            </DialogTitle>
-          </DialogHeader>
-          <SavingsBreakdownPlaid />
-        </DialogContent>
-      </Dialog>
 
       {/* Recipe Dialog */}
       <Dialog open={!!selectedMeal} onOpenChange={() => setSelectedMeal(null)}>

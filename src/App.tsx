@@ -70,13 +70,6 @@ const HiveAiScanPage = lazy(() => import("./pages/dashboard/HiveAiScanPage.tsx")
 const HiveAiScanReviewPage = lazy(() => import("./pages/dashboard/HiveAiScanReviewPage.tsx"));
 const HiveAiAddItemPage = lazy(() => import("./pages/dashboard/HiveAiAddItemPage.tsx"));
 const MealCookedPage = lazy(() => import("./pages/dashboard/MealCookedPage.tsx"));
-const BudgetConnectPage = lazy(() => import("./pages/dashboard/BudgetConnectPage.tsx"));
-const BudgetSyncingPage = lazy(() => import("./pages/dashboard/BudgetSyncingPage.tsx"));
-const BudgetDashboardPage = lazy(() => import("./pages/dashboard/BudgetDashboardPage.tsx"));
-const BudgetTransactionsPage = lazy(() => import("./pages/dashboard/BudgetTransactionsPage.tsx"));
-const BudgetAiInsightsPage = lazy(() => import("./pages/dashboard/BudgetAiInsightsPage.tsx"));
-const BudgetGoalsPage = lazy(() => import("./pages/dashboard/BudgetGoalsPage.tsx"));
-const BudgetSettingsPage = lazy(() => import("./pages/dashboard/BudgetSettingsPage.tsx"));
 
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout.tsx"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.tsx"));
@@ -176,13 +169,6 @@ const App = () => {
                     <Route path="hive-ai/scan/review" element={<HiveAiScanReviewPage />} />
                     <Route path="hive-ai/add" element={<HiveAiAddItemPage />} />
                     <Route path="cook/recipes/:id/cooked" element={<MealCookedPage />} />
-                    <Route path="budget-snapshot" element={<BudgetDashboardPage />} />
-                    <Route path="budget-snapshot/connect" element={<BudgetConnectPage />} />
-                    <Route path="budget-snapshot/syncing" element={<BudgetSyncingPage />} />
-                    <Route path="budget-snapshot/transactions" element={<BudgetTransactionsPage />} />
-                    <Route path="budget-snapshot/insights" element={<BudgetAiInsightsPage />} />
-                    <Route path="budget-snapshot/goals" element={<BudgetGoalsPage />} />
-                    <Route path="budget-snapshot/settings" element={<BudgetSettingsPage />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>

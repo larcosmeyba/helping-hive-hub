@@ -17,7 +17,7 @@ import { useZipValidation } from "@/hooks/useZipValidation";
 import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
 // 1 welcome + 11 onboarding sections
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 11;
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -138,8 +138,7 @@ export default function Questionnaire() {
   const [foodWasteAlerts, setFoodWasteAlerts] = useState<boolean>((localSeed.foodWasteAlerts as boolean) ?? true);
   const [foodWasteSuggestions, setFoodWasteSuggestions] = useState<boolean>((localSeed.foodWasteSuggestions as boolean) ?? true);
 
-  // SECTION 10 — Plaid interest
-  const [plaidInterest, setPlaidInterest] = useState<string>((localSeed.plaidInterest as string) || "");
+  // SECTION 10 — Apollo goals (renumbered after Plaid removal)
 
   // SECTION 11 — Apollo goals
   const [goals, setGoals] = useState<BoolMap>((localSeed.goals as BoolMap) || {});
@@ -189,7 +188,7 @@ export default function Questionnaire() {
           if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
           if (typeof dbProgress.foodWasteAlerts === "boolean") setFoodWasteAlerts(dbProgress.foodWasteAlerts);
           if (typeof dbProgress.foodWasteSuggestions === "boolean") setFoodWasteSuggestions(dbProgress.foodWasteSuggestions);
-          if (typeof dbProgress.plaidInterest === "string") setPlaidInterest(dbProgress.plaidInterest);
+          
           if (dbProgress.goals && typeof dbProgress.goals === "object") setGoals(dbProgress.goals as BoolMap);
         }
         setHydrated(true);
@@ -211,7 +210,7 @@ export default function Questionnaire() {
       assistance, dietary,
       cookingConfidence, pantryStarter,
       foodWasteAlerts, foodWasteSuggestions,
-      plaidInterest, goals,
+      goals,
     };
     saveLocalProgress(progress);
     if (!user || !hydrated) return;
@@ -230,7 +229,7 @@ export default function Questionnaire() {
     householdSize, childrenUnder5, children5to12, teenagers, seniors65plus,
     weeklyBudget, budgetTouched, zipCode, locationCity, locationState,
     homeStore, assistance, dietary, cookingConfidence, pantryStarter,
-    foodWasteAlerts, foodWasteSuggestions, plaidInterest, goals,
+    foodWasteAlerts, foodWasteSuggestions, goals,
   ]);
 
   const toggleBool = (map: BoolMap, key: string, setter: (m: BoolMap) => void) => {
@@ -329,8 +328,6 @@ export default function Questionnaire() {
         // Food waste
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        // Plaid
-        plaid_interest: plaidInterest || null,
         // Apollo
         ...goalCols,
         // Onboarding
@@ -351,7 +348,7 @@ export default function Questionnaire() {
         dietary_preferences: dietaryPrefs,
         assistance_count: Object.values(assistanceCols).filter(Boolean).length,
         apollo_goals_count: Object.values(goalCols).filter(Boolean).length,
-        plaid_interest: plaidInterest,
+        
       });
 
       clearProgress();
@@ -675,33 +672,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 11 — Section 10: Plaid interest */}
+      {/* STEP 11 — Section 10: Apollo goals + finish */}
       {step === 11 && (
         <QuestionnaireStep step={11} totalSteps={TOTAL_STEPS}
-          title="Want budget insights from your bank?"
-          subtitle="We can securely connect to your bank (via Plaid) to track grocery spend."
-          onNext={next} onBack={back}
-        >
-          <div className="space-y-3 mt-4">
-            {[
-              { value: "yes", label: "Yes — I'm interested" },
-              { value: "later", label: "Maybe later — remind me" },
-              { value: "skip", label: "No thanks" },
-            ].map((opt) => (
-              <OptionChip key={opt.value} label={opt.label}
-                selected={plaidInterest === opt.value}
-                onClick={() => setPlaidInterest(opt.value)} />
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-4 text-center">
-            Nothing connects until you explicitly authorize it. Your bank credentials are never stored by Help The Hive.
-          </p>
-        </QuestionnaireStep>
-      )}
-
-      {/* STEP 12 — Section 11: Apollo goals + finish */}
-      {step === 12 && (
-        <QuestionnaireStep step={12} totalSteps={TOTAL_STEPS}
           title="Any wellness goals?"
           subtitle="Optional — Apollo Reborn uses these for personalized recommendations."
           onNext={handleSubmit} onBack={back}

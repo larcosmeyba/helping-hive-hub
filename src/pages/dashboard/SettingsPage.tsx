@@ -54,11 +54,8 @@ const COOKING_OPTIONS = [
   { value: "advanced", label: "Advanced" },
 ];
 
-const PLAID_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "later", label: "Maybe later" },
-  { value: "skip", label: "No thanks" },
-];
+
+
 
 export default function SettingsPage() {
   const { user, signOut, refreshProfile } = useAuth();
@@ -83,7 +80,7 @@ export default function SettingsPage() {
   const [goals, setGoals] = useState<Record<string, boolean>>({});
   const [foodWasteAlerts, setFoodWasteAlerts] = useState(true);
   const [foodWasteSuggestions, setFoodWasteSuggestions] = useState(true);
-  const [plaidInterest, setPlaidInterest] = useState("");
+  
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
   const [showMacros, setShowMacros] = useShowMacros();
@@ -118,7 +115,7 @@ export default function SettingsPage() {
       setGoals(g);
       setFoodWasteAlerts(d.food_waste_alerts_enabled ?? true);
       setFoodWasteSuggestions(d.food_waste_recipe_suggestions_enabled ?? true);
-      setPlaidInterest(d.plaid_interest ?? "");
+      
       const prefs = (d.notification_preferences as Record<string, boolean> | null) ?? {};
       setNotifPrefs({
         meal_plan_reminders: prefs.meal_plan_reminders ?? true,
@@ -174,7 +171,6 @@ export default function SettingsPage() {
         ...goalCols,
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        plaid_interest: plaidInterest || null,
       }).eq("user_id", user.id);
       if (error) throw error;
       await refreshProfile?.();
@@ -357,18 +353,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div>
-          <Label>Budget tracking (Plaid)</Label>
-          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Connect your bank later for grocery spend insights.</p>
-          <div className="flex flex-wrap gap-2">
-            {PLAID_OPTIONS.map((opt) => (
-              <button key={opt.value} onClick={() => setPlaidInterest(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${plaidInterest === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <div>
           <Label>Move with your meals</Label>
