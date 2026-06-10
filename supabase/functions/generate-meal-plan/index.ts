@@ -125,6 +125,13 @@ const DIET_FORBIDDEN: Record<string, string[]> = {
   vegan: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "milk", "cheese", "butter", "yogurt", "cream", "whey", "casein", "egg", "eggs", "honey", "gelatin", "lard", "tallow", "ghee", "parmesan", "mozzarella", "cheddar", "feta"],
   vegetarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "gelatin", "lard", "tallow"],
   pescatarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "gelatin", "lard", "tallow"],
+  "gluten-free": ["wheat", "flour", "bread", "pasta", "barley", "rye", "couscous", "semolina", "farro", "spelt", "bulgur", "seitan", "soy sauce", "breadcrumbs", "tortilla", "noodle", "noodles"],
+  "dairy-free": ["milk", "cheese", "butter", "yogurt", "yoghurt", "cream", "whey", "casein", "lactose", "ghee", "parmesan", "mozzarella", "cheddar", "feta", "ricotta"],
+  "nut-free": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline", "nut butter"],
+  keto: ["sugar", "bread", "pasta", "rice", "potato", "potatoes", "corn", "flour", "tortilla", "noodle", "noodles", "oats", "cereal", "banana", "honey", "syrup"],
+  paleo: ["bread", "pasta", "rice", "flour", "tortilla", "noodle", "noodles", "oats", "cereal", "beans", "lentil", "chickpea", "peanut", "soy", "tofu", "milk", "cheese", "butter", "yogurt", "cream", "sugar"],
+  halal: ["pork", "bacon", "ham", "sausage", "pepperoni", "prosciutto", "lard", "wine", "beer", "rum", "vodka", "whiskey", "alcohol"],
+  kosher: ["pork", "bacon", "ham", "sausage", "pepperoni", "prosciutto", "lard", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "catfish", "shark", "eel"],
 };
 export function expandAllergies(allergies: string[]): string[] {
   const out = new Set<string>();
