@@ -250,7 +250,52 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
       });
     }
 
-    const recipes = Array.isArray(parsed?.recipes) ? parsed.recipes : [];
+    const { expandAllergies, forbiddenForDiets, recipeContainsAny } = await import("../generate-meal-plan/index.ts").catch(() => ({} as any));
+    // Inline copies (avoid cross-function import issues)
+    const ALLERGY_MAP: Record<string, string[]> = {
+      nuts: ["nut","nuts","almond","walnut","pecan","peanut","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut","nut butter"],
+      "tree nuts": ["almond","walnut","pecan","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut"],
+      peanuts: ["peanut","peanuts","peanut butter","groundnut"],
+      dairy: ["milk","cheese","butter","yogurt","yoghurt","cream","whey","casein","lactose","ghee","parmesan","mozzarella","cheddar","feta","ricotta"],
+      milk: ["milk","cheese","butter","yogurt","cream","whey","casein","lactose"],
+      gluten: ["wheat","flour","bread","pasta","barley","rye","couscous","semolina","farro","spelt","bulgur","seitan"],
+      wheat: ["wheat","flour","bread","pasta","couscous","semolina"],
+      eggs: ["egg","eggs","mayonnaise","mayo","meringue"],
+      soy: ["soy","soya","tofu","tempeh","edamame","miso","soy sauce","tamari"],
+      shellfish: ["shrimp","prawn","crab","lobster","crawfish","scallop","clam","mussel","oyster"],
+      fish: ["fish","salmon","tuna","cod","tilapia","trout","anchovy","sardine","halibut","mackerel"],
+      sesame: ["sesame","tahini"],
+    };
+    const DIET_MAP: Record<string, string[]> = {
+      vegan: ["beef","steak","pot roast","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","fish","salmon","tuna","cod","tilapia","shrimp","prawn","crab","lobster","scallop","clam","oyster","mussel","anchovy","milk","cheese","butter","yogurt","cream","whey","casein","egg","eggs","honey","gelatin","lard","tallow","ghee","parmesan","mozzarella","cheddar","feta"],
+      vegetarian: ["beef","steak","pot roast","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","fish","salmon","tuna","cod","tilapia","shrimp","prawn","crab","lobster","scallop","clam","oyster","mussel","anchovy","gelatin","lard","tallow"],
+      pescatarian: ["beef","steak","pot roast","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","gelatin","lard","tallow"],
+    };
+    const safetyTerms = new Set<string>();
+    for (const a of (profile?.allergies ?? []) as string[]) {
+      const k = (a||"").toLowerCase().trim(); if (!k) continue;
+      safetyTerms.add(k); for (const t of ALLERGY_MAP[k]||[]) safetyTerms.add(t);
+    }
+    for (const d of (profile?.dietary_preferences ?? []) as string[]) {
+      const k = (d||"").toLowerCase().trim();
+      for (const t of DIET_MAP[k]||[]) safetyTerms.add(t);
+    }
+    function violatesSafety(r: any): boolean {
+      if (!safetyTerms.size) return false;
+      const parts: string[] = [String(r.recipe_name||""), String(r.description||"")];
+      for (const i of (r.ingredients||[])) parts.push(String(i?.item_name||""));
+      const hay = parts.join(" ").toLowerCase();
+      for (const t of safetyTerms) {
+        const re = new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\b`,"i");
+        if (re.test(hay)) return true;
+      }
+      return false;
+    }
+    const safeRecipes = (Array.isArray(parsed?.recipes) ? parsed.recipes : []).filter((r: any) => {
+      if (violatesSafety(r)) { console.warn("[cook-from-what-i-have] rejected unsafe recipe", r?.recipe_name); return false; }
+      return true;
+    });
+    const recipes = safeRecipes;
     const persisted: any[] = [];
     const norm = (s: string) => (s || "").trim().toLowerCase();
     const pantryByName = new Map<string, any>();
