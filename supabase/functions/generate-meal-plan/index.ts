@@ -327,14 +327,19 @@ Deno.serve(async (req) => {
       }
       let pool = (data ?? []).filter((r: any) => !excludeIds.has(r.id));
 
-      // Allergy filter (hard)
-      if (allergies.length) {
-        const allergyRe = new RegExp(`\\b(${allergies.map((a) => a.toLowerCase().trim()).filter(Boolean).join("|")})\\b`, "i");
-        pool = pool.filter((r: any) => !(Array.isArray(r.ingredients) && r.ingredients.some((i: any) => typeof i === "string" && allergyRe.test(i))));
+      // Allergy filter (HARD — checks title, description, ingredients)
+      const allergyTerms = expandAllergies(allergies);
+      if (allergyTerms.length) {
+        pool = pool.filter((r: any) => !recipeContainsAny(r, allergyTerms));
       }
 
-      // Dietary preference filter (soft — only apply if it leaves enough)
-      if (dietaryPrefs.length) {
+      // Dietary preference filter (HARD for vegan/vegetarian/pescatarian — safety)
+      const dietForbidden = forbiddenForDiets(dietaryPrefs);
+      if (dietForbidden.length) {
+        pool = pool.filter((r: any) => !recipeContainsAny(r, dietForbidden));
+      }
+      // Soft tag-match preference for non-restrictive prefs
+      if (dietaryPrefs.length && !dietForbidden.length) {
         const prefsLower = dietaryPrefs.map((p) => p.toLowerCase());
         const matched = pool.filter((r: any) => {
           const tags = (r.tags ?? []).map((t: string) => t.toLowerCase());
