@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Shield, Lock, Eye, Unlink, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -10,9 +12,13 @@ import { PRIVACY_COPY } from "@/lib/foodBudget";
 export default function BudgetConnectPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isNative = Capacitor.isNativePlatform();
+
   const [loading, setLoading] = useState(false);
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
+  const [waitingHosted, setWaitingHosted] = useState(false);
+  const pollRef = useRef<number | null>(null);
 
   // Check if already connected — skip straight to dashboard.
   useEffect(() => {
@@ -28,6 +34,7 @@ export default function BudgetConnectPage() {
     })();
   }, [user, navigate]);
 
+  // ---------- WEB FLOW (react-plaid-link) ----------
   const onSuccess = useCallback(
     async (public_token: string) => {
       setExchanging(true);
@@ -50,7 +57,7 @@ export default function BudgetConnectPage() {
   );
 
   const { open, ready } = usePlaidLink({
-    token: linkToken,
+    token: isNative ? null : linkToken,
     onSuccess,
     onExit: (err) => {
       setLinkToken(null);
@@ -64,15 +71,58 @@ export default function BudgetConnectPage() {
   });
 
   useEffect(() => {
-    if (linkToken && ready) open();
-  }, [linkToken, ready, open]);
+    if (!isNative && linkToken && ready) open();
+  }, [isNative, linkToken, ready, open]);
+
+  // ---------- NATIVE FLOW (Hosted Link in system browser) ----------
+  // While the in-app browser is open, poll Supabase for an active connection
+  // (the webhook will insert it once Plaid finishes).
+  useEffect(() => {
+    if (!waitingHosted || !user) return;
+    const startedAt = Date.now();
+    const tick = async () => {
+      const { data } = await supabase
+        .from("plaid_connections")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (data) {
+        try { await Browser.close(); } catch { /* noop */ }
+        setWaitingHosted(false);
+        navigate("/dashboard/budget-snapshot/syncing");
+        return;
+      }
+      if (Date.now() - startedAt > 10 * 60 * 1000) {
+        setWaitingHosted(false);
+        return;
+      }
+      pollRef.current = window.setTimeout(tick, 2500);
+    };
+    tick();
+    return () => {
+      if (pollRef.current) window.clearTimeout(pollRef.current);
+    };
+  }, [waitingHosted, user, navigate]);
+
+  // If the user dismisses the in-app browser manually, stop polling.
+  useEffect(() => {
+    if (!isNative) return;
+    const sub = Browser.addListener("browserFinished", () => {
+      // Give the webhook a brief grace period before giving up.
+      window.setTimeout(() => setWaitingHosted(false), 6000);
+    });
+    return () => {
+      sub.then((s) => s.remove()).catch(() => undefined);
+    };
+  }, [isNative]);
 
   async function handleConnect() {
     if (!user) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-plaid-link-token", {
-        body: { user_id: user.id },
+        body: { user_id: user.id, hosted: isNative },
       });
       if (error || !data?.link_token) {
         toast({
@@ -82,7 +132,21 @@ export default function BudgetConnectPage() {
         });
         return;
       }
-      setLinkToken(data.link_token);
+
+      if (isNative) {
+        if (!data.hosted_link_url) {
+          toast({
+            title: "Plaid unavailable",
+            description: "Hosted link unavailable. Please try again shortly.",
+            variant: "destructive",
+          });
+          return;
+        }
+        setWaitingHosted(true);
+        await Browser.open({ url: data.hosted_link_url, presentationStyle: "popover" });
+      } else {
+        setLinkToken(data.link_token);
+      }
     } catch (e) {
       toast({
         title: "Could not start Plaid",
@@ -93,6 +157,16 @@ export default function BudgetConnectPage() {
       setLoading(false);
     }
   }
+
+  const buttonLabel = exchanging
+    ? "Finishing connection…"
+    : loading
+      ? "Starting Plaid…"
+      : isNative && waitingHosted
+        ? "Waiting for Plaid…"
+        : !isNative && linkToken && !ready
+          ? "Opening Plaid…"
+          : "Connect With Plaid";
 
   return (
     <div className="max-w-md mx-auto px-4 pb-10">
@@ -123,16 +197,10 @@ export default function BudgetConnectPage() {
 
       <button
         onClick={handleConnect}
-        disabled={loading || exchanging || (!!linkToken && !ready)}
+        disabled={loading || exchanging || waitingHosted || (!isNative && !!linkToken && !ready)}
         className="w-full bg-[#1F5A3D] text-white font-semibold py-3.5 rounded-xl disabled:opacity-60"
       >
-        {exchanging
-          ? "Finishing connection…"
-          : loading
-            ? "Starting Plaid…"
-            : linkToken && !ready
-              ? "Opening Plaid…"
-              : "Connect With Plaid"}
+        {buttonLabel}
       </button>
 
       <p className="text-[11px] text-[#9a9a9a] text-center mt-3">
