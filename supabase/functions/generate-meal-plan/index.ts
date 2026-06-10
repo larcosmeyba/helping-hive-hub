@@ -678,6 +678,26 @@ Deno.serve(async (req) => {
         if (recipe.id) usedIds.add(recipe.id);
         dayMeals.push({ meal_type: mealType, recipe, reason });
       }
+      // Backfill missing meal slots — families need a full 3 meals per day.
+      // If the AI returned fewer than 3 slots (or omitted a meal_type), pull
+      // the next safe unused candidate of the missing type from the pool.
+      const present = new Set(dayMeals.map((m) => m.meal_type));
+      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+        if (present.has(mealType)) continue;
+        const fill = findSafeCandidate(mealType, usedIds);
+        if (!fill) continue;
+        usedIds.add(fill.id);
+        dayMeals.push({
+          meal_type: mealType,
+          recipe: fill,
+          reason: "Added to round out your day with breakfast, lunch, and dinner.",
+        });
+      }
+      // Keep meals in canonical breakfast → lunch → dinner order.
+      dayMeals.sort((a, b) => {
+        const order = { breakfast: 0, lunch: 1, dinner: 2 } as Record<string, number>;
+        return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
+      });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
