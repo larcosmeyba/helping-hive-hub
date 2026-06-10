@@ -615,12 +615,87 @@ Deno.serve(async (req) => {
       };
     }
 
-    // If still over budget (no swap could fix it), drop the most expensive
-    // meal(s) until under budget. We'd rather show a smaller plan than an
-    // over-budget one. Keep at least one meal per day if possible.
-    let dropGuard = 0;
-    while (projectedTotal() > weeklyBudget && dropGuard < 24) {
-      dropGuard++;
+    // ===== Build grocery list (helper, callable repeatedly during enforcement) =====
+    // Category averages MUST mirror src/lib/pricingService.ts so the server's
+    // budget enforcement uses the SAME numbers the UI displays. Otherwise the
+    // engine can declare a plan "within budget" while the client renders a
+    // higher range and shows "Over budget" — exactly what users were seeing.
+    const CATEGORY_AVG: Record<string, number> = {
+      Produce: 1.75,
+      Protein: 6.5,
+      Dairy: 4.0,
+      Pantry: 3.0,
+      Spices: 3.0,
+      Condiments: 3.5,
+      Frozen: 4.0,
+      Other: 3.0,
+    };
+    // 1.15 mirrors the client's high-end range multiplier. We enforce against
+    // the HIGH end so the displayed range never exceeds the user's budget.
+    const HIGH_MULT = 1.15;
+
+    function buildGroceryListAndBasket(days: typeof resolvedDays) {
+      const agg = new Map<string, {
+        ingredient_name: string;
+        quantity: string;
+        category: string;
+        estimated_price: number;
+        already_have: boolean;
+        needed_for_meals: string[];
+        instacart_search_term: string;
+      }>();
+      for (const day of days) {
+        for (const meal of day.meals) {
+          const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
+          for (const raw of ings) {
+            if (typeof raw !== "string") continue;
+            const parsed = parseIngredientString(raw);
+            if (!parsed.normalized) continue;
+            const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
+            const alreadyHave = pantryHas(parsed.normalized, pantryNormalized) || isStaple;
+            const category = categorizeIngredient(parsed.item);
+            const catAvg = CATEGORY_AVG[category] ?? CATEGORY_AVG.Other;
+            const existing = agg.get(parsed.normalized);
+            if (existing) {
+              if (!existing.needed_for_meals.includes(meal.recipe.title)) {
+                existing.needed_for_meals.push(meal.recipe.title);
+              }
+            } else {
+              agg.set(parsed.normalized, {
+                ingredient_name: parsed.item || parsed.display,
+                quantity: parsed.quantity || "1",
+                category,
+                // Use category average so the client-side basket math
+                // reconciles with our server-side enforcement.
+                estimated_price: Math.round(catAvg * 100) / 100,
+                already_have: alreadyHave,
+                needed_for_meals: [meal.recipe.title],
+                instacart_search_term: parsed.item,
+              });
+            }
+          }
+        }
+      }
+      const list = Array.from(agg.values());
+      const buy = list.filter((g) => !g.already_have);
+      // Basket HIGH end = sum of (category_avg × 1.15). Matches the UI's
+      // estimateBasketRangeFromDB high bound when no DB pricing is hit.
+      const high = buy.reduce(
+        (s, g) => s + (CATEGORY_AVG[g.category] ?? CATEGORY_AVG.Other) * HIGH_MULT,
+        0,
+      );
+      return { list, buy, high };
+    }
+
+    let { list: groceryList, buy: buyItems, high: basketHigh } =
+      buildGroceryListAndBasket(resolvedDays);
+
+    // Hard-cap enforcement against the basket HIGH end. Drop the most
+    // expensive remaining meal until the displayed range fits the budget,
+    // preserving at least one meal per day where possible.
+    let basketDropGuard = 0;
+    while (basketHigh > weeklyBudget && basketDropGuard < 40) {
+      basketDropGuard++;
       let worst: { dayIdx: number; mealIdx: number; cost: number } | null = null;
       for (let di = 0; di < resolvedDays.length; di++) {
         const day = resolvedDays[di];
@@ -632,59 +707,14 @@ Deno.serve(async (req) => {
       }
       if (!worst) break;
       resolvedDays[worst.dayIdx].meals.splice(worst.mealIdx, 1);
-    }
-    const overBudgetAfterAdjust = projectedTotal() > weeklyBudget;
-
-    // ===== Build grocery list from chosen recipes (server-side, pantry-aware) =====
-    const groceryAgg = new Map<string, {
-      ingredient_name: string;
-      quantity: string;
-      category: string;
-      estimated_price: number;
-      already_have: boolean;
-      needed_for_meals: string[];
-      instacart_search_term: string;
-    }>();
-
-    for (const day of resolvedDays) {
-      for (const meal of day.meals) {
-        const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
-        // Conservative per-ingredient fallback when recipe cost is missing —
-        // err on the high side so we never under-estimate the basket and
-        // accidentally exceed the user's weekly budget.
-        const costPerIng = meal.recipe.cost_per_serving
-          ? (Number(meal.recipe.cost_per_serving) * householdSize) / Math.max(1, ings.length)
-          : 2.5;
-        for (const raw of ings) {
-          if (typeof raw !== "string") continue;
-          const parsed = parseIngredientString(raw);
-          if (!parsed.normalized) continue;
-          const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
-          const alreadyHave = pantryHas(parsed.normalized, pantryNormalized) || isStaple;
-
-          const existing = groceryAgg.get(parsed.normalized);
-          if (existing) {
-            if (!existing.needed_for_meals.includes(meal.recipe.title)) {
-              existing.needed_for_meals.push(meal.recipe.title);
-            }
-          } else {
-            groceryAgg.set(parsed.normalized, {
-              ingredient_name: parsed.item || parsed.display,
-              quantity: parsed.quantity || "1",
-              category: categorizeIngredient(parsed.item),
-              estimated_price: Math.round(costPerIng * 100) / 100,
-              already_have: alreadyHave,
-              needed_for_meals: [meal.recipe.title],
-              instacart_search_term: parsed.item,
-            });
-          }
-        }
-      }
+      ({ list: groceryList, buy: buyItems, high: basketHigh } =
+        buildGroceryListAndBasket(resolvedDays));
     }
 
-    const groceryList = Array.from(groceryAgg.values());
-    const buyItems = groceryList.filter((g) => !g.already_have);
-    const estimatedTotalCost = buyItems.reduce((s, g) => s + g.estimated_price, 0);
+    const overBudgetAfterAdjust = basketHigh > weeklyBudget;
+    // Persist the basket-high number (what the UI shows) so Budget/Remaining
+    // math agrees with the displayed range.
+    const estimatedTotalCost = Math.round(basketHigh * 100) / 100;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
     const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
@@ -693,6 +723,7 @@ Deno.serve(async (req) => {
     });
     await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
       estimated_total_cost: estimatedTotalCost,
+      budget_exceeded: overBudgetAfterAdjust,
     });
 
     // ===== Persist meal_plan =====
