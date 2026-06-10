@@ -823,50 +823,90 @@ Deno.serve(async (req) => {
       return (cachedStoreMult ?? 1) * (cachedStateMult ?? 1);
     }
 
-    const dbPriceCache = new Map<string, { avg: number; low: number | null; high: number | null } | null>();
-    async function lookupItemPrice(name: string) {
-      const key = (name || "").trim().toLowerCase();
-      if (!key) return null;
-      if (dbPriceCache.has(key)) return dbPriceCache.get(key)!;
+    // ===== Deterministic pricing engine (single source of truth) =====
+    // Every grocery item resolves to a price detail via lookup_ingredient_price.
+    // If no DB row matches we fall back to a conservative category median AND
+    // log the miss so the catalog can be expanded. The LLM never computes the
+    // total — the engine does.
+    const INGREDIENT_ALIASES: Record<string, string> = {
+      scallions: "green onion",
+      scallion: "green onion",
+      "green onions": "green onion",
+      cilantro: "coriander",
+      capsicum: "bell pepper",
+      eggplant: "aubergine",
+      "ground beef": "beef ground",
+      "ground turkey": "turkey ground",
+      "olive oil": "oil olive",
+    };
+    const mappedAlias = (key: string) => INGREDIENT_ALIASES[key] ?? key;
+
+    const dbPriceCache = new Map<string, { avg: number; low: number; high: number; matched: boolean } | null>();
+    async function priceItemDetail(
+      name: string,
+      category: string,
+    ): Promise<{ avg: number; low: number; high: number; matched: boolean }> {
+      const rawKey = (name || "").trim().toLowerCase();
+      const key = mappedAlias(rawKey);
+      const cached = dbPriceCache.get(key);
+      if (cached !== undefined && cached !== null) return cached;
+
       try {
         const { data } = await admin.rpc("lookup_ingredient_price", { _query: key });
-        if (!Array.isArray(data) || data.length === 0) {
-          dbPriceCache.set(key, null);
-          return null;
+        if (Array.isArray(data) && data.length > 0) {
+          const top: any = data[0];
+          if (Number(top.similarity ?? 0) >= 0.3) {
+            const avg = Number(top.avg_price);
+            const lowDb = top.low_price != null ? Number(top.low_price) : avg * 0.85;
+            const highDb = top.high_price != null ? Number(top.high_price) : avg * 1.15;
+            const entry = { avg, low: lowDb, high: highDb, matched: true };
+            dbPriceCache.set(key, entry);
+            return entry;
+          }
         }
-        const top: any = data[0];
-        if (Number(top.similarity ?? 0) < 0.3) {
-          dbPriceCache.set(key, null);
-          return null;
-        }
-        const entry = {
-          avg: Number(top.avg_price),
-          low: top.low_price != null ? Number(top.low_price) : null,
-          high: top.high_price != null ? Number(top.high_price) : null,
-        };
-        dbPriceCache.set(key, entry);
-        return entry;
-      } catch {
-        dbPriceCache.set(key, null);
-        return null;
+      } catch (e) {
+        console.warn("[generate-meal-plan] lookup_ingredient_price failed", e);
       }
+      // Unmatched — log and fall back to category median (conservative, never $0).
+      try {
+        await admin.rpc("log_missing_ingredient", {
+          _name: name,
+          _store_code: storeCodeForPricing,
+          _state_code: stateCodeForPricing,
+        });
+      } catch { /* best-effort log */ }
+      const catAvg = CATEGORY_AVG[category] ?? CATEGORY_AVG.Other;
+      const entry = { avg: catAvg, low: catAvg * 0.9, high: catAvg * HIGH_MULT, matched: false };
+      dbPriceCache.set(key, entry);
+      return entry;
     }
 
-    async function computeBasketHighFromDB(buy: any[]): Promise<number> {
+    async function priceBasket(buy: any[]): Promise<{
+      low: number;
+      avg: number;
+      high: number;
+      drivers: Array<{ name: string; high: number }>;
+      unmatched: number;
+    }> {
       const mult = await getMultipliers();
-      let high = 0;
-      await Promise.all(
-        buy.map(async (g) => {
-          const priced = await lookupItemPrice(g.ingredient_name);
-          if (priced) {
-            high += (priced.high ?? priced.avg * 1.1) * mult;
-          } else {
-            const catAvg = CATEGORY_AVG[g.category] ?? CATEGORY_AVG.Other;
-            high += catAvg * mult * HIGH_MULT;
-          }
-        }),
-      );
-      return high;
+      let low = 0, avg = 0, high = 0, unmatched = 0;
+      const drivers: Array<{ name: string; high: number }> = [];
+      for (const g of buy) {
+        const p = await priceItemDetail(g.ingredient_name, g.category);
+        const lineHigh = p.high * mult;
+        low += p.low * mult;
+        avg += p.avg * mult;
+        high += lineHigh;
+        if (!p.matched) unmatched++;
+        drivers.push({ name: g.ingredient_name, high: lineHigh });
+        // Mutate the grocery line so the UI shows the real DB price, not "Other $3.00".
+        g.estimated_price = Math.round(p.avg * mult * 100) / 100;
+        g.price_low = Math.round(p.low * mult * 100) / 100;
+        g.price_high = Math.round(p.high * mult * 100) / 100;
+        g.price_matched = p.matched;
+      }
+      drivers.sort((a, b) => b.high - a.high);
+      return { low, avg, high, drivers: drivers.slice(0, 5), unmatched };
     }
 
     function buildGroceryListAndBasket(days: typeof resolvedDays) {
@@ -914,31 +954,104 @@ Deno.serve(async (req) => {
       return { list, buy };
     }
 
-    let { list: groceryList, buy: buyItems } =
-      buildGroceryListAndBasket(resolvedDays);
-    let basketHigh = await computeBasketHighFromDB(buyItems);
+    // DB-priced cost of a single recipe (excluding already-on-hand items).
+    async function recipeDbCost(recipe: any): Promise<number> {
+      const ings = Array.isArray(recipe?.ingredients) ? recipe.ingredients : [];
+      const mult = await getMultipliers();
+      let total = 0;
+      for (const raw of ings) {
+        if (typeof raw !== "string") continue;
+        const parsed = parseIngredientString(raw);
+        if (!parsed.normalized) continue;
+        const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
+        if (isStaple || pantryHas(parsed.normalized, pantryNormalized)) continue;
+        const category = categorizeIngredient(parsed.item);
+        const p = await priceItemDetail(parsed.item, category);
+        total += p.high * mult;
+      }
+      return total;
+    }
 
-    // Budget guard: NEVER drop meals to fit the budget. Families need a full
-    // 3-meals-per-day plan even when the basket exceeds the cap — we already
-    // ran a swap-to-cheaper pass above. If the basket still comes in high,
-    // we flag budget_exceeded and let the UI show the over-budget banner so
-    // the user can raise the budget, swap meals manually, or pick a cheaper
-    // home store. Removing meals here was producing 1-meal/day plans.
+    let { list: groceryList, buy: buyItems } = buildGroceryListAndBasket(resolvedDays);
+    let basket = await priceBasket(buyItems);
 
+    // ===== DB-priced budget repair loop =====
+    // The earlier swap pass uses recipe.cost_per_serving, which can disagree
+    // with the DB-priced basket the UI actually shows. Run a second pass that
+    // optimizes against the SAME number the user sees, swapping the meal whose
+    // DB-priced ingredients contribute the most to the basket for the cheapest
+    // unused safe candidate of the same meal_type. Target the budget itself —
+    // we want estimate_high <= budget so the displayed upper bound never exceeds.
+    const MAX_REPAIR_ATTEMPTS = 6;
+    const usedRecipeIds2 = new Set<string>();
+    for (const d of resolvedDays) for (const m of d.meals) if (m.recipe?.id) usedRecipeIds2.add(m.recipe.id);
 
-    const overBudgetAfterAdjust = basketHigh > weeklyBudget;
-    // Persist the basket-high number (what the UI shows) so Budget/Remaining
-    // math agrees with the displayed range.
-    const estimatedTotalCost = Math.round(basketHigh * 100) / 100;
+    for (let attempt = 0; attempt < MAX_REPAIR_ATTEMPTS; attempt++) {
+      if (basket.high <= weeklyBudget) break;
+
+      // Pre-compute DB cost for every placed meal + every unused candidate.
+      const placedCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+      for (let di = 0; di < resolvedDays.length; di++) {
+        const day = resolvedDays[di];
+        for (let mi = 0; mi < day.meals.length; mi++) {
+          placedCosts.push({ di, mi, meal: day.meals[mi], cost: await recipeDbCost(day.meals[mi].recipe) });
+        }
+      }
+      // Most expensive placed meals first — that's where the biggest savings live.
+      placedCosts.sort((a, b) => b.cost - a.cost);
+
+      let bestSwap: { di: number; mi: number; candidate: any; savings: number } | null = null;
+      for (const slot of placedCosts) {
+        const pool = candidatesByType[slot.meal.meal_type] || [];
+        for (const cand of pool) {
+          if (usedRecipeIds2.has(cand.id)) continue;
+          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+          const candCost = await recipeDbCost(cand);
+          const savings = slot.cost - candCost;
+          if (savings <= 0.01) continue;
+          if (!bestSwap || savings > bestSwap.savings) {
+            bestSwap = { di: slot.di, mi: slot.mi, candidate: cand, savings };
+          }
+        }
+        // Greedy: once we have a swap on the most expensive meal that helps, take it.
+        if (bestSwap && bestSwap.di === slot.di && bestSwap.mi === slot.mi) break;
+      }
+
+      if (!bestSwap) break;
+      const old = resolvedDays[bestSwap.di].meals[bestSwap.mi];
+      if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+      usedRecipeIds2.add(bestSwap.candidate.id);
+      resolvedDays[bestSwap.di].meals[bestSwap.mi] = {
+        meal_type: old.meal_type,
+        recipe: bestSwap.candidate,
+        reason: "Swapped to keep your plan within your weekly grocery budget.",
+      };
+
+      const rebuilt = buildGroceryListAndBasket(resolvedDays);
+      groceryList = rebuilt.list;
+      buyItems = rebuilt.buy;
+      basket = await priceBasket(buyItems);
+    }
+
+    const overBudgetAfterAdjust = basket.high > weeklyBudget;
+    // Persist the basket-high number (what the UI shows as the upper bound)
+    // so Budget / Remaining math agrees with the displayed range.
+    const estimatedTotalCost = Math.round(basket.high * 100) / 100;
+    const estimatedTotalLow = Math.round(basket.low * 100) / 100;
+    const estimatedTotalAvg = Math.round(basket.avg * 100) / 100;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
     const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
     await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
       grocery_items_count: groceryList.length,
+      unmatched_price_items: basket.unmatched,
     });
     await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
       estimated_total_cost: estimatedTotalCost,
+      estimated_total_low: estimatedTotalLow,
+      estimated_total_avg: estimatedTotalAvg,
       budget_exceeded: overBudgetAfterAdjust,
+      top_cost_drivers: basket.drivers,
     });
 
     // ===== Persist meal_plan =====
@@ -949,6 +1062,11 @@ Deno.serve(async (req) => {
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
     (normalized as any).budgetExceeded = overBudgetAfterAdjust;
+    (normalized as any).estimateLow = estimatedTotalLow;
+    (normalized as any).estimateAvg = estimatedTotalAvg;
+    (normalized as any).estimateHigh = estimatedTotalCost;
+    (normalized as any).topCostDrivers = basket.drivers;
+    (normalized as any).unmatchedPriceItems = basket.unmatched;
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
