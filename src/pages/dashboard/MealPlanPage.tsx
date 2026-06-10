@@ -220,8 +220,8 @@ export default function MealPlanPage() {
           <History className="w-3.5 h-3.5" /> Past Plans
         </button>
       </div>
-      {/* Plaid-powered grocery spending insights (real data, not estimates) */}
-      <MealPlanGroceryInsights />
+
+
 
       
 
