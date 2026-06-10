@@ -138,8 +138,7 @@ export default function Questionnaire() {
   const [foodWasteAlerts, setFoodWasteAlerts] = useState<boolean>((localSeed.foodWasteAlerts as boolean) ?? true);
   const [foodWasteSuggestions, setFoodWasteSuggestions] = useState<boolean>((localSeed.foodWasteSuggestions as boolean) ?? true);
 
-  // SECTION 10 — Plaid interest
-  const [plaidInterest, setPlaidInterest] = useState<string>((localSeed.plaidInterest as string) || "");
+  // SECTION 10 — Apollo goals (renumbered after Plaid removal)
 
   // SECTION 11 — Apollo goals
   const [goals, setGoals] = useState<BoolMap>((localSeed.goals as BoolMap) || {});
