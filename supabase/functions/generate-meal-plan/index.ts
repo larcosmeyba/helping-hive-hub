@@ -105,6 +105,63 @@ const RESPONSE_SCHEMA = {
   },
 } as const;
 
+// ===== Allergy + dietary safety helpers =====
+const ALLERGY_EXPANSIONS: Record<string, string[]> = {
+  nuts: ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline"],
+  "tree nuts": ["almond", "walnut", "pecan", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut"],
+  peanuts: ["peanut", "peanuts", "peanut butter", "groundnut"],
+  dairy: ["milk", "cheese", "butter", "yogurt", "yoghurt", "cream", "whey", "casein", "lactose", "ghee", "parmesan", "mozzarella", "cheddar", "feta", "ricotta"],
+  milk: ["milk", "cheese", "butter", "yogurt", "cream", "whey", "casein", "lactose"],
+  gluten: ["wheat", "flour", "bread", "pasta", "barley", "rye", "couscous", "semolina", "farro", "spelt", "bulgur", "seitan", "soy sauce"],
+  wheat: ["wheat", "flour", "bread", "pasta", "couscous", "semolina"],
+  eggs: ["egg", "eggs", "mayonnaise", "mayo", "meringue"],
+  soy: ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce", "tamari"],
+  shellfish: ["shrimp", "prawn", "crab", "lobster", "crawfish", "crayfish", "scallop", "clam", "mussel", "oyster"],
+  fish: ["fish", "salmon", "tuna", "cod", "tilapia", "trout", "anchovy", "sardine", "halibut", "mackerel"],
+  sesame: ["sesame", "tahini"],
+};
+const DIET_FORBIDDEN: Record<string, string[]> = {
+  vegan: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "milk", "cheese", "butter", "yogurt", "cream", "whey", "casein", "egg", "eggs", "honey", "gelatin", "lard", "tallow", "ghee", "parmesan", "mozzarella", "cheddar", "feta"],
+  vegetarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "fish", "salmon", "tuna", "cod", "tilapia", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "oyster", "mussel", "anchovy", "gelatin", "lard", "tallow"],
+  pescatarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "gelatin", "lard", "tallow"],
+};
+export function expandAllergies(allergies: string[]): string[] {
+  const out = new Set<string>();
+  for (const a of allergies || []) {
+    const k = (a || "").toLowerCase().trim();
+    if (!k) continue;
+    out.add(k);
+    for (const term of ALLERGY_EXPANSIONS[k] || []) out.add(term);
+  }
+  return Array.from(out);
+}
+export function forbiddenForDiets(prefs: string[]): string[] {
+  const out = new Set<string>();
+  for (const p of prefs || []) {
+    const k = (p || "").toLowerCase().trim();
+    for (const term of DIET_FORBIDDEN[k] || []) out.add(term);
+  }
+  return Array.from(out);
+}
+export function recipeContainsAny(recipe: any, terms: string[]): boolean {
+  if (!terms.length) return false;
+  const haystacks: string[] = [];
+  if (recipe?.title) haystacks.push(String(recipe.title));
+  if (recipe?.description) haystacks.push(String(recipe.description));
+  if (Array.isArray(recipe?.ingredients)) {
+    for (const i of recipe.ingredients) {
+      if (typeof i === "string") haystacks.push(i);
+      else if (i?.item_name) haystacks.push(String(i.item_name));
+    }
+  }
+  const hay = haystacks.join(" \n ").toLowerCase();
+  return terms.some((t) => {
+    const term = t.toLowerCase();
+    const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+    return re.test(hay);
+  });
+}
+
 function freshness(item: any): string {
   if (!item.expiration_date) return item.is_low_stock ? "low_stock" : "good";
   const today = new Date(); today.setHours(0, 0, 0, 0);
