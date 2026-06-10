@@ -37,8 +37,9 @@ Your job is to SELECT recipes from the pool to fill each day's breakfast/lunch/d
 
 ABSOLUTE SAFETY RULES — VIOLATION CAN HARM THE USER:
 - The user's "allergies" array lists ingredients they CANNOT eat. NEVER select or create a meal containing ANY allergen — including derivatives (e.g. "nuts" forbids almond, walnut, pecan, peanut, cashew, hazelnut, pistachio, macadamia, brazil nut, pine nut, nut butter; "dairy" forbids milk, cheese, butter, yogurt, cream, whey; "gluten" forbids wheat, flour, bread, pasta, barley, rye).
-- The user's "dietary_preferences" array is BINDING. "vegan" = NO meat, poultry, fish, seafood, eggs, dairy, honey, gelatin. "vegetarian" = NO meat, poultry, fish, seafood, gelatin. "pescatarian" = NO meat or poultry. Pot roast, beef, chicken, pork, bacon, etc. are FORBIDDEN for vegan/vegetarian users.
-- If a recipe's title, description, or any ingredient could violate these rules, SKIP IT. Better to return fewer meals than to harm the user.
+- The user's "dietary_preferences" array is BINDING and hard-enforced for: vegan, vegetarian, pescatarian, gluten-free, dairy-free, nut-free, keto, paleo, halal, kosher. "vegan" = NO meat/poultry/fish/seafood/eggs/dairy/honey/gelatin. "vegetarian" = NO meat/poultry/fish/seafood/gelatin. "pescatarian" = NO meat or poultry. "gluten-free" = NO wheat/flour/bread/pasta/barley/rye/soy sauce. "dairy-free" = NO milk/cheese/butter/yogurt/cream/whey. "halal" = NO pork or alcohol. "kosher" = NO pork or shellfish.
+- You MUST output exactly 3 meals for every day: breakfast, lunch, AND dinner. Never skip a slot. If no candidate fits, return a safe new_meal for that slot.
+- If a recipe's title, description, or any ingredient could violate these rules, SKIP IT. Better to return a safe new_meal than to harm the user.
 
 OTHER RULES:
 - PREFER library recipes. For each meal slot, choose a recipe from candidates_<meal_type> by returning its library_recipe_id.
