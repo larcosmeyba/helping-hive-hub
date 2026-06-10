@@ -672,30 +672,6 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 11 — Section 10: Plaid interest */}
-      {step === 11 && (
-        <QuestionnaireStep step={11} totalSteps={TOTAL_STEPS}
-          title="Want budget insights from your bank?"
-          subtitle="We can securely connect to your bank (via Plaid) to track grocery spend."
-          onNext={next} onBack={back}
-        >
-          <div className="space-y-3 mt-4">
-            {[
-              { value: "yes", label: "Yes — I'm interested" },
-              { value: "later", label: "Maybe later — remind me" },
-              { value: "skip", label: "No thanks" },
-            ].map((opt) => (
-              <OptionChip key={opt.value} label={opt.label}
-                selected={plaidInterest === opt.value}
-                onClick={() => setPlaidInterest(opt.value)} />
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-4 text-center">
-            Nothing connects until you explicitly authorize it. Your bank credentials are never stored by Help The Hive.
-          </p>
-        </QuestionnaireStep>
-      )}
-
       {/* STEP 12 — Section 11: Apollo goals + finish */}
       {step === 12 && (
         <QuestionnaireStep step={12} totalSteps={TOTAL_STEPS}
