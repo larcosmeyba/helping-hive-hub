@@ -712,3 +712,12 @@ function Section({
     </div>
   );
 }
+
+function Row({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between text-[#6b6b6b]">
+      <span>{label}</span>
+      <span className="text-[#1a1a1a] font-medium">${value.toFixed(2)}</span>
+    </div>
+  );
+}
