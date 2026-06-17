@@ -81,7 +81,9 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        const price = best.items?.[0]?.price?.promo ?? best.items?.[0]?.price?.regular ?? 0;
+        const priceObj = best.items?.[0]?.price;
+        const price = priceObj?.promo ?? priceObj?.regular ?? 0;
+        const stock = best.items?.[0]?.inventory?.stockLevel ?? null;
         const qty = item.quantity ?? 1;
         total += price * qty;
         matched += 1;
@@ -99,6 +101,7 @@ Deno.serve(async (req) => {
           unit_price: price,
           confidence: 0.8,
           status: "matched",
+          availability: stock,
         });
       } catch (_e) {
         failed += 1;
