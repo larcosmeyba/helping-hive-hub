@@ -1190,12 +1190,86 @@ Deno.serve(async (req) => {
       basket = await priceBasket(buyItems);
     }
 
-    const overBudgetAfterAdjust = basket.high > weeklyBudget;
-    // Persist the basket-high number (what the UI shows as the upper bound)
-    // so Budget / Remaining math agrees with the displayed range.
-    const estimatedTotalCost = Math.round(basket.high * 100) / 100;
-    const estimatedTotalLow = Math.round(basket.low * 100) / 100;
-    const estimatedTotalAvg = Math.round(basket.avg * 100) / 100;
+    // ===== Channel-aware delivered total (THE budget the user actually pays) =====
+    // basket.high is the in-store, per-serving-summed estimate. Real shoppers
+    // must buy whole packages and pay Instacart markup + fees. Apply the
+    // package-waste multiplier (until package_prices is CSV-seeded), then
+    // layer channel markup + fees so the budget cap reflects the actual
+    // delivered cart price.
+    const channelCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "delivery");
+    const inStoreCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "in_store");
+    const inStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const inStoreTotals = computeChannelTotals(inStoreSubtotalRaw, inStoreCfg);
+    const deliveredTotals = computeChannelTotals(inStoreSubtotalRaw, channelCfg);
+
+    // ===== Channel-aware budget repair (final pass) =====
+    // We previously repaired against basket.high (in-store). With markup/fees
+    // layered on, we may still be over. Run additional swap passes targeting
+    // the delivered_total directly.
+    let deliveredNow = deliveredTotals.delivered_total;
+    const MAX_DELIVERED_REPAIR = 5;
+    let deliveredRepairAttempts = 0;
+    while (deliveredNow > weeklyBudget && deliveredRepairAttempts < MAX_DELIVERED_REPAIR) {
+      deliveredRepairAttempts++;
+      const placedCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+      for (let di = 0; di < resolvedDays.length; di++) {
+        for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+          placedCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost: await recipeDbCost(resolvedDays[di].meals[mi].recipe) });
+        }
+      }
+      placedCosts.sort((a, b) => b.cost - a.cost);
+
+      let swapped = false;
+      for (const slot of placedCosts) {
+        const pool = candidatesByType[slot.meal.meal_type] || [];
+        let best: { cand: any; cost: number } | null = null;
+        for (const cand of pool) {
+          if (usedRecipeIds2.has(cand.id)) continue;
+          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+          const candCost = await recipeDbCost(cand);
+          if (candCost >= slot.cost) continue;
+          if (!best || candCost < best.cost) best = { cand, cost: candCost };
+        }
+        if (best) {
+          const old = resolvedDays[slot.di].meals[slot.mi];
+          if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+          usedRecipeIds2.add(best.cand.id);
+          resolvedDays[slot.di].meals[slot.mi] = {
+            meal_type: old.meal_type,
+            recipe: best.cand,
+            reason: "Swapped to keep your delivered total within budget (includes Instacart fees).",
+          };
+          swapped = true;
+          break;
+        }
+      }
+      if (!swapped) break;
+      const rebuilt = buildGroceryListAndBasket(resolvedDays);
+      groceryList = rebuilt.list;
+      buyItems = rebuilt.buy;
+      basket = await priceBasket(buyItems);
+      const newInStore = basket.high * PACKAGE_WASTE_MULTIPLIER;
+      const newDelivered = computeChannelTotals(newInStore, channelCfg);
+      deliveredNow = newDelivered.delivered_total;
+    }
+
+    // Recompute totals once after the repair loop settles
+    const finalInStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
+    const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
+
+    const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
+    let budgetWarningText: string | null = null;
+    if (overBudgetAfterAdjust) {
+      const shortfall = Math.ceil(finalDeliveredTotals.delivered_total - weeklyBudget);
+      budgetWarningText = `This budget covers reduced portions; consider adding $${shortfall} for full portions delivered with Instacart fees.`;
+    }
+
+    // Persist the DELIVERED total — what the user actually pays at checkout —
+    // as the headline cost. UI/Budget/Remaining math is computed against it.
+    const estimatedTotalCost = finalDeliveredTotals.delivered_total;
+    const estimatedTotalLow = finalInStoreTotals.delivered_total; // in-store = no fees/markup
+    const estimatedTotalAvg = Math.round(((estimatedTotalLow + estimatedTotalCost) / 2) * 100) / 100;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
     const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
@@ -1204,9 +1278,13 @@ Deno.serve(async (req) => {
       unmatched_price_items: basket.unmatched,
     });
     await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
-      estimated_total_cost: estimatedTotalCost,
-      estimated_total_low: estimatedTotalLow,
-      estimated_total_avg: estimatedTotalAvg,
+      delivered_total: estimatedTotalCost,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
       budget_exceeded: overBudgetAfterAdjust,
       top_cost_drivers: basket.drivers,
     });
@@ -1214,16 +1292,33 @@ Deno.serve(async (req) => {
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
     const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
-    // Expose budget context to the client so the Grocery screen can show
-    // Budget / Remaining without an extra round-trip.
+    // Expose budget context + full delivered breakdown to the client.
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
     (normalized as any).budgetExceeded = overBudgetAfterAdjust;
+    (normalized as any).budgetWarningText = budgetWarningText;
     (normalized as any).estimateLow = estimatedTotalLow;
     (normalized as any).estimateAvg = estimatedTotalAvg;
     (normalized as any).estimateHigh = estimatedTotalCost;
     (normalized as any).topCostDrivers = basket.drivers;
     (normalized as any).unmatchedPriceItems = basket.unmatched;
+    (normalized as any).totalEstimatedCost = estimatedTotalCost; // override to delivered
+    (normalized as any).channel = "delivery";
+    (normalized as any).channelBreakdown = {
+      channel: "delivery",
+      store: finalDeliveredTotals.store,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      bag_fee: finalDeliveredTotals.bag_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
+      delivered_total: finalDeliveredTotals.delivered_total,
+      in_store_only_total: finalInStoreTotals.delivered_total,
+      as_of_date: finalDeliveredTotals.as_of_date,
+    };
+
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
