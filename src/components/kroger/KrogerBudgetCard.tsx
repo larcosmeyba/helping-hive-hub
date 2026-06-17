@@ -17,11 +17,12 @@ interface KrogerMatch {
   unit_price?: number;
   confidence?: number;
   availability?: string | null;
+  from_cache?: boolean;
 }
 
 interface MatchResponse {
   matches: KrogerMatch[];
-  totals: { matched: number; failed: number; estimatedTotal: number };
+  totals: { matched: number; failed: number; cacheHits?: number; estimatedTotal: number };
 }
 
 export function KrogerBudgetCard({
