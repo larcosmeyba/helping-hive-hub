@@ -280,10 +280,21 @@ export function KrogerBudgetCard({
             )}
 
             {needsReview.length > 0 && (
-              <div className="rounded-lg border border-[#F2D88A] bg-[#FFF8E1] p-2">
-                <p className="text-[11px] font-semibold text-[#7A5A00] mb-1">
-                  Needs Review · {needsReview.length}
-                </p>
+              <div className="rounded-lg border border-[#F2D88A] bg-[#FFF8E1] p-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-semibold text-[#7A5A00] flex-1">
+                    Needs Review · {needsReview.length}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-[11px] border-[#B8860B] text-[#7A5A00] hover:bg-[#FFF1C2]"
+                    onClick={retrySimpler}
+                    disabled={loading}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" /> Try simpler match
+                  </Button>
+                </div>
                 <ul className="space-y-0.5">
                   {needsReview.slice(0, 6).map((m, idx) => (
                     <li key={`nr-${idx}`} className="text-[11px] text-[#7A5A00]">
