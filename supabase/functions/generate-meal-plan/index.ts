@@ -1434,14 +1434,16 @@ Deno.serve(async (req) => {
           if (ingErr) console.error("[generate-meal-plan] meal_ingredients insert failed", ingErr);
         }
 
-        usageRows.push({
-          user_id: userId,
-          recipe_id: r.id,
-          meal_plan_id: planId,
-          week_start: weekStart,
-          meal_type: meal.meal_type,
-        });
-        usedRecipeIds.push(r.id);
+        if (r.id) {
+          usageRows.push({
+            user_id: userId,
+            recipe_id: r.id,
+            meal_plan_id: planId,
+            week_start: weekStart,
+            meal_type: meal.meal_type,
+          });
+          usedRecipeIds.push(r.id);
+        }
       }
     }
     await advance("done", "meal_plan_meals saved", "Finalizing your plan");
