@@ -48,6 +48,8 @@ OTHER RULES:
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
 - Stay within the weekly grocery budget.
+- Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
+- When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
 - Output ONLY the structured tool call.`;
 
 const RESPONSE_SCHEMA = {
