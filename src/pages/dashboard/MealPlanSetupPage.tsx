@@ -183,11 +183,6 @@ export default function MealPlanSetupPage() {
           onClick={() => setOpenSheet("family")}
         />
         <SettingRow
-          icon={<Store className="w-5 h-5 text-white" />} iconBg="#F2A900"
-          label="Store" value={storeDisplay}
-          onClick={() => setOpenSheet("store")}
-        />
-        <SettingRow
           icon={<Leaf className="w-5 h-5 text-white" />} iconBg="#3FAE5A"
           label="Dietary Preferences" value={diet.length ? diet.join(", ") : "None"}
           onClick={() => setOpenSheet("diet")}
