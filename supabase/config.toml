@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.plaid-webhook]
 verify_jwt = false
+
+[functions.kroger-oauth-callback]
+verify_jwt = false
+
+[functions.kroger-locations]
+verify_jwt = false
+
+[functions.kroger-product-search]
+verify_jwt = false
