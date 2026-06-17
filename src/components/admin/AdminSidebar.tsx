@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, CalendarDays, BookOpen, Sparkles,
-  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft, Flag, Activity, ShoppingBag
+  Megaphone, BarChart3, ShieldCheck, Settings, LogOut, ChevronLeft, Flag, Activity, ShoppingBag, FileCheck2
 } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
 import { NavLink } from "@/components/NavLink";
