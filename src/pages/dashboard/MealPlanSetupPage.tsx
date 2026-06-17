@@ -240,40 +240,6 @@ export default function MealPlanSetupPage() {
           saveProfile({ household_size: total }, "Family size updated");
         }}
       />
-      <StoreSheet
-        open={openSheet === "store"} onOpenChange={(o) => !o && setOpenSheet(null)}
-        zip={zip} setZip={setZip}
-        homeStore={homeStore} setHomeStore={setHomeStore}
-        homeStoreKey={homeStoreKey} setHomeStoreKey={setHomeStoreKey}
-        saving={saving}
-        onSave={async () => {
-          if (!user) return;
-          setSaving(true);
-          try {
-            const { error: pErr } = await supabase.from("profiles").update({
-              zip_code: zip || null,
-              home_store: homeStore || null,
-              preferred_stores: homeStore ? [homeStore] : [],
-            }).eq("user_id", user.id);
-            if (pErr) throw pErr;
-            if (homeStoreKey && homeStore) {
-              await supabase.from("instacart_home_store").upsert({
-                user_id: user.id,
-                retailer_key: homeStoreKey,
-                retailer_name: homeStore,
-                postal_code: zip || null,
-              }, { onConflict: "user_id" });
-            }
-            await refreshProfile?.();
-            toast({ title: "Store updated" });
-            setOpenSheet(null);
-          } catch (e: any) {
-            toast({ title: "Error", description: e?.message, variant: "destructive" });
-          } finally {
-            setSaving(false);
-          }
-        }}
-      />
       <ChipSheet
         open={openSheet === "diet"} onOpenChange={(o) => !o && setOpenSheet(null)}
         title="Dietary Preferences" options={DIET_OPTIONS}
