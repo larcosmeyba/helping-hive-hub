@@ -10,6 +10,7 @@ import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -528,6 +529,13 @@ export default function GroceryReviewPage() {
         channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
         instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
         sendItems={sendItems}
+      />
+
+      <KrogerBudgetCard
+        items={[...toAdjust, ...toBuy, ...manualItems]}
+        weeklyBudget={
+          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+        }
       />
     </div>
   );
