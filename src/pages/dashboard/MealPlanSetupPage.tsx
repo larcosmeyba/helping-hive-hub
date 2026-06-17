@@ -155,9 +155,6 @@ export default function MealPlanSetupPage() {
     await generate();
   };
 
-  const storeDisplay = homeStore ||
-    ((profile?.preferred_stores as string[] | undefined)?.[0]) ||
-    "Not selected";
 
   return (
     <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-[hsl(43_100%_96%)]">
@@ -181,11 +178,6 @@ export default function MealPlanSetupPage() {
           icon={<Users className="w-5 h-5 text-white" />} iconBg="#7A6BD8"
           label="Family Size" value={`${household} ${household === 1 ? "Person" : "People"}`}
           onClick={() => setOpenSheet("family")}
-        />
-        <SettingRow
-          icon={<Store className="w-5 h-5 text-white" />} iconBg="#F2A900"
-          label="Store" value={storeDisplay}
-          onClick={() => setOpenSheet("store")}
         />
         <SettingRow
           icon={<Leaf className="w-5 h-5 text-white" />} iconBg="#3FAE5A"
@@ -243,40 +235,6 @@ export default function MealPlanSetupPage() {
           const total = Math.max(1, adults + kids);
           setHousehold(total);
           saveProfile({ household_size: total }, "Family size updated");
-        }}
-      />
-      <StoreSheet
-        open={openSheet === "store"} onOpenChange={(o) => !o && setOpenSheet(null)}
-        zip={zip} setZip={setZip}
-        homeStore={homeStore} setHomeStore={setHomeStore}
-        homeStoreKey={homeStoreKey} setHomeStoreKey={setHomeStoreKey}
-        saving={saving}
-        onSave={async () => {
-          if (!user) return;
-          setSaving(true);
-          try {
-            const { error: pErr } = await supabase.from("profiles").update({
-              zip_code: zip || null,
-              home_store: homeStore || null,
-              preferred_stores: homeStore ? [homeStore] : [],
-            }).eq("user_id", user.id);
-            if (pErr) throw pErr;
-            if (homeStoreKey && homeStore) {
-              await supabase.from("instacart_home_store").upsert({
-                user_id: user.id,
-                retailer_key: homeStoreKey,
-                retailer_name: homeStore,
-                postal_code: zip || null,
-              }, { onConflict: "user_id" });
-            }
-            await refreshProfile?.();
-            toast({ title: "Store updated" });
-            setOpenSheet(null);
-          } catch (e: any) {
-            toast({ title: "Error", description: e?.message, variant: "destructive" });
-          } finally {
-            setSaving(false);
-          }
         }}
       />
       <ChipSheet
