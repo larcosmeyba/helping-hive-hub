@@ -13,6 +13,9 @@ interface Status {
   connectedUsers: number;
   matched7d: number;
   failed7d: number;
+  cacheHits7d: number;
+  matchRate: number;
+  lastSuccessfulMatch: string | null;
   lastLocationSync: string | null;
   lastPriceSync: string | null;
 }
