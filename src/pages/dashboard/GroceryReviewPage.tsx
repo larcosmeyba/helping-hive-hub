@@ -541,6 +541,8 @@ function EstimatedTotal({
   stateCode,
   weeklyBudget,
   budgetExceeded,
+  budgetWarningText,
+  channelBreakdown,
   instacartTitle,
   sendItems,
 }: {
@@ -551,6 +553,19 @@ function EstimatedTotal({
   stateCode?: string;
   weeklyBudget?: number | null;
   budgetExceeded?: boolean;
+  budgetWarningText?: string | null;
+  channelBreakdown?: {
+    in_store_subtotal: number;
+    item_markup: number;
+    service_fee: number;
+    delivery_fee: number;
+    bag_fee: number;
+    tip: number;
+    tax: number;
+    delivered_total: number;
+    store: string;
+    as_of_date: string;
+  } | null;
   instacartTitle: string;
   sendItems: InstacartLineItem[];
 }) {
