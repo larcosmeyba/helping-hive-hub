@@ -530,6 +530,13 @@ export default function GroceryReviewPage() {
         instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
         sendItems={sendItems}
       />
+
+      <KrogerBudgetCard
+        items={[...toAdjust, ...toBuy, ...manualItems]}
+        weeklyBudget={
+          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+        }
+      />
     </div>
   );
 }
