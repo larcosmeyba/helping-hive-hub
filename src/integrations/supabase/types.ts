@@ -654,6 +654,51 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_pricing_config: {
+        Row: {
+          bag_fee: number
+          channel: string
+          created_at: string
+          delivery_fee: number
+          id: string
+          item_markup_pct: number
+          notes: string | null
+          service_fee: number
+          store: string
+          tax_rate: number
+          tip_default_pct: number
+          updated_at: string
+        }
+        Insert: {
+          bag_fee?: number
+          channel: string
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          item_markup_pct?: number
+          notes?: string | null
+          service_fee?: number
+          store: string
+          tax_rate?: number
+          tip_default_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          bag_fee?: number
+          channel?: string
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          item_markup_pct?: number
+          notes?: string | null
+          service_fee?: number
+          store?: string
+          tax_rate?: number
+          tip_default_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cheap_meals: {
         Row: {
           calories_per_serving: number | null
@@ -1936,6 +1981,89 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_plan_cost_breakdown: {
+        Row: {
+          bag_fee: number
+          budget: number | null
+          budget_exceeded: boolean
+          channel: string
+          created_at: string
+          delivered_total: number
+          delivery_fee: number
+          id: string
+          in_store_subtotal: number
+          item_markup: number
+          line_items: Json
+          meal_plan_id: string
+          pantry_savings: number
+          remaining: number | null
+          service_fee: number
+          store: string | null
+          tax: number
+          tip: number
+          updated_at: string
+          user_id: string
+          warning_text: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          bag_fee?: number
+          budget?: number | null
+          budget_exceeded?: boolean
+          channel?: string
+          created_at?: string
+          delivered_total?: number
+          delivery_fee?: number
+          id?: string
+          in_store_subtotal?: number
+          item_markup?: number
+          line_items?: Json
+          meal_plan_id: string
+          pantry_savings?: number
+          remaining?: number | null
+          service_fee?: number
+          store?: string | null
+          tax?: number
+          tip?: number
+          updated_at?: string
+          user_id: string
+          warning_text?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          bag_fee?: number
+          budget?: number | null
+          budget_exceeded?: boolean
+          channel?: string
+          created_at?: string
+          delivered_total?: number
+          delivery_fee?: number
+          id?: string
+          in_store_subtotal?: number
+          item_markup?: number
+          line_items?: Json
+          meal_plan_id?: string
+          pantry_savings?: number
+          remaining?: number | null
+          service_fee?: number
+          store?: string | null
+          tax?: number
+          tip?: number
+          updated_at?: string
+          user_id?: string
+          warning_text?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_cost_breakdown_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: true
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plan_days: {
         Row: {
           created_at: string
@@ -2343,6 +2471,63 @@ export type Database = {
           item_name?: string
           product_name?: string | null
           protein?: number | null
+        }
+        Relationships: []
+      }
+      package_prices: {
+        Row: {
+          as_of_date: string
+          brand: string | null
+          category: string | null
+          created_at: string
+          display_name: string
+          id: string
+          item_key: string
+          package_price: number
+          package_size: number
+          package_unit: string
+          servings_per_package: number | null
+          source: string | null
+          store: string
+          unit_price: number | null
+          updated_at: string
+          zip_prefix: string | null
+        }
+        Insert: {
+          as_of_date?: string
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          item_key: string
+          package_price: number
+          package_size: number
+          package_unit: string
+          servings_per_package?: number | null
+          source?: string | null
+          store: string
+          unit_price?: number | null
+          updated_at?: string
+          zip_prefix?: string | null
+        }
+        Update: {
+          as_of_date?: string
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          item_key?: string
+          package_price?: number
+          package_size?: number
+          package_unit?: string
+          servings_per_package?: number | null
+          source?: string | null
+          store?: string
+          unit_price?: number | null
+          updated_at?: string
+          zip_prefix?: string | null
         }
         Relationships: []
       }

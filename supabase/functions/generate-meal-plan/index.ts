@@ -5,6 +5,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
+import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
 
 interface Overrides {
   budget?: number;
@@ -371,8 +372,10 @@ Deno.serve(async (req) => {
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
     const allergies: string[] = (profile.allergies ?? []) as string[];
-    const mealCount = overrides.meal_count ?? 18;
-    const daysCount = 6; // 6-day batch cook
+    // 7 days × 3 meals (breakfast/lunch/dinner) is the contract. Snack only
+    // if delivered total stays ≤90% of budget after the 3 meals are placed.
+    const daysCount = 7;
+    const mealCount = overrides.meal_count ?? daysCount * 3;
     const mealsPerType = Math.max(1, Math.ceil(mealCount / 3));
 
     // Budget tier preference based on per-serving budget
@@ -805,18 +808,28 @@ Deno.serve(async (req) => {
         dayMeals.push({ meal_type: mealType, recipe, reason });
       }
       // Backfill missing meal slots — families need a full 3 meals per day.
-      // If the AI returned fewer than 3 slots (or omitted a meal_type), pull
-      // the next safe unused candidate of the missing type from the pool.
+      // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
+      // fallbacks: unused safe candidate → reused safe candidate → minimum-
+      // portion hardcoded staple meal. We NEVER leave a slot empty.
       const present = new Set(dayMeals.map((m) => m.meal_type));
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
         if (present.has(mealType)) continue;
-        const fill = findSafeCandidate(mealType, usedIds);
-        if (!fill) continue;
-        usedIds.add(fill.id);
+        let fill: any = findSafeCandidate(mealType, usedIds);
+        if (!fill) {
+          // Allow reusing a previously-placed safe candidate before dropping a meal.
+          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+        }
+        if (!fill) {
+          // No library option fits the safety filters at all — inject a
+          // minimum-portion staple meal so the user still gets 3 meals.
+          fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        }
+        if (fill.id) usedIds.add(fill.id);
         dayMeals.push({
           meal_type: mealType,
           recipe: fill,
-          reason: "Added to round out your day with breakfast, lunch, and dinner.",
+          reason: "Added at minimum portions to keep your day complete within budget.",
         });
       }
       // Keep meals in canonical breakfast → lunch → dinner order.
@@ -825,6 +838,24 @@ Deno.serve(async (req) => {
         return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
       });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
+    }
+
+    // If the AI returned fewer than `daysCount` days, top up so we always
+    // emit a full week of 3 meals/day. Builds each missing day the same way.
+    const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    while (resolvedDays.length < daysCount) {
+      const dayMeals: any[] = [];
+      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+        let fill: any = findSafeCandidate(mealType, usedIds);
+        if (!fill) {
+          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+        }
+        if (!fill) fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (fill.id) usedIds.add(fill.id);
+        dayMeals.push({ meal_type: mealType, recipe: fill, reason: "Added to complete your week." });
+      }
+      resolvedDays.push({ day_name: DAY_NAMES[resolvedDays.length] || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
     // ===== Budget enforcement (hard cap) =====
@@ -1159,12 +1190,86 @@ Deno.serve(async (req) => {
       basket = await priceBasket(buyItems);
     }
 
-    const overBudgetAfterAdjust = basket.high > weeklyBudget;
-    // Persist the basket-high number (what the UI shows as the upper bound)
-    // so Budget / Remaining math agrees with the displayed range.
-    const estimatedTotalCost = Math.round(basket.high * 100) / 100;
-    const estimatedTotalLow = Math.round(basket.low * 100) / 100;
-    const estimatedTotalAvg = Math.round(basket.avg * 100) / 100;
+    // ===== Channel-aware delivered total (THE budget the user actually pays) =====
+    // basket.high is the in-store, per-serving-summed estimate. Real shoppers
+    // must buy whole packages and pay Instacart markup + fees. Apply the
+    // package-waste multiplier (until package_prices is CSV-seeded), then
+    // layer channel markup + fees so the budget cap reflects the actual
+    // delivered cart price.
+    const channelCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "delivery");
+    const inStoreCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "in_store");
+    const inStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const inStoreTotals = computeChannelTotals(inStoreSubtotalRaw, inStoreCfg);
+    const deliveredTotals = computeChannelTotals(inStoreSubtotalRaw, channelCfg);
+
+    // ===== Channel-aware budget repair (final pass) =====
+    // We previously repaired against basket.high (in-store). With markup/fees
+    // layered on, we may still be over. Run additional swap passes targeting
+    // the delivered_total directly.
+    let deliveredNow = deliveredTotals.delivered_total;
+    const MAX_DELIVERED_REPAIR = 5;
+    let deliveredRepairAttempts = 0;
+    while (deliveredNow > weeklyBudget && deliveredRepairAttempts < MAX_DELIVERED_REPAIR) {
+      deliveredRepairAttempts++;
+      const placedCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+      for (let di = 0; di < resolvedDays.length; di++) {
+        for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+          placedCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost: await recipeDbCost(resolvedDays[di].meals[mi].recipe) });
+        }
+      }
+      placedCosts.sort((a, b) => b.cost - a.cost);
+
+      let swapped = false;
+      for (const slot of placedCosts) {
+        const pool = candidatesByType[slot.meal.meal_type] || [];
+        let best: { cand: any; cost: number } | null = null;
+        for (const cand of pool) {
+          if (usedRecipeIds2.has(cand.id)) continue;
+          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+          const candCost = await recipeDbCost(cand);
+          if (candCost >= slot.cost) continue;
+          if (!best || candCost < best.cost) best = { cand, cost: candCost };
+        }
+        if (best) {
+          const old = resolvedDays[slot.di].meals[slot.mi];
+          if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+          usedRecipeIds2.add(best.cand.id);
+          resolvedDays[slot.di].meals[slot.mi] = {
+            meal_type: old.meal_type,
+            recipe: best.cand,
+            reason: "Swapped to keep your delivered total within budget (includes Instacart fees).",
+          };
+          swapped = true;
+          break;
+        }
+      }
+      if (!swapped) break;
+      const rebuilt = buildGroceryListAndBasket(resolvedDays);
+      groceryList = rebuilt.list;
+      buyItems = rebuilt.buy;
+      basket = await priceBasket(buyItems);
+      const newInStore = basket.high * PACKAGE_WASTE_MULTIPLIER;
+      const newDelivered = computeChannelTotals(newInStore, channelCfg);
+      deliveredNow = newDelivered.delivered_total;
+    }
+
+    // Recompute totals once after the repair loop settles
+    const finalInStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
+    const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
+
+    const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
+    let budgetWarningText: string | null = null;
+    if (overBudgetAfterAdjust) {
+      const shortfall = Math.ceil(finalDeliveredTotals.delivered_total - weeklyBudget);
+      budgetWarningText = `This budget covers reduced portions; consider adding $${shortfall} for full portions delivered with Instacart fees.`;
+    }
+
+    // Persist the DELIVERED total — what the user actually pays at checkout —
+    // as the headline cost. UI/Budget/Remaining math is computed against it.
+    const estimatedTotalCost = finalDeliveredTotals.delivered_total;
+    const estimatedTotalLow = finalInStoreTotals.delivered_total; // in-store = no fees/markup
+    const estimatedTotalAvg = Math.round(((estimatedTotalLow + estimatedTotalCost) / 2) * 100) / 100;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
     const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
@@ -1173,9 +1278,13 @@ Deno.serve(async (req) => {
       unmatched_price_items: basket.unmatched,
     });
     await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
-      estimated_total_cost: estimatedTotalCost,
-      estimated_total_low: estimatedTotalLow,
-      estimated_total_avg: estimatedTotalAvg,
+      delivered_total: estimatedTotalCost,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
       budget_exceeded: overBudgetAfterAdjust,
       top_cost_drivers: basket.drivers,
     });
@@ -1183,16 +1292,33 @@ Deno.serve(async (req) => {
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
     const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
-    // Expose budget context to the client so the Grocery screen can show
-    // Budget / Remaining without an extra round-trip.
+    // Expose budget context + full delivered breakdown to the client.
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
     (normalized as any).budgetExceeded = overBudgetAfterAdjust;
+    (normalized as any).budgetWarningText = budgetWarningText;
     (normalized as any).estimateLow = estimatedTotalLow;
     (normalized as any).estimateAvg = estimatedTotalAvg;
     (normalized as any).estimateHigh = estimatedTotalCost;
     (normalized as any).topCostDrivers = basket.drivers;
     (normalized as any).unmatchedPriceItems = basket.unmatched;
+    (normalized as any).totalEstimatedCost = estimatedTotalCost; // override to delivered
+    (normalized as any).channel = "delivery";
+    (normalized as any).channelBreakdown = {
+      channel: "delivery",
+      store: finalDeliveredTotals.store,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      bag_fee: finalDeliveredTotals.bag_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
+      delivered_total: finalDeliveredTotals.delivered_total,
+      in_store_only_total: finalInStoreTotals.delivered_total,
+      as_of_date: finalDeliveredTotals.as_of_date,
+    };
+
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
       user_id: userId,
@@ -1215,6 +1341,35 @@ Deno.serve(async (req) => {
     }
     const planId = planRow.id;
     await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
+
+    // Persist channel-aware cost breakdown — one row per generated plan.
+    await admin.from("meal_plan_cost_breakdown").insert({
+      meal_plan_id: planId,
+      user_id: userId,
+      channel: "delivery",
+      store: finalDeliveredTotals.store,
+      zip_code: mealPlanContext.zip_code,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      bag_fee: finalDeliveredTotals.bag_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
+      delivered_total: finalDeliveredTotals.delivered_total,
+      budget: weeklyBudget,
+      remaining: Math.max(0, Math.round((weeklyBudget - finalDeliveredTotals.delivered_total) * 100) / 100),
+      budget_exceeded: overBudgetAfterAdjust,
+      warning_text: budgetWarningText,
+      pantry_savings: (normalized as any).pantrySavings ?? 0,
+      line_items: groceryList.map((g) => ({
+        name: g.ingredient_name,
+        category: g.category,
+        quantity: g.quantity,
+        estimated_price: g.estimated_price,
+        already_have: g.already_have,
+      })),
+    });
 
     // Persist days + meals + recipe_usage
     const usageRows: any[] = [];
@@ -1279,14 +1434,16 @@ Deno.serve(async (req) => {
           if (ingErr) console.error("[generate-meal-plan] meal_ingredients insert failed", ingErr);
         }
 
-        usageRows.push({
-          user_id: userId,
-          recipe_id: r.id,
-          meal_plan_id: planId,
-          week_start: weekStart,
-          meal_type: meal.meal_type,
-        });
-        usedRecipeIds.push(r.id);
+        if (r.id) {
+          usageRows.push({
+            user_id: userId,
+            recipe_id: r.id,
+            meal_plan_id: planId,
+            week_start: weekStart,
+            meal_type: meal.meal_type,
+          });
+          usedRecipeIds.push(r.id);
+        }
       }
     }
     await advance("done", "meal_plan_meals saved", "Finalizing your plan");
@@ -1443,3 +1600,66 @@ function buildServerFallback(daysCount: number, b: any[], l: any[], d: any[]) {
   }
   return { days, why_this_plan: { summary: "Server-picked from library because AI was unavailable." } };
 }
+
+// ============================================================
+// buildMinimumPortionStaple — last-resort safe meal so we NEVER drop a slot.
+// Uses calorie-dense, allergy/diet-aware staples. Returns a recipe-shaped
+// object compatible with the rest of the pipeline (no DB row created).
+// ============================================================
+function buildMinimumPortionStaple(
+  mealType: "breakfast" | "lunch" | "dinner",
+  allergies: string[],
+  dietaryPrefs: string[],
+): any {
+  const a = (allergies || []).map((x) => (x || "").toLowerCase());
+  const d = (dietaryPrefs || []).map((x) => (x || "").toLowerCase());
+  const hasAllergy = (term: string) => a.some((x) => x.includes(term) || term.includes(x));
+  const isVegan = d.includes("vegan");
+  const isVeg = isVegan || d.includes("vegetarian");
+  const noGluten = d.includes("gluten-free") || hasAllergy("gluten") || hasAllergy("wheat");
+  const noDairy = isVegan || d.includes("dairy-free") || hasAllergy("dairy") || hasAllergy("milk");
+  const noEggs = isVegan || hasAllergy("egg");
+  const noPeanuts = hasAllergy("peanut") || hasAllergy("nut") || d.includes("nut-free");
+
+  // Pick a hardy staple per meal type, dodging forbidden ingredients.
+  const choose = () => {
+    if (mealType === "breakfast") {
+      if (!noGluten && !noDairy) return { title: "Oatmeal with milk", ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"], cal: 280, p: 11 };
+      if (!noGluten) return { title: "Oatmeal with water", ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"], cal: 200, p: 6 };
+      if (!noEggs) return { title: "Scrambled eggs", ings: ["2 eggs", "1 tsp oil", "salt", "pepper"], cal: 220, p: 14 };
+      return { title: "Banana with peanut butter", ings: ["1 banana", noPeanuts ? "1 tbsp sunflower seed butter" : "1 tbsp peanut butter"], cal: 200, p: 5 };
+    }
+    if (mealType === "lunch") {
+      if (!noGluten && !noPeanuts && !isVegan === false ? true : true) {
+        // PB sandwich path
+        if (!noGluten && !noPeanuts) return { title: "Peanut butter sandwich", ings: ["2 slices bread", "2 tbsp peanut butter"], cal: 380, p: 14 };
+      }
+      if (!isVeg) return { title: "Tuna and rice bowl", ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"], cal: 380, p: 22 };
+      return { title: "Beans and rice", ings: ["1 cup cooked rice", "1/2 cup canned black beans", "salt", "1 tsp oil"], cal: 340, p: 12 };
+    }
+    // dinner
+    if (!isVeg) return { title: "Chicken and pasta", ings: ["3 oz cooked chicken", noGluten ? "1 cup cooked rice" : "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28 };
+    if (!noDairy && !noGluten) return { title: "Pasta with cheese", ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"], cal: 420, p: 16 };
+    return { title: "Lentils and rice", ings: ["1/2 cup cooked lentils", "1 cup cooked rice", "1 tsp oil", "salt"], cal: 380, p: 16 };
+  };
+
+  const pick = choose();
+  return {
+    id: null, // signals not-a-library-recipe; downstream insert handles null
+    title: `${pick.title} (minimum portion)`,
+    description: "Budget-safety meal: kept your day complete at the lowest possible cost.",
+    meal_type: mealType,
+    ingredients: pick.ings,
+    instructions: ["Cook staple per package instructions.", "Combine and serve."],
+    calories: pick.cal,
+    protein_g: pick.p,
+    cost_per_serving: 0.85,
+    serving_size: 1,
+    prep_time_minutes: 5,
+    cook_time_minutes: 10,
+    image_url: null,
+    tags: ["minimum_portion", "staple"],
+    source: "minimum_portion_fallback",
+  };
+}
+

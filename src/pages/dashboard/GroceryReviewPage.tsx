@@ -524,6 +524,8 @@ export default function GroceryReviewPage() {
           (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
         }
         budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
+        budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
+        channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
         instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
         sendItems={sendItems}
       />
@@ -539,6 +541,8 @@ function EstimatedTotal({
   stateCode,
   weeklyBudget,
   budgetExceeded,
+  budgetWarningText,
+  channelBreakdown,
   instacartTitle,
   sendItems,
 }: {
@@ -549,6 +553,19 @@ function EstimatedTotal({
   stateCode?: string;
   weeklyBudget?: number | null;
   budgetExceeded?: boolean;
+  budgetWarningText?: string | null;
+  channelBreakdown?: {
+    in_store_subtotal: number;
+    item_markup: number;
+    service_fee: number;
+    delivery_fee: number;
+    bag_fee: number;
+    tip: number;
+    tax: number;
+    delivered_total: number;
+    store: string;
+    as_of_date: string;
+  } | null;
   instacartTitle: string;
   sendItems: InstacartLineItem[];
 }) {
@@ -579,10 +596,12 @@ function EstimatedTotal({
     };
   }, [selectedItems.map((i) => i.name).join("|"), storeCode, stateCode]);
 
-  // Point estimate used for the Budget / Remaining math. Use the low end of
-  // the range so we never display "over budget" on a basket the engine
-  // already capped at the budget.
-  const estimateForBudget = totalRange ? totalRange.low : 0;
+  // When the server provided a delivered-total breakdown, prefer that as the
+  // authoritative number — it already includes whole-package costs, Instacart
+  // markup, fees, tip, and tax. The client-side basket range is a fallback.
+  const useServerDelivered = !!channelBreakdown;
+  const displayedTotal = useServerDelivered ? channelBreakdown!.delivered_total : (totalRange?.high ?? 0);
+  const estimateForBudget = useServerDelivered ? channelBreakdown!.delivered_total : (totalRange ? totalRange.low : 0);
   const hasBudget = typeof weeklyBudget === "number" && weeklyBudget > 0;
   const remaining = hasBudget ? Math.max(0, (weeklyBudget as number) - estimateForBudget) : null;
   const overBudget = hasBudget && (estimateForBudget > (weeklyBudget as number) || budgetExceeded);
@@ -592,16 +611,35 @@ function EstimatedTotal({
       <div className="mt-5 rounded-2xl border border-border bg-card px-4 py-3 space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <span className="block text-[13px] text-[#6b6b6b]">Estimated Grocery Total</span>
-            <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">range, not exact</span>
+            <span className="block text-[13px] text-[#6b6b6b]">
+              {useServerDelivered ? "Delivered Total (Instacart)" : "Estimated Grocery Total"}
+            </span>
+            <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">
+              {useServerDelivered
+                ? `incl. markup, fees, tip & tax · ${channelBreakdown!.store} · as of ${channelBreakdown!.as_of_date}`
+                : "range, not exact"}
+            </span>
           </div>
           <span className="text-[18px] font-extrabold text-[#1a1a1a]">
-            {formatBasketRange(totalRange)}
+            {useServerDelivered ? `$${displayedTotal.toFixed(2)}` : formatBasketRange(totalRange)}
           </span>
         </div>
+
+        {useServerDelivered && (
+          <div className="pt-2 border-t border-border/60 space-y-1 text-[12px]">
+            <Row label="In-store subtotal" value={channelBreakdown!.in_store_subtotal} />
+            {channelBreakdown!.item_markup > 0 && <Row label="Item markup" value={channelBreakdown!.item_markup} />}
+            {channelBreakdown!.service_fee > 0 && <Row label="Service fee" value={channelBreakdown!.service_fee} />}
+            {channelBreakdown!.delivery_fee > 0 && <Row label="Delivery fee" value={channelBreakdown!.delivery_fee} />}
+            {channelBreakdown!.bag_fee > 0 && <Row label="Bag fee" value={channelBreakdown!.bag_fee} />}
+            {channelBreakdown!.tip > 0 && <Row label="Tip (est.)" value={channelBreakdown!.tip} />}
+            {channelBreakdown!.tax > 0 && <Row label="Tax" value={channelBreakdown!.tax} />}
+          </div>
+        )}
+
         {hasBudget && (
           <>
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-[13px] pt-2 border-t border-border/60">
               <span className="text-[#6b6b6b]">Budget</span>
               <span className="font-semibold text-[#1a1a1a]">${(weeklyBudget as number).toFixed(2)}</span>
             </div>
@@ -624,7 +662,7 @@ function EstimatedTotal({
       )}
       {overBudget && (
         <p className="text-[11px] text-[#B91C1C] leading-relaxed mt-2 px-1 font-medium">
-          This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at Instacart checkout.
+          {budgetWarningText || "This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at Instacart checkout."}
         </p>
       )}
       {/* Universal Instacart cost-saving tip — every user sees how to trim
@@ -671,6 +709,15 @@ function Section({
         <p className="text-[13px] font-extrabold" style={{ color: titleColor }}>{title}</p>
       </div>
       {children}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between text-[#6b6b6b]">
+      <span>{label}</span>
+      <span className="text-[#1a1a1a] font-medium">${value.toFixed(2)}</span>
     </div>
   );
 }

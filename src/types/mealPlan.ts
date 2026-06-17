@@ -78,4 +78,23 @@ export interface GeneratedMealPlan {
   budgetRemaining?: number;
   /** True if the engine could not bring the plan under budget. */
   budgetExceeded?: boolean;
+  /** Human-readable warning shown only when budgetExceeded=true. */
+  budgetWarningText?: string | null;
+  /** Channel the displayed total represents. Defaults to delivery (Instacart). */
+  channel?: "delivery" | "in_store";
+  /** Full delivered-cost breakdown — what the user actually pays at Instacart checkout. */
+  channelBreakdown?: {
+    channel: "delivery" | "in_store";
+    store: string;
+    in_store_subtotal: number;
+    item_markup: number;
+    service_fee: number;
+    delivery_fee: number;
+    bag_fee: number;
+    tip: number;
+    tax: number;
+    delivered_total: number;
+    in_store_only_total: number;
+    as_of_date: string;
+  };
 }
