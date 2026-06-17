@@ -1,0 +1,2 @@
+ALTER TABLE public.kroger_product_matches ADD COLUMN IF NOT EXISTS from_cache boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_kroger_matches_cache_lookup ON public.kroger_product_matches (location_id, lower(ingredient_name), matched_at DESC) WHERE status = 'matched';
