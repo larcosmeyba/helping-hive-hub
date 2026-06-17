@@ -207,6 +207,17 @@ export function KrogerBudgetCard({
                       <p className="text-[10px] text-[#6b6b6b] truncate">
                         {[m.brand, m.size].filter(Boolean).join(" · ") || m.ingredient_name}
                       </p>
+                      {m.availability && (
+                        <p
+                          className={`text-[10px] mt-0.5 ${
+                            m.availability === "HIGH" || m.availability === "LOW"
+                              ? "text-[#1F5A3D]"
+                              : "text-[#B91C1C]"
+                          }`}
+                        >
+                          {m.availability.replace(/_/g, " ").toLowerCase()}
+                        </p>
+                      )}
                     </div>
                     <span className="text-[12px] font-semibold text-[#1a1a1a] shrink-0">
                       {typeof m.unit_price === "number" ? `$${m.unit_price.toFixed(2)}` : "—"}
