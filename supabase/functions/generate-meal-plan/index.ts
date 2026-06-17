@@ -1598,3 +1598,66 @@ function buildServerFallback(daysCount: number, b: any[], l: any[], d: any[]) {
   }
   return { days, why_this_plan: { summary: "Server-picked from library because AI was unavailable." } };
 }
+
+// ============================================================
+// buildMinimumPortionStaple — last-resort safe meal so we NEVER drop a slot.
+// Uses calorie-dense, allergy/diet-aware staples. Returns a recipe-shaped
+// object compatible with the rest of the pipeline (no DB row created).
+// ============================================================
+function buildMinimumPortionStaple(
+  mealType: "breakfast" | "lunch" | "dinner",
+  allergies: string[],
+  dietaryPrefs: string[],
+): any {
+  const a = (allergies || []).map((x) => (x || "").toLowerCase());
+  const d = (dietaryPrefs || []).map((x) => (x || "").toLowerCase());
+  const hasAllergy = (term: string) => a.some((x) => x.includes(term) || term.includes(x));
+  const isVegan = d.includes("vegan");
+  const isVeg = isVegan || d.includes("vegetarian");
+  const noGluten = d.includes("gluten-free") || hasAllergy("gluten") || hasAllergy("wheat");
+  const noDairy = isVegan || d.includes("dairy-free") || hasAllergy("dairy") || hasAllergy("milk");
+  const noEggs = isVegan || hasAllergy("egg");
+  const noPeanuts = hasAllergy("peanut") || hasAllergy("nut") || d.includes("nut-free");
+
+  // Pick a hardy staple per meal type, dodging forbidden ingredients.
+  const choose = () => {
+    if (mealType === "breakfast") {
+      if (!noGluten && !noDairy) return { title: "Oatmeal with milk", ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"], cal: 280, p: 11 };
+      if (!noGluten) return { title: "Oatmeal with water", ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"], cal: 200, p: 6 };
+      if (!noEggs) return { title: "Scrambled eggs", ings: ["2 eggs", "1 tsp oil", "salt", "pepper"], cal: 220, p: 14 };
+      return { title: "Banana with peanut butter", ings: ["1 banana", noPeanuts ? "1 tbsp sunflower seed butter" : "1 tbsp peanut butter"], cal: 200, p: 5 };
+    }
+    if (mealType === "lunch") {
+      if (!noGluten && !noPeanuts && !isVegan === false ? true : true) {
+        // PB sandwich path
+        if (!noGluten && !noPeanuts) return { title: "Peanut butter sandwich", ings: ["2 slices bread", "2 tbsp peanut butter"], cal: 380, p: 14 };
+      }
+      if (!isVeg) return { title: "Tuna and rice bowl", ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"], cal: 380, p: 22 };
+      return { title: "Beans and rice", ings: ["1 cup cooked rice", "1/2 cup canned black beans", "salt", "1 tsp oil"], cal: 340, p: 12 };
+    }
+    // dinner
+    if (!isVeg) return { title: "Chicken and pasta", ings: ["3 oz cooked chicken", noGluten ? "1 cup cooked rice" : "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28 };
+    if (!noDairy && !noGluten) return { title: "Pasta with cheese", ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"], cal: 420, p: 16 };
+    return { title: "Lentils and rice", ings: ["1/2 cup cooked lentils", "1 cup cooked rice", "1 tsp oil", "salt"], cal: 380, p: 16 };
+  };
+
+  const pick = choose();
+  return {
+    id: null, // signals not-a-library-recipe; downstream insert handles null
+    title: `${pick.title} (minimum portion)`,
+    description: "Budget-safety meal: kept your day complete at the lowest possible cost.",
+    meal_type: mealType,
+    ingredients: pick.ings,
+    instructions: ["Cook staple per package instructions.", "Combine and serve."],
+    calories: pick.cal,
+    protein_g: pick.p,
+    cost_per_serving: 0.85,
+    serving_size: 1,
+    prep_time_minutes: 5,
+    cook_time_minutes: 10,
+    image_url: null,
+    tags: ["minimum_portion", "staple"],
+    source: "minimum_portion_fallback",
+  };
+}
+
