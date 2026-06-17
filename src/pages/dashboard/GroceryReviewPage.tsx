@@ -524,6 +524,8 @@ export default function GroceryReviewPage() {
           (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
         }
         budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
+        budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
+        channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
         instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
         sendItems={sendItems}
       />
