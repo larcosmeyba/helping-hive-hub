@@ -371,8 +371,10 @@ Deno.serve(async (req) => {
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
     const allergies: string[] = (profile.allergies ?? []) as string[];
-    const mealCount = overrides.meal_count ?? 18;
-    const daysCount = 6; // 6-day batch cook
+    // 7 days × 3 meals (breakfast/lunch/dinner) is the contract. Snack only
+    // if delivered total stays ≤90% of budget after the 3 meals are placed.
+    const daysCount = 7;
+    const mealCount = overrides.meal_count ?? daysCount * 3;
     const mealsPerType = Math.max(1, Math.ceil(mealCount / 3));
 
     // Budget tier preference based on per-serving budget
