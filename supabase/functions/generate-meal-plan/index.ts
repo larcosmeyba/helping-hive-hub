@@ -1342,6 +1342,35 @@ Deno.serve(async (req) => {
     const planId = planRow.id;
     await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
 
+    // Persist channel-aware cost breakdown — one row per generated plan.
+    await admin.from("meal_plan_cost_breakdown").insert({
+      meal_plan_id: planId,
+      user_id: userId,
+      channel: "delivery",
+      store: finalDeliveredTotals.store,
+      zip_code: mealPlanContext.zip_code,
+      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
+      item_markup: finalDeliveredTotals.item_markup,
+      service_fee: finalDeliveredTotals.service_fee,
+      delivery_fee: finalDeliveredTotals.delivery_fee,
+      bag_fee: finalDeliveredTotals.bag_fee,
+      tip: finalDeliveredTotals.tip,
+      tax: finalDeliveredTotals.tax,
+      delivered_total: finalDeliveredTotals.delivered_total,
+      budget: weeklyBudget,
+      remaining: Math.max(0, Math.round((weeklyBudget - finalDeliveredTotals.delivered_total) * 100) / 100),
+      budget_exceeded: overBudgetAfterAdjust,
+      warning_text: budgetWarningText,
+      pantry_savings: (normalized as any).pantrySavings ?? 0,
+      line_items: groceryList.map((g) => ({
+        name: g.ingredient_name,
+        category: g.category,
+        quantity: g.quantity,
+        estimated_price: g.estimated_price,
+        already_have: g.already_have,
+      })),
+    });
+
     // Persist days + meals + recipe_usage
     const usageRows: any[] = [];
     const usedRecipeIds: string[] = [];
