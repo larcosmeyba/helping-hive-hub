@@ -376,6 +376,189 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_food_items: {
+        Row: {
+          brand: string | null
+          calories: number | null
+          carbs_g: number | null
+          category: string | null
+          cost_per_serving: number | null
+          created_at: string
+          estimated_cost: number | null
+          expiration_type: string | null
+          fat_g: number | null
+          food_item: string
+          household_size_supported: string | null
+          id: string
+          is_canned: boolean | null
+          is_carbohydrate: boolean | null
+          is_dairy: boolean | null
+          is_frozen: boolean | null
+          is_fruit: boolean | null
+          is_protein: boolean | null
+          is_shelf_stable: boolean | null
+          is_vegetable: boolean | null
+          notes: string | null
+          protein_g: number | null
+          serving_size: string | null
+          storage_type: string | null
+          store: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          calories?: number | null
+          carbs_g?: number | null
+          category?: string | null
+          cost_per_serving?: number | null
+          created_at?: string
+          estimated_cost?: number | null
+          expiration_type?: string | null
+          fat_g?: number | null
+          food_item: string
+          household_size_supported?: string | null
+          id?: string
+          is_canned?: boolean | null
+          is_carbohydrate?: boolean | null
+          is_dairy?: boolean | null
+          is_frozen?: boolean | null
+          is_fruit?: boolean | null
+          is_protein?: boolean | null
+          is_shelf_stable?: boolean | null
+          is_vegetable?: boolean | null
+          notes?: string | null
+          protein_g?: number | null
+          serving_size?: string | null
+          storage_type?: string | null
+          store?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          calories?: number | null
+          carbs_g?: number | null
+          category?: string | null
+          cost_per_serving?: number | null
+          created_at?: string
+          estimated_cost?: number | null
+          expiration_type?: string | null
+          fat_g?: number | null
+          food_item?: string
+          household_size_supported?: string | null
+          id?: string
+          is_canned?: boolean | null
+          is_carbohydrate?: boolean | null
+          is_dairy?: boolean | null
+          is_frozen?: boolean | null
+          is_fruit?: boolean | null
+          is_protein?: boolean | null
+          is_shelf_stable?: boolean | null
+          is_vegetable?: boolean | null
+          notes?: string | null
+          protein_g?: number | null
+          serving_size?: string | null
+          storage_type?: string | null
+          store?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      budget_recipes: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          cost_estimate: number | null
+          cost_per_serving: number | null
+          created_at: string
+          difficulty: string | null
+          fat_g: number | null
+          id: string
+          ingredients: string | null
+          instructions: string | null
+          preparation_time: string | null
+          protein_g: number | null
+          recipe_name: string
+          servings: number | null
+          updated_at: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          cost_estimate?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          difficulty?: string | null
+          fat_g?: number | null
+          id?: string
+          ingredients?: string | null
+          instructions?: string | null
+          preparation_time?: string | null
+          protein_g?: number | null
+          recipe_name: string
+          servings?: number | null
+          updated_at?: string
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          cost_estimate?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          difficulty?: string | null
+          fat_g?: number | null
+          id?: string
+          ingredients?: string | null
+          instructions?: string | null
+          preparation_time?: string | null
+          protein_g?: number | null
+          recipe_name?: string
+          servings?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      budget_staples: {
+        Row: {
+          calories_per_dollar: number | null
+          cost_per_serving: number | null
+          created_at: string
+          estimated_cost_pack: number | null
+          food_item: string
+          id: string
+          meals_it_can_be_used_in: string | null
+          priority_ranking: number | null
+          protein_per_dollar_g: number | null
+          store: string | null
+          updated_at: string
+        }
+        Insert: {
+          calories_per_dollar?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          estimated_cost_pack?: number | null
+          food_item: string
+          id?: string
+          meals_it_can_be_used_in?: string | null
+          priority_ranking?: number | null
+          protein_per_dollar_g?: number | null
+          store?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calories_per_dollar?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          estimated_cost_pack?: number | null
+          food_item?: string
+          id?: string
+          meals_it_can_be_used_in?: string | null
+          priority_ranking?: number | null
+          protein_per_dollar_g?: number | null
+          store?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       canonical_product_aliases: {
         Row: {
           alias_id: string
@@ -467,6 +650,63 @@ export type Database = {
           size_unit?: string | null
           size_value?: number | null
           subcategory?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cheap_meals: {
+        Row: {
+          calories_per_serving: number | null
+          cost_per_serving: number | null
+          created_at: string
+          difficulty: string | null
+          estimated_total_cost: number | null
+          family_friendly: string | null
+          id: string
+          ingredients: string | null
+          kid_friendly: string | null
+          meal_name: string
+          meal_type: string | null
+          notes: string | null
+          preparation_time: string | null
+          protein_per_serving_g: number | null
+          store_availability: string | null
+          updated_at: string
+        }
+        Insert: {
+          calories_per_serving?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          difficulty?: string | null
+          estimated_total_cost?: number | null
+          family_friendly?: string | null
+          id?: string
+          ingredients?: string | null
+          kid_friendly?: string | null
+          meal_name: string
+          meal_type?: string | null
+          notes?: string | null
+          preparation_time?: string | null
+          protein_per_serving_g?: number | null
+          store_availability?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calories_per_serving?: number | null
+          cost_per_serving?: number | null
+          created_at?: string
+          difficulty?: string | null
+          estimated_total_cost?: number | null
+          family_friendly?: string | null
+          id?: string
+          ingredients?: string | null
+          kid_friendly?: string | null
+          meal_name?: string
+          meal_type?: string | null
+          notes?: string | null
+          preparation_time?: string | null
+          protein_per_serving_g?: number | null
+          store_availability?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1884,6 +2124,45 @@ export type Database = {
           },
         ]
       }
+      meal_plan_weekly_totals: {
+        Row: {
+          avg_calories_per_person_per_day: number | null
+          calories_per_week: number | null
+          created_at: string
+          id: string
+          plan_tier: string
+          protein_g_per_week: number | null
+          supports_people: number
+          updated_at: string
+          weekly_budget: number
+          weekly_cost: number | null
+        }
+        Insert: {
+          avg_calories_per_person_per_day?: number | null
+          calories_per_week?: number | null
+          created_at?: string
+          id?: string
+          plan_tier: string
+          protein_g_per_week?: number | null
+          supports_people: number
+          updated_at?: string
+          weekly_budget: number
+          weekly_cost?: number | null
+        }
+        Update: {
+          avg_calories_per_person_per_day?: number | null
+          calories_per_week?: number | null
+          created_at?: string
+          id?: string
+          plan_tier?: string
+          protein_g_per_week?: number | null
+          supports_people?: number
+          updated_at?: string
+          weekly_budget?: number
+          weekly_cost?: number | null
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           budget_status: string | null
@@ -3300,6 +3579,54 @@ export type Database = {
           name?: string | null
           referral_source?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      weekly_meal_plans: {
+        Row: {
+          breakfast: string | null
+          created_at: string
+          daily_cost: number | null
+          day_of_week: string
+          day_order: number
+          dinner: string | null
+          id: string
+          lunch: string | null
+          plan_tier: string
+          snack: string | null
+          supports_people: number
+          updated_at: string
+          weekly_budget: number
+        }
+        Insert: {
+          breakfast?: string | null
+          created_at?: string
+          daily_cost?: number | null
+          day_of_week: string
+          day_order: number
+          dinner?: string | null
+          id?: string
+          lunch?: string | null
+          plan_tier: string
+          snack?: string | null
+          supports_people: number
+          updated_at?: string
+          weekly_budget: number
+        }
+        Update: {
+          breakfast?: string | null
+          created_at?: string
+          daily_cost?: number | null
+          day_of_week?: string
+          day_order?: number
+          dinner?: string | null
+          id?: string
+          lunch?: string | null
+          plan_tier?: string
+          snack?: string | null
+          supports_people?: number
+          updated_at?: string
+          weekly_budget?: number
         }
         Relationships: []
       }
