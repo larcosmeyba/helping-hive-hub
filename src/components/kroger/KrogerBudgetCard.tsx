@@ -224,6 +224,11 @@ export function KrogerBudgetCard({
             <div className="flex items-center gap-2 text-[11px] text-[#6b6b6b]">
               <CheckCircle2 className="h-3 w-3 text-[#1F5A3D]" />
               {matched.length} matched · {needsReview.length} need review
+              {(result.totals.cacheHits ?? 0) > 0 && (
+                <span className="text-[10px] text-[#6b6b6b]">
+                  · {result.totals.cacheHits} from cache
+                </span>
+              )}
               <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={run}>
                 <RefreshCw className="h-3 w-3 mr-1" /> Refresh
               </Button>
