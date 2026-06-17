@@ -16,6 +16,7 @@ interface KrogerMatch {
   image_url?: string | null;
   unit_price?: number;
   confidence?: number;
+  availability?: string | null;
 }
 
 interface MatchResponse {
