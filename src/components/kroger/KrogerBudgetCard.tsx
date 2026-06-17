@@ -78,6 +78,47 @@ export function KrogerBudgetCard({
     }
   };
 
+  const retrySimpler = async () => {
+    if (!locationId || !result) return;
+    const unmatched = result.matches.filter((m) => m.status === "no_match");
+    if (!unmatched.length) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const retryItems = unmatched.map((m) => ({ name: m.ingredient_name, quantity: 1 }));
+      const { data, error } = await supabase.functions.invoke("kroger-match-grocery-list", {
+        body: { items: retryItems, locationId, simplify: true, skipCache: true },
+      });
+      if (error) throw error;
+      const retry = data as MatchResponse;
+      // Merge: replace previously-unmatched entries with retry results.
+      const byName = new Map(retry.matches.map((m) => [m.ingredient_name, m]));
+      const mergedMatches = result.matches.map((m) =>
+        m.status === "no_match" && byName.has(m.ingredient_name)
+          ? byName.get(m.ingredient_name)!
+          : m,
+      );
+      const newMatched = mergedMatches.filter((m) => m.status === "matched").length;
+      const newFailed = mergedMatches.filter((m) => m.status === "no_match").length;
+      const newTotal = mergedMatches
+        .filter((m) => m.status === "matched")
+        .reduce((sum, m) => sum + (m.unit_price ?? 0), 0);
+      setResult({
+        matches: mergedMatches,
+        totals: {
+          matched: newMatched,
+          failed: newFailed,
+          cacheHits: result.totals.cacheHits ?? 0,
+          estimatedTotal: Math.round(newTotal * 100) / 100,
+        },
+      });
+    } catch (e: any) {
+      setError(e?.message ?? "Could not retry");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Auto-run once when ready
   useEffect(() => {
     if (connected && locationId && payloadItems.length && !result && !loading) {
