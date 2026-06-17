@@ -13,6 +13,9 @@ interface Status {
   connectedUsers: number;
   matched7d: number;
   failed7d: number;
+  cacheHits7d: number;
+  matchRate: number;
+  lastSuccessfulMatch: string | null;
   lastLocationSync: string | null;
   lastPriceSync: string | null;
 }
@@ -88,6 +91,25 @@ export default function AdminKroger() {
           <Card className="p-4">
             <div className="text-sm text-muted-foreground">Failed matches (7d)</div>
             <div className="text-2xl font-bold text-destructive">{status.failed7d}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Match rate (7d)</div>
+            <div className="text-2xl font-bold text-[#B8860B]">{status.matchRate}%</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {status.matched7d} matched / {status.matched7d + status.failed7d} attempts
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Cached matches used (7d)</div>
+            <div className="text-2xl font-bold">{status.cacheHits7d}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Last successful match</div>
+            <div className="font-medium">
+              {status.lastSuccessfulMatch
+                ? new Date(status.lastSuccessfulMatch).toLocaleString()
+                : "—"}
+            </div>
           </Card>
           <Card className="p-4">
             <div className="text-sm text-muted-foreground">Last location sync</div>

@@ -17,11 +17,12 @@ interface KrogerMatch {
   unit_price?: number;
   confidence?: number;
   availability?: string | null;
+  from_cache?: boolean;
 }
 
 interface MatchResponse {
   matches: KrogerMatch[];
-  totals: { matched: number; failed: number; estimatedTotal: number };
+  totals: { matched: number; failed: number; cacheHits?: number; estimatedTotal: number };
 }
 
 export function KrogerBudgetCard({
@@ -72,6 +73,47 @@ export function KrogerBudgetCard({
       setResult(data as MatchResponse);
     } catch (e: any) {
       setError(e?.message ?? "Could not reach Kroger");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const retrySimpler = async () => {
+    if (!locationId || !result) return;
+    const unmatched = result.matches.filter((m) => m.status === "no_match");
+    if (!unmatched.length) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const retryItems = unmatched.map((m) => ({ name: m.ingredient_name, quantity: 1 }));
+      const { data, error } = await supabase.functions.invoke("kroger-match-grocery-list", {
+        body: { items: retryItems, locationId, simplify: true, skipCache: true },
+      });
+      if (error) throw error;
+      const retry = data as MatchResponse;
+      // Merge: replace previously-unmatched entries with retry results.
+      const byName = new Map(retry.matches.map((m) => [m.ingredient_name, m]));
+      const mergedMatches = result.matches.map((m) =>
+        m.status === "no_match" && byName.has(m.ingredient_name)
+          ? byName.get(m.ingredient_name)!
+          : m,
+      );
+      const newMatched = mergedMatches.filter((m) => m.status === "matched").length;
+      const newFailed = mergedMatches.filter((m) => m.status === "no_match").length;
+      const newTotal = mergedMatches
+        .filter((m) => m.status === "matched")
+        .reduce((sum, m) => sum + (m.unit_price ?? 0), 0);
+      setResult({
+        matches: mergedMatches,
+        totals: {
+          matched: newMatched,
+          failed: newFailed,
+          cacheHits: result.totals.cacheHits ?? 0,
+          estimatedTotal: Math.round(newTotal * 100) / 100,
+        },
+      });
+    } catch (e: any) {
+      setError(e?.message ?? "Could not retry");
     } finally {
       setLoading(false);
     }
@@ -182,6 +224,11 @@ export function KrogerBudgetCard({
             <div className="flex items-center gap-2 text-[11px] text-[#6b6b6b]">
               <CheckCircle2 className="h-3 w-3 text-[#1F5A3D]" />
               {matched.length} matched · {needsReview.length} need review
+              {(result.totals.cacheHits ?? 0) > 0 && (
+                <span className="text-[10px] text-[#6b6b6b]">
+                  · {result.totals.cacheHits} from cache
+                </span>
+              )}
               <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={run}>
                 <RefreshCw className="h-3 w-3 mr-1" /> Refresh
               </Button>
@@ -233,10 +280,21 @@ export function KrogerBudgetCard({
             )}
 
             {needsReview.length > 0 && (
-              <div className="rounded-lg border border-[#F2D88A] bg-[#FFF8E1] p-2">
-                <p className="text-[11px] font-semibold text-[#7A5A00] mb-1">
-                  Needs Review · {needsReview.length}
-                </p>
+              <div className="rounded-lg border border-[#F2D88A] bg-[#FFF8E1] p-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-semibold text-[#7A5A00] flex-1">
+                    Needs Review · {needsReview.length}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-[11px] border-[#B8860B] text-[#7A5A00] hover:bg-[#FFF1C2]"
+                    onClick={retrySimpler}
+                    disabled={loading}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" /> Try simpler match
+                  </Button>
+                </div>
                 <ul className="space-y-0.5">
                   {needsReview.slice(0, 6).map((m, idx) => (
                     <li key={`nr-${idx}`} className="text-[11px] text-[#7A5A00]">

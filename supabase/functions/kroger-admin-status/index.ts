@@ -50,14 +50,28 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
-    const [{ count: connectedUsers }, { count: matched7d }, { count: failed7d }, { data: lastLoc }, { data: lastPrice }] =
-      await Promise.all([
-        supabase.from("kroger_user_tokens").select("*", { count: "exact", head: true }).eq("environment", env),
-        supabase.from("kroger_product_matches").select("*", { count: "exact", head: true }).eq("status", "matched").gte("matched_at", sevenDaysAgo),
-        supabase.from("kroger_product_matches").select("*", { count: "exact", head: true }).eq("status", "no_match").gte("matched_at", sevenDaysAgo),
-        supabase.from("kroger_locations").select("cached_at").order("cached_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("kroger_pricing_cache").select("fetched_at").order("fetched_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
+    const [
+      { count: connectedUsers },
+      { count: matched7d },
+      { count: failed7d },
+      { count: cacheHits7d },
+      { data: lastLoc },
+      { data: lastPrice },
+      { data: lastMatch },
+    ] = await Promise.all([
+      supabase.from("kroger_user_tokens").select("*", { count: "exact", head: true }).eq("environment", env),
+      supabase.from("kroger_product_matches").select("*", { count: "exact", head: true }).eq("status", "matched").gte("matched_at", sevenDaysAgo),
+      supabase.from("kroger_product_matches").select("*", { count: "exact", head: true }).eq("status", "no_match").gte("matched_at", sevenDaysAgo),
+      supabase.from("kroger_product_matches").select("*", { count: "exact", head: true }).eq("status", "matched").eq("from_cache", true).gte("matched_at", sevenDaysAgo),
+      supabase.from("kroger_locations").select("cached_at").order("cached_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("kroger_pricing_cache").select("fetched_at").order("fetched_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("kroger_product_matches").select("matched_at").eq("status", "matched").order("matched_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+
+    const matchedN = matched7d ?? 0;
+    const failedN = failed7d ?? 0;
+    const totalAttempts = matchedN + failedN;
+    const matchRate = totalAttempts > 0 ? Math.round((matchedN / totalAttempts) * 1000) / 10 : 0;
 
     return new Response(JSON.stringify({
       environment: env,
@@ -65,8 +79,11 @@ Deno.serve(async (req) => {
       apiError,
       appToken: tok,
       connectedUsers: connectedUsers ?? 0,
-      matched7d: matched7d ?? 0,
-      failed7d: failed7d ?? 0,
+      matched7d: matchedN,
+      failed7d: failedN,
+      cacheHits7d: cacheHits7d ?? 0,
+      matchRate,
+      lastSuccessfulMatch: lastMatch?.matched_at ?? null,
       lastLocationSync: lastLoc?.cached_at ?? null,
       lastPriceSync: lastPrice?.fetched_at ?? null,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

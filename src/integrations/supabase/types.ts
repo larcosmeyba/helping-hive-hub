@@ -1942,6 +1942,7 @@ export type Database = {
           brand: string | null
           confidence: number | null
           created_at: string
+          from_cache: boolean
           grocery_list_item_id: string | null
           id: string
           image_url: string | null
@@ -1960,6 +1961,7 @@ export type Database = {
           brand?: string | null
           confidence?: number | null
           created_at?: string
+          from_cache?: boolean
           grocery_list_item_id?: string | null
           id?: string
           image_url?: string | null
@@ -1978,6 +1980,7 @@ export type Database = {
           brand?: string | null
           confidence?: number | null
           created_at?: string
+          from_cache?: boolean
           grocery_list_item_id?: string | null
           id?: string
           image_url?: string | null
