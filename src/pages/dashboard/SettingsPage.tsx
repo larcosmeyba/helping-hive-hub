@@ -22,6 +22,8 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "@/contexts/LocationContext";
 import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
+import { KrogerConnectionCard } from "@/components/kroger/KrogerConnectionCard";
+import { KrogerHomeStoreCard } from "@/components/kroger/KrogerHomeStoreCard";
 import { Switch } from "@/components/ui/switch";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
@@ -452,6 +454,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Privacy & Data Controls */}
+      <KrogerConnectionCard />
+      <KrogerHomeStoreCard />
       <PrivacyDataControls />
 
       {/* Notification Preferences */}
