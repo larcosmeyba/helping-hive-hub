@@ -25,6 +25,7 @@ const navItems = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, permission: "view_analytics" as const },
   { title: "System Health", url: "/admin/system-health", icon: Activity, permission: "view_analytics" as const },
   { title: "Kroger API", url: "/admin/kroger", icon: ShoppingBag, permission: "view_analytics" as const },
+  { title: "Kroger Readiness", url: "/admin/kroger/readiness", icon: FileCheck2, permission: "view_analytics" as const },
   { title: "Admin Management", url: "/admin/admins", icon: ShieldCheck, permission: "invite_remove_admins" as const },
 ];
 
