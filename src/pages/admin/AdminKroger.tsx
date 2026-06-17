@@ -110,6 +110,7 @@ export default function AdminKroger() {
                 ? new Date(status.lastSuccessfulMatch).toLocaleString()
                 : "—"}
             </div>
+          </Card>
           <Card className="p-4">
             <div className="text-sm text-muted-foreground">Last location sync</div>
             <div className="font-medium">
