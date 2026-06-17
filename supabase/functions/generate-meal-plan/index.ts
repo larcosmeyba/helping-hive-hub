@@ -458,6 +458,112 @@ Deno.serve(async (req) => {
     const candidatesById = new Map<string, any>();
     for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates]) candidatesById.set(r.id, r);
 
+    // ===== Help The Hive budget reference data =====
+    // Tables: cheap_meals, budget_staples, weekly_meal_plans, meal_plan_weekly_totals, budget_food_items.
+    // Prices are PLANNING ESTIMATES, not exact store prices. Used to steer the AI toward
+    // low-cost, high-protein, family-friendly, shelf-stable, widely available foods.
+    function pickPlanTier(budget: number | null | undefined): string {
+      const b = Number(budget ?? 0);
+      if (b <= 30) return "$25";
+      if (b <= 60) return "$50";
+      if (b <= 85) return "$75";
+      if (b <= 125) return "$100";
+      return "$150";
+    }
+    const planTier = pickPlanTier(weeklyBudget);
+    const allergyTermsForBudget = expandAllergies(allergies);
+    const dietForbiddenForBudget = forbiddenForDiets(dietaryPrefs);
+    const budgetUnsafe = (text: string | null | undefined) => {
+      const t = String(text ?? "").toLowerCase();
+      if (!t) return false;
+      const all = [...allergyTermsForBudget, ...dietForbiddenForBudget];
+      return all.some((term) => term && t.includes(term.toLowerCase()));
+    };
+
+    const [cheapMealsRes, budgetStaplesRes, tierPlanRes, tierTotalsRes, budgetFoodsRes] = await Promise.all([
+      admin.from("cheap_meals")
+        .select("meal_name, meal_type, ingredients, cost_per_serving, protein_per_serving_g, calories_per_serving, preparation_time, difficulty, family_friendly, kid_friendly, notes")
+        .order("cost_per_serving", { ascending: true })
+        .limit(120),
+      admin.from("budget_staples")
+        .select("food_item, store, cost_per_serving, protein_per_dollar_g, calories_per_dollar, meals_it_can_be_used_in, priority_ranking")
+        .order("priority_ranking", { ascending: true })
+        .limit(40),
+      admin.from("weekly_meal_plans")
+        .select("day_of_week, day_order, breakfast, lunch, dinner, snack, daily_cost")
+        .eq("plan_tier", planTier)
+        .order("day_order", { ascending: true }),
+      admin.from("meal_plan_weekly_totals")
+        .select("plan_tier, weekly_budget, supports_people, avg_calories_per_person_per_day, protein_g_per_week, calories_per_week, weekly_cost")
+        .eq("plan_tier", planTier)
+        .maybeSingle(),
+      admin.from("budget_food_items")
+        .select("food_item, brand, store, category, is_protein, is_vegetable, is_fruit, is_carbohydrate, is_dairy, is_shelf_stable, cost_per_serving, protein_g, calories")
+        .order("cost_per_serving", { ascending: true })
+        .limit(80),
+    ]);
+
+    const cheapMealIdeas = (cheapMealsRes.data ?? [])
+      .filter((m: any) => !budgetUnsafe(m.meal_name) && !budgetUnsafe(m.ingredients))
+      .slice(0, 40)
+      .map((m: any) => ({
+        meal_name: m.meal_name,
+        meal_type: m.meal_type,
+        ingredients_preview: String(m.ingredients ?? "").slice(0, 220),
+        cost_per_serving: m.cost_per_serving,
+        protein_g: m.protein_per_serving_g,
+        calories: m.calories_per_serving,
+        prep: m.preparation_time,
+        difficulty: m.difficulty,
+        family_friendly: m.family_friendly,
+        kid_friendly: m.kid_friendly,
+      }));
+
+    const budgetStaplesList = (budgetStaplesRes.data ?? [])
+      .filter((s: any) => !budgetUnsafe(s.food_item))
+      .slice(0, 30)
+      .map((s: any) => ({
+        food_item: s.food_item,
+        store: s.store,
+        cost_per_serving: s.cost_per_serving,
+        protein_per_dollar_g: s.protein_per_dollar_g,
+        calories_per_dollar: s.calories_per_dollar,
+        used_in: s.meals_it_can_be_used_in,
+      }));
+
+    const tierWeeklyPlan = (tierPlanRes.data ?? []).map((d: any) => ({
+      day: d.day_of_week,
+      breakfast: d.breakfast,
+      lunch: d.lunch,
+      dinner: d.dinner,
+      snack: d.snack,
+      daily_cost: d.daily_cost,
+    }));
+
+    const tierTotals = tierTotalsRes.data ?? null;
+
+    const budgetFoodItemsList = (budgetFoodsRes.data ?? [])
+      .filter((f: any) => !budgetUnsafe(f.food_item))
+      .slice(0, 50)
+      .map((f: any) => ({
+        food_item: f.food_item,
+        brand: f.brand,
+        store: f.store,
+        category: f.category,
+        cost_per_serving: f.cost_per_serving,
+        protein_g: f.protein_g,
+        calories: f.calories,
+        shelf_stable: f.is_shelf_stable,
+      }));
+
+    await advance("preparing", "budget reference loaded", "Loading Help The Hive budget guide", {
+      plan_tier: planTier,
+      cheap_meal_ideas: cheapMealIdeas.length,
+      budget_staples: budgetStaplesList.length,
+      tier_weekly_plan_days: tierWeeklyPlan.length,
+      budget_food_items: budgetFoodItemsList.length,
+    });
+
     function compactCandidate(r: any) {
       // Identify pantry-overlap count for AI signal
       const ings = Array.isArray(r.ingredients) ? r.ingredients : [];
@@ -500,6 +606,16 @@ Deno.serve(async (req) => {
       candidates_breakfast: breakfastCandidates.map(compactCandidate),
       candidates_lunch: lunchCandidates.map(compactCandidate),
       candidates_dinner: dinnerCandidates.map(compactCandidate),
+      // Help The Hive budget reference (planning estimates — NOT exact store prices)
+      budget_reference: {
+        notice: "Prices are PLANNING ESTIMATES, not exact store prices. Prioritize low-cost, high-protein, family-friendly, shelf-stable, widely available foods.",
+        plan_tier: planTier,
+        tier_totals: tierTotals,
+        tier_weekly_plan: tierWeeklyPlan,
+        cheap_meal_ideas: cheapMealIdeas,
+        budget_staples: budgetStaplesList,
+        budget_food_items: budgetFoodItemsList,
+      },
     };
 
     const missingFields = missingContextFields({
