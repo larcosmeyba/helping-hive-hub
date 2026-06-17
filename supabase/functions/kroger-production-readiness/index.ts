@@ -85,11 +85,11 @@ Deno.serve(async (req) => {
     // Average budget savings — compare weekly_budget on profiles to avg total when both exist.
     const { data: budgets } = await supabase
       .from("profiles")
-      .select("weekly_grocery_budget")
-      .not("weekly_grocery_budget", "is", null)
+      .select("weekly_budget")
+      .not("weekly_budget", "is", null)
       .limit(2000);
     const budgetVals = (budgets ?? [])
-      .map((p: any) => Number(p.weekly_grocery_budget))
+      .map((p: any) => Number(p.weekly_budget))
       .filter((n) => Number.isFinite(n) && n > 0);
     const avgBudget = budgetVals.length
       ? budgetVals.reduce((a, b) => a + b, 0) / budgetVals.length
@@ -136,11 +136,11 @@ Deno.serve(async (req) => {
       ) / 100;
       const { data: prof } = await supabase
         .from("profiles")
-        .select("weekly_grocery_budget")
+        .select("weekly_budget")
         .eq("user_id", recentMatch.user_id)
         .maybeSingle();
-      const wb = (prof as any)?.weekly_grocery_budget
-        ? Number((prof as any).weekly_grocery_budget) : null;
+      const wb = (prof as any)?.weekly_budget
+        ? Number((prof as any).weekly_budget) : null;
       sampleReport = {
         generatedAt: recentMatch.matched_at,
         locationId: recentMatch.location_id,
