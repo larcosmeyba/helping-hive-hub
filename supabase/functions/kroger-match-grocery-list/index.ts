@@ -109,7 +109,9 @@ Deno.serve(async (req) => {
     }
 
     if (matches.length) {
-      await supabase.from("kroger_product_matches").insert(matches);
+      // availability is response-only — strip before insert (not a column)
+      const rows = matches.map(({ availability: _a, ...rest }: any) => rest);
+      await supabase.from("kroger_product_matches").insert(rows);
     }
 
     return new Response(
