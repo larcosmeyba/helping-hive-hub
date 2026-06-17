@@ -186,6 +186,7 @@ const App = () => {
                     <Route path="feedback" element={<AdminFeedback />} />
                     <Route path="system-health" element={<AdminSystemHealth />} />
                     <Route path="kroger" element={<AdminKroger />} />
+                    <Route path="kroger/readiness" element={<AdminKrogerReadiness />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
