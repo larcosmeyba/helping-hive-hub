@@ -807,18 +807,28 @@ Deno.serve(async (req) => {
         dayMeals.push({ meal_type: mealType, recipe, reason });
       }
       // Backfill missing meal slots — families need a full 3 meals per day.
-      // If the AI returned fewer than 3 slots (or omitted a meal_type), pull
-      // the next safe unused candidate of the missing type from the pool.
+      // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
+      // fallbacks: unused safe candidate → reused safe candidate → minimum-
+      // portion hardcoded staple meal. We NEVER leave a slot empty.
       const present = new Set(dayMeals.map((m) => m.meal_type));
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
         if (present.has(mealType)) continue;
-        const fill = findSafeCandidate(mealType, usedIds);
-        if (!fill) continue;
-        usedIds.add(fill.id);
+        let fill: any = findSafeCandidate(mealType, usedIds);
+        if (!fill) {
+          // Allow reusing a previously-placed safe candidate before dropping a meal.
+          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+        }
+        if (!fill) {
+          // No library option fits the safety filters at all — inject a
+          // minimum-portion staple meal so the user still gets 3 meals.
+          fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        }
+        if (fill.id) usedIds.add(fill.id);
         dayMeals.push({
           meal_type: mealType,
           recipe: fill,
-          reason: "Added to round out your day with breakfast, lunch, and dinner.",
+          reason: "Added at minimum portions to keep your day complete within budget.",
         });
       }
       // Keep meals in canonical breakfast → lunch → dinner order.
@@ -827,6 +837,24 @@ Deno.serve(async (req) => {
         return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
       });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
+    }
+
+    // If the AI returned fewer than `daysCount` days, top up so we always
+    // emit a full week of 3 meals/day. Builds each missing day the same way.
+    const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    while (resolvedDays.length < daysCount) {
+      const dayMeals: any[] = [];
+      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+        let fill: any = findSafeCandidate(mealType, usedIds);
+        if (!fill) {
+          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+        }
+        if (!fill) fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (fill.id) usedIds.add(fill.id);
+        dayMeals.push({ meal_type: mealType, recipe: fill, reason: "Added to complete your week." });
+      }
+      resolvedDays.push({ day_name: DAY_NAMES[resolvedDays.length] || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
     // ===== Budget enforcement (hard cap) =====
