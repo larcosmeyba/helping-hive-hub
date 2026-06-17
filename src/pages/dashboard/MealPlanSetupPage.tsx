@@ -155,9 +155,6 @@ export default function MealPlanSetupPage() {
     await generate();
   };
 
-  const storeDisplay = homeStore ||
-    ((profile?.preferred_stores as string[] | undefined)?.[0]) ||
-    "Not selected";
 
   return (
     <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-[hsl(43_100%_96%)]">
