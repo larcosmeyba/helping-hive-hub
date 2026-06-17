@@ -10,6 +10,7 @@ import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
