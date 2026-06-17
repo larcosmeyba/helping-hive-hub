@@ -1790,6 +1790,294 @@ export type Database = {
         }
         Relationships: []
       }
+      kroger_access_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          environment: string
+          expires_at: string
+          id: string
+          scope: string | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          environment: string
+          expires_at: string
+          id?: string
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kroger_locations: {
+        Row: {
+          address: string | null
+          cached_at: string
+          city: string | null
+          created_at: string
+          hours: Json | null
+          id: string
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          name: string
+          phone: string | null
+          raw: Json | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          cached_at?: string
+          city?: string | null
+          created_at?: string
+          hours?: Json | null
+          id?: string
+          latitude?: number | null
+          location_id: string
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          raw?: Json | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          cached_at?: string
+          city?: string | null
+          created_at?: string
+          hours?: Json | null
+          id?: string
+          latitude?: number | null
+          location_id?: string
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          raw?: Json | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      kroger_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          redirect_after: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          redirect_after?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          redirect_after?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kroger_pricing_cache: {
+        Row: {
+          currency: string
+          fetched_at: string
+          id: string
+          location_id: string
+          product_id: string
+          promo_price: number | null
+          regular_price: number | null
+          size: string | null
+          stock_level: string | null
+        }
+        Insert: {
+          currency?: string
+          fetched_at?: string
+          id?: string
+          location_id: string
+          product_id: string
+          promo_price?: number | null
+          regular_price?: number | null
+          size?: string | null
+          stock_level?: string | null
+        }
+        Update: {
+          currency?: string
+          fetched_at?: string
+          id?: string
+          location_id?: string
+          product_id?: string
+          promo_price?: number | null
+          regular_price?: number | null
+          size?: string | null
+          stock_level?: string | null
+        }
+        Relationships: []
+      }
+      kroger_product_matches: {
+        Row: {
+          brand: string | null
+          confidence: number | null
+          created_at: string
+          grocery_list_item_id: string | null
+          id: string
+          image_url: string | null
+          ingredient_name: string
+          location_id: string | null
+          matched_at: string
+          matched_name: string | null
+          product_id: string | null
+          size: string | null
+          status: string
+          unit_price: number | null
+          upc: string | null
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          confidence?: number | null
+          created_at?: string
+          grocery_list_item_id?: string | null
+          id?: string
+          image_url?: string | null
+          ingredient_name: string
+          location_id?: string | null
+          matched_at?: string
+          matched_name?: string | null
+          product_id?: string | null
+          size?: string | null
+          status?: string
+          unit_price?: number | null
+          upc?: string | null
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          confidence?: number | null
+          created_at?: string
+          grocery_list_item_id?: string | null
+          id?: string
+          image_url?: string | null
+          ingredient_name?: string
+          location_id?: string | null
+          matched_at?: string
+          matched_name?: string | null
+          product_id?: string | null
+          size?: string | null
+          status?: string
+          unit_price?: number | null
+          upc?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kroger_products: {
+        Row: {
+          brand: string | null
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          last_seen_at: string
+          name: string
+          product_id: string
+          raw: Json | null
+          size: string | null
+          upc: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          last_seen_at?: string
+          name: string
+          product_id: string
+          raw?: Json | null
+          size?: string | null
+          upc?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          last_seen_at?: string
+          name?: string
+          product_id?: string
+          raw?: Json | null
+          size?: string | null
+          upc?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kroger_user_tokens: {
+        Row: {
+          access_token: string
+          connected_at: string
+          environment: string
+          expires_at: string
+          id: string
+          refresh_token: string | null
+          scope: string | null
+          token_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string
+          environment?: string
+          expires_at: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       local_resources: {
         Row: {
           address: string | null
@@ -2788,6 +3076,9 @@ export type Database = {
           id: string
           infant_formula: boolean | null
           kitchen_equipment: string[] | null
+          kroger_location_id: string | null
+          kroger_store_name: string | null
+          kroger_store_zip: string | null
           last_active: string | null
           last_engagement_email_at: string | null
           latitude: number | null
@@ -2860,6 +3151,9 @@ export type Database = {
           id?: string
           infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
+          kroger_location_id?: string | null
+          kroger_store_name?: string | null
+          kroger_store_zip?: string | null
           last_active?: string | null
           last_engagement_email_at?: string | null
           latitude?: number | null
@@ -2932,6 +3226,9 @@ export type Database = {
           id?: string
           infant_formula?: boolean | null
           kitchen_equipment?: string[] | null
+          kroger_location_id?: string | null
+          kroger_store_name?: string | null
+          kroger_store_zip?: string | null
           last_active?: string | null
           last_engagement_email_at?: string | null
           latitude?: number | null
