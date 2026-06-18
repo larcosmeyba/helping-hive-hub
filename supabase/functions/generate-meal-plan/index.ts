@@ -1697,7 +1697,9 @@ Deno.serve(async (req) => {
         grocery_list_id: glRow.id,
         ...normalized,
         why_this_plan: parsed.why_this_plan ?? {},
-        pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
+        pricing_disclaimer: pricingMode === "kroger"
+          ? "Prices reflect live Kroger pricing for your home store. Final pricing is confirmed at checkout."
+          : "Estimated pricing for planning only. Connect Kroger for live store pricing.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
