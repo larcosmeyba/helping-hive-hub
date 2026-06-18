@@ -507,62 +507,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 5 — Section 4: Store (live Instacart-supported retailers for this ZIP) */}
+      {/* STEP 5 — Section 4: Family Assistance */}
       {step === 5 && (
         <QuestionnaireStep step={5} totalSteps={TOTAL_STEPS}
-          title="Which store do you shop at most?"
-          subtitle={zipCode ? `Showing stores near ${zipCode}.` : "Enter your ZIP code first so we can show stores near you."}
-          onNext={() => { trackEvent("home_store_selected", { store: homeStore }); next(); }}
-          onBack={back}
-          nextDisabled={!homeStore}
-        >
-          {!zipValidation.isValid && (
-            <div className="mt-4 p-4 rounded-2xl border border-border bg-card text-sm text-muted-foreground text-center">
-              Please go back and enter a valid 5-digit ZIP code.
-            </div>
-          )}
-          {zipValidation.isValid && retailers.loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading stores near {zipCode}…
-            </div>
-          )}
-          {zipValidation.isValid && !retailers.loading && retailers.error && (
-            <div className="mt-4 p-4 rounded-2xl border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-              Couldn't load stores for ZIP {zipCode}. {retailers.error}
-            </div>
-          )}
-          {zipValidation.isValid && !retailers.loading && !retailers.error && retailers.retailers.length === 0 && (
-            <div className="mt-4 p-4 rounded-2xl border border-border bg-card text-sm text-muted-foreground text-center">
-              No stores were found for ZIP {zipCode}.
-            </div>
-          )}
-          {zipValidation.isValid && !retailers.loading && retailers.retailers.length > 0 && (
-            <div className="grid grid-cols-2 gap-2.5 mt-4 max-h-[420px] overflow-y-auto pr-1">
-              {retailers.retailers.map((r) => (
-                <button key={r.retailer_key} onClick={() => setHomeStore(r.name)}
-                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all text-left ${
-                    homeStore === r.name ? "bg-primary/10 border-primary" : "bg-card border-border hover:border-primary/30"
-                  }`}>
-                  {r.retailer_logo_url ? (
-                    <img src={r.retailer_logo_url} alt="" className="w-6 h-6 rounded object-contain shrink-0" loading="lazy" />
-                  ) : (
-                    <Store className="w-4 h-4 text-primary shrink-0" />
-                  )}
-                  <span className="text-sm font-medium text-foreground truncate">{r.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground mt-4 text-center">
-            You can change this anytime. Only stores in your area are shown.
-          </p>
-        </QuestionnaireStep>
-      )}
-
-
-      {/* STEP 6 — Section 5: Family Assistance */}
-      {step === 6 && (
-        <QuestionnaireStep step={6} totalSteps={TOTAL_STEPS}
           title="What support is your family looking for?"
           subtitle="Optional — tap any that apply. We'll surface matching resources."
           onNext={next} onBack={back} optional onSkip={next}
@@ -577,9 +524,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 7 — Section 6: Dietary */}
-      {step === 7 && (
-        <QuestionnaireStep step={7} totalSteps={TOTAL_STEPS}
+      {/* STEP 6 — Section 5: Dietary */}
+      {step === 6 && (
+        <QuestionnaireStep step={6} totalSteps={TOTAL_STEPS}
           title="Any dietary preferences or allergies?"
           subtitle="Optional — tap any that apply."
           onNext={next} onBack={back} optional onSkip={next}
@@ -594,9 +541,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 8 — Section 7: Cooking confidence */}
-      {step === 8 && (
-        <QuestionnaireStep step={8} totalSteps={TOTAL_STEPS}
+      {/* STEP 7 — Section 6: Cooking confidence */}
+      {step === 7 && (
+        <QuestionnaireStep step={7} totalSteps={TOTAL_STEPS}
           title="How comfortable are you in the kitchen?"
           subtitle="We'll calibrate recipe complexity to your skill level."
           onNext={next} onBack={back} optional onSkip={next}
@@ -611,9 +558,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 9 — Section 8: Pantry defaults */}
-      {step === 9 && (
-        <QuestionnaireStep step={9} totalSteps={TOTAL_STEPS}
+      {/* STEP 8 — Section 7: Pantry defaults */}
+      {step === 8 && (
+        <QuestionnaireStep step={8} totalSteps={TOTAL_STEPS}
           title="Quick pantry check"
           subtitle="Tap anything you already have. We'll skip these on your grocery list."
           onNext={next} onBack={back} optional onSkip={next}
@@ -634,9 +581,9 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 10 — Section 9: Food waste + finish */}
-      {step === 10 && (
-        <QuestionnaireStep step={10} totalSteps={TOTAL_STEPS}
+      {/* STEP 9 — Section 8: Food waste + finish */}
+      {step === 9 && (
+        <QuestionnaireStep step={9} totalSteps={TOTAL_STEPS}
           title="Help us cut food waste in your kitchen?"
           subtitle="Hive Assistant can warn you before things spoil and suggest recipes."
           onNext={handleSubmit} onBack={back}
@@ -668,7 +615,6 @@ export default function Questionnaire() {
             <div className="text-center space-y-2 max-w-xs">
               <p className="text-sm text-foreground leading-relaxed">
                 Your first meal plan will fit your <strong>${weeklyBudget}/week</strong> budget
-                {homeStore && <> at <strong>{homeStore}</strong></>}
                 {householdSize > 0 && <>, for <strong>{householdSize} {householdSize === 1 ? "person" : "people"}</strong></>}.
               </p>
             </div>
@@ -678,6 +624,7 @@ export default function Questionnaire() {
           </div>
         </QuestionnaireStep>
       )}
+
 
     </div>
   );
