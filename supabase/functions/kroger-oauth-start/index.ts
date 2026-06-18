@@ -32,8 +32,43 @@ Deno.serve(async (req) => {
     const userId = claims.claims.sub as string;
 
     const body = await req.json().catch(() => ({}));
-    const redirectAfter: string = body.redirectAfter ?? "/dashboard/settings";
+    const rawRedirect: string = body.redirectAfter ?? "/dashboard/settings";
     const scope: string = body.scope ?? "product.compact profile.compact cart.basic:write";
+
+    // Resolve redirect to an ABSOLUTE URL on an allowed app origin so the
+    // callback's 302 lands on the app — not on the Supabase functions domain
+    // (which returns {"error":"requested path is invalid"}).
+    const ALLOWED_APP_ORIGINS = [
+      "https://helpthehive.com",
+      "https://www.helpthehive.com",
+      "https://helping-hive-hub.lovable.app",
+      "https://id-preview--bf8fd03f-0e47-4e05-b2a3-0c914e6bd586.lovable.app",
+      "http://localhost:8080",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ];
+    const DEFAULT_APP_ORIGIN = "https://helpthehive.com";
+    const reqOrigin = req.headers.get("Origin") ?? req.headers.get("Referer") ?? "";
+    let originBase = DEFAULT_APP_ORIGIN;
+    try {
+      const o = new URL(reqOrigin).origin;
+      if (ALLOWED_APP_ORIGINS.includes(o)) originBase = o;
+    } catch { /* ignore */ }
+
+    let redirectAfter = rawRedirect;
+    if (rawRedirect.startsWith("http://") || rawRedirect.startsWith("https://")) {
+      try {
+        const u = new URL(rawRedirect);
+        if (!ALLOWED_APP_ORIGINS.includes(u.origin)) {
+          redirectAfter = `${originBase}${u.pathname}${u.search}`;
+        }
+      } catch {
+        redirectAfter = `${originBase}/dashboard/settings`;
+      }
+    } else {
+      const path = rawRedirect.startsWith("/") ? rawRedirect : `/${rawRedirect}`;
+      redirectAfter = `${originBase}${path}`;
+    }
 
     const state = crypto.randomUUID();
     const supabase = getServiceClient();
