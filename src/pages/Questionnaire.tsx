@@ -16,8 +16,16 @@ import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
 import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
-// 1 welcome + 10 onboarding sections
-const TOTAL_STEPS = 10;
+// 1 welcome + 9 onboarding sections (home-store step removed — we use the closest Kroger to the user)
+const TOTAL_STEPS = 9;
+
+// Maps dietary-toggle keys to allergy labels stored on profiles.allergies
+const DIETARY_TO_ALLERGY: Record<string, string> = {
+  gluten_free: "Gluten",
+  dairy_free: "Dairy",
+  nut_allergy: "Nuts",
+  seafood_free: "Shellfish",
+};
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
