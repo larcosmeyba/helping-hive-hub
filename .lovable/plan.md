@@ -1,102 +1,127 @@
-# Kroger Certification API Integration
+## Help The Hive — Kroger-First Meal Planning, Questionnaire & Pantry Overhaul
 
-A phased rollout that wires Kroger's Certification (Sandbox) API into Help The Hive end-to-end, with a clean switch to Production later. Strictly Kroger-only — no scraping, no competitor comparisons (also keeps us aligned with the Instacart Connect compliance rule).
+This is a large, multi-system change. I'll break it into phases so we can ship and verify incrementally. Each phase ends with something testable.
 
-## Phase 1 — Environment & Secrets
+---
 
-Add Supabase secrets (I will request them via the secrets prompt — you paste values, they are never stored in code):
+### Phase 1 — Questionnaire restructure (frontend only)
 
-- `KROGER_CERT_CLIENT_ID`
-- `KROGER_CERT_CLIENT_SECRET`
-- `KROGER_PROD_CLIENT_ID` (optional now, placeholder)
-- `KROGER_PROD_CLIENT_SECRET` (optional now, placeholder)
-- `KROGER_ENV` = `certification` (single switch; flip to `production` later — no code change)
+**File:** `src/pages/Questionnaire.tsx` (+ small additions to profile schema if needed)
 
-A shared edge helper `_shared/kroger.ts` reads `KROGER_ENV` and selects:
+New step order (12 steps):
+1. Household — adults count
+2. Children — count + ages (dynamic age inputs for 5–12 logic)
+3. Babies/Toddlers — count
+4. Weekly grocery budget
+5. Dietary preferences / allergies
+6. Cooking skill level (Beginner / Intermediate / Advanced) — **new explicit step**
+7. Pantry staples on hand (already exists)
+8. Disliked foods
+9. Food waste habits
+10. **Family Assistance needs** (SNAP, food, transport, housing, childcare, utilities, financial) — multi-select; drives prompt in Phase 6
+11. **Connect Kroger** — "Connect Kroger" + "Continue Without Kroger" buttons; uses existing `useKrogerConnection.connect()`
+12. Summary + "Finish & See My Plan"
 
-```text
-certification → https://api-ce.kroger.com/v1
-production    → https://api.kroger.com/v1
-```
+Profile columns needed (migration):
+- `adults_count int`, `children_count int`, `children_ages int[]`, `babies_count int`
+- `assistance_needs text[]` (already-ish via `assistance_needs` table, but we store the questionnaire snapshot on profile for fast read)
 
-## Phase 2 — OAuth
+Pantry sync fix: on submit, write each pantry staple into `public.pantry_items` (insert rows with `user_id`, `item_name`, `location='pantry'`) in addition to updating `profiles.pantry_items`. Currently questionnaire only stores them on the profile JSON — that's the bug in item 7.
 
-Two OAuth flows, both Kroger-standard:
+---
 
-1. **Client-credentials** (server-to-server) for catalog/locations/pricing. Cached in `kroger_access_tokens` (service-role only), auto-refreshed before expiry.
-2. **Authorization-code** for per-user account linking. Connect / Disconnect / Reconnect flows from the user settings page. Tokens encrypted at rest in `kroger_user_tokens`, scoped to `auth.uid()`.
+### Phase 2 — Kroger gating in meal plan generation (frontend)
 
-Edge functions:
-- `kroger-oauth-start` — builds authorize URL
-- `kroger-oauth-callback` — exchanges code, stores tokens
-- `kroger-oauth-disconnect`
+**Files:** `src/pages/dashboard/MealPlanSetupPage.tsx`, `src/pages/dashboard/MealPlanPage.tsx`, new `src/components/kroger/KrogerRequiredBanner.tsx`
 
-## Phase 3 — Store Lookup
+- Before "Generate Plan" runs, check `useKrogerConnection().ready`.
+- If not ready: show modal — "Connect Kroger for live pricing accuracy" with **Connect Kroger** / **Continue Without Kroger** buttons.
+- If user continues without: pass `pricing_mode: "estimated"` to the edge function and show a yellow "Pricing accuracy reduced" banner on the resulting plan.
 
-Edge function `kroger-locations` accepting `{ zip?, city?, state?, radiusInMiles? }`. Results cached in `kroger_locations` for 30 days. User picks a "home Kroger store" → stored on `profiles.kroger_location_id`.
+---
 
-UI: a store-picker on the meal-plan setup screen (Kroger-only; no other retailers shown).
+### Phase 3 — Edge function: Kroger-priced budget enforcement loop
 
-## Phase 4 — Product Search & Matching
+**File:** `supabase/functions/generate-meal-plan/index.ts` + `supabase/functions/_shared/mealPlanContext.ts` + new `supabase/functions/_shared/krogerPricing.ts`
 
-Edge function `kroger-product-search` for ad-hoc lookups, plus `kroger-match-grocery-list` that:
+New flow when Kroger is connected:
+1. Generate plan with Gemini (existing).
+2. Build grocery list from meal ingredients (existing helper).
+3. For each grocery item, look up Kroger price via existing `kroger_product_matches` / `kroger_pricing_cache` (call Kroger Products API for misses, cache result).
+4. Sum priced subtotal.
+5. If `subtotal > weekly_budget`: re-prompt Gemini with `{over_budget_by, expensive_items}` and ask it to swap the N most expensive meals for cheaper equivalents. Loop up to 3 attempts.
+6. Persist final priced breakdown to `meal_plan_cost_breakdown`.
+7. If still over after 3 attempts, attach `budget_warning` and surface to UI (do not block — still ship the plan with warning).
 
-1. Reads a grocery list.
-2. For each item, queries Kroger `/products` with the user's `locationId` (so prices are store-specific).
-3. Picks the best match (exact UPC > brand+size > top-ranked).
-4. Writes to `kroger_product_matches` with confidence score.
-5. Caches the product + price in `kroger_pricing_cache` (TTL 24h).
+When Kroger not connected: skip pricing loop, mark plan `pricing_mode='estimated'`, no Kroger calls.
 
-## Phase 5 — Grocery List & Budget Integration
+---
 
-When a meal plan is generated, after the existing grocery list is built we:
+### Phase 4 — Meal generation prompt: family size, kid-friendly, skill level, full instructions
 
-1. Run Kroger match for every item.
-2. Compute `kroger_estimated_total` from `regularPrice` (and `promoPrice` when present).
-3. Compare to `profiles.weekly_budget`:
-   - Estimated Total
-   - Remaining Budget
-   - Over Budget (red banner if > 0)
-4. Show per-item: product name, brand, size, image, price, availability.
+**File:** `supabase/functions/generate-meal-plan/index.ts` (prompt + schema)
 
-This replaces the 1.35 waste multiplier for Kroger users — real store prices flow straight through.
+Prompt additions:
+- Inject `adults_count`, `children_count`, `children_ages`, `babies_count`, `cooking_confidence`.
+- Rule: if any child age is 5–12, ≥3 meals/week must be kid-friendly (tacos / pasta / breakfast burritos / rice bowls / sheet pan).
+- Rule: if `babies_count > 0`, grocery list must include milk + yogurt + soft fruit quantities scaled by `babies_count`.
+- Rule: recipe complexity matches `cooking_confidence` (beginner = ≤8 ingredients, ≤30 min, ≤6 steps; advanced = unrestricted).
+- Servings sized for `adults_count + children_count` (toddlers excluded — handled via grocery extras).
 
-## Phase 6 — Database Schema
+Schema additions per meal (already partially present, enforce):
+- `ingredients: [{name, quantity, unit}]`
+- `instructions: string[]` — non-empty, numbered steps. Reject and regenerate if any meal has empty instructions.
 
-New tables (all with `GRANT` + RLS, `service_role` full access, users scoped to `auth.uid()`):
+---
 
-- `kroger_locations` — locationId, name, address, city, state, zip, lat/lng, hours, cached_at
-- `kroger_products` — productId, upc, name, brand, size, image_url, category, last_seen_at
-- `kroger_product_matches` — user_id, grocery_list_item_id, productId, confidence, matched_at
-- `kroger_pricing_cache` — productId, locationId, regular_price, promo_price, currency, fetched_at (unique on productId+locationId)
-- `kroger_access_tokens` — service-role only; client-credentials token + expiry
-- `kroger_user_tokens` — per-user OAuth tokens (encrypted), refresh handling
+### Phase 5 — Plan validation gate (frontend)
 
-## Phase 7 — Admin Dashboard
+**File:** new `src/lib/validateMealPlan.ts`, used by `MealPlanPage.tsx`
 
-New `/admin/kroger` page (gated by `manage_marketing` or a new `manage_kroger` permission) showing:
+Before rendering, validate:
+- Plan has 7 days × 3 meals
+- Every meal has ingredients + instructions (non-empty)
+- Family size matches profile
+- Kroger pricing present if `pricing_mode='kroger'`
+- Subtotal ≤ budget OR `budget_warning` set
 
-- API status (last successful call, current env badge: **CERTIFICATION** / **PRODUCTION**)
-- OAuth status (client-credentials token TTL, count of linked users)
-- Product match stats (matched / failed last 7 days)
-- Last sync time per cache table
-- Button to force-refresh client-credentials token
+If any required check fails: show error card + "Regenerate" button instead of partial plan.
 
-## Out of Scope (explicitly)
+---
 
-- Walmart, Aldi, Dollar General, SerpApi, Open Prices, or any competitor pricing.
-- Real Instacart cart sync (separate flow, Instacart Connect).
-- Production credentials use — Certification only until Kroger approves Production.
+### Phase 6 — Family Assistance prompt
 
-## Technical Notes
+**Files:** `src/pages/dashboard/DashboardHome.tsx` (or first post-questionnaire screen), new `src/components/dashboard/FamilyAssistancePrompt.tsx`
 
-- All Kroger calls go through edge functions; the browser never sees Kroger credentials.
-- `kroger_pricing_cache` TTL is configurable per env (Cert: 1h to test refresh, Prod: 24h).
-- Existing `package_prices` table remains as a fallback when a user has no Kroger store selected.
-- Switching `KROGER_ENV` from `certification` → `production` later requires only updating the secret and bumping cache; no code changes.
+After questionnaire, if `assistance_needs.length > 0`, show dismissible banner:
+> "We found resources that may help your family."
+> **[Open Hive Family Assistance →]** → routes to `/dashboard/family-assistance` with the selected need types pre-filtered by ZIP.
 
-## What I Need From You To Start
+---
 
-1. Confirm this plan (or tell me to trim/expand any phase).
-2. After confirmation, I'll trigger the secrets prompt for `KROGER_CERT_CLIENT_ID` and `KROGER_CERT_CLIENT_SECRET` (and the prod placeholders if you have them).
-3. Your Kroger OAuth redirect URI to register in their developer portal — I'll generate it as `https://<project>.supabase.co/functions/v1/kroger-oauth-callback` once you approve.
+### Phase 7 — Pantry sync verification
+
+Covered by Phase 1 write into `pantry_items`. Add Playwright smoke test: complete questionnaire with 3 pantry staples → navigate to `/dashboard/pantry` → assert all 3 visible.
+
+---
+
+### Technical notes
+
+- **Migration** (Phase 1): add family-size columns + `pricing_mode` to `meal_plans` and `meal_plan_generation_jobs`.
+- **Kroger pricing cache**: reuse `kroger_pricing_cache` table; TTL 24h.
+- **Cost loop**: hard cap 3 Gemini re-prompts to control credits/latency. Each iteration logs to `meal_plan_generation_jobs.status_message` so the progress UI shows "Adjusting plan to fit budget…".
+- **Backward compat**: existing plans without `pricing_mode` default to `estimated` on read.
+- **No Instacart code touched.**
+
+---
+
+### Suggested ship order
+
+I recommend shipping in this order, verifying each before the next:
+1. Phase 1 + Phase 7 (questionnaire + pantry fix — visible immediately)
+2. Phase 6 (family assistance prompt)
+3. Phase 2 (Kroger gating UI)
+4. Phase 3 + Phase 4 (backend pricing loop + prompt rules)
+5. Phase 5 (validation gate)
+
+**Want me to start with Phase 1 + 7, or ship all phases in one pass?**

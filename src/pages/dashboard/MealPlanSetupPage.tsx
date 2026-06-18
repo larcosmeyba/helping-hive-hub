@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
+import { KrogerRequiredDialog } from "@/components/kroger/KrogerRequiredDialog";
+import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 
 const DIET_OPTIONS = [
   "Vegetarian", "Vegan", "Gluten-free", "Dairy-free",
@@ -123,6 +125,8 @@ export default function MealPlanSetupPage() {
 
   const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const [saving, setSaving] = useState(false);
+  const [krogerPromptOpen, setKrogerPromptOpen] = useState(false);
+  const { ready: krogerReady, loading: krogerLoading } = useKrogerConnection();
 
   const saveProfile = async (patch: Record<string, unknown>, label = "Updated") => {
     if (!user) return;
@@ -143,16 +147,22 @@ export default function MealPlanSetupPage() {
     }
   };
 
-  const handleGenerate = async () => {
-    // Selections are local-only filters; persist so engine context (which
-    // reads pantry via DB) can be paired with this UX later without losing
-    // the user's intent on the screen.
+  const runGenerate = async () => {
     try {
       localStorage.setItem(SELECTED_PANTRY_KEY, JSON.stringify([...selectedPantry]));
       localStorage.setItem(SELECTED_FRIDGE_KEY, JSON.stringify([...selectedFridge]));
     } catch { /* ignore */ }
     navigate("/dashboard/meal-plan/generating");
     await generate();
+  };
+
+  const handleGenerate = async () => {
+    // Strongly encourage Kroger connection for accurate pricing before generating.
+    if (!krogerLoading && !krogerReady) {
+      setKrogerPromptOpen(true);
+      return;
+    }
+    await runGenerate();
   };
 
 
@@ -275,6 +285,13 @@ export default function MealPlanSetupPage() {
         open={openSheet === "cooking"} onOpenChange={(o) => !o && setOpenSheet(null)}
         value={cooking} setValue={setCooking}
         saving={saving} onSave={() => saveProfile({ cooking_confidence: cooking }, "Cooking level updated")}
+      />
+
+      <KrogerRequiredDialog
+        open={krogerPromptOpen}
+        onOpenChange={setKrogerPromptOpen}
+        onContinueWithout={() => { void runGenerate(); }}
+        redirectAfter="/dashboard/meal-plan/setup"
       />
     </div>
   );
