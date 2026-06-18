@@ -198,7 +198,6 @@ export default function Questionnaire() {
       assistance, dietary,
       cookingConfidence, pantryStarter,
       foodWasteAlerts, foodWasteSuggestions,
-      goals,
     };
     saveLocalProgress(progress);
     if (!user || !hydrated) return;
@@ -217,7 +216,7 @@ export default function Questionnaire() {
     householdSize, childrenUnder5, children5to12, teenagers, seniors65plus,
     weeklyBudget, budgetTouched, zipCode, locationCity, locationState,
     homeStore, assistance, dietary, cookingConfidence, pantryStarter,
-    foodWasteAlerts, foodWasteSuggestions, goals,
+    foodWasteAlerts, foodWasteSuggestions,
   ]);
 
   const toggleBool = (map: BoolMap, key: string, setter: (m: BoolMap) => void) => {
@@ -277,11 +276,6 @@ export default function Questionnaire() {
         return acc;
       }, {} as Record<string, boolean>);
 
-      const goalCols = APOLLO_GOALS.reduce((acc, o) => {
-        acc[o.key] = !!goals[o.key];
-        return acc;
-      }, {} as Record<string, boolean>);
-
       const dietaryPrefs = DIETARY_OPTIONS
         .filter((o) => dietary[o.key])
         .map((o) => o.label);
@@ -316,8 +310,6 @@ export default function Questionnaire() {
         // Food waste
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        // Apollo
-        ...goalCols,
         // Onboarding
         questionnaire_completed: true,
         onboarding_completed_at: new Date().toISOString(),
