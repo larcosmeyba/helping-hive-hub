@@ -335,6 +335,14 @@ export default function GroceryReviewPage() {
   useEffect(() => {
     const items = [...toBuy, ...manualItems];
     if (!items.length) return;
+    // Don't fetch or surface internal estimated prices unless the user has
+    // connected Kroger AND saved a home store. Pricing must come from
+    // Kroger Production only in the user-facing grocery review.
+    if (!kroger.ready) {
+      setItemPrices({});
+      setPricesLoading(false);
+      return;
+    }
     let cancelled = false;
     setPricesLoading(true);
     (async () => {
