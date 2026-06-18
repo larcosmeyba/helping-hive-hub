@@ -624,12 +624,14 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 10 — Section 9: Food waste */}
+      {/* STEP 10 — Section 9: Food waste + finish */}
       {step === 10 && (
         <QuestionnaireStep step={10} totalSteps={TOTAL_STEPS}
           title="Help us cut food waste in your kitchen?"
           subtitle="Hive Assistant can warn you before things spoil and suggest recipes."
-          onNext={next} onBack={back}
+          onNext={handleSubmit} onBack={back}
+          nextLabel={loading ? "Setting up..." : "Finish & See My Plan →"}
+          loading={loading}
         >
           <div className="mt-6 space-y-3">
             <div className="flex items-center justify-between bg-card border border-border rounded-2xl px-4 py-4">
@@ -645,6 +647,23 @@ export default function Questionnaire() {
                 <p className="text-xs text-muted-foreground mt-0.5">"Use it up" recipes based on what's in your kitchen.</p>
               </div>
               <Switch checked={foodWasteSuggestions} onCheckedChange={setFoodWasteSuggestions} />
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center mt-8 space-y-4">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}
+              className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-primary" />
+            </motion.div>
+            <div className="text-center space-y-2 max-w-xs">
+              <p className="text-sm text-foreground leading-relaxed">
+                Your first meal plan will fit your <strong>${weeklyBudget}/week</strong> budget
+                {homeStore && <> at <strong>{homeStore}</strong></>}
+                {householdSize > 0 && <>, for <strong>{householdSize} {householdSize === 1 ? "person" : "people"}</strong></>}.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+              <Sparkles className="w-3.5 h-3.5" /> Free for every family — forever
             </div>
           </div>
         </QuestionnaireStep>
