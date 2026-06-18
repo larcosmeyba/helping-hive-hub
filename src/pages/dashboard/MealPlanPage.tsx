@@ -249,30 +249,24 @@ export default function MealPlanPage() {
         </ul>
       </div>
 
-      {/* Section 3: Primary Instacart CTA (full-width) */}
-      <div className="bg-[#003D29] rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-            <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Your Grocery List Is Ready</p>
-            <p className="text-[12px] text-white/80 mt-0.5">{itemCount} Items Ready · Estimated Total: ~${weeklyTotal.toFixed(2)}</p>
-          </div>
+      {/* Section 3: Grocery list summary (read-only — pricing is for in-store reference) */}
+      <div className="bg-[#003D29] rounded-2xl p-4 md:p-5 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+          <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
         </div>
-        <div className="w-full sm:w-auto">
-          <SendToInstacartButton
-            title="Weekly Meal Plan"
-            lineItems={instacartLineItems}
-            variant="light"
-            label="Shop at Kroger"
-            fullWidth
-            showExternalIcon={false}
-          />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Your Grocery List Is Ready</p>
+          <p className="text-[12px] text-white/80 mt-0.5">{itemCount} items · Estimated total at Kroger ~${weeklyTotal.toFixed(2)}</p>
         </div>
+        <button
+          onClick={() => navigate("/dashboard/grocery")}
+          className="text-[12px] font-bold text-white underline underline-offset-2"
+        >
+          View list
+        </button>
       </div>
       <p className="text-[11px] text-[#8a8a8a] -mt-2 px-1">
-        Estimated pricing — final confirmed at your store at checkout.
+        Pricing pulled from your Kroger store for in-store reference — final price confirmed at checkout.
       </p>
 
       {/* Estimated Savings card removed — replaced by Plaid grocery insights at top */}
