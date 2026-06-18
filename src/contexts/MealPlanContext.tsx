@@ -224,6 +224,33 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       await pollJob();
 
       if (error) {
+        // Friendly handling of the 3/hour rate limit on this very expensive
+        // endpoint (each call runs OpenAI + live Kroger product searches).
+        const ctx: any = (error as any).context;
+        let rateLimitedMsg: string | null = null;
+        try {
+          const status = ctx?.status ?? (error as any).status;
+          if (status === 429) {
+            const body = typeof ctx?.body === "string" ? JSON.parse(ctx.body) : ctx?.body;
+            rateLimitedMsg = body?.message
+              ?? "You've reached the limit of 3 meal-plan generations per hour. Please try again soon.";
+          }
+        } catch { /* ignore parse errors */ }
+        if (rateLimitedMsg) {
+          toast({
+            title: "Regeneration limit reached",
+            description: rateLimitedMsg,
+            variant: "destructive",
+          });
+          setGenerationStage("idle");
+          setGenerationStatus((prev) => ({
+            ...prev,
+            errorCode: "rate_limited",
+            errorMessage: rateLimitedMsg!,
+            statusMessage: rateLimitedMsg!,
+          }));
+          return;
+        }
         throw new Error(latestJob?.error_message || error.message);
       }
       // Validation gates: server returns 200 with a structured error rather
