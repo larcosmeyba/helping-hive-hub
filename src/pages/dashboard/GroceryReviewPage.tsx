@@ -554,14 +554,9 @@ export default function GroceryReviewPage() {
         <p className="text-[13px] text-[#6b6b6b] font-medium">
           {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
-        <SendToInstacartButton
-          title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          linkType="shopping_list"
-          lineItems={sendItems}
-          label="Shop at Kroger"
-          fullWidth
-        />
-        <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
+        <p className="text-[11px] text-[#8a8a8a] text-center max-w-sm px-2">
+          Bring this list with you — pricing reflects your Kroger store and is confirmed at checkout.
+        </p>
       </div>
     </div>
   );
