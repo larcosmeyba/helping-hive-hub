@@ -140,7 +140,13 @@ export default function MealPlanPage() {
   };
 
   const handleRegenerate = async () => {
-    if (mealPlan) setPreviousPlan(mealPlan);
+    if (mealPlan) {
+      const ok = window.confirm(
+        "Regenerate this week's meal plan and grocery list?\n\nYour current plan will be replaced. To control costs, regenerations are limited to 3 per hour.",
+      );
+      if (!ok) return;
+      setPreviousPlan(mealPlan);
+    }
     setSwappedMeals({});
     setCookedMeals(new Set());
     await generate();
@@ -249,30 +255,24 @@ export default function MealPlanPage() {
         </ul>
       </div>
 
-      {/* Section 3: Primary Instacart CTA (full-width) */}
-      <div className="bg-[#003D29] rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-            <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Your Grocery List Is Ready</p>
-            <p className="text-[12px] text-white/80 mt-0.5">{itemCount} Items Ready · Estimated Total: ~${weeklyTotal.toFixed(2)}</p>
-          </div>
+      {/* Section 3: Grocery list summary (read-only — pricing is for in-store reference) */}
+      <div className="bg-[#003D29] rounded-2xl p-4 md:p-5 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+          <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
         </div>
-        <div className="w-full sm:w-auto">
-          <SendToInstacartButton
-            title="Weekly Meal Plan"
-            lineItems={instacartLineItems}
-            variant="light"
-            label="Shop at Kroger"
-            fullWidth
-            showExternalIcon={false}
-          />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Your Grocery List Is Ready</p>
+          <p className="text-[12px] text-white/80 mt-0.5">{itemCount} items · Estimated total at Kroger ~${weeklyTotal.toFixed(2)}</p>
         </div>
+        <button
+          onClick={() => navigate("/dashboard/grocery")}
+          className="text-[12px] font-bold text-white underline underline-offset-2"
+        >
+          View list
+        </button>
       </div>
       <p className="text-[11px] text-[#8a8a8a] -mt-2 px-1">
-        Estimated pricing — final confirmed at your store at checkout.
+        Pricing pulled from your Kroger store for in-store reference — final price confirmed at checkout.
       </p>
 
       {/* Estimated Savings card removed — replaced by Plaid grocery insights at top */}
@@ -602,26 +602,6 @@ function ActionCard({ icon: Icon, label, sub, onClick, disabled }: { icon: any; 
   );
 }
 
-function InstacartActionCard({ title, lineItems }: { title: string; lineItems: { name: string; quantity?: number; display_text?: string }[] }) {
-  return (
-    <div className="bg-white border border-[#EEE7DA] rounded-2xl p-3 flex flex-col items-start gap-1.5">
-      <div className="w-8 h-8 rounded-full bg-[#FFE9D6] flex items-center justify-center">
-        <ShoppingCart className="w-4 h-4 text-[#E07A1F]" />
-      </div>
-      <p className="font-bold text-[12px] md:text-[13px] text-[#1a1a1a] leading-tight">Shop at Kroger</p>
-      <p className="text-[10px] md:text-[11px] text-[#6a6a6a] leading-tight">Shop in one click</p>
-      <SendToInstacartButton
-        title={title}
-        lineItems={lineItems}
-        variant="dark"
-        label="Shop at Kroger"
-        fullWidth
-        showExternalIcon={false}
-        className="mt-1 !h-8 !text-[11px] !px-2"
-      />
-    </div>
-  );
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (

@@ -341,59 +341,7 @@ export default function GroceryListPage() {
         </p>
       </div>
 
-      {/* Shop at Kroger — branded CTA (opens external) */}
-      <div className="flex flex-col items-center gap-3">
-        <SendToInstacartButton
-          title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          linkType="shopping_list"
-          lineItems={(() => {
-            // Sanitize recipe-portion strings ("1 tbsp olive oil") into
-            // purchasable grocery products ("olive oil bottle") before sending
-            // anything to Instacart. The on-screen list still shows the recipe
-            // text; only the wire payload is normalized.
-            const sourceItems = (() => {
-              if (checked.size === 0) {
-                return [
-                  ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
-                  ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
-                ];
-              }
-              const selectedGrocery = groceryItems
-                .filter((i) => checked.has(i.name))
-                .map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") }));
-              const selectedExtras = extraItems
-                .filter((e) => checked.has(e.name))
-                .map((e) => ({ name: e.name, rawQuantity: "" }));
-              const picked = [...selectedGrocery, ...selectedExtras];
-              if (picked.length > 0) return picked;
-              return [
-                ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
-                ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
-              ];
-            })();
-            const sanitized = sanitizeForInstacart(sourceItems);
-            // TEMP DIAGNOSTIC — verify grocery cleanup end-to-end.
-            // eslint-disable-next-line no-console
-            console.log("[DIAG] Instacart CTA (top)", {
-              rawCount: sourceItems.length,
-              sanitizedCount: sanitized.length,
-              rawSample: sourceItems.slice(0, 20).map((s) => s.name),
-              sanitizedSample: sanitized.slice(0, 20).map((s) => s.name),
-            });
-            return sanitized.map<InstacartLineItem>((s) => ({
-              name: s.name,
-              quantity: s.quantity,
-              unit: s.unit,
-            }));
-          })()}
-          label="Shop at Kroger"
-          fullWidth
-        />
-        <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
-          Opens your Instacart cart with these ingredients pre-loaded in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
-        </p>
-        <InstacartDisclaimer variant="inline" className="text-center max-w-lg px-2" />
-      </div>
+      {/* Shop-at-Kroger CTA removed — Kroger pricing is shown inline for in-store reference. */}
 
 
 
@@ -595,44 +543,7 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Bottom Shop at Kroger — branded CTA (opens external) */}
-      <div className="flex flex-col items-center gap-3">
-        <SendToInstacartButton
-          title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          linkType="shopping_list"
-          lineItems={(() => {
-            // Same sanitizer path as the top CTA — keep both buttons in sync.
-            const sourceItems = (() => {
-              const all = [
-                ...groceryItems.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
-                ...extraItems.map((e) => ({ name: e.name, rawQuantity: "" })),
-              ];
-              if (checked.size === 0) return all;
-              const picked = all.filter((i) => checked.has(i.name));
-              return picked.length > 0 ? picked : all;
-            })();
-            const sanitized = sanitizeForInstacart(sourceItems);
-            // eslint-disable-next-line no-console
-            console.log("[DIAG] Instacart CTA (bottom)", {
-              rawCount: sourceItems.length,
-              sanitizedCount: sanitized.length,
-              rawSample: sourceItems.slice(0, 20).map((s) => s.name),
-              sanitizedSample: sanitized.slice(0, 20).map((s) => s.name),
-            });
-            return sanitized.map<InstacartLineItem>((s) => ({
-              name: s.name,
-              quantity: s.quantity,
-              unit: s.unit,
-            }));
-          })()}
-          label="Shop at Kroger"
-          fullWidth
-        />
-        <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
-          Opens Ralphs on Instacart in your browser. Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
-        </p>
-        <InstacartDisclaimer variant="inline" className="text-center max-w-lg px-2" />
-      </div>
+      {/* Bottom Shop-at-Kroger CTA removed — list is for in-store reference only. */}
 
       {/* Change home store — escape hatch (not a comparison view) */}
       <div className="text-center py-3">
