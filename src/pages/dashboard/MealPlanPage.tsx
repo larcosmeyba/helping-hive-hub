@@ -159,7 +159,7 @@ export default function MealPlanPage() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Hive AI builds a 6-day meal plan and grocery list tuned to your budget, household, and pantry. Takes about 15 seconds.
           </p>
-          <Button onClick={generate} disabled={generating} className="bg-[#F2A900] text-white hover:bg-[#E09F00] h-12 px-6 rounded-xl">
+          <Button onClick={() => generate()} disabled={generating} className="bg-[#F2A900] text-white hover:bg-[#E09F00] h-12 px-6 rounded-xl">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : "Generate Meal Plan"}
           </Button>
         </div>
