@@ -532,24 +532,15 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total — ONLY when Kroger is connected with a home store.
-          Internal estimated pricing stays in the backend; we never surface it
-          to users in the grocery review. */}
+      {/* Pricing surface — Kroger-only. No Instacart fees, markup, delivery,
+          or tip estimates. Pricing is shown ONLY when the user is connected
+          to Kroger with a saved home store; otherwise we prompt to connect. */}
       {kroger.ready ? (
-        <EstimatedTotal
-          allItems={[...toAdjust, ...toBuy, ...manualItems]}
-          selectedItems={selectedItemsAll}
-          selectedCount={selectedCount}
-          storeCode={store || undefined}
-          stateCode={(profile as any)?.state || undefined}
+        <KrogerBudgetCard
+          items={[...toAdjust, ...toBuy, ...manualItems]}
           weeklyBudget={
             (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
           }
-          budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
-          budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
-          channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
-          instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          sendItems={sendItems}
         />
       ) : (
         <ConnectKrogerForPricing
@@ -559,12 +550,19 @@ export default function GroceryReviewPage() {
         />
       )}
 
-      <KrogerBudgetCard
-        items={[...toAdjust, ...toBuy, ...manualItems]}
-        weeklyBudget={
-          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-        }
-      />
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <p className="text-[13px] text-[#6b6b6b] font-medium">
+          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
+        </p>
+        <SendToInstacartButton
+          title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+          linkType="shopping_list"
+          lineItems={sendItems}
+          label="Shop at Kroger"
+          fullWidth
+        />
+        <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
+      </div>
     </div>
   );
 }
