@@ -1467,6 +1467,65 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ===== KID-FRIENDLY VALIDATION =====
+    // If the household has children 5–12, at least 3 of the week's meals MUST
+    // be kid-friendly. Repair by swapping non-kid-friendly slots with unused
+    // kid-friendly candidates of the same meal_type. If we still cannot reach
+    // 3, refuse to save the plan with a friendly validation error.
+    if (hasChildren512) {
+      const MIN_KID_FRIENDLY = 3;
+      const countKf = () =>
+        resolvedDays.reduce(
+          (s, d) => s + d.meals.filter((m) => isKidFriendlyRecipe(m.recipe)).length,
+          0,
+        );
+      let kfCount = countKf();
+      if (kfCount < MIN_KID_FRIENDLY) {
+        outer: for (let attempt = 0; attempt < MIN_KID_FRIENDLY * 2 && kfCount < MIN_KID_FRIENDLY; attempt++) {
+          for (let di = 0; di < resolvedDays.length; di++) {
+            for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+              const slot = resolvedDays[di].meals[mi];
+              if (isKidFriendlyRecipe(slot.recipe)) continue;
+              const pool = candidatesByType[slot.meal_type] || [];
+              const kfCand = pool.find((c: any) =>
+                !usedRecipeIds2.has(c.id) &&
+                (!safetyTerms.length || !recipeContainsAny(c, safetyTerms)) &&
+                isKidFriendlyRecipe(c)
+              );
+              if (!kfCand) continue;
+              if (slot.recipe?.id) usedRecipeIds2.delete(slot.recipe.id);
+              usedRecipeIds2.add(kfCand.id);
+              resolvedDays[di].meals[mi] = {
+                meal_type: slot.meal_type,
+                recipe: kfCand,
+                reason: "Swapped in a kid-friendly meal for your family.",
+              };
+              kfCount = countKf();
+              if (kfCount >= MIN_KID_FRIENDLY) break outer;
+            }
+          }
+        }
+      }
+      if (kfCount < MIN_KID_FRIENDLY) {
+        const friendly =
+          "We couldn't find enough kid-friendly meals for your family this week. Try broadening your dietary preferences or increasing your budget.";
+        await failJob("kid_friendly_unfit" as any, friendly, {
+          kid_friendly_count: kfCount,
+          required: MIN_KID_FRIENDLY,
+        });
+        return new Response(
+          JSON.stringify(structuredError("kid_friendly_unfit" as any, friendly, {
+            job_id: jobId,
+            kid_friendly_count: kfCount,
+            required: MIN_KID_FRIENDLY,
+          })),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+
+
     // ===== INSTRUCTION ENFORCEMENT =====
     // Every meal MUST have step-by-step instructions. Backfill obvious cases.
     for (const day of resolvedDays) {
