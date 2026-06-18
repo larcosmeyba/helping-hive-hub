@@ -3,7 +3,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, AlertCircle, PlayCircle, XCircle } from "lucide-react";
+
+interface SmokeCheck {
+  name: string;
+  status: "pass" | "fail" | "skip";
+  detail?: string;
+  durationMs?: number;
+}
+interface SmokeResult {
+  environment: string;
+  baseUrl: string;
+  overall: "pass" | "fail";
+  ranAt: string;
+  lastSuccessfulApiCall: string | null;
+  checks: SmokeCheck[];
+}
 
 interface Status {
   environment: "certification" | "production";
@@ -28,12 +43,31 @@ interface Status {
 export default function AdminKroger() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
+  const [smoke, setSmoke] = useState<SmokeResult | null>(null);
+  const [smokeLoading, setSmokeLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase.functions.invoke("kroger-admin-status", { body: {} });
     setStatus(data as Status);
     setLoading(false);
+  };
+  const runSmoke = async () => {
+    setSmokeLoading(true);
+    const { data, error } = await supabase.functions.invoke("kroger-smoke-test", { body: {} });
+    if (error) {
+      setSmoke({
+        environment: status?.environment ?? "?",
+        baseUrl: status?.baseUrl ?? "",
+        overall: "fail",
+        ranAt: new Date().toISOString(),
+        lastSuccessfulApiCall: null,
+        checks: [{ name: "Smoke test", status: "fail", detail: error.message }],
+      });
+    } else {
+      setSmoke(data as SmokeResult);
+    }
+    setSmokeLoading(false);
   };
   useEffect(() => { load(); }, []);
 
@@ -149,6 +183,79 @@ export default function AdminKroger() {
           </Card>
         </div>
       )}
+
+      <Card className="p-5 space-y-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold">Production Smoke Test</h2>
+            <p className="text-sm text-muted-foreground">
+              Validates OAuth, token generation, store lookup, product search, and the
+              grocery-matching pipeline against the active Kroger environment.
+            </p>
+            <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-xs">
+              <span><span className="text-muted-foreground">Environment:</span>{" "}
+                <Badge variant={status?.environment === "production" ? "default" : "secondary"} className="text-[10px]">
+                  {(smoke?.environment ?? status?.environment ?? "—").toString().toUpperCase()}
+                </Badge>
+              </span>
+              <span className="font-mono">
+                <span className="text-muted-foreground">Base URL:</span>{" "}
+                {smoke?.baseUrl ?? status?.baseUrl ?? "—"}
+              </span>
+              <span>
+                <span className="text-muted-foreground">Last successful API call:</span>{" "}
+                {(smoke?.lastSuccessfulApiCall ?? status?.lastSuccessfulMatch)
+                  ? new Date((smoke?.lastSuccessfulApiCall ?? status?.lastSuccessfulMatch)!).toLocaleString()
+                  : "—"}
+              </span>
+            </div>
+          </div>
+          <Button onClick={runSmoke} disabled={smokeLoading}>
+            {smokeLoading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <PlayCircle className="h-4 w-4" />}
+            <span className="ml-2">Run Smoke Test</span>
+          </Button>
+        </div>
+
+        {smoke && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Overall:</span>
+              {smoke.overall === "pass"
+                ? <Badge className="bg-green-600 hover:bg-green-600">PASS</Badge>
+                : <Badge variant="destructive">FAIL</Badge>}
+              <span className="text-xs text-muted-foreground">
+                Ran {new Date(smoke.ranAt).toLocaleString()}
+              </span>
+            </div>
+            <div className="divide-y border rounded-md">
+              {smoke.checks.map((c) => (
+                <div key={c.name} className="flex items-start gap-3 p-3">
+                  {c.status === "pass"
+                    ? <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    : c.status === "fail"
+                      ? <XCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                      : <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium text-sm">{c.name}</div>
+                      {typeof c.durationMs === "number" && (
+                        <div className="text-[10px] text-muted-foreground">{c.durationMs}ms</div>
+                      )}
+                    </div>
+                    {c.detail && (
+                      <div className={`text-xs mt-0.5 break-words ${c.status === "fail" ? "text-destructive" : "text-muted-foreground"}`}>
+                        {c.detail}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
