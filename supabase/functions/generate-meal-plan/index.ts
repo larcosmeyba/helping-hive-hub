@@ -786,7 +786,15 @@ Deno.serve(async (req) => {
 
     const allergyTerms = expandAllergies(allergies);
     const dietForbidden = forbiddenForDiets(dietaryPrefs);
-    const safetyTerms = [...allergyTerms, ...dietForbidden];
+    const hasToddler = Number((mealPlanContext as any).household?.babies_under_5 ?? 0) > 0;
+    const hasChildren512 = Number((mealPlanContext as any).household?.children_5_to_12 ?? 0) > 0;
+    // Toddler safety: applied to BOTH AI new_meal entries AND library candidates
+    // by piggy-backing on the existing recipeContainsAny filter.
+    const safetyTerms = [
+      ...allergyTerms,
+      ...dietForbidden,
+      ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
+    ];
 
     function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
       const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
