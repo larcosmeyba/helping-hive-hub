@@ -1383,23 +1383,47 @@ Deno.serve(async (req) => {
         let swapped = false;
         for (const slot of slotCosts) {
           const pool = candidatesByType[slot.meal.meal_type] || [];
+          // Pre-rank candidates by DB cost; only the cheapest few are worth
+          // the extra Kroger API calls. We then live-price each to avoid
+          // swaps that look cheap in the DB but become expensive at Kroger.
+          const ranked: Array<{ cand: any; dbCost: number }> = [];
           for (const cand of pool) {
             if (usedRecipeIds2.has(cand.id)) continue;
             if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
-            const candDbCost = await recipeDbCost(cand);
-            // Prefer cheaper candidate by DB cost as a heuristic proxy.
-            if (candDbCost >= slot.cost * 0.9) continue;
-            const old = resolvedDays[slot.di].meals[slot.mi];
-            if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
-            usedRecipeIds2.add(cand.id);
-            resolvedDays[slot.di].meals[slot.mi] = {
-              meal_type: old.meal_type, recipe: cand,
-              reason: "Swapped to fit your Kroger-priced weekly budget.",
-            };
-            swapped = true;
-            break;
+            ranked.push({ cand, dbCost: await recipeDbCost(cand) });
           }
-          if (swapped) break;
+          ranked.sort((a, b) => a.dbCost - b.dbCost);
+
+          let chosen: any | null = null;
+          for (const { cand } of ranked.slice(0, 5)) {
+            const candItems: Array<{ name: string; quantity: number }> = [];
+            for (const raw of (Array.isArray(cand.ingredients) ? cand.ingredients : [])) {
+              if (typeof raw !== "string") continue;
+              const parsed = parseIngredientString(raw);
+              if (!parsed.normalized) continue;
+              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+              candItems.push({ name: parsed.item || raw, quantity: 1 });
+            }
+            const candKroger = candItems.length
+              ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems)
+              : { subtotal: 0 } as any;
+            // Only accept the swap when the candidate is actually cheaper at
+            // Kroger than the slot it's replacing (5% margin to avoid churn).
+            if (candKroger.subtotal < slot.cost * 0.95) {
+              chosen = cand;
+              break;
+            }
+          }
+          if (!chosen) continue;
+          const old = resolvedDays[slot.di].meals[slot.mi];
+          if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+          usedRecipeIds2.add(chosen.id);
+          resolvedDays[slot.di].meals[slot.mi] = {
+            meal_type: old.meal_type, recipe: chosen,
+            reason: "Swapped to fit your Kroger-priced weekly budget.",
+          };
+          swapped = true;
+          break;
         }
         if (!swapped) break;
 
