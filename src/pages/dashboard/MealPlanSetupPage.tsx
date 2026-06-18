@@ -49,7 +49,7 @@ function readIds(key: string): string[] {
 export default function MealPlanSetupPage() {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
-  const { generate, generating } = useMealPlan();
+  const { generate, generating, mealPlan } = useMealPlan();
   const { toast } = useToast();
 
   // Local mirror of profile so rows update instantly after each save.
