@@ -3,7 +3,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, AlertCircle, PlayCircle, XCircle } from "lucide-react";
+
+interface SmokeCheck {
+  name: string;
+  status: "pass" | "fail" | "skip";
+  detail?: string;
+  durationMs?: number;
+}
+interface SmokeResult {
+  environment: string;
+  baseUrl: string;
+  overall: "pass" | "fail";
+  ranAt: string;
+  lastSuccessfulApiCall: string | null;
+  checks: SmokeCheck[];
+}
 
 interface Status {
   environment: "certification" | "production";
