@@ -1485,6 +1485,13 @@ Deno.serve(async (req) => {
       in_store_only_total: finalInStoreTotals.delivered_total,
       as_of_date: finalDeliveredTotals.as_of_date,
     };
+    (normalized as any).pricingMode = pricingMode;
+    (normalized as any).krogerPricing = krogerSummary;
+    (normalized as any).krogerConnected = kroger.connected;
+    (normalized as any).krogerStoreName = kroger.storeName;
+    (normalized as any).pricingAccuracyReduced = pricingMode === "estimated";
+
+
 
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
