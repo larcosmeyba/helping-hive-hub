@@ -194,7 +194,7 @@ export function KrogerBudgetCard({
         {result && (
           <>
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-[#6b6b6b]">Estimated Kroger total</span>
+              <span className="text-[13px] text-[#6b6b6b]">Kroger Subtotal</span>
               <span className="text-[18px] font-extrabold text-[#1a1a1a]">
                 ${total.toFixed(2)}
               </span>

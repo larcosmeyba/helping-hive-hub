@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
-import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
 import { KrogerConnectReminder } from "@/components/kroger/KrogerConnectReminder";
 import { useKrogerConnection } from "@/hooks/useKrogerConnection";
@@ -532,24 +532,15 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total — ONLY when Kroger is connected with a home store.
-          Internal estimated pricing stays in the backend; we never surface it
-          to users in the grocery review. */}
+      {/* Pricing surface — Kroger-only. No Instacart fees, markup, delivery,
+          or tip estimates. Pricing is shown ONLY when the user is connected
+          to Kroger with a saved home store; otherwise we prompt to connect. */}
       {kroger.ready ? (
-        <EstimatedTotal
-          allItems={[...toAdjust, ...toBuy, ...manualItems]}
-          selectedItems={selectedItemsAll}
-          selectedCount={selectedCount}
-          storeCode={store || undefined}
-          stateCode={(profile as any)?.state || undefined}
+        <KrogerBudgetCard
+          items={[...toAdjust, ...toBuy, ...manualItems]}
           weeklyBudget={
             (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
           }
-          budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
-          budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
-          channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
-          instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-          sendItems={sendItems}
         />
       ) : (
         <ConnectKrogerForPricing
@@ -559,164 +550,12 @@ export default function GroceryReviewPage() {
         />
       )}
 
-      <KrogerBudgetCard
-        items={[...toAdjust, ...toBuy, ...manualItems]}
-        weeklyBudget={
-          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-        }
-      />
-    </div>
-  );
-}
-
-function EstimatedTotal({
-  allItems,
-  selectedItems,
-  selectedCount,
-  storeCode,
-  stateCode,
-  weeklyBudget,
-  budgetExceeded,
-  budgetWarningText,
-  channelBreakdown,
-  instacartTitle,
-  sendItems,
-}: {
-  allItems: GroceryItem[];
-  selectedItems: GroceryItem[];
-  selectedCount: number;
-  storeCode?: string;
-  stateCode?: string;
-  weeklyBudget?: number | null;
-  budgetExceeded?: boolean;
-  budgetWarningText?: string | null;
-  channelBreakdown?: {
-    in_store_subtotal: number;
-    item_markup: number;
-    service_fee: number;
-    delivery_fee: number;
-    bag_fee: number;
-    tip: number;
-    tax: number;
-    delivered_total: number;
-    store: string;
-    as_of_date: string;
-  } | null;
-  instacartTitle: string;
-  sendItems: InstacartLineItem[];
-}) {
-  const [totalRange, setTotalRange] = useState<{ low: number; high: number } | null>(
-    estimateBasketRange(allItems),
-  );
-  const [selectedRange, setSelectedRange] = useState<{ low: number; high: number } | null>(
-    estimateBasketRange(selectedItems),
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    estimateBasketRangeFromDB(allItems, { storeCode, stateCode }).then((r) => {
-      if (!cancelled) setTotalRange(r);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [allItems.map((i) => i.name).join("|"), storeCode, stateCode]);
-
-  useEffect(() => {
-    let cancelled = false;
-    estimateBasketRangeFromDB(selectedItems, { storeCode, stateCode }).then((r) => {
-      if (!cancelled) setSelectedRange(r);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedItems.map((i) => i.name).join("|"), storeCode, stateCode]);
-
-  // When the server provided a delivered-total breakdown, prefer that as the
-  // authoritative number — it already includes whole-package costs, Instacart
-  // markup, fees, tip, and tax. The client-side basket range is a fallback.
-  const useServerDelivered = !!channelBreakdown;
-  const displayedTotal = useServerDelivered ? channelBreakdown!.delivered_total : (totalRange?.high ?? 0);
-  const estimateForBudget = useServerDelivered ? channelBreakdown!.delivered_total : (totalRange ? totalRange.low : 0);
-  const hasBudget = typeof weeklyBudget === "number" && weeklyBudget > 0;
-  const remaining = hasBudget ? Math.max(0, (weeklyBudget as number) - estimateForBudget) : null;
-  const overBudget = hasBudget && (estimateForBudget > (weeklyBudget as number) || budgetExceeded);
-
-  return (
-    <>
-      <div className="mt-5 rounded-2xl border border-border bg-card px-4 py-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="block text-[13px] text-[#6b6b6b]">
-              {useServerDelivered ? "Estimated Delivered Total" : "Estimated Grocery Total"}
-            </span>
-            <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">
-              {useServerDelivered
-                ? `incl. markup, fees, tip & tax · ${channelBreakdown!.store} · as of ${channelBreakdown!.as_of_date}`
-                : "range, not exact"}
-            </span>
-          </div>
-          <span className="text-[18px] font-extrabold text-[#1a1a1a]">
-            {useServerDelivered ? `$${displayedTotal.toFixed(2)}` : formatBasketRange(totalRange)}
-          </span>
-        </div>
-
-        {useServerDelivered && (
-          <div className="pt-2 border-t border-border/60 space-y-1 text-[12px]">
-            <Row label="In-store subtotal" value={channelBreakdown!.in_store_subtotal} />
-            {channelBreakdown!.item_markup > 0 && <Row label="Item markup" value={channelBreakdown!.item_markup} />}
-            {channelBreakdown!.service_fee > 0 && <Row label="Service fee" value={channelBreakdown!.service_fee} />}
-            {channelBreakdown!.delivery_fee > 0 && <Row label="Delivery fee" value={channelBreakdown!.delivery_fee} />}
-            {channelBreakdown!.bag_fee > 0 && <Row label="Bag fee" value={channelBreakdown!.bag_fee} />}
-            {channelBreakdown!.tip > 0 && <Row label="Tip (est.)" value={channelBreakdown!.tip} />}
-            {channelBreakdown!.tax > 0 && <Row label="Tax" value={channelBreakdown!.tax} />}
-          </div>
-        )}
-
-        {hasBudget && (
-          <>
-            <div className="flex items-center justify-between text-[13px] pt-2 border-t border-border/60">
-              <span className="text-[#6b6b6b]">Budget</span>
-              <span className="font-semibold text-[#1a1a1a]">${(weeklyBudget as number).toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between text-[13px]">
-              <span className="text-[#6b6b6b]">Remaining</span>
-              <span
-                className={`font-semibold ${overBudget ? "text-[#B91C1C]" : "text-[#1F5A3D]"}`}
-              >
-                {overBudget ? "Over budget" : `$${(remaining as number).toFixed(2)}`}
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-
-      {hasBudget && !overBudget && (
-        <p className="text-[11px] text-[#1F5A3D] leading-relaxed mt-2 px-1 font-medium">
-          Your meal plan was built to stay within your grocery budget. Final pricing and availability are confirmed at your store at checkout.
-        </p>
-      )}
-      {overBudget && (
-        <p className="text-[11px] text-[#B91C1C] leading-relaxed mt-2 px-1 font-medium">
-          {budgetWarningText || "This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at your store at checkout."}
-        </p>
-      )}
-      {/* Universal Instacart cost-saving tip — every user sees how to trim
-          their cart at checkout without leaving the app. */}
-      <div className="mt-3 rounded-xl bg-[#FFF8E1] border border-[#F2D88A] px-3 py-2">
-        <p className="text-[11px] text-[#7A5A00] leading-relaxed">
-          <span className="font-semibold">Tip:</span> If your grocery total comes in over budget, uncheck pricier items or swap meals to lower your total for the week.
-        </p>
-      </div>
-
-      <p className="text-[10px] text-[#6b6b6b] leading-relaxed mt-2 px-1">{PRICING_DISCLAIMER}</p>
-
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
-          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected • Estimated {formatBasketRange(selectedRange)}
+          {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
         <SendToInstacartButton
-          title={instacartTitle}
+          title={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
           linkType="shopping_list"
           lineItems={sendItems}
           label="Shop at Kroger"
@@ -724,9 +563,10 @@ function EstimatedTotal({
         />
         <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />
       </div>
-    </>
+    </div>
   );
 }
+
 
 function Section({
   title,
@@ -749,14 +589,6 @@ function Section({
   );
 }
 
-function Row({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between text-[#6b6b6b]">
-      <span>{label}</span>
-      <span className="text-[#1a1a1a] font-medium">${value.toFixed(2)}</span>
-    </div>
-  );
-}
 
 function ConnectKrogerForPricing({
   loading,
@@ -771,12 +603,12 @@ function ConnectKrogerForPricing({
   return (
     <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 text-center space-y-2">
       <p className="text-[13px] font-extrabold text-[#1a1a1a]">
-        Connect Kroger for accurate pricing
+        Connect Kroger to view live store pricing.
       </p>
       <p className="text-[12px] text-[#6b6b6b] leading-relaxed">
         {needsStore
           ? "Pick your home Kroger store in Settings to see live prices and a total for this list."
-          : "We only show pricing when it comes directly from your Kroger store. Connect your Kroger account to see live prices and your weekly total."}
+          : "Pricing is only shown when it comes directly from your Kroger store."}
       </p>
       {needsStore ? (
         <a
