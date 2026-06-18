@@ -1346,125 +1346,142 @@ Deno.serve(async (req) => {
     } | null = null;
 
     if (pricingMode === "kroger" && kroger.locationId) {
-      await advance("saving", "kroger pricing requested", "Pulling live Kroger prices");
-      const MAX_KROGER_REPAIR = 5;
-      let krogerPriced = await priceBasketWithKroger(
-        admin, userId, kroger.locationId,
-        buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
-      );
-
-      for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
-        if (krogerPriced.subtotal <= weeklyBudget) break;
-        await advance(
-          "saving", "kroger budget repair",
-          `Adjusting plan to fit your $${weeklyBudget} budget (Kroger subtotal $${krogerPriced.subtotal})`,
-          { attempt: attempt + 1, kroger_subtotal: krogerPriced.subtotal, budget: weeklyBudget },
-        );
-
-        // Score every placed meal by its Kroger-priced contribution.
-        const slotCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
-        for (let di = 0; di < resolvedDays.length; di++) {
-          for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
-            const recipe = resolvedDays[di].meals[mi].recipe;
-            const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-            let cost = 0;
-            for (const raw of ings) {
-              if (typeof raw !== "string") continue;
-              const parsed = parseIngredientString(raw);
-              if (!parsed.normalized) continue;
-              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
-              const line = krogerPriced.lines.find((l: any) =>
-                String(l.name).toLowerCase() === String(parsed.item || raw).toLowerCase());
-              if (line) cost += Number(line.line_total ?? 0);
-            }
-            slotCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost });
-          }
-        }
-        slotCosts.sort((a, b) => b.cost - a.cost);
-
-        let swapped = false;
-        for (const slot of slotCosts) {
-          const pool = candidatesByType[slot.meal.meal_type] || [];
-          // Pre-rank candidates by DB cost; only the cheapest few are worth
-          // the extra Kroger API calls. We then live-price each to avoid
-          // swaps that look cheap in the DB but become expensive at Kroger.
-          const ranked: Array<{ cand: any; dbCost: number }> = [];
-          for (const cand of pool) {
-            if (usedRecipeIds2.has(cand.id)) continue;
-            if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
-            ranked.push({ cand, dbCost: await recipeDbCost(cand) });
-          }
-          ranked.sort((a, b) => a.dbCost - b.dbCost);
-
-          let chosen: any | null = null;
-          for (const { cand } of ranked.slice(0, 5)) {
-            const candItems: Array<{ name: string; quantity: number }> = [];
-            for (const raw of (Array.isArray(cand.ingredients) ? cand.ingredients : [])) {
-              if (typeof raw !== "string") continue;
-              const parsed = parseIngredientString(raw);
-              if (!parsed.normalized) continue;
-              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
-              candItems.push({ name: parsed.item || raw, quantity: 1 });
-            }
-            const candKroger = candItems.length
-              ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems)
-              : { subtotal: 0 } as any;
-            // Only accept the swap when the candidate is actually cheaper at
-            // Kroger than the slot it's replacing (5% margin to avoid churn).
-            if (candKroger.subtotal < slot.cost * 0.95) {
-              chosen = cand;
-              break;
-            }
-          }
-          if (!chosen) continue;
-          const old = resolvedDays[slot.di].meals[slot.mi];
-          if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
-          usedRecipeIds2.add(chosen.id);
-          resolvedDays[slot.di].meals[slot.mi] = {
-            meal_type: old.meal_type, recipe: chosen,
-            reason: "Swapped to fit your Kroger-priced weekly budget.",
-          };
-          swapped = true;
-          break;
-        }
-        if (!swapped) break;
-
-        // Rebuild grocery list + reprice
-        const rebuilt = buildGroceryListAndBasket(resolvedDays);
-        groceryList = rebuilt.list;
-        buyItems = rebuilt.buy;
-        basket = await priceBasket(buyItems);
-        krogerPriced = await priceBasketWithKroger(
+      // Kroger pricing is best-effort: any failure (timeout, Kroger API
+      // outage, rate limit) MUST NOT fail the whole generation. We fall back
+      // to estimated pricing so the user still gets a saved plan.
+      try {
+        await advance("saving", "kroger pricing requested", "Pulling live Kroger prices");
+        // Repair loop kept tight to stay well within edge-function time budget.
+        const MAX_KROGER_REPAIR = 2;
+        const MAX_CANDIDATES_PER_SLOT = 3;
+        let krogerPriced = await priceBasketWithKroger(
           admin, userId, kroger.locationId,
           buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
         );
-      }
 
-      krogerSummary = {
-        subtotal: krogerPriced.subtotal,
-        matched_count: krogerPriced.matched_count,
-        unmatched_count: krogerPriced.unmatched_count,
-        location_id: kroger.locationId,
-        store_name: kroger.storeName,
-        lines: krogerPriced.lines,
-      };
+        for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
+          if (krogerPriced.subtotal <= weeklyBudget) break;
+          await advance(
+            "saving", "kroger budget repair",
+            `Adjusting plan to fit your $${weeklyBudget} budget (Kroger subtotal $${krogerPriced.subtotal})`,
+            { attempt: attempt + 1, kroger_subtotal: krogerPriced.subtotal, budget: weeklyBudget },
+          );
 
-      // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
-      if (krogerPriced.subtotal > weeklyBudget) {
-        const friendly =
-          "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
-        await failJob("budget_unfit", friendly, {
-          kroger_subtotal: krogerPriced.subtotal,
-          weekly_budget: weeklyBudget,
+          // Score every placed meal by its Kroger-priced contribution.
+          const slotCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+          for (let di = 0; di < resolvedDays.length; di++) {
+            for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+              const recipe = resolvedDays[di].meals[mi].recipe;
+              const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+              let cost = 0;
+              for (const raw of ings) {
+                if (typeof raw !== "string") continue;
+                const parsed = parseIngredientString(raw);
+                if (!parsed.normalized) continue;
+                if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+                const line = krogerPriced.lines.find((l: any) =>
+                  String(l.name).toLowerCase() === String(parsed.item || raw).toLowerCase());
+                if (line) cost += Number(line.line_total ?? 0);
+              }
+              slotCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost });
+            }
+          }
+          slotCosts.sort((a, b) => b.cost - a.cost);
+
+          let swapped = false;
+          // Only inspect the 3 most expensive slots per attempt to keep the
+          // total live-pricing call count bounded.
+          for (const slot of slotCosts.slice(0, 3)) {
+            const pool = candidatesByType[slot.meal.meal_type] || [];
+            const ranked: Array<{ cand: any; dbCost: number }> = [];
+            for (const cand of pool) {
+              if (usedRecipeIds2.has(cand.id)) continue;
+              if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+              ranked.push({ cand, dbCost: await recipeDbCost(cand) });
+            }
+            ranked.sort((a, b) => a.dbCost - b.dbCost);
+
+            let chosen: any | null = null;
+            for (const { cand } of ranked.slice(0, MAX_CANDIDATES_PER_SLOT)) {
+              const candItems: Array<{ name: string; quantity: number }> = [];
+              for (const raw of (Array.isArray(cand.ingredients) ? cand.ingredients : [])) {
+                if (typeof raw !== "string") continue;
+                const parsed = parseIngredientString(raw);
+                if (!parsed.normalized) continue;
+                if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+                candItems.push({ name: parsed.item || raw, quantity: 1 });
+              }
+              const candKroger = candItems.length
+                ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems)
+                : { subtotal: 0 } as any;
+              if (candKroger.subtotal < slot.cost * 0.95) {
+                chosen = cand;
+                break;
+              }
+            }
+            if (!chosen) continue;
+            const old = resolvedDays[slot.di].meals[slot.mi];
+            if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+            usedRecipeIds2.add(chosen.id);
+            resolvedDays[slot.di].meals[slot.mi] = {
+              meal_type: old.meal_type, recipe: chosen,
+              reason: "Swapped to fit your Kroger-priced weekly budget.",
+            };
+            swapped = true;
+            break;
+          }
+          if (!swapped) break;
+
+          const rebuilt = buildGroceryListAndBasket(resolvedDays);
+          groceryList = rebuilt.list;
+          buyItems = rebuilt.buy;
+          basket = await priceBasket(buyItems);
+          krogerPriced = await priceBasketWithKroger(
+            admin, userId, kroger.locationId,
+            buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+          );
+        }
+
+        krogerSummary = {
+          subtotal: krogerPriced.subtotal,
+          matched_count: krogerPriced.matched_count,
           unmatched_count: krogerPriced.unmatched_count,
-        });
-        return new Response(
-          JSON.stringify(structuredError("budget_unfit", friendly, {
-            job_id: jobId,
+          location_id: kroger.locationId,
+          store_name: kroger.storeName,
+          lines: krogerPriced.lines,
+        };
+
+        // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
+        if (krogerPriced.subtotal > weeklyBudget) {
+          const friendly =
+            "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+          await failJob("budget_unfit", friendly, {
             kroger_subtotal: krogerPriced.subtotal,
             weekly_budget: weeklyBudget,
-          })),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            unmatched_count: krogerPriced.unmatched_count,
+          });
+          return new Response(
+            JSON.stringify(structuredError("budget_unfit", friendly, {
+              job_id: jobId,
+              kroger_subtotal: krogerPriced.subtotal,
+              weekly_budget: weeklyBudget,
+            })),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      } catch (krogerErr) {
+        // Kroger live pricing failed — degrade gracefully to estimated pricing
+        // so the user always gets a saved plan instead of a hard error.
+        console.warn(
+          "[generate-meal-plan] Kroger pricing failed, falling back to estimated:",
+          (krogerErr as Error)?.message ?? krogerErr,
+        );
+        pricingMode = "estimated";
+        krogerSummary = null;
+        await advance(
+          "saving", "kroger pricing fallback",
+          "Kroger pricing unavailable right now — using estimated pricing for this plan.",
+          { reason: (krogerErr as Error)?.message ?? "unknown" },
         );
       }
     }
