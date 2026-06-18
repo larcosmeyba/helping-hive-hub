@@ -226,16 +226,20 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       if (error) {
         throw new Error(latestJob?.error_message || error.message);
       }
-      // Budget-unfit gate: server returns 200 with structured error rather than
-      // saving an over-budget plan. Surface as a friendly toast and stop here.
-      if (data && (data as any).ok === false && (data as any).error_code === "budget_unfit") {
-        const msg = (data as any).error
-          || "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
-        toast({ title: "Budget too tight", description: msg, variant: "destructive" });
+      // Validation gates: server returns 200 with a structured error rather
+      // than saving a plan that fails budget or kid-friendly checks.
+      const errCode = (data as any)?.error_code;
+      if (data && (data as any).ok === false && (errCode === "budget_unfit" || errCode === "kid_friendly_unfit")) {
+        const defaultMsg = errCode === "kid_friendly_unfit"
+          ? "We couldn't find enough kid-friendly meals for your family this week. Try broadening your dietary preferences or increasing your budget."
+          : "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+        const msg = (data as any).error || defaultMsg;
+        const title = errCode === "kid_friendly_unfit" ? "Not enough kid-friendly meals" : "Budget too tight";
+        toast({ title, description: msg, variant: "destructive" });
         setGenerationStage("idle");
         setGenerationStatus((prev) => ({
           ...prev,
-          errorCode: "budget_unfit",
+          errorCode: errCode,
           errorMessage: msg,
           statusMessage: msg,
         }));

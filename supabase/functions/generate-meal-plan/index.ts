@@ -192,6 +192,35 @@ export function recipeContainsAny(recipe: any, terms: string[]): boolean {
   });
 }
 
+// Choking-hazard terms for households with children under 5. Applied as
+// additional safety terms to the existing recipeContainsAny filter so they
+// scope BOTH library candidates and AI-authored new_meal entries.
+export const TODDLER_CHOKING_HAZARDS = [
+  "whole nuts", "peanuts", "almonds", "walnuts", "pecans", "cashews", "pistachios", "hazelnuts",
+  "popcorn", "whole grapes", "grapes", "hard candy", "candy", "gum", "marshmallows",
+  "hot dog", "hot dogs", "raw carrots", "whole olives", "cherry tomatoes",
+  "chunks of meat", "beef chunks", "steak chunks", "sausage rounds", "sausage coins",
+  "sunflower seeds", "pumpkin seeds",
+];
+
+const KID_FRIENDLY_KEYWORDS = [
+  "mac and cheese", "mac & cheese", "macaroni", "pasta", "spaghetti", "lasagna", "ravioli",
+  "taco", "tacos", "quesadilla", "quesadillas", "burrito", "burritos",
+  "pizza", "chicken nugget", "nuggets", "tender", "tenders", "meatball", "meatballs",
+  "grilled cheese", "sloppy joe", "sheet pan", "rice bowl", "chicken and rice",
+  "fried rice", "stir fry", "pancake", "waffle", "french toast", "oatmeal",
+  "breakfast burrito", "mini pizza", "scrambled egg",
+];
+
+export function isKidFriendlyRecipe(recipe: any): boolean {
+  if (recipe?.kid_friendly === true) return true;
+  if (recipe?.family_friendly === true) return true;
+  const tags = Array.isArray(recipe?.tags) ? recipe.tags.map((t: any) => String(t).toLowerCase()) : [];
+  if (tags.some((t: string) => t.includes("kid") || t === "family-friendly" || t === "family_friendly")) return true;
+  const text = `${recipe?.title ?? ""} ${recipe?.description ?? ""}`.toLowerCase();
+  return KID_FRIENDLY_KEYWORDS.some((k) => text.includes(k));
+}
+
 function freshness(item: any): string {
   if (!item.expiration_date) return item.is_low_stock ? "low_stock" : "good";
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -757,7 +786,15 @@ Deno.serve(async (req) => {
 
     const allergyTerms = expandAllergies(allergies);
     const dietForbidden = forbiddenForDiets(dietaryPrefs);
-    const safetyTerms = [...allergyTerms, ...dietForbidden];
+    const hasToddler = Number((mealPlanContext as any).household?.babies_under_5 ?? 0) > 0;
+    const hasChildren512 = Number((mealPlanContext as any).household?.children_5_to_12 ?? 0) > 0;
+    // Toddler safety: applied to BOTH AI new_meal entries AND library candidates
+    // by piggy-backing on the existing recipeContainsAny filter.
+    const safetyTerms = [
+      ...allergyTerms,
+      ...dietForbidden,
+      ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
+    ];
 
     function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
       const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
@@ -1346,23 +1383,47 @@ Deno.serve(async (req) => {
         let swapped = false;
         for (const slot of slotCosts) {
           const pool = candidatesByType[slot.meal.meal_type] || [];
+          // Pre-rank candidates by DB cost; only the cheapest few are worth
+          // the extra Kroger API calls. We then live-price each to avoid
+          // swaps that look cheap in the DB but become expensive at Kroger.
+          const ranked: Array<{ cand: any; dbCost: number }> = [];
           for (const cand of pool) {
             if (usedRecipeIds2.has(cand.id)) continue;
             if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
-            const candDbCost = await recipeDbCost(cand);
-            // Prefer cheaper candidate by DB cost as a heuristic proxy.
-            if (candDbCost >= slot.cost * 0.9) continue;
-            const old = resolvedDays[slot.di].meals[slot.mi];
-            if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
-            usedRecipeIds2.add(cand.id);
-            resolvedDays[slot.di].meals[slot.mi] = {
-              meal_type: old.meal_type, recipe: cand,
-              reason: "Swapped to fit your Kroger-priced weekly budget.",
-            };
-            swapped = true;
-            break;
+            ranked.push({ cand, dbCost: await recipeDbCost(cand) });
           }
-          if (swapped) break;
+          ranked.sort((a, b) => a.dbCost - b.dbCost);
+
+          let chosen: any | null = null;
+          for (const { cand } of ranked.slice(0, 5)) {
+            const candItems: Array<{ name: string; quantity: number }> = [];
+            for (const raw of (Array.isArray(cand.ingredients) ? cand.ingredients : [])) {
+              if (typeof raw !== "string") continue;
+              const parsed = parseIngredientString(raw);
+              if (!parsed.normalized) continue;
+              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+              candItems.push({ name: parsed.item || raw, quantity: 1 });
+            }
+            const candKroger = candItems.length
+              ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems)
+              : { subtotal: 0 } as any;
+            // Only accept the swap when the candidate is actually cheaper at
+            // Kroger than the slot it's replacing (5% margin to avoid churn).
+            if (candKroger.subtotal < slot.cost * 0.95) {
+              chosen = cand;
+              break;
+            }
+          }
+          if (!chosen) continue;
+          const old = resolvedDays[slot.di].meals[slot.mi];
+          if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+          usedRecipeIds2.add(chosen.id);
+          resolvedDays[slot.di].meals[slot.mi] = {
+            meal_type: old.meal_type, recipe: chosen,
+            reason: "Swapped to fit your Kroger-priced weekly budget.",
+          };
+          swapped = true;
+          break;
         }
         if (!swapped) break;
 
@@ -1405,6 +1466,65 @@ Deno.serve(async (req) => {
         );
       }
     }
+
+    // ===== KID-FRIENDLY VALIDATION =====
+    // If the household has children 5–12, at least 3 of the week's meals MUST
+    // be kid-friendly. Repair by swapping non-kid-friendly slots with unused
+    // kid-friendly candidates of the same meal_type. If we still cannot reach
+    // 3, refuse to save the plan with a friendly validation error.
+    if (hasChildren512) {
+      const MIN_KID_FRIENDLY = 3;
+      const countKf = () =>
+        resolvedDays.reduce(
+          (s, d) => s + d.meals.filter((m) => isKidFriendlyRecipe(m.recipe)).length,
+          0,
+        );
+      let kfCount = countKf();
+      if (kfCount < MIN_KID_FRIENDLY) {
+        outer: for (let attempt = 0; attempt < MIN_KID_FRIENDLY * 2 && kfCount < MIN_KID_FRIENDLY; attempt++) {
+          for (let di = 0; di < resolvedDays.length; di++) {
+            for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+              const slot = resolvedDays[di].meals[mi];
+              if (isKidFriendlyRecipe(slot.recipe)) continue;
+              const pool = candidatesByType[slot.meal_type] || [];
+              const kfCand = pool.find((c: any) =>
+                !usedRecipeIds2.has(c.id) &&
+                (!safetyTerms.length || !recipeContainsAny(c, safetyTerms)) &&
+                isKidFriendlyRecipe(c)
+              );
+              if (!kfCand) continue;
+              if (slot.recipe?.id) usedRecipeIds2.delete(slot.recipe.id);
+              usedRecipeIds2.add(kfCand.id);
+              resolvedDays[di].meals[mi] = {
+                meal_type: slot.meal_type,
+                recipe: kfCand,
+                reason: "Swapped in a kid-friendly meal for your family.",
+              };
+              kfCount = countKf();
+              if (kfCount >= MIN_KID_FRIENDLY) break outer;
+            }
+          }
+        }
+      }
+      if (kfCount < MIN_KID_FRIENDLY) {
+        const friendly =
+          "We couldn't find enough kid-friendly meals for your family this week. Try broadening your dietary preferences or increasing your budget.";
+        await failJob("kid_friendly_unfit" as any, friendly, {
+          kid_friendly_count: kfCount,
+          required: MIN_KID_FRIENDLY,
+        });
+        return new Response(
+          JSON.stringify(structuredError("kid_friendly_unfit" as any, friendly, {
+            job_id: jobId,
+            kid_friendly_count: kfCount,
+            required: MIN_KID_FRIENDLY,
+          })),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+
 
     // ===== INSTRUCTION ENFORCEMENT =====
     // Every meal MUST have step-by-step instructions. Backfill obvious cases.
