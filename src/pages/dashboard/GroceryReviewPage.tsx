@@ -757,3 +757,49 @@ function Row({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
+
+function ConnectKrogerForPricing({
+  loading,
+  connected,
+  onConnect,
+}: {
+  loading: boolean;
+  connected: boolean;
+  onConnect: () => void | Promise<void>;
+}) {
+  const needsStore = connected && !loading;
+  return (
+    <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 text-center space-y-2">
+      <p className="text-[13px] font-extrabold text-[#1a1a1a]">
+        Connect Kroger for accurate pricing
+      </p>
+      <p className="text-[12px] text-[#6b6b6b] leading-relaxed">
+        {needsStore
+          ? "Pick your home Kroger store in Settings to see live prices and a total for this list."
+          : "We only show pricing when it comes directly from your Kroger store. Connect your Kroger account to see live prices and your weekly total."}
+      </p>
+      {needsStore ? (
+        <a
+          href="/dashboard/settings"
+          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold"
+        >
+          Choose home store
+        </a>
+      ) : (
+        <button
+          onClick={() => onConnect()}
+          disabled={loading}
+          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold disabled:opacity-60"
+        >
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking…
+            </span>
+          ) : (
+            "Connect Kroger"
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
