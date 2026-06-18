@@ -24,10 +24,10 @@ const features = [
   },
 ];
 
-const instacartBadges = [
+const krogerBadges = [
   { icon: Truck, text: "Delivery" },
   { icon: Store, text: "Pickup" },
-  { icon: CreditCard, text: "EBT Accepted at Participating Retailers" },
+  { icon: CreditCard, text: "EBT Accepted at Participating Stores" },
   { icon: MapPin, text: "Store Availability Based on ZIP Code" },
 ];
 
@@ -58,7 +58,7 @@ export function FeaturesSection() {
           ))}
         </div>
 
-        {/* Shop Through Instacart trust banner */}
+        {/* Shop at Kroger trust banner */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -66,13 +66,13 @@ export function FeaturesSection() {
           className="rounded-2xl bg-[#E6F4E6] px-5 md:px-8 py-5 md:py-6 text-center"
         >
           <h3 className="font-display text-lg md:text-xl font-bold text-[#1F5A2C] mb-1">
-            Shop Through Instacart
+            Shop at Kroger
           </h3>
           <p className="text-sm text-[#1F5A2C]/80 max-w-2xl mx-auto mb-4">
-            Send your grocery list directly to Instacart for delivery or pickup at participating retailers.
+            Take your grocery list to Kroger for pickup or delivery.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            {instacartBadges.map(({ icon: Icon, text }) => (
+            {krogerBadges.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-1.5">
                 <Icon className="w-4 h-4 text-[#1F5A2C] shrink-0" />
                 <span className="text-sm font-medium text-[#1F5A2C]">{text}</span>

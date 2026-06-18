@@ -26,7 +26,7 @@ export function WeeklyProgress({ budget, spent, mealsCooked, costPerMeal }: Prop
         <Stat label="Meals" value={`${mealsCooked}`} />
         <Stat label="Est. Per Meal" value={`~$${costPerMeal.toFixed(2)}`} />
       </div>
-      <p className="text-[10px] text-muted-foreground text-center mt-2">Estimates only. Final pricing confirmed at Instacart checkout.</p>
+      <p className="text-[10px] text-muted-foreground text-center mt-2">Estimates only. Final pricing confirmed at your store at checkout.</p>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export function HowItWorksSection() {
             Plan Meals. Build Grocery Lists. Shop Smarter.
           </h2>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            Help The Hive creates budget-friendly meal plans, builds your grocery list, and sends everything to Instacart in minutes.
+            Help The Hive creates budget-friendly meal plans, builds your grocery list, and gets you ready to shop in minutes.
           </p>
         </motion.div>
 

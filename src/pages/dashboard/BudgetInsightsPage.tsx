@@ -78,7 +78,7 @@ export default function BudgetInsightsPage() {
           <TrendingUp className="w-6 h-6 text-primary" /> Budget Insights
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Your estimated spending, projected savings, and optimization at a glance</p>
-        <p className="text-[11px] text-muted-foreground mt-1">All amounts are planning estimates. Final pricing is confirmed at Instacart checkout.</p>
+        <p className="text-[11px] text-muted-foreground mt-1">All amounts are planning estimates. Final pricing is confirmed at your store at checkout.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

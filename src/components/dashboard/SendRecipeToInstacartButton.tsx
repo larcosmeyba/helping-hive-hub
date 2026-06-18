@@ -1,119 +1,61 @@
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
-import { openInstacartExternal, preopenExternalWindow } from "@/lib/openInstacartExternal";
-import { parseIngredients } from "@/lib/parseIngredient";
-import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Per-recipe action button. Originally sent ingredients to Instacart; now
+ * copies the recipe's ingredient list to the clipboard so the user can paste
+ * it into their preferred grocery flow. Prop shape preserved.
+ */
 
 interface Props {
   title: string;
   ingredients: string[];
-  instructions: string[];
+  instructions?: string[];
   imageUrl?: string;
   className?: string;
   variant?: InstacartCTAVariant;
-  label?: "Shop on Instacart" | "Shop Ingredients";
+  label?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
   partnerLinkbackUrl?: string;
 }
 
-// Default Instacart landing-page linkback that returns the user to Help The Hive
-// after they finish on Instacart (per Instacart's partner-linkback spec).
-const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list?from=instacart";
-
 export function SendRecipeToInstacartButton({
   title,
   ingredients,
-  instructions,
-  imageUrl,
   className,
   variant = "dark",
-  label = "Shop Ingredients",
+  label = "Copy Ingredients",
   fullWidth = false,
-  showExternalIcon = true,
-  partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,
+  showExternalIcon = false,
 }: Props) {
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const parsed = parseIngredients(ingredients);
-    if (!parsed.length) {
+    if (!ingredients.length) {
       toast({
         title: "No ingredients",
-        description: "This recipe has no ingredients to send.",
+        description: "This recipe has no ingredients to copy.",
         variant: "destructive",
       });
       return;
     }
-    // Open the external tab SYNCHRONOUSLY so the browser keeps the user
-    // gesture and doesn't block the popup when the URL arrives later.
-    const preopened = preopenExternalWindow();
-    setLoading(true);
-    void trackEvent("instacart_recipe_clicked", { itemCount: parsed.length, title });
+    const text = `${title}\n\nIngredients:\n${ingredients.map((i) => `• ${i}`).join("\n")}`;
     try {
-      const payload: Record<string, unknown> = {
-        title,
-        link_type: "recipe",
-        ingredients: parsed.map((p) => ({
-          name: p.name,
-          display_text: p.display_text,
-          measurements: p.measurements,
-        })),
-        environment: "development",
-      };
-      if (imageUrl) payload.image_url = imageUrl;
-      if (instructions?.length) payload.instructions = instructions;
-      if (partnerLinkbackUrl) {
-        payload.landing_page_configuration = { partner_linkback_url: partnerLinkbackUrl };
-      }
-
-      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
-        body: payload,
-      });
-
-      const landingUrl =
-        (data as { products_link_url?: string } | null)?.products_link_url ?? null;
-
-      if (error || !landingUrl) {
-        if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
-        console.error("[Instacart] No products_link_url returned:", error);
-        toast({
-          title: "Couldn't reach Instacart",
-          description: "Please try again in a moment.",
-          variant: "destructive",
-        });
-        void trackEvent("instacart_recipe_error", { itemCount: parsed.length, error: String(error ?? "no_url") });
-      } else {
-        void trackEvent("instacart_link_generated", {
-          products_link_url: landingUrl,
-          link_type: "recipe",
-          title,
-          itemCount: parsed.length,
-          ingredients: JSON.parse(JSON.stringify(parsed)),
-        });
-        openInstacartExternal(landingUrl, preopened);
-        toast({
-          title: "Opening Instacart…",
-          description: "Your cart is loading in Instacart.",
-          duration: 4000,
-        });
-        void trackEvent("instacart_recipe_success", { itemCount: parsed.length, products_link_url: landingUrl });
-      }
-    } catch (err) {
-      if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
-      console.error("[Instacart] Recipe send failed:", err);
+      await navigator.clipboard.writeText(text);
       toast({
-        title: "Couldn't reach Instacart",
-        description: "Please try again in a moment.",
+        title: "Ingredients copied",
+        description: `${ingredients.length} ingredient${ingredients.length === 1 ? "" : "s"} on the clipboard.`,
+      });
+      void trackEvent("recipe_ingredients_copied", { itemCount: ingredients.length, title });
+    } catch {
+      toast({
+        title: "Couldn't copy",
+        description: "Your browser blocked clipboard access.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -121,7 +63,6 @@ export function SendRecipeToInstacartButton({
     <InstacartCTAButton
       onClick={handleClick}
       disabled={!ingredients.length}
-      loading={loading}
       variant={variant}
       label={label}
       fullWidth={fullWidth}

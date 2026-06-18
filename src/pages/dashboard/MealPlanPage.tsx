@@ -248,7 +248,7 @@ export default function MealPlanPage() {
             <ShoppingCart className="w-5 h-5 text-[#FF7009]" />
           </div>
           <div className="min-w-0">
-            <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Send Grocery List To Instacart</p>
+            <p className="text-[15px] md:text-[16px] font-bold text-white leading-tight">Your Grocery List Is Ready</p>
             <p className="text-[12px] text-white/80 mt-0.5">{itemCount} Items Ready · Estimated Total: ~${weeklyTotal.toFixed(2)}</p>
           </div>
         </div>
@@ -257,14 +257,14 @@ export default function MealPlanPage() {
             title="Weekly Meal Plan"
             lineItems={instacartLineItems}
             variant="light"
-            label="Send to Instacart"
+            label="Shop at Kroger"
             fullWidth
             showExternalIcon={false}
           />
         </div>
       </div>
       <p className="text-[11px] text-[#8a8a8a] -mt-2 px-1">
-        Pricing and availability confirmed at Instacart checkout.
+        Estimated pricing — final confirmed at your store at checkout.
       </p>
 
       {/* Estimated Savings card removed — replaced by Plaid grocery insights at top */}
@@ -600,13 +600,13 @@ function InstacartActionCard({ title, lineItems }: { title: string; lineItems: {
       <div className="w-8 h-8 rounded-full bg-[#FFE9D6] flex items-center justify-center">
         <ShoppingCart className="w-4 h-4 text-[#E07A1F]" />
       </div>
-      <p className="font-bold text-[12px] md:text-[13px] text-[#1a1a1a] leading-tight">Send to Instacart</p>
+      <p className="font-bold text-[12px] md:text-[13px] text-[#1a1a1a] leading-tight">Shop at Kroger</p>
       <p className="text-[10px] md:text-[11px] text-[#6a6a6a] leading-tight">Shop in one click</p>
       <SendToInstacartButton
         title={title}
         lineItems={lineItems}
         variant="dark"
-        label="Send to Instacart"
+        label="Shop at Kroger"
         fullWidth
         showExternalIcon={false}
         className="mt-1 !h-8 !text-[11px] !px-2"

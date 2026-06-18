@@ -11,7 +11,7 @@ const PLAN_STORES: Record<string, { primary: string; secondary: string }> = {
   "more-variety-75": { primary: "Sprouts", secondary: "Safeway" },
   "college-eats-35": { primary: "Aldi", secondary: "Walmart" },
   "snap-friendly-meals": { primary: "Aldi", secondary: "WinCo" },
-  "cook-from-what-you-have": { primary: "Your Instacart store", secondary: "" },
+  "cook-from-what-you-have": { primary: "your home store", secondary: "" },
 };
 
 const SAMPLE_PLANS: Record<string, {
@@ -205,7 +205,7 @@ const SAMPLE_PLANS: Record<string, {
   "snap-friendly-meals": {
     title: "SNAP-Friendly Meal Plan",
     budget: "$45 / week",
-    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating Instacart retailers. Every dollar works harder.",
+    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating retailers. Every dollar works harder.",
     tag: "Eligible for SNAP Purchases",
     servings: "4 servings",
     meals: 21,
@@ -376,7 +376,7 @@ export default function SampleMealPlan() {
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
                   <ShoppingCart className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Shop at: {PLAN_STORES[slug!]?.primary ?? "Your Instacart store"}</span>
+                  <span className="text-sm font-medium">Shop at: {PLAN_STORES[slug!]?.primary ?? "your home store"}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border border-border shadow-sm">
                   <DollarSign className="w-4 h-4 text-primary" />
@@ -478,7 +478,7 @@ export default function SampleMealPlan() {
                     <span className="text-muted-foreground">Estimated Weekly Total</span>
                     <span className="font-bold text-primary text-lg">~${weekTotal.toFixed(2)}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-2">Estimated pricing for planning purposes only. Final pricing and product availability are confirmed at Instacart checkout.</p>
+                  <p className="text-[11px] text-muted-foreground mt-2">Estimated pricing for planning purposes only. Final pricing and product availability are confirmed at your store at checkout.</p>
                   <p className="text-[11px] text-muted-foreground mt-1">Store availability varies by ZIP code and participating Instacart retailers.</p>
                 </div>
               </motion.div>
@@ -517,7 +517,7 @@ export default function SampleMealPlan() {
                 Like what you see?
               </h2>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Sign up free to get plans tailored to your household — and check out via Instacart with one tap.
+                Sign up free to get plans tailored to your household — and shop with confidence at your store.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button size="lg" className="bg-gradient-honey text-primary-foreground hover:opacity-90" asChild>

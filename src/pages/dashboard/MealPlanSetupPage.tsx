@@ -218,7 +218,7 @@ export default function MealPlanSetupPage() {
       </button>
 
       <p className="text-[11px] text-[#6b6b6b] mt-3 text-center px-4">
-        Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.
+        Estimated pricing for planning only. Final pricing and availability are confirmed at your store at checkout.
       </p>
 
       {/* ── Sheets ───────────────────────────────────────────────── */}
@@ -418,7 +418,7 @@ function StoreSheet({
           />
         </div>
         <div>
-          <Label>Available Instacart stores</Label>
+          <Label>Nearby stores</Label>
           {!cleanZip && (
             <p className="text-[12px] text-[#6b6b6b] mt-2">Enter a 5-digit ZIP to see stores.</p>
           )}
@@ -431,11 +431,11 @@ function StoreSheet({
             <p className="text-[12px] text-destructive mt-2">{error}</p>
           )}
           {cleanZip && !loading && !error && retailers.length === 0 && (
-            <p className="text-[12px] text-[#6b6b6b] mt-2">No Instacart stores found for this ZIP.</p>
+            <p className="text-[12px] text-[#6b6b6b] mt-2">No stores found for this ZIP.</p>
           )}
           {cleanZip && !loading && !error && retailers.length > 0 && (
             <p className="text-[12px] text-[#6b6b6b] mt-2">
-              Stores shown are available through Instacart in your ZIP code.
+              Stores shown are typical grocery retailers in your ZIP code.
             </p>
           )}
           <div className="mt-2 space-y-2">

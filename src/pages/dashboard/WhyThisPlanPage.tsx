@@ -80,7 +80,7 @@ export default function WhyThisPlanPage() {
       </div>
 
       <p className="text-[11px] text-[#6b6b6b] mt-4 text-center px-4">
-        Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.
+        Estimated pricing for planning only. Final pricing and availability are confirmed at your store at checkout.
       </p>
     </div>
   );

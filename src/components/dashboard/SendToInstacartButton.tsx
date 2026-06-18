@@ -1,10 +1,21 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
 import { trackEvent } from "@/lib/analytics";
 import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
-import { openInstacartExternal, preopenExternalWindow } from "@/lib/openInstacartExternal";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Copy, Download, ExternalLink, ChevronDown } from "lucide-react";
+
+/**
+ * Grocery-list action button. Originally sent the list to Instacart; now
+ * provides Kroger and manual shopping actions:
+ *   • Copy Grocery List   (clipboard)
+ *   • Export Grocery List (CSV download)
+ *   • Shop at Kroger      (opens kroger.com)
+ *
+ * Prop shape is preserved so existing callers compile unchanged.
+ */
 
 export interface InstacartLineItem {
   name: string;
@@ -21,114 +32,107 @@ interface Props {
   instructions?: string[];
   className?: string;
   variant?: InstacartCTAVariant;
-  /** Approved Instacart CTA copy. */
-  label?: "Shop on Instacart" | "Shop Ingredients" | "Send to Instacart" | "Send Selected Items to Instacart";
+  label?: string;
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
 }
 
-// Default Instacart landing-page linkback that returns the user to Help The Hive
-// after they finish on Instacart (per Instacart's partner-linkback spec).
-const DEFAULT_PARTNER_LINKBACK_URL = "https://helpthehive.com/dashboard/grocery-list?from=instacart";
+function formatLine(item: InstacartLineItem): string {
+  if (item.display_text && item.display_text.trim()) return item.display_text.trim();
+  const qty = item.quantity ? `${item.quantity}${item.unit ? " " + item.unit : ""} ` : "";
+  return `${qty}${item.name}`.trim();
+}
+
+function toCsv(title: string, items: InstacartLineItem[]): string {
+  const esc = (v: unknown) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [
+    [title],
+    ["Item", "Quantity", "Unit"],
+    ...items.map((i) => [i.name, i.quantity ?? "", i.unit ?? ""]),
+  ];
+  return rows.map((r) => r.map(esc).join(",")).join("\n");
+}
+
+function downloadFile(filename: string, content: string, mime: string) {
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function SendToInstacartButton({
   title,
   lineItems,
-  imageUrl,
-  linkType = "shopping_list",
-  instructions,
   className,
   variant = "dark",
-  label = "Shop Ingredients",
-  partnerLinkbackUrl = DEFAULT_PARTNER_LINKBACK_URL,
+  label = "Shop at Kroger",
   fullWidth = false,
-  showExternalIcon = true,
+  showExternalIcon = false,
 }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleClick = async () => {
-    if (!lineItems.length) {
-      toast({ title: "Nothing to send", description: "Add ingredients first.", variant: "destructive" });
-      return;
-    }
-    // Open the external tab SYNCHRONOUSLY so the browser keeps the user
-    // gesture and doesn't block the popup when the URL arrives later.
-    const preopened = preopenExternalWindow();
-    setLoading(true);
-    void trackEvent("instacart_send_clicked", { itemCount: lineItems.length, title });
+  const empty = lineItems.length === 0;
+
+  const handleCopy = async () => {
+    if (empty) return;
+    const text = `${title}\n\n${lineItems.map((i) => `• ${formatLine(i)}`).join("\n")}`;
     try {
-      const payload: Record<string, unknown> = {
-        title,
-        link_type: linkType,
-        line_items: lineItems,
-        environment: "development",
-      };
-      if (imageUrl) payload.image_url = imageUrl;
-      if (instructions?.length) payload.instructions = instructions;
-      if (partnerLinkbackUrl) {
-        payload.landing_page_configuration = { partner_linkback_url: partnerLinkbackUrl };
-      }
-
-      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
-        body: payload,
-      });
-
-      const landingUrl =
-        (data as { products_link_url?: string } | null)?.products_link_url ?? null;
-
-      if (error || !landingUrl) {
-        if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
-        console.error("[Instacart] No products_link_url returned:", error);
-        toast({
-          title: "Couldn't reach Instacart",
-          description: "Please try again in a moment.",
-          variant: "destructive",
-        });
-        void trackEvent("instacart_send_error", { itemCount: lineItems.length, error: String(error ?? "no_url") });
-      } else {
-        // Log generated landing URL + payload for Instacart's ingredient-parsing review.
-        void trackEvent("instacart_link_generated", {
-          products_link_url: landingUrl,
-          link_type: linkType,
-          title,
-          itemCount: lineItems.length,
-          line_items: JSON.parse(JSON.stringify(lineItems)),
-        });
-        // Open the generated Instacart URL externally immediately — no
-        // intermediate toast/status. Required for Instacart's review demo.
-        openInstacartExternal(landingUrl, preopened);
-        toast({
-          title: "Opening Instacart…",
-          description: "Your cart is loading in Instacart.",
-          duration: 4000,
-        });
-        void trackEvent("instacart_send_success", { itemCount: lineItems.length, products_link_url: landingUrl });
-      }
-    } catch (err) {
-      if (preopened && !preopened.closed) { try { preopened.close(); } catch { /* noop */ } }
-      console.error("[Instacart] Send failed:", err);
-      toast({
-        title: "Couldn't reach Instacart",
-        description: "Please try again in a moment.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Grocery list copied", description: `${lineItems.length} item${lineItems.length === 1 ? "" : "s"} on the clipboard.` });
+      void trackEvent("grocery_list_copied", { itemCount: lineItems.length, title });
+    } catch {
+      toast({ title: "Couldn't copy", description: "Your browser blocked clipboard access.", variant: "destructive" });
     }
   };
 
+  const handleExport = () => {
+    if (empty) return;
+    const safe = title.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "grocery-list";
+    downloadFile(`${safe}.csv`, toCsv(title, lineItems), "text/csv");
+    toast({ title: "Grocery list exported", description: "CSV saved to your device." });
+    void trackEvent("grocery_list_exported", { itemCount: lineItems.length, title });
+  };
+
+  const handleShopKroger = () => {
+    if (empty) return;
+    const q = encodeURIComponent(lineItems.slice(0, 8).map((i) => i.name).join(" "));
+    const url = `https://www.kroger.com/search?query=${q}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    void trackEvent("shop_at_kroger_clicked", { itemCount: lineItems.length, title });
+  };
+
   return (
-    <InstacartCTAButton
-      onClick={handleClick}
-      disabled={!lineItems.length}
-      loading={loading}
-      variant={variant}
-      label={label}
-      fullWidth={fullWidth}
-      showExternalIcon={showExternalIcon}
-      className={className}
-    />
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <span className={fullWidth ? "block" : "inline-block"}>
+          <InstacartCTAButton
+            disabled={empty}
+            variant={variant}
+            label={label}
+            fullWidth={fullWidth}
+            showExternalIcon={showExternalIcon}
+            className={className}
+            // append a tiny chevron via a sibling span below
+          />
+        </span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleCopy}>
+          <Copy className="h-4 w-4 mr-2" /> Copy Grocery List
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" /> Export Grocery List
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleShopKroger}>
+          <ExternalLink className="h-4 w-4 mr-2" /> Shop at Kroger
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
