@@ -134,6 +134,7 @@ const App = () => {
                   <Route path="/signup" element={native ? <Navigate to="/auth" replace /> : <Signup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/onboarding/kroger" element={<ProtectedRoute><KrogerOnboarding /></ProtectedRoute>} />
                   <Route path="/questionnaire" element={<ProtectedRoute><Questionnaire /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                     <Route index element={<DashboardHome />} />
