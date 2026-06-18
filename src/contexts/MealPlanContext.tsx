@@ -33,7 +33,7 @@ interface MealPlanContextType {
   generating: boolean;
   generationStage: GenerationStage;
   generationStatus: GenerationStatus;
-  generate: () => Promise<void>;
+  generate: (opts?: { pricingMode?: "kroger" | "estimated" }) => Promise<void>;
   history: MealPlanHistoryEntry[];
   historyLoading: boolean;
   loadHistory: () => Promise<void>;
@@ -178,7 +178,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (opts?: { pricingMode?: "kroger" | "estimated" }) => {
     if (!user) return;
 
     const startedAt = new Date().toISOString();
@@ -218,13 +218,28 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
-        body: {},
+        body: opts?.pricingMode ? { pricingMode: opts.pricingMode } : {},
       });
 
       await pollJob();
 
       if (error) {
         throw new Error(latestJob?.error_message || error.message);
+      }
+      // Budget-unfit gate: server returns 200 with structured error rather than
+      // saving an over-budget plan. Surface as a friendly toast and stop here.
+      if (data && (data as any).ok === false && (data as any).error_code === "budget_unfit") {
+        const msg = (data as any).error
+          || "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+        toast({ title: "Budget too tight", description: msg, variant: "destructive" });
+        setGenerationStage("idle");
+        setGenerationStatus((prev) => ({
+          ...prev,
+          errorCode: "budget_unfit",
+          errorMessage: msg,
+          statusMessage: msg,
+        }));
+        return;
       }
       if (data?.error) {
         throw new Error(data.error);
