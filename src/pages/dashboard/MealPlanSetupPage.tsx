@@ -157,6 +157,14 @@ export default function MealPlanSetupPage() {
   };
 
   const handleGenerate = async () => {
+    // Confirm before throwing away an existing plan — generation is expensive
+    // (OpenAI + Kroger pricing) and limited to 3 regenerations per hour.
+    if (mealPlan) {
+      const ok = window.confirm(
+        "You already have a meal plan and grocery list for this week.\n\nRegenerate and replace them?\n\nTo control costs, plan regenerations are limited to 3 per hour.",
+      );
+      if (!ok) return;
+    }
     // Strongly encourage Kroger connection for accurate pricing before generating.
     if (!krogerLoading && !krogerReady) {
       setKrogerPromptOpen(true);
