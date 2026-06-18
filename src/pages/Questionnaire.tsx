@@ -54,12 +54,6 @@ const ASSISTANCE_OPTIONS: { key: string; label: string }[] = [
   { key: "assistance_childcare", label: "Childcare" },
 ];
 
-const APOLLO_GOALS: { key: string; label: string }[] = [
-  { key: "goal_lose_weight", label: "Lose weight" },
-  { key: "goal_build_muscle", label: "Build muscle" },
-  { key: "goal_stay_active", label: "Stay active" },
-  { key: "goal_improve_mobility", label: "Improve mobility" },
-];
 
 const STORAGE_KEY = "hth_onboarding_progress";
 
