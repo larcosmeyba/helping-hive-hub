@@ -165,8 +165,8 @@ Deno.serve(async (req) => {
         }
         let parsed: any = null;
         try { parsed = JSON.parse(text); } catch { /* ignore */ }
-        const matched = parsed?.summary?.matched ?? parsed?.matched?.length ?? 0;
-        const total = parsed?.summary?.total ?? 3;
+        const matched = parsed?.totals?.matched ?? parsed?.matches?.filter((m: any) => m.status === "matched").length ?? 0;
+        const total = parsed?.matches?.length ?? 3;
         return `${matched}/${total} sample items matched`;
       }),
     );
