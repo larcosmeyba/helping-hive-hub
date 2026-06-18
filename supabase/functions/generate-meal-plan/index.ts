@@ -1284,6 +1284,147 @@ Deno.serve(async (req) => {
     const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
     const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
 
+    // ===== KROGER-PRICED BUDGET ENFORCEMENT =====
+    // When the user has connected Kroger and chosen a home store, the Kroger
+    // basket subtotal IS the budget the user pays. We run an additional swap
+    // loop targeting Kroger subtotal directly. If we cannot fit, we return a
+    // budget_unfit error without ever saving an over-budget plan.
+    const kroger = await getUserKrogerLocation(admin, userId);
+    const requestedPricingMode = (body?.pricingMode === "estimated" || body?.pricing_mode === "estimated")
+      ? "estimated"
+      : (kroger.connected && kroger.locationId ? "kroger" : "estimated");
+    let pricingMode: "kroger" | "estimated" = requestedPricingMode === "kroger" && kroger.connected && kroger.locationId
+      ? "kroger"
+      : "estimated";
+
+    let krogerSummary: {
+      subtotal: number;
+      matched_count: number;
+      unmatched_count: number;
+      location_id: string | null;
+      store_name: string | null;
+      lines: any[];
+    } | null = null;
+
+    if (pricingMode === "kroger" && kroger.locationId) {
+      await advance("saving", "kroger pricing requested", "Pulling live Kroger prices");
+      const MAX_KROGER_REPAIR = 5;
+      let krogerPriced = await priceBasketWithKroger(
+        admin, userId, kroger.locationId,
+        buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+      );
+
+      for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
+        if (krogerPriced.subtotal <= weeklyBudget) break;
+        await advance(
+          "saving", "kroger budget repair",
+          `Adjusting plan to fit your $${weeklyBudget} budget (Kroger subtotal $${krogerPriced.subtotal})`,
+          { attempt: attempt + 1, kroger_subtotal: krogerPriced.subtotal, budget: weeklyBudget },
+        );
+
+        // Score every placed meal by its Kroger-priced contribution.
+        const slotCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+        for (let di = 0; di < resolvedDays.length; di++) {
+          for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+            const recipe = resolvedDays[di].meals[mi].recipe;
+            const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+            let cost = 0;
+            for (const raw of ings) {
+              if (typeof raw !== "string") continue;
+              const parsed = parseIngredientString(raw);
+              if (!parsed.normalized) continue;
+              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+              const line = krogerPriced.lines.find((l: any) =>
+                String(l.name).toLowerCase() === String(parsed.item || raw).toLowerCase());
+              if (line) cost += Number(line.line_total ?? 0);
+            }
+            slotCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost });
+          }
+        }
+        slotCosts.sort((a, b) => b.cost - a.cost);
+
+        let swapped = false;
+        for (const slot of slotCosts) {
+          const pool = candidatesByType[slot.meal.meal_type] || [];
+          for (const cand of pool) {
+            if (usedRecipeIds2.has(cand.id)) continue;
+            if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+            const candDbCost = await recipeDbCost(cand);
+            // Prefer cheaper candidate by DB cost as a heuristic proxy.
+            if (candDbCost >= slot.cost * 0.9) continue;
+            const old = resolvedDays[slot.di].meals[slot.mi];
+            if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+            usedRecipeIds2.add(cand.id);
+            resolvedDays[slot.di].meals[slot.mi] = {
+              meal_type: old.meal_type, recipe: cand,
+              reason: "Swapped to fit your Kroger-priced weekly budget.",
+            };
+            swapped = true;
+            break;
+          }
+          if (swapped) break;
+        }
+        if (!swapped) break;
+
+        // Rebuild grocery list + reprice
+        const rebuilt = buildGroceryListAndBasket(resolvedDays);
+        groceryList = rebuilt.list;
+        buyItems = rebuilt.buy;
+        basket = await priceBasket(buyItems);
+        krogerPriced = await priceBasketWithKroger(
+          admin, userId, kroger.locationId,
+          buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+        );
+      }
+
+      krogerSummary = {
+        subtotal: krogerPriced.subtotal,
+        matched_count: krogerPriced.matched_count,
+        unmatched_count: krogerPriced.unmatched_count,
+        location_id: kroger.locationId,
+        store_name: kroger.storeName,
+        lines: krogerPriced.lines,
+      };
+
+      // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
+      if (krogerPriced.subtotal > weeklyBudget) {
+        const friendly =
+          "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+        await failJob("budget_unfit", friendly, {
+          kroger_subtotal: krogerPriced.subtotal,
+          weekly_budget: weeklyBudget,
+          unmatched_count: krogerPriced.unmatched_count,
+        });
+        return new Response(
+          JSON.stringify(structuredError("budget_unfit", friendly, {
+            job_id: jobId,
+            kroger_subtotal: krogerPriced.subtotal,
+            weekly_budget: weeklyBudget,
+          })),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // ===== INSTRUCTION ENFORCEMENT =====
+    // Every meal MUST have step-by-step instructions. Backfill obvious cases.
+    for (const day of resolvedDays) {
+      for (const m of day.meals) {
+        const r = m.recipe;
+        const instr = Array.isArray(r.instructions) ? r.instructions.filter((s: any) => typeof s === "string" && s.trim()) : [];
+        if (instr.length === 0) {
+          r.instructions = [
+            "Gather and measure all ingredients.",
+            "Heat a pan or pot over medium heat as needed for your main ingredient.",
+            "Cook proteins first until fully done; add vegetables and seasonings.",
+            "Combine all components, adjust seasoning to taste, and serve warm.",
+          ];
+        } else {
+          r.instructions = instr;
+        }
+      }
+    }
+
     const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
     let budgetWarningText: string | null = null;
     if (overBudgetAfterAdjust) {
