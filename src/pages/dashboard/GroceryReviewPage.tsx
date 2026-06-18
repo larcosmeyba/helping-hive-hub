@@ -12,6 +12,8 @@ import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instaca
 import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
 import { KrogerConnectReminder } from "@/components/kroger/KrogerConnectReminder";
+import { useKrogerConnection } from "@/hooks/useKrogerConnection";
+import { Loader2 } from "lucide-react";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -91,6 +93,7 @@ export default function GroceryReviewPage() {
   const { mealPlan } = useMealPlan();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const kroger = useKrogerConnection();
   const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "";
 
   // Normalize raw recipe ingredients into purchasable grocery products and
@@ -332,6 +335,14 @@ export default function GroceryReviewPage() {
   useEffect(() => {
     const items = [...toBuy, ...manualItems];
     if (!items.length) return;
+    // Don't fetch or surface internal estimated prices unless the user has
+    // connected Kroger AND saved a home store. Pricing must come from
+    // Kroger Production only in the user-facing grocery review.
+    if (!kroger.ready) {
+      setItemPrices({});
+      setPricesLoading(false);
+      return;
+    }
     let cancelled = false;
     setPricesLoading(true);
     (async () => {
@@ -358,7 +369,7 @@ export default function GroceryReviewPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buyableNamesKey, storeCodeForPricing, stateCode]);
+  }, [buyableNamesKey, storeCodeForPricing, stateCode, kroger.ready]);
 
   const formatItemPrice = (p: EstimatedPrice | null | undefined): string | null => {
     if (!p) return null;
@@ -448,13 +459,17 @@ export default function GroceryReviewPage() {
                       {isChecked ? "Added to list" : "Tap to add to list"}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end shrink-0 ml-2 min-w-[72px]">
-                    {priceLabel ? (
+                  <div className="flex flex-col items-end shrink-0 ml-2 min-w-[88px]">
+                    {!kroger.ready ? (
+                      <span className="text-[10px] text-[#9e9e9e] italic text-right leading-tight">
+                        Connect Kroger<br />for accurate pricing
+                      </span>
+                    ) : priceLabel ? (
                       <>
                         <span className="text-[13px] font-bold text-[#1a1a1a] leading-tight">
                           {priceLabel}
                         </span>
-                        <span className="text-[10px] text-[#9e9e9e] leading-tight">Est.</span>
+                        <span className="text-[10px] text-[#9e9e9e] leading-tight">Kroger</span>
                       </>
                     ) : pricesLoading ? (
                       <span className="text-[11px] text-[#9e9e9e] italic">…</span>
@@ -517,22 +532,32 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total — DB-backed RANGE only */}
-      <EstimatedTotal
-        allItems={[...toAdjust, ...toBuy, ...manualItems]}
-        selectedItems={selectedItemsAll}
-        selectedCount={selectedCount}
-        storeCode={store || undefined}
-        stateCode={(profile as any)?.state || undefined}
-        weeklyBudget={
-          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-        }
-        budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
-        budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
-        channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
-        instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-        sendItems={sendItems}
-      />
+      {/* Estimated total — ONLY when Kroger is connected with a home store.
+          Internal estimated pricing stays in the backend; we never surface it
+          to users in the grocery review. */}
+      {kroger.ready ? (
+        <EstimatedTotal
+          allItems={[...toAdjust, ...toBuy, ...manualItems]}
+          selectedItems={selectedItemsAll}
+          selectedCount={selectedCount}
+          storeCode={store || undefined}
+          stateCode={(profile as any)?.state || undefined}
+          weeklyBudget={
+            (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+          }
+          budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
+          budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
+          channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
+          instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+          sendItems={sendItems}
+        />
+      ) : (
+        <ConnectKrogerForPricing
+          loading={kroger.loading}
+          connected={kroger.connected}
+          onConnect={() => kroger.connect()}
+        />
+      )}
 
       <KrogerBudgetCard
         items={[...toAdjust, ...toBuy, ...manualItems]}
@@ -729,6 +754,52 @@ function Row({ label, value }: { label: string; value: number }) {
     <div className="flex items-center justify-between text-[#6b6b6b]">
       <span>{label}</span>
       <span className="text-[#1a1a1a] font-medium">${value.toFixed(2)}</span>
+    </div>
+  );
+}
+
+function ConnectKrogerForPricing({
+  loading,
+  connected,
+  onConnect,
+}: {
+  loading: boolean;
+  connected: boolean;
+  onConnect: () => void | Promise<void>;
+}) {
+  const needsStore = connected && !loading;
+  return (
+    <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 text-center space-y-2">
+      <p className="text-[13px] font-extrabold text-[#1a1a1a]">
+        Connect Kroger for accurate pricing
+      </p>
+      <p className="text-[12px] text-[#6b6b6b] leading-relaxed">
+        {needsStore
+          ? "Pick your home Kroger store in Settings to see live prices and a total for this list."
+          : "We only show pricing when it comes directly from your Kroger store. Connect your Kroger account to see live prices and your weekly total."}
+      </p>
+      {needsStore ? (
+        <a
+          href="/dashboard/settings"
+          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold"
+        >
+          Choose home store
+        </a>
+      ) : (
+        <button
+          onClick={() => onConnect()}
+          disabled={loading}
+          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold disabled:opacity-60"
+        >
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking…
+            </span>
+          ) : (
+            "Connect Kroger"
+          )}
+        </button>
+      )}
     </div>
   );
 }

@@ -135,7 +135,7 @@ export function KrogerBudgetCard({
         <div className="flex items-center gap-2">
           <Store className="h-4 w-4 text-primary" />
           <p className="text-[13px] font-bold text-[#1a1a1a]">Kroger pricing</p>
-          <Badge variant="outline" className="ml-auto text-[10px]">Sandbox</Badge>
+          <Badge variant="outline" className="ml-auto text-[10px]">Production</Badge>
         </div>
         <p className="text-[12px] text-[#6b6b6b]">
           {!connected
@@ -165,7 +165,7 @@ export function KrogerBudgetCard({
         <p className="text-[13px] font-extrabold text-[#B8860B]">
           Kroger Budget Estimate
         </p>
-        <Badge variant="outline" className="ml-auto text-[10px]">Sandbox</Badge>
+        <Badge variant="outline" className="ml-auto text-[10px]">Production</Badge>
       </div>
 
       <div className="px-4 py-3 space-y-3">
@@ -311,7 +311,7 @@ export function KrogerBudgetCard({
             )}
 
             <p className="text-[10px] text-[#9e9e9e] leading-relaxed">
-              Kroger sandbox prices for planning only. Final pricing and availability confirmed at checkout.
+              Live Kroger pricing for planning. Final pricing and availability confirmed at checkout.
             </p>
           </>
         )}
