@@ -121,8 +121,8 @@ export default function Questionnaire() {
   const [userLongitude, setUserLongitude] = useState<number | null>(null);
   const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
 
-  // SECTION 4 — Store (chosen from Instacart-supported retailers for this ZIP)
-  const [homeStore, setHomeStore] = useState<string>((localSeed.homeStore as string) || "");
+  // SECTION 4 (removed) — home store is no longer collected; we resolve the
+  // closest Kroger from the user's location after onboarding.
 
   // SECTION 5 — Family assistance
   const [assistance, setAssistance] = useState<BoolMap>((localSeed.assistance as BoolMap) || {});
