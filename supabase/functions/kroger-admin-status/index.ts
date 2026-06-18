@@ -73,8 +73,16 @@ Deno.serve(async (req) => {
     const totalAttempts = matchedN + failedN;
     const matchRate = totalAttempts > 0 ? Math.round((matchedN / totalAttempts) * 1000) / 10 : 0;
 
+    const certCreds = getKrogerCreds("certification");
+    const prodCreds = getKrogerCreds("production");
+
     return new Response(JSON.stringify({
       environment: env,
+      baseUrl: getKrogerBaseUrl(env),
+      credentials: {
+        certification: { configured: !!(certCreds.clientId && certCreds.clientSecret) },
+        production: { configured: !!(prodCreds.clientId && prodCreds.clientSecret) },
+      },
       apiStatus,
       apiError,
       appToken: tok,
