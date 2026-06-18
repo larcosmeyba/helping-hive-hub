@@ -12,6 +12,8 @@ import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instaca
 import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
 import { KrogerConnectReminder } from "@/components/kroger/KrogerConnectReminder";
+import { useKrogerConnection } from "@/hooks/useKrogerConnection";
+import { Loader2 } from "lucide-react";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
