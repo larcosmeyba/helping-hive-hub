@@ -192,6 +192,35 @@ export function recipeContainsAny(recipe: any, terms: string[]): boolean {
   });
 }
 
+// Choking-hazard terms for households with children under 5. Applied as
+// additional safety terms to the existing recipeContainsAny filter so they
+// scope BOTH library candidates and AI-authored new_meal entries.
+export const TODDLER_CHOKING_HAZARDS = [
+  "whole nuts", "peanuts", "almonds", "walnuts", "pecans", "cashews", "pistachios", "hazelnuts",
+  "popcorn", "whole grapes", "grapes", "hard candy", "candy", "gum", "marshmallows",
+  "hot dog", "hot dogs", "raw carrots", "whole olives", "cherry tomatoes",
+  "chunks of meat", "beef chunks", "steak chunks", "sausage rounds", "sausage coins",
+  "sunflower seeds", "pumpkin seeds",
+];
+
+const KID_FRIENDLY_KEYWORDS = [
+  "mac and cheese", "mac & cheese", "macaroni", "pasta", "spaghetti", "lasagna", "ravioli",
+  "taco", "tacos", "quesadilla", "quesadillas", "burrito", "burritos",
+  "pizza", "chicken nugget", "nuggets", "tender", "tenders", "meatball", "meatballs",
+  "grilled cheese", "sloppy joe", "sheet pan", "rice bowl", "chicken and rice",
+  "fried rice", "stir fry", "pancake", "waffle", "french toast", "oatmeal",
+  "breakfast burrito", "mini pizza", "scrambled egg",
+];
+
+export function isKidFriendlyRecipe(recipe: any): boolean {
+  if (recipe?.kid_friendly === true) return true;
+  if (recipe?.family_friendly === true) return true;
+  const tags = Array.isArray(recipe?.tags) ? recipe.tags.map((t: any) => String(t).toLowerCase()) : [];
+  if (tags.some((t: string) => t.includes("kid") || t === "family-friendly" || t === "family_friendly")) return true;
+  const text = `${recipe?.title ?? ""} ${recipe?.description ?? ""}`.toLowerCase();
+  return KID_FRIENDLY_KEYWORDS.some((k) => text.includes(k));
+}
+
 function freshness(item: any): string {
   if (!item.expiration_date) return item.is_low_stock ? "low_stock" : "good";
   const today = new Date(); today.setHours(0, 0, 0, 0);
