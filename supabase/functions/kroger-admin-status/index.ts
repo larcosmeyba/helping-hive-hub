@@ -2,7 +2,7 @@
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getAppToken, getKrogerEnv, getServiceClient } from "../_shared/kroger.ts";
+import { getAppToken, getKrogerBaseUrl, getKrogerCreds, getKrogerEnv, getServiceClient } from "../_shared/kroger.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
