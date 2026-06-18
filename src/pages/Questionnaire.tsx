@@ -288,6 +288,10 @@ export default function Questionnaire() {
         .filter((o) => dietary[o.key])
         .map((o) => o.label);
 
+      const allergyLabels = Object.keys(dietary)
+        .filter((k) => dietary[k] && DIETARY_TO_ALLERGY[k])
+        .map((k) => DIETARY_TO_ALLERGY[k]);
+
       const hasYoungKids = childrenUnder5 > 0;
 
       const { error } = await supabase.from("profiles").update({
