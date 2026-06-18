@@ -7,6 +7,7 @@ import bowlImg from "@/assets/home-bowl.png";
 import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
+import { FamilyAssistancePrompt } from "@/components/dashboard/FamilyAssistancePrompt";
 
 // Bundled in /public so the native (Capacitor) app can load them locally.
 // CDN pointers under /__l5e/ only resolve on Lovable web hosts.
@@ -41,6 +42,9 @@ export default function DashboardHome() {
           Let's save money, eat better, and feel your best.
         </p>
       </div>
+
+      <FamilyAssistancePrompt />
+
 
       {/* Section heading */}
       <h2 className="text-[15px] font-bold text-[#1a1a1a] mt-5 mb-3">
