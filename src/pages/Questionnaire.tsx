@@ -223,7 +223,7 @@ export default function Questionnaire() {
     user, hydrated, step,
     householdSize, childrenUnder5, children5to12, teenagers, seniors65plus,
     weeklyBudget, budgetTouched, zipCode, locationCity, locationState,
-    homeStore, assistance, dietary, cookingConfidence, pantryStarter,
+    assistance, dietary, cookingConfidence, pantryStarter,
     foodWasteAlerts, foodWasteSuggestions,
   ]);
 
