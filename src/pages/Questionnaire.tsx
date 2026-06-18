@@ -176,7 +176,7 @@ export default function Questionnaire() {
           if (typeof dbProgress.seniors65plus === "number") setSeniors65plus(dbProgress.seniors65plus);
           if (typeof dbProgress.weeklyBudget === "number") setWeeklyBudget(dbProgress.weeklyBudget);
           if (typeof dbProgress.budgetTouched === "boolean") setBudgetTouched(dbProgress.budgetTouched);
-          if (typeof dbProgress.homeStore === "string") setHomeStore(dbProgress.homeStore);
+          // homeStore intentionally ignored — no longer collected
           if (typeof dbProgress.zipCode === "string") setZipCode(dbProgress.zipCode);
           if (typeof dbProgress.locationCity === "string") setLocationCity(dbProgress.locationCity);
           if (typeof dbProgress.locationState === "string") setLocationState(dbProgress.locationState);
