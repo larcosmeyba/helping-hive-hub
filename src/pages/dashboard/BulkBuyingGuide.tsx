@@ -53,17 +53,7 @@ export default function BulkBuyingGuide() {
         </p>
       </div>
 
-      {/* Shop at Kroger CTA */}
-      <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0px 4px 12px rgba(0,0,0,0.03)" }}>
-        <SendToInstacartButton
-          title="Bulk Buying — Help The Hive"
-          lineItems={selectedLineItems}
-          label="Shop at Kroger"
-        />
-        <p className="text-[11px] text-muted-foreground text-center mt-2">
-          Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.
-        </p>
-      </div>
+      {/* Shop-at-Kroger CTA removed — bring this list with you to your Kroger store. */}
 
       <div className="space-y-3">
         {BULK_BUYING_ITEMS.map((item) => {
