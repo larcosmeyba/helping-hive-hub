@@ -310,13 +310,12 @@ export default function Questionnaire() {
         state: locationState || null,
         latitude: userLatitude,
         longitude: userLongitude,
-        // Store
-        home_store: homeStore,
-        preferred_stores: homeStore ? [homeStore] : [],
+        // Store — no longer collected; closest Kroger is resolved from user location
         // Assistance
         ...assistanceCols,
-        // Dietary
+        // Dietary + Allergies
         dietary_preferences: dietaryPrefs,
+        allergies: allergyLabels,
         // Cooking
         cooking_confidence: cookingConfidence || null,
         // Food waste
