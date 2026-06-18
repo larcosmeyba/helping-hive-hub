@@ -7,6 +7,11 @@ import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Status {
   environment: "certification" | "production";
+  baseUrl?: string;
+  credentials?: {
+    certification: { configured: boolean };
+    production: { configured: boolean };
+  };
   apiStatus: "ok" | "error";
   apiError: string | null;
   appToken: { expires_at: string; scope: string } | null;
