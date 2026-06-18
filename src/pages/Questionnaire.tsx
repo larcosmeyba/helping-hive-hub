@@ -16,8 +16,8 @@ import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
 import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
-// 1 welcome + 11 onboarding sections
-const TOTAL_STEPS = 11;
+// 1 welcome + 10 onboarding sections
+const TOTAL_STEPS = 10;
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -54,12 +54,6 @@ const ASSISTANCE_OPTIONS: { key: string; label: string }[] = [
   { key: "assistance_childcare", label: "Childcare" },
 ];
 
-const APOLLO_GOALS: { key: string; label: string }[] = [
-  { key: "goal_lose_weight", label: "Lose weight" },
-  { key: "goal_build_muscle", label: "Build muscle" },
-  { key: "goal_stay_active", label: "Stay active" },
-  { key: "goal_improve_mobility", label: "Improve mobility" },
-];
 
 const STORAGE_KEY = "hth_onboarding_progress";
 
@@ -138,10 +132,6 @@ export default function Questionnaire() {
   const [foodWasteAlerts, setFoodWasteAlerts] = useState<boolean>((localSeed.foodWasteAlerts as boolean) ?? true);
   const [foodWasteSuggestions, setFoodWasteSuggestions] = useState<boolean>((localSeed.foodWasteSuggestions as boolean) ?? true);
 
-  // SECTION 10 — Apollo goals (renumbered after Plaid removal)
-
-  // SECTION 11 — Apollo goals
-  const [goals, setGoals] = useState<BoolMap>((localSeed.goals as BoolMap) || {});
 
   const [loading, setLoading] = useState(false);
   const zipValidation = useZipValidation(zipCode);
@@ -188,8 +178,6 @@ export default function Questionnaire() {
           if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
           if (typeof dbProgress.foodWasteAlerts === "boolean") setFoodWasteAlerts(dbProgress.foodWasteAlerts);
           if (typeof dbProgress.foodWasteSuggestions === "boolean") setFoodWasteSuggestions(dbProgress.foodWasteSuggestions);
-          
-          if (dbProgress.goals && typeof dbProgress.goals === "object") setGoals(dbProgress.goals as BoolMap);
         }
         setHydrated(true);
       })
@@ -210,7 +198,6 @@ export default function Questionnaire() {
       assistance, dietary,
       cookingConfidence, pantryStarter,
       foodWasteAlerts, foodWasteSuggestions,
-      goals,
     };
     saveLocalProgress(progress);
     if (!user || !hydrated) return;
@@ -229,7 +216,7 @@ export default function Questionnaire() {
     householdSize, childrenUnder5, children5to12, teenagers, seniors65plus,
     weeklyBudget, budgetTouched, zipCode, locationCity, locationState,
     homeStore, assistance, dietary, cookingConfidence, pantryStarter,
-    foodWasteAlerts, foodWasteSuggestions, goals,
+    foodWasteAlerts, foodWasteSuggestions,
   ]);
 
   const toggleBool = (map: BoolMap, key: string, setter: (m: BoolMap) => void) => {
@@ -289,11 +276,6 @@ export default function Questionnaire() {
         return acc;
       }, {} as Record<string, boolean>);
 
-      const goalCols = APOLLO_GOALS.reduce((acc, o) => {
-        acc[o.key] = !!goals[o.key];
-        return acc;
-      }, {} as Record<string, boolean>);
-
       const dietaryPrefs = DIETARY_OPTIONS
         .filter((o) => dietary[o.key])
         .map((o) => o.label);
@@ -328,8 +310,6 @@ export default function Questionnaire() {
         // Food waste
         food_waste_alerts_enabled: foodWasteAlerts,
         food_waste_recipe_suggestions_enabled: foodWasteSuggestions,
-        // Apollo
-        ...goalCols,
         // Onboarding
         questionnaire_completed: true,
         onboarding_completed_at: new Date().toISOString(),
@@ -347,8 +327,6 @@ export default function Questionnaire() {
         pantry_starter_count: pantryStarter.length,
         dietary_preferences: dietaryPrefs,
         assistance_count: Object.values(assistanceCols).filter(Boolean).length,
-        apollo_goals_count: Object.values(goalCols).filter(Boolean).length,
-        
       });
 
       clearProgress();
@@ -646,12 +624,14 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 10 — Section 9: Food waste */}
+      {/* STEP 10 — Section 9: Food waste + finish */}
       {step === 10 && (
         <QuestionnaireStep step={10} totalSteps={TOTAL_STEPS}
           title="Help us cut food waste in your kitchen?"
           subtitle="Hive Assistant can warn you before things spoil and suggest recipes."
-          onNext={next} onBack={back}
+          onNext={handleSubmit} onBack={back}
+          nextLabel={loading ? "Setting up..." : "Finish & See My Plan →"}
+          loading={loading}
         >
           <div className="mt-6 space-y-3">
             <div className="flex items-center justify-between bg-card border border-border rounded-2xl px-4 py-4">
@@ -668,25 +648,6 @@ export default function Questionnaire() {
               </div>
               <Switch checked={foodWasteSuggestions} onCheckedChange={setFoodWasteSuggestions} />
             </div>
-          </div>
-        </QuestionnaireStep>
-      )}
-
-      {/* STEP 11 — Section 10: Apollo goals + finish */}
-      {step === 11 && (
-        <QuestionnaireStep step={11} totalSteps={TOTAL_STEPS}
-          title="Any wellness goals?"
-          subtitle="Optional — Apollo Reborn uses these for personalized recommendations."
-          onNext={handleSubmit} onBack={back}
-          nextLabel={loading ? "Setting up..." : "Finish & See My Plan →"}
-          loading={loading}
-        >
-          <div className="flex flex-wrap gap-2.5 mt-4">
-            {APOLLO_GOALS.map((opt) => (
-              <MultiChip key={opt.key} label={opt.label}
-                selected={!!goals[opt.key]}
-                onClick={() => toggleBool(goals, opt.key, setGoals)} />
-            ))}
           </div>
 
           <div className="flex flex-col items-center mt-8 space-y-4">
@@ -707,6 +668,7 @@ export default function Questionnaire() {
           </div>
         </QuestionnaireStep>
       )}
+
     </div>
   );
 }
