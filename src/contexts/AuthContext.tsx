@@ -126,7 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { display_name: displayName },
-        emailRedirectTo: getAppUrl(),
+        // Always route to the web /auth/confirm landing page. That page
+        // completes verification on the web AND offers a deep-link button
+        // (com.helpthehive://auth/confirm) to bounce native-app users back
+        // into the installed app with their session tokens.
+        emailRedirectTo: `${getAppUrl()}/auth/confirm`,
       },
     });
     if (error) throw error;
