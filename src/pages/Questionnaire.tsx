@@ -178,8 +178,6 @@ export default function Questionnaire() {
           if (Array.isArray(dbProgress.pantryStarter)) setPantryStarter(dbProgress.pantryStarter as string[]);
           if (typeof dbProgress.foodWasteAlerts === "boolean") setFoodWasteAlerts(dbProgress.foodWasteAlerts);
           if (typeof dbProgress.foodWasteSuggestions === "boolean") setFoodWasteSuggestions(dbProgress.foodWasteSuggestions);
-          
-          if (dbProgress.goals && typeof dbProgress.goals === "object") setGoals(dbProgress.goals as BoolMap);
         }
         setHydrated(true);
       })
