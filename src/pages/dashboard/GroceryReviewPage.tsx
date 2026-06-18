@@ -93,6 +93,7 @@ export default function GroceryReviewPage() {
   const { mealPlan } = useMealPlan();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const kroger = useKrogerConnection();
   const store = profile?.home_store ?? mealPlan?.storeRecommendations?.[0]?.store ?? "";
 
   // Normalize raw recipe ingredients into purchasable grocery products and
