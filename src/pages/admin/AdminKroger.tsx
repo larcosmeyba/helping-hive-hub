@@ -43,12 +43,31 @@ interface Status {
 export default function AdminKroger() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
+  const [smoke, setSmoke] = useState<SmokeResult | null>(null);
+  const [smokeLoading, setSmokeLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase.functions.invoke("kroger-admin-status", { body: {} });
     setStatus(data as Status);
     setLoading(false);
+  };
+  const runSmoke = async () => {
+    setSmokeLoading(true);
+    const { data, error } = await supabase.functions.invoke("kroger-smoke-test", { body: {} });
+    if (error) {
+      setSmoke({
+        environment: status?.environment ?? "?",
+        baseUrl: status?.baseUrl ?? "",
+        overall: "fail",
+        ranAt: new Date().toISOString(),
+        lastSuccessfulApiCall: null,
+        checks: [{ name: "Smoke test", status: "fail", detail: error.message }],
+      });
+    } else {
+      setSmoke(data as SmokeResult);
+    }
+    setSmokeLoading(false);
   };
   useEffect(() => { load(); }, []);
 
