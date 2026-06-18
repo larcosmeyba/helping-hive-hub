@@ -27,7 +27,7 @@ export default function Signup() {
     try {
       await signUp(email, password, displayName);
       toast({ title: "Account created!", description: "Please check your email to verify your account." });
-      navigate("/questionnaire");
+      navigate("/onboarding/kroger");
     } catch (err) {
       // Map known errors to safe strings; never surface raw provider messages
       // (avoids leaking account-exists hints, weak-password specifics, etc.).
