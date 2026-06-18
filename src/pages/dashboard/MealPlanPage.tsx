@@ -602,26 +602,6 @@ function ActionCard({ icon: Icon, label, sub, onClick, disabled }: { icon: any; 
   );
 }
 
-function InstacartActionCard({ title, lineItems }: { title: string; lineItems: { name: string; quantity?: number; display_text?: string }[] }) {
-  return (
-    <div className="bg-white border border-[#EEE7DA] rounded-2xl p-3 flex flex-col items-start gap-1.5">
-      <div className="w-8 h-8 rounded-full bg-[#FFE9D6] flex items-center justify-center">
-        <ShoppingCart className="w-4 h-4 text-[#E07A1F]" />
-      </div>
-      <p className="font-bold text-[12px] md:text-[13px] text-[#1a1a1a] leading-tight">Shop at Kroger</p>
-      <p className="text-[10px] md:text-[11px] text-[#6a6a6a] leading-tight">Shop in one click</p>
-      <SendToInstacartButton
-        title={title}
-        lineItems={lineItems}
-        variant="dark"
-        label="Shop at Kroger"
-        fullWidth
-        showExternalIcon={false}
-        className="mt-1 !h-8 !text-[11px] !px-2"
-      />
-    </div>
-  );
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
