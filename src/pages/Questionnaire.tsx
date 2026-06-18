@@ -669,41 +669,6 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-      {/* STEP 11 — Section 10: Apollo goals + finish */}
-      {step === 11 && (
-        <QuestionnaireStep step={11} totalSteps={TOTAL_STEPS}
-          title="Any wellness goals?"
-          subtitle="Optional — Apollo Reborn uses these for personalized recommendations."
-          onNext={handleSubmit} onBack={back}
-          nextLabel={loading ? "Setting up..." : "Finish & See My Plan →"}
-          loading={loading}
-        >
-          <div className="flex flex-wrap gap-2.5 mt-4">
-            {APOLLO_GOALS.map((opt) => (
-              <MultiChip key={opt.key} label={opt.label}
-                selected={!!goals[opt.key]}
-                onClick={() => toggleBool(goals, opt.key, setGoals)} />
-            ))}
-          </div>
-
-          <div className="flex flex-col items-center mt-8 space-y-4">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}
-              className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-primary" />
-            </motion.div>
-            <div className="text-center space-y-2 max-w-xs">
-              <p className="text-sm text-foreground leading-relaxed">
-                Your first meal plan will fit your <strong>${weeklyBudget}/week</strong> budget
-                {homeStore && <> at <strong>{homeStore}</strong></>}
-                {householdSize > 0 && <>, for <strong>{householdSize} {householdSize === 1 ? "person" : "people"}</strong></>}.
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
-              <Sparkles className="w-3.5 h-3.5" /> Free for every family — forever
-            </div>
-          </div>
-        </QuestionnaireStep>
-      )}
     </div>
   );
 }
