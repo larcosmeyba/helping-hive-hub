@@ -97,8 +97,6 @@ export default function GroceryListPage() {
 
   // (Legacy ?from=instacart return-flow removed — no external checkout handoff.)
 
-  }, []);
-
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
       <div className="max-w-4xl mx-auto px-4">
