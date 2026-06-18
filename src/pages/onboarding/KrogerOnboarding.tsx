@@ -58,11 +58,24 @@ export default function KrogerOnboarding() {
   const connect = async () => {
     setWorking(true);
     try {
+      // On native, route Kroger's OAuth redirect to a web landing page that
+      // deep-links the user back into the installed app via
+      // com.helpthehive://. On web, stay on the onboarding screen.
+      const { Capacitor } = await import("@capacitor/core");
+      const isNative = Capacitor.isNativePlatform();
+      const redirectAfter = isNative ? "/oauth/kroger/return" : "/onboarding/kroger";
       const { data, error } = await supabase.functions.invoke("kroger-oauth-start", {
-        body: { redirectAfter: "/onboarding/kroger" },
+        body: { redirectAfter },
       });
       if (error || !data?.authorizeUrl) throw error ?? new Error("No URL");
-      window.location.href = data.authorizeUrl;
+      // Use the system browser on native so OAuth doesn't trap the user inside
+      // the webview with no way back (Kroger's domain isn't in our app).
+      if (isNative) {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: data.authorizeUrl });
+      } else {
+        window.location.href = data.authorizeUrl;
+      }
     } catch (e) {
       toast({
         title: "Could not start Kroger sign-in",

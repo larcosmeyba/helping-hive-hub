@@ -33,6 +33,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const NativeAuth = lazy(() => import("./pages/NativeAuth.tsx"));
 const NativeSplash = lazy(() => import("./pages/NativeSplash.tsx"));
 const AuthConfirm = lazy(() => import("./pages/AuthConfirm.tsx"));
+const KrogerOAuthReturn = lazy(() => import("./pages/KrogerOAuthReturn.tsx"));
 
 const DashboardLayout = lazy(() => import("./pages/dashboard/DashboardLayout.tsx"));
 const DashboardHome = lazy(() => import("./pages/dashboard/DashboardHome.tsx"));
@@ -136,6 +137,7 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/auth/confirm" element={<AuthConfirm />} />
+                  <Route path="/oauth/kroger/return" element={<KrogerOAuthReturn />} />
                   <Route path="/onboarding/kroger" element={<ProtectedRoute><KrogerOnboarding /></ProtectedRoute>} />
                   <Route path="/questionnaire" element={<ProtectedRoute><Questionnaire /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

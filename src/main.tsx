@@ -25,12 +25,32 @@ CapacitorApp.addListener("appStateChange", async ({ isActive }) => {
   }
 });
 
-// Handle deep links from email verification / password reset:
+// Handle deep links into the native app:
 //   com.helpthehive://auth/confirm#access_token=...&refresh_token=...&type=...
-// The web /auth/confirm page bounces here so the native app gets the session.
+//      → email verification / password reset bouncing back from the web.
+//   com.helpthehive://oauth/kroger/return?kroger=connected
+//      → Kroger OAuth bouncing back from the system browser.
 CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
   try {
     if (!url.startsWith("com.helpthehive://")) return;
+    const parsed = new URL(url);
+    const path = parsed.host + parsed.pathname; // e.g. "auth/confirm" or "oauth/kroger/return"
+
+    // Kroger OAuth bounce — token is already saved server-side by the
+    // kroger-oauth-callback edge function. Close the in-app browser (if open)
+    // and route to /onboarding/kroger so the existing flow detects the
+    // connection and advances to the store picker.
+    if (path.startsWith("oauth/kroger/return")) {
+      try {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.close();
+      } catch { /* browser may already be closed */ }
+      const status = parsed.searchParams.get("kroger") ?? "connected";
+      window.location.replace(`/onboarding/kroger?kroger=${encodeURIComponent(status)}`);
+      return;
+    }
+
+    // Auth (email verification / password reset) — tokens come in the hash.
     const hashIdx = url.indexOf("#");
     if (hashIdx === -1) return;
     const params = new URLSearchParams(url.slice(hashIdx + 1));
@@ -43,7 +63,7 @@ CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
       window.location.replace(dest);
     }
   } catch (err) {
-    console.warn("[DeepLink] failed to handle auth url:", err);
+    console.warn("[DeepLink] failed to handle url:", err);
   }
 });
 
