@@ -23,7 +23,8 @@ type GenerationErrorCode =
   | "openai_timeout"
   | "invalid_ai_json"
   | "database_insert_failed"
-  | "grocery_list_failed";
+  | "grocery_list_failed"
+  | "budget_unfit";
 
 const BACKEND_STEPS: Record<JobStage, string[]> = {
   preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "recipe candidates fetched", "meal_plan_context created"],
