@@ -333,7 +333,6 @@ export default function Questionnaire() {
       trackEvent("onboarding_completed", {
         household_size: householdSize,
         weekly_budget: weeklyBudget,
-        home_store: homeStore,
         cooking_confidence: cookingConfidence,
         pantry_starter_count: pantryStarter.length,
         dietary_preferences: dietaryPrefs,
