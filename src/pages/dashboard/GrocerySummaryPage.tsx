@@ -58,7 +58,7 @@ export default function GrocerySummaryPage() {
             Generate a meal plan and we'll build your grocery list automatically.
           </p>
           <button
-            onClick={generate}
+            onClick={() => generate()}
             disabled={generating}
             className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-[#1F5A3D] text-white font-semibold text-sm disabled:opacity-60"
           >

@@ -159,7 +159,7 @@ export default function MealPlanPage() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Hive AI builds a 6-day meal plan and grocery list tuned to your budget, household, and pantry. Takes about 15 seconds.
           </p>
-          <Button onClick={generate} disabled={generating} className="bg-[#F2A900] text-white hover:bg-[#E09F00] h-12 px-6 rounded-xl">
+          <Button onClick={() => generate()} disabled={generating} className="bg-[#F2A900] text-white hover:bg-[#E09F00] h-12 px-6 rounded-xl">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : "Generate Meal Plan"}
           </Button>
         </div>
@@ -220,6 +220,14 @@ export default function MealPlanPage() {
           <History className="w-3.5 h-3.5" /> Past Plans
         </button>
       </div>
+
+      {(mealPlan as any)?.pricingAccuracyReduced && (
+        <div className="bg-[#FFF6E1] border border-[#F2D78A] rounded-2xl p-3 text-[12px] text-[#5a4a1a]">
+          <span className="font-bold">Pricing accuracy reduced.</span> This plan uses estimated prices.
+          Connect your Kroger account to budget against live store pricing.
+        </div>
+      )}
+
 
 
 

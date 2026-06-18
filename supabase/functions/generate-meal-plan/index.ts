@@ -6,6 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
+import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 
 interface Overrides {
   budget?: number;
@@ -22,7 +23,8 @@ type GenerationErrorCode =
   | "openai_timeout"
   | "invalid_ai_json"
   | "database_insert_failed"
-  | "grocery_list_failed";
+  | "grocery_list_failed"
+  | "budget_unfit";
 
 const BACKEND_STEPS: Record<JobStage, string[]> = {
   preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "recipe candidates fetched", "meal_plan_context created"],
@@ -49,6 +51,22 @@ OTHER RULES:
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
 - Stay within the weekly grocery budget.
+
+FAMILY & CHILD RULES (binding):
+- "household.adults_count", "household.children_ages_5_to_12", "household.babies_under_5" are present in the context. Servings must be sized for adults_count + children_5_to_12 (toddlers eat from the same pot at reduced portions).
+- If children_5_to_12 > 0, AT LEAST 3 of the 21 meals across the week MUST be classic kid-friendly: chicken tacos, pasta dishes, breakfast burritos, rice bowls, sheet pan meals, mac & cheese, quesadillas, meatballs. Note this in the meal "reason".
+- If babies_under_5 > 0, the new_meal you create may NOT rely on hard-to-chew or choking-hazard whole foods (whole nuts, popcorn, whole grapes, large meat chunks).
+
+COOKING SKILL RULES (binding):
+- "cooking_confidence" is one of: beginner, intermediate, advanced.
+- beginner: every meal must be ≤8 ingredients total, prep+cook ≤30 min, instructions ≤6 steps, no specialty techniques.
+- intermediate: ≤12 ingredients, prep+cook ≤45 min.
+- advanced: no restriction.
+
+RECIPE OUTPUT RULES (binding):
+- For every new_meal you create, "instructions" MUST be a non-empty array of clear, numbered step-by-step cooking actions ("Heat skillet over medium heat", "Add olive oil and onions", "Cook 3-5 minutes", etc.). Empty or single-line instructions are NOT acceptable.
+- Include prep_time_minutes and cook_time_minutes for every new_meal.
+
 - Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
 - When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
 - Output ONLY the structured tool call.`;
@@ -594,12 +612,20 @@ Deno.serve(async (req) => {
     const mealPlanContext = {
       user_id: userId,
       household_size: householdSize,
+      household: {
+        adults_count: Number((profile as any).adults_count ?? Math.max(1, householdSize - Number((profile as any).children_5_to_12 ?? 0) - Number((profile as any).children_under_5 ?? 0))),
+        children_5_to_12: Number((profile as any).children_5_to_12 ?? 0),
+        babies_under_5: Number((profile as any).children_under_5 ?? 0),
+        teenagers: Number((profile as any).teenagers ?? 0),
+        seniors_65_plus: Number((profile as any).seniors_65_plus ?? 0),
+        children_ages: (profile as any).children_ages ?? [],
+      },
       weekly_grocery_budget: weeklyBudget,
       zip_code: profile.zip_code ?? null,
       preferred_store: overrides.store ?? homeStore?.retailer_name ?? profile.home_store ?? null,
       dietary_preferences: dietaryPrefs,
       allergies,
-      cooking_confidence: profile.cooking_confidence ?? "medium",
+      cooking_confidence: profile.cooking_confidence ?? "intermediate",
       pantry_items: pantryOnly.slice(0, 50),
       fridge_items: fridgeItems.slice(0, 30),
       expiring_soon_items: expiringSoon,
@@ -1258,6 +1284,147 @@ Deno.serve(async (req) => {
     const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
     const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
 
+    // ===== KROGER-PRICED BUDGET ENFORCEMENT =====
+    // When the user has connected Kroger and chosen a home store, the Kroger
+    // basket subtotal IS the budget the user pays. We run an additional swap
+    // loop targeting Kroger subtotal directly. If we cannot fit, we return a
+    // budget_unfit error without ever saving an over-budget plan.
+    const kroger = await getUserKrogerLocation(admin, userId);
+    const requestedPricingMode = (body?.pricingMode === "estimated" || body?.pricing_mode === "estimated")
+      ? "estimated"
+      : (kroger.connected && kroger.locationId ? "kroger" : "estimated");
+    let pricingMode: "kroger" | "estimated" = requestedPricingMode === "kroger" && kroger.connected && kroger.locationId
+      ? "kroger"
+      : "estimated";
+
+    let krogerSummary: {
+      subtotal: number;
+      matched_count: number;
+      unmatched_count: number;
+      location_id: string | null;
+      store_name: string | null;
+      lines: any[];
+    } | null = null;
+
+    if (pricingMode === "kroger" && kroger.locationId) {
+      await advance("saving", "kroger pricing requested", "Pulling live Kroger prices");
+      const MAX_KROGER_REPAIR = 5;
+      let krogerPriced = await priceBasketWithKroger(
+        admin, userId, kroger.locationId,
+        buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+      );
+
+      for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
+        if (krogerPriced.subtotal <= weeklyBudget) break;
+        await advance(
+          "saving", "kroger budget repair",
+          `Adjusting plan to fit your $${weeklyBudget} budget (Kroger subtotal $${krogerPriced.subtotal})`,
+          { attempt: attempt + 1, kroger_subtotal: krogerPriced.subtotal, budget: weeklyBudget },
+        );
+
+        // Score every placed meal by its Kroger-priced contribution.
+        const slotCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
+        for (let di = 0; di < resolvedDays.length; di++) {
+          for (let mi = 0; mi < resolvedDays[di].meals.length; mi++) {
+            const recipe = resolvedDays[di].meals[mi].recipe;
+            const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+            let cost = 0;
+            for (const raw of ings) {
+              if (typeof raw !== "string") continue;
+              const parsed = parseIngredientString(raw);
+              if (!parsed.normalized) continue;
+              if (pantryHas(parsed.normalized, pantryNormalized)) continue;
+              const line = krogerPriced.lines.find((l: any) =>
+                String(l.name).toLowerCase() === String(parsed.item || raw).toLowerCase());
+              if (line) cost += Number(line.line_total ?? 0);
+            }
+            slotCosts.push({ di, mi, meal: resolvedDays[di].meals[mi], cost });
+          }
+        }
+        slotCosts.sort((a, b) => b.cost - a.cost);
+
+        let swapped = false;
+        for (const slot of slotCosts) {
+          const pool = candidatesByType[slot.meal.meal_type] || [];
+          for (const cand of pool) {
+            if (usedRecipeIds2.has(cand.id)) continue;
+            if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) continue;
+            const candDbCost = await recipeDbCost(cand);
+            // Prefer cheaper candidate by DB cost as a heuristic proxy.
+            if (candDbCost >= slot.cost * 0.9) continue;
+            const old = resolvedDays[slot.di].meals[slot.mi];
+            if (old.recipe?.id) usedRecipeIds2.delete(old.recipe.id);
+            usedRecipeIds2.add(cand.id);
+            resolvedDays[slot.di].meals[slot.mi] = {
+              meal_type: old.meal_type, recipe: cand,
+              reason: "Swapped to fit your Kroger-priced weekly budget.",
+            };
+            swapped = true;
+            break;
+          }
+          if (swapped) break;
+        }
+        if (!swapped) break;
+
+        // Rebuild grocery list + reprice
+        const rebuilt = buildGroceryListAndBasket(resolvedDays);
+        groceryList = rebuilt.list;
+        buyItems = rebuilt.buy;
+        basket = await priceBasket(buyItems);
+        krogerPriced = await priceBasketWithKroger(
+          admin, userId, kroger.locationId,
+          buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+        );
+      }
+
+      krogerSummary = {
+        subtotal: krogerPriced.subtotal,
+        matched_count: krogerPriced.matched_count,
+        unmatched_count: krogerPriced.unmatched_count,
+        location_id: kroger.locationId,
+        store_name: kroger.storeName,
+        lines: krogerPriced.lines,
+      };
+
+      // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
+      if (krogerPriced.subtotal > weeklyBudget) {
+        const friendly =
+          "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+        await failJob("budget_unfit", friendly, {
+          kroger_subtotal: krogerPriced.subtotal,
+          weekly_budget: weeklyBudget,
+          unmatched_count: krogerPriced.unmatched_count,
+        });
+        return new Response(
+          JSON.stringify(structuredError("budget_unfit", friendly, {
+            job_id: jobId,
+            kroger_subtotal: krogerPriced.subtotal,
+            weekly_budget: weeklyBudget,
+          })),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // ===== INSTRUCTION ENFORCEMENT =====
+    // Every meal MUST have step-by-step instructions. Backfill obvious cases.
+    for (const day of resolvedDays) {
+      for (const m of day.meals) {
+        const r = m.recipe;
+        const instr = Array.isArray(r.instructions) ? r.instructions.filter((s: any) => typeof s === "string" && s.trim()) : [];
+        if (instr.length === 0) {
+          r.instructions = [
+            "Gather and measure all ingredients.",
+            "Heat a pan or pot over medium heat as needed for your main ingredient.",
+            "Cook proteins first until fully done; add vegetables and seasonings.",
+            "Combine all components, adjust seasoning to taste, and serve warm.",
+          ];
+        } else {
+          r.instructions = instr;
+        }
+      }
+    }
+
     const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
     let budgetWarningText: string | null = null;
     if (overBudgetAfterAdjust) {
@@ -1318,6 +1485,13 @@ Deno.serve(async (req) => {
       in_store_only_total: finalInStoreTotals.delivered_total,
       as_of_date: finalDeliveredTotals.as_of_date,
     };
+    (normalized as any).pricingMode = pricingMode;
+    (normalized as any).krogerPricing = krogerSummary;
+    (normalized as any).krogerConnected = kroger.connected;
+    (normalized as any).krogerStoreName = kroger.storeName;
+    (normalized as any).pricingAccuracyReduced = pricingMode === "estimated";
+
+
 
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
@@ -1523,7 +1697,9 @@ Deno.serve(async (req) => {
         grocery_list_id: glRow.id,
         ...normalized,
         why_this_plan: parsed.why_this_plan ?? {},
-        pricing_disclaimer: "Estimated pricing for planning only. Final pricing and availability are confirmed at Instacart checkout.",
+        pricing_disclaimer: pricingMode === "kroger"
+          ? "Prices reflect live Kroger pricing for your home store. Final pricing is confirmed at checkout."
+          : "Estimated pricing for planning only. Connect Kroger for live store pricing.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

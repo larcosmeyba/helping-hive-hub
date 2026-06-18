@@ -108,7 +108,7 @@ export default function GroceryListPage() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Generate a meal plan and we'll build a categorized, store-tailored grocery list with estimated prices.
           </p>
-          <Button onClick={generate} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 px-6 rounded-xl">
+          <Button onClick={() => generate()} disabled={generating} className="bg-gradient-honey text-primary-foreground hover:opacity-90 h-12 px-6 rounded-xl">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Meal Plan</>}
           </Button>
         </div>

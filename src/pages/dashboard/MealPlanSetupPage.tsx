@@ -147,13 +147,13 @@ export default function MealPlanSetupPage() {
     }
   };
 
-  const runGenerate = async () => {
+  const runGenerate = async (mode?: "kroger" | "estimated") => {
     try {
       localStorage.setItem(SELECTED_PANTRY_KEY, JSON.stringify([...selectedPantry]));
       localStorage.setItem(SELECTED_FRIDGE_KEY, JSON.stringify([...selectedFridge]));
     } catch { /* ignore */ }
     navigate("/dashboard/meal-plan/generating");
-    await generate();
+    await generate(mode ? { pricingMode: mode } : undefined);
   };
 
   const handleGenerate = async () => {
@@ -162,7 +162,7 @@ export default function MealPlanSetupPage() {
       setKrogerPromptOpen(true);
       return;
     }
-    await runGenerate();
+    await runGenerate("kroger");
   };
 
 
@@ -290,7 +290,7 @@ export default function MealPlanSetupPage() {
       <KrogerRequiredDialog
         open={krogerPromptOpen}
         onOpenChange={setKrogerPromptOpen}
-        onContinueWithout={() => { void runGenerate(); }}
+        onContinueWithout={() => { void runGenerate("estimated"); }}
         redirectAfter="/dashboard/meal-plan/setup"
       />
     </div>
