@@ -2,7 +2,7 @@
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getAppToken, getKrogerEnv, getServiceClient } from "../_shared/kroger.ts";
+import { getAppToken, getKrogerBaseUrl, getKrogerCreds, getKrogerEnv, getServiceClient } from "../_shared/kroger.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -73,8 +73,16 @@ Deno.serve(async (req) => {
     const totalAttempts = matchedN + failedN;
     const matchRate = totalAttempts > 0 ? Math.round((matchedN / totalAttempts) * 1000) / 10 : 0;
 
+    const certCreds = getKrogerCreds("certification");
+    const prodCreds = getKrogerCreds("production");
+
     return new Response(JSON.stringify({
       environment: env,
+      baseUrl: getKrogerBaseUrl(env),
+      credentials: {
+        certification: { configured: !!(certCreds.clientId && certCreds.clientSecret) },
+        production: { configured: !!(prodCreds.clientId && prodCreds.clientSecret) },
+      },
       apiStatus,
       apiError,
       appToken: tok,
