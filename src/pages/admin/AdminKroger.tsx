@@ -63,6 +63,25 @@ export default function AdminKroger() {
                 {status.environment.toUpperCase()}
               </Badge>
             </div>
+            {status.baseUrl && (
+              <div className="text-xs text-muted-foreground mt-2 font-mono break-all">{status.baseUrl}</div>
+            )}
+            {status.credentials && (
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Certification creds</span>
+                  {status.credentials.certification.configured
+                    ? <Badge variant="secondary" className="text-[10px]">Configured</Badge>
+                    : <Badge variant="destructive" className="text-[10px]">Missing</Badge>}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Production creds</span>
+                  {status.credentials.production.configured
+                    ? <Badge variant="secondary" className="text-[10px]">Configured</Badge>
+                    : <Badge variant="destructive" className="text-[10px]">Missing</Badge>}
+                </div>
+              </div>
+            )}
           </Card>
           <Card className="p-4">
             <div className="text-sm text-muted-foreground">API Status</div>
