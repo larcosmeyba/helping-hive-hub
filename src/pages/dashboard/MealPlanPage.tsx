@@ -140,7 +140,13 @@ export default function MealPlanPage() {
   };
 
   const handleRegenerate = async () => {
-    if (mealPlan) setPreviousPlan(mealPlan);
+    if (mealPlan) {
+      const ok = window.confirm(
+        "Regenerate this week's meal plan and grocery list?\n\nYour current plan will be replaced. To control costs, regenerations are limited to 3 per hour.",
+      );
+      if (!ok) return;
+      setPreviousPlan(mealPlan);
+    }
     setSwappedMeals({});
     setCookedMeals(new Set());
     await generate();
