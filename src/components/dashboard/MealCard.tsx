@@ -127,7 +127,7 @@ export function MealCard({ meal, compact, onClick }: Props) {
                 fullWidth
               />
               <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">
-                Opens on Instacart. Pricing and availability shown at checkout. Help The Hive may earn a small affiliate fee.
+                
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">

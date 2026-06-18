@@ -92,7 +92,7 @@ export function SiteFooter() {
           </div>
         </div>
         <p className="text-sm text-white/50 leading-relaxed max-w-lg ml-11 mb-3">
-          Free meal planning for every family. Budget smarter on groceries — proudly supports SNAP/EBT families through our Instacart partnership.
+          Free meal planning for every family. Budget smarter on groceries — proudly supports SNAP/EBT families.
         </p>
         <div className="ml-11">
           <p className="text-xs font-semibold text-white/60 mb-1.5">Contact</p>
@@ -197,7 +197,7 @@ export function SiteFooter() {
       {/* Disclaimer */}
       <div className="container mx-auto px-4 py-8">
         <p className="text-center text-[11px] text-white/40 leading-relaxed max-w-3xl mx-auto mb-4">
-          Grocery shopping and checkout available through Instacart. Help The Hive is an independent service and is not owned or operated by Instacart.
+          Help The Hive is an independent grocery budgeting service.
         </p>
         <div className="flex items-center justify-center gap-3 mb-4">
           <p className="text-xs text-white/30">

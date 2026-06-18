@@ -100,8 +100,8 @@ export default function GroceryListPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("from") === "instacart") {
       toast({
-        title: "Welcome back from Instacart",
-        description: "Your cart is ready in your Instacart account.",
+        title: "Welcome back",
+        description: "Your grocery list is saved and ready.",
       });
       if (user) {
         supabase.from("activity_logs").insert({
@@ -292,7 +292,7 @@ export default function GroceryListPage() {
       )}
       {/* Pricing transparency note (replaces 98% accuracy claim) */}
       <p className="text-[11px] text-muted-foreground px-1">
-        Estimated for planning. Final prices shown at Instacart checkout.{" "}
+        Estimated for planning. Final prices shown at your store at checkout.{" "}
         <button
           onClick={() => setShowPricingInfo(true)}
           className="underline hover:text-foreground transition-colors"
@@ -324,7 +324,7 @@ export default function GroceryListPage() {
             </div>
           </div>
           <p className="text-[10px] md:text-xs text-muted-foreground text-center mt-2">
-            Estimated ~{savings.savingsPercent}% vs typical grocery spending in your area. Final pricing confirmed at Instacart checkout.
+            Estimated ~{savings.savingsPercent}% vs typical grocery spending in your area. Final pricing confirmed at your store at checkout.
           </p>
         </div>
       )}
@@ -355,16 +355,16 @@ export default function GroceryListPage() {
       {/* Bold instructional banner guiding users into the Instacart flow */}
       <div className="rounded-2xl border-2 border-primary/20 bg-primary/[0.06] p-5 md:p-6">
         <p className="text-center font-bold text-foreground text-sm md:text-base leading-relaxed">
-          Select the items you want to shop for, then send items to Instacart to complete your purchase.
+          Select the items you want to shop for, then mark them purchased after you buy.
         </p>
         <p className="text-center text-muted-foreground text-[11px] md:text-xs mt-2">
           {checkedCount > 0
-            ? `${checkedCount} item${checkedCount === 1 ? "" : "s"} selected to send to Instacart`
+            ? `${checkedCount} item${checkedCount === 1 ? "" : "s"} selected`
             : `All ${groceryItems.length + extraItems.length} items will be sent to Instacart`}
         </p>
       </div>
 
-      {/* Send to Instacart — branded CTA (opens external) */}
+      {/* Shop at Kroger — branded CTA (opens external) */}
       <div className="flex flex-col items-center gap-3">
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
@@ -409,7 +409,7 @@ export default function GroceryListPage() {
               unit: s.unit,
             }));
           })()}
-          label="Send to Instacart"
+          label="Shop at Kroger"
           fullWidth
         />
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
@@ -618,7 +618,7 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Bottom Send to Instacart — branded CTA (opens external) */}
+      {/* Bottom Shop at Kroger — branded CTA (opens external) */}
       <div className="flex flex-col items-center gap-3">
         <SendToInstacartButton
           title={`Help The Hive Grocery List${mealPlan.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
@@ -648,7 +648,7 @@ export default function GroceryListPage() {
               unit: s.unit,
             }));
           })()}
-          label="Send to Instacart"
+          label="Shop at Kroger"
           fullWidth
         />
         <p className="text-[11px] text-muted-foreground text-center px-2 leading-relaxed max-w-lg">
@@ -706,7 +706,7 @@ export default function GroceryListPage() {
 
       {/* Data attribution */}
       <p className="text-[10px] text-muted-foreground/70 leading-relaxed text-center px-2 pt-2">
-        Estimates for planning only. Final prices shown at Instacart checkout. Product images and metadata from Open Food Facts.
+        Estimates for planning only. Final prices shown at your store at checkout. Product images and metadata from Open Food Facts.
       </p>
     </div>
   );

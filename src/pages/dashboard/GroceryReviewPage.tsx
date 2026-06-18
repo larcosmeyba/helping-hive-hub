@@ -442,7 +442,7 @@ export default function GroceryReviewPage() {
                         isChecked ? "text-[#1F5A3D] font-medium" : "text-[#9e9e9e]"
                       }`}
                     >
-                      {isChecked ? "Added to Instacart" : "Tap to add to Instacart"}
+                      {isChecked ? "Added to list" : "Tap to add to list"}
                     </p>
                   </div>
                   <div className="flex flex-col items-end shrink-0 ml-2 min-w-[72px]">
@@ -620,7 +620,7 @@ function EstimatedTotal({
         <div className="flex items-center justify-between">
           <div>
             <span className="block text-[13px] text-[#6b6b6b]">
-              {useServerDelivered ? "Delivered Total (Instacart)" : "Estimated Grocery Total"}
+              {useServerDelivered ? "Estimated Delivered Total" : "Estimated Grocery Total"}
             </span>
             <span className="block text-[10px] text-[#9e9e9e] italic mt-0.5">
               {useServerDelivered
@@ -665,19 +665,19 @@ function EstimatedTotal({
 
       {hasBudget && !overBudget && (
         <p className="text-[11px] text-[#1F5A3D] leading-relaxed mt-2 px-1 font-medium">
-          Your meal plan was built to stay within your grocery budget. Final pricing and availability are confirmed at Instacart checkout.
+          Your meal plan was built to stay within your grocery budget. Final pricing and availability are confirmed at your store at checkout.
         </p>
       )}
       {overBudget && (
         <p className="text-[11px] text-[#B91C1C] leading-relaxed mt-2 px-1 font-medium">
-          {budgetWarningText || "This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at Instacart checkout."}
+          {budgetWarningText || "This basket is above your weekly budget. Uncheck items or regenerate your meal plan to bring it back in range. Final pricing and availability are confirmed at your store at checkout."}
         </p>
       )}
       {/* Universal Instacart cost-saving tip — every user sees how to trim
           their cart at checkout without leaving the app. */}
       <div className="mt-3 rounded-xl bg-[#FFF8E1] border border-[#F2D88A] px-3 py-2">
         <p className="text-[11px] text-[#7A5A00] leading-relaxed">
-          <span className="font-semibold">Tip:</span> If your Instacart cart comes in over budget, open the cart, tap “Replace with best match” on pricier items, and pick a cheaper option to lower your total for the week.
+          <span className="font-semibold">Tip:</span> If your grocery total comes in over budget, uncheck pricier items or swap meals to lower your total for the week.
         </p>
       </div>
 
@@ -691,7 +691,7 @@ function EstimatedTotal({
           title={instacartTitle}
           linkType="shopping_list"
           lineItems={sendItems}
-          label="Send Selected Items to Instacart"
+          label="Shop at Kroger"
           fullWidth
         />
         <InstacartDisclaimer variant="inline" className="text-center max-w-sm px-2" />

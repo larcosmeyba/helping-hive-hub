@@ -461,7 +461,7 @@ export default function Questionnaire() {
       {step === 4 && (
         <QuestionnaireStep step={4} totalSteps={TOTAL_STEPS}
           title="Where are you located?"
-          subtitle="Used for local stores, SNAP offices, food banks, and Instacart."
+          subtitle="Used for local stores, SNAP offices, and food banks."
           onNext={next} onBack={back}
           nextDisabled={!zipValidation.isValid}
         >
@@ -523,7 +523,7 @@ export default function Questionnaire() {
       {step === 5 && (
         <QuestionnaireStep step={5} totalSteps={TOTAL_STEPS}
           title="Which store do you shop at most?"
-          subtitle={zipCode ? `Showing stores Instacart supports near ${zipCode}.` : "Enter your ZIP code first so we can show stores Instacart supports near you."}
+          subtitle={zipCode ? `Showing stores near ${zipCode}.` : "Enter your ZIP code first so we can show stores near you."}
           onNext={() => { trackEvent("home_store_selected", { store: homeStore }); next(); }}
           onBack={back}
           nextDisabled={!homeStore}
@@ -545,7 +545,7 @@ export default function Questionnaire() {
           )}
           {zipValidation.isValid && !retailers.loading && !retailers.error && retailers.retailers.length === 0 && (
             <div className="mt-4 p-4 rounded-2xl border border-border bg-card text-sm text-muted-foreground text-center">
-              No Instacart-supported stores were found for ZIP {zipCode}.
+              No stores were found for ZIP {zipCode}.
             </div>
           )}
           {zipValidation.isValid && !retailers.loading && retailers.retailers.length > 0 && (
@@ -566,7 +566,7 @@ export default function Questionnaire() {
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-4 text-center">
-            You can change this anytime. Only stores Instacart supports in your area are shown.
+            You can change this anytime. Only stores in your area are shown.
           </p>
         </QuestionnaireStep>
       )}

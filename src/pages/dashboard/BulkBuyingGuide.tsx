@@ -44,21 +44,21 @@ export default function BulkBuyingGuide() {
       {/* Instructional Banner */}
       <div className="bg-primary/[0.06] border border-primary/20 rounded-2xl px-4 py-3.5">
         <p className="text-sm md:text-base font-bold text-foreground text-center leading-snug">
-          Select the items you want to shop for, then send items to Instacart to complete your purchase.
+          Select the items you want to shop for, then mark them purchased after you buy.
         </p>
         <p className="text-xs text-muted-foreground text-center mt-1.5">
           {checked.size > 0
-            ? `${checked.size} item${checked.size === 1 ? "" : "s"} selected to send to Instacart`
+            ? `${checked.size} item${checked.size === 1 ? "" : "s"} selected`
             : "No items selected — sending all items"}
         </p>
       </div>
 
-      {/* Shop on Instacart CTA */}
+      {/* Shop at Kroger CTA */}
       <div className="bg-card rounded-2xl border border-border p-4" style={{ boxShadow: "0px 4px 12px rgba(0,0,0,0.03)" }}>
         <SendToInstacartButton
           title="Bulk Buying — Help The Hive"
           lineItems={selectedLineItems}
-          label="Send to Instacart"
+          label="Shop at Kroger"
         />
         <p className="text-[11px] text-muted-foreground text-center mt-2">
           Instacart handles checkout, substitutions, payment, and delivery. Help The Hive may earn a small affiliate fee that helps keep the app free.

@@ -37,13 +37,13 @@ const plans = [
   },
   {
     title: "SNAP-Friendly Meal Plan",
-    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating Instacart retailers.",
+    desc: "Budget-friendly meals eligible for SNAP/EBT purchases at participating retailers.",
     budget: "$65 / week grocery budget",
     store: "Aldi / WinCo",
     tag: "SNAP-Friendly",
     slug: "snap-friendly-meals",
     image: mealSnapFriendly,
-    note: "Eligible for SNAP purchases via Instacart",
+    note: "Eligible for SNAP purchases",
   },
   {
     title: "Cook From What You Have",

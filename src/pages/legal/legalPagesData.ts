@@ -236,13 +236,13 @@ We do not guarantee:
       },
       {
         heading: "8. Pricing",
-        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Hive AI, budget insights, and Instacart checkout handoff — are available at no cost to every user.
+        content: `**Help the Hive is 100% free for everyone, with no subscriptions, no paywalls, and no premium tiers.** All core features — meal planning, grocery lists, pantry tools, Hive AI, and budget insights — are available at no cost to every user.
 
-We do not charge for the app, do not collect payment information, and do not offer in-app purchases. Help the Hive is funded through optional Instacart affiliate commissions, sponsored brand placements, institutional licensing, and grants. None of these affect what you pay (which is nothing) or your access to features.`
+We do not charge for the app, do not collect payment information, and do not offer in-app purchases. Help the Hive is funded through optional retail affiliate partnerships, sponsored brand placements, institutional licensing, and grants. None of these affect what you pay (which is nothing) or your access to features.`
       },
       {
         heading: "9. Retailer & Third-Party Partnerships",
-        content: `The Service integrates with third-party services including Instacart, recipe databases, and payment processors. You are subject to those services' terms and privacy policies. We may receive affiliate commissions when you complete transactions through partner links.`
+        content: `The Service integrates with third-party services including grocery retailer APIs (such as Kroger), recipe databases, and payment processors. You are subject to those services' terms and privacy policies. We may receive affiliate commissions when you complete transactions through partner links.`
       },
       {
         heading: "10. No Medical Advice",
@@ -395,7 +395,7 @@ By downloading or using the Help the Hive app, you agree to the terms set forth 
         heading: "4. How We Share Your Information",
         content: `**Service providers:** Cloud hosting, analytics, customer support, email delivery. These providers are contractually required to protect your data.
 
-**Retailer partnerships:** When you tap "Send to Instacart" or similar, your grocery list is shared with that partner to populate your cart. We do NOT share your full user profile.
+**Retailer partnerships:** When you tap "Shop at Kroger" or similar, your grocery list is shared with that partner to populate your cart. We do NOT share your full user profile.
 
 **Aggregated/anonymized data:** May be shared with partners, investors, or grant funders. Cannot be linked to you personally.
 
@@ -481,7 +481,7 @@ If we discover we have collected information from a child under 13, we delete it
       },
       {
         heading: "12. Third-Party Services",
-        content: `The Service integrates with third parties (Instacart, Apple, Google). Their privacy practices are governed by their own policies.`
+        content: `The Service integrates with third parties (grocery retailer APIs such as Kroger, Apple, Google). Their privacy practices are governed by their own policies.`
       },
       {
         heading: "13. Research & Grant Reporting",
@@ -793,7 +793,7 @@ Each state runs its own SNAP application — most accept online applications, ma
       },
       {
         heading: "After you apply",
-        content: "States must process applications within 30 days (7 days for emergency SNAP). You may receive a phone or in-person interview. If approved, benefits load monthly onto an EBT card you can use at participating retailers — including many Instacart-supported stores."
+        content: "States must process applications within 30 days (7 days for emergency SNAP). You may receive a phone or in-person interview. If approved, benefits load monthly onto an EBT card you can use at participating retailers."
       }
     ]
   },
@@ -815,7 +815,7 @@ Each state runs its own SNAP application — most accept online applications, ma
       },
       {
         heading: "Using EBT online",
-        content: "Most states allow SNAP EBT to be used online at participating retailers. Instacart accepts SNAP/EBT at many partner stores — Help the Hive routes your grocery list to Instacart so eligible items can be paid for with EBT at checkout."
+        content: "Most states allow SNAP EBT to be used online at participating retailers. Help the Hive helps you plan an EBT-eligible grocery list you can use at your local store."
       }
     ]
   },
@@ -1311,7 +1311,7 @@ Use of Help the Hive does not create eligibility for government benefits, alter 
         content: `• Help the Hive is 100% free for all users with no subscriptions, no paywalls, and no in-app purchases.
 • SNAP benefit tracking is a manual, self-reported feature. We do NOT connect to government systems, store EBT card numbers, or handle transactions.
 • Estimated Pricing is clearly labeled; users are informed actual in-store prices may vary.
-• Retailer integration via Instacart is an optional affiliate handoff — no purchase data is processed by our servers.
+• Retailer integration (such as Kroger) is an optional affiliate handoff — no purchase data is processed by our servers.
 • Self-reported eligibility (SNAP, WIC, military, teacher) is used only for personalization and resource matching, not for gating access.`
       },
       {
