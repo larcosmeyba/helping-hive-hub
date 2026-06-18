@@ -532,22 +532,32 @@ export default function GroceryReviewPage() {
         </div>
       </Section>
 
-      {/* Estimated total — DB-backed RANGE only */}
-      <EstimatedTotal
-        allItems={[...toAdjust, ...toBuy, ...manualItems]}
-        selectedItems={selectedItemsAll}
-        selectedCount={selectedCount}
-        storeCode={store || undefined}
-        stateCode={(profile as any)?.state || undefined}
-        weeklyBudget={
-          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-        }
-        budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
-        budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
-        channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
-        instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
-        sendItems={sendItems}
-      />
+      {/* Estimated total — ONLY when Kroger is connected with a home store.
+          Internal estimated pricing stays in the backend; we never surface it
+          to users in the grocery review. */}
+      {kroger.ready ? (
+        <EstimatedTotal
+          allItems={[...toAdjust, ...toBuy, ...manualItems]}
+          selectedItems={selectedItemsAll}
+          selectedCount={selectedCount}
+          storeCode={store || undefined}
+          stateCode={(profile as any)?.state || undefined}
+          weeklyBudget={
+            (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+          }
+          budgetExceeded={(mealPlan as any)?.budgetExceeded ?? false}
+          budgetWarningText={(mealPlan as any)?.budgetWarningText ?? null}
+          channelBreakdown={(mealPlan as any)?.channelBreakdown ?? null}
+          instacartTitle={`Help The Hive Grocery List${mealPlan?.regionLabel ? ` — ${mealPlan.regionLabel}` : ""}`}
+          sendItems={sendItems}
+        />
+      ) : (
+        <ConnectKrogerForPricing
+          loading={kroger.loading}
+          connected={kroger.connected}
+          onConnect={() => kroger.connect()}
+        />
+      )}
 
       <KrogerBudgetCard
         items={[...toAdjust, ...toBuy, ...manualItems]}
