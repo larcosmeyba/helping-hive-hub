@@ -6,6 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
+import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 
 interface Overrides {
   budget?: number;
@@ -49,6 +50,22 @@ OTHER RULES:
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
 - Stay within the weekly grocery budget.
+
+FAMILY & CHILD RULES (binding):
+- "household.adults_count", "household.children_ages_5_to_12", "household.babies_under_5" are present in the context. Servings must be sized for adults_count + children_5_to_12 (toddlers eat from the same pot at reduced portions).
+- If children_5_to_12 > 0, AT LEAST 3 of the 21 meals across the week MUST be classic kid-friendly: chicken tacos, pasta dishes, breakfast burritos, rice bowls, sheet pan meals, mac & cheese, quesadillas, meatballs. Note this in the meal "reason".
+- If babies_under_5 > 0, the new_meal you create may NOT rely on hard-to-chew or choking-hazard whole foods (whole nuts, popcorn, whole grapes, large meat chunks).
+
+COOKING SKILL RULES (binding):
+- "cooking_confidence" is one of: beginner, intermediate, advanced.
+- beginner: every meal must be ≤8 ingredients total, prep+cook ≤30 min, instructions ≤6 steps, no specialty techniques.
+- intermediate: ≤12 ingredients, prep+cook ≤45 min.
+- advanced: no restriction.
+
+RECIPE OUTPUT RULES (binding):
+- For every new_meal you create, "instructions" MUST be a non-empty array of clear, numbered step-by-step cooking actions ("Heat skillet over medium heat", "Add olive oil and onions", "Cook 3-5 minutes", etc.). Empty or single-line instructions are NOT acceptable.
+- Include prep_time_minutes and cook_time_minutes for every new_meal.
+
 - Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
 - When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
 - Output ONLY the structured tool call.`;
