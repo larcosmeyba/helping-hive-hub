@@ -137,6 +137,7 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/auth/confirm" element={<AuthConfirm />} />
+                  <Route path="/oauth/kroger/return" element={<KrogerOAuthReturn />} />
                   <Route path="/onboarding/kroger" element={<ProtectedRoute><KrogerOnboarding /></ProtectedRoute>} />
                   <Route path="/questionnaire" element={<ProtectedRoute><Questionnaire /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
