@@ -9,12 +9,11 @@ import { MultiChip } from "@/components/questionnaire/MultiChip";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, Store, AlertCircle, Check } from "lucide-react";
+import { MapPin, Loader2, Sparkles, CheckCircle2, DollarSign, AlertCircle, Check } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
-import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
 
 // 1 welcome + 9 onboarding sections (home-store step removed — we use the closest Kroger to the user)
 const TOTAL_STEPS = 9;
