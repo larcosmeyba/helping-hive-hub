@@ -398,7 +398,7 @@ export default function Questionnaire() {
               <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1">Health & pricing</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Help The Hive provides planning and budgeting tools only — not medical or nutritional advice.
-                Prices shown are estimates; final pricing is confirmed at Instacart checkout.
+                Prices shown are estimates; final pricing is confirmed at your store at checkout.
               </p>
             </div>
           </div>
