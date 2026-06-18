@@ -130,9 +130,9 @@ export function MealPlanSection() {
           ))}
         </div>
 
-        {/* Instacart + SNAP/EBT partnership explainer */}
+        {/* Pricing disclaimer */}
         <div className="max-w-3xl mx-auto mt-12">
-          <InstacartDisclaimer variant="why-instacart" />
+          <InstacartDisclaimer variant="inline" className="text-center" />
         </div>
       </div>
     </section>

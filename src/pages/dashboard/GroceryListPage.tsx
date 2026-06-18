@@ -95,29 +95,8 @@ export default function GroceryListPage() {
   const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
 
-  // Instacart return-flow handler — detect ?from=instacart and welcome user back
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("from") === "instacart") {
-      toast({
-        title: "Welcome back",
-        description: "Your grocery list is saved and ready.",
-      });
-      if (user) {
-        supabase.from("activity_logs").insert({
-          user_id: user.id,
-          action: "instacart_return",
-          entity_type: "grocery_list",
-          entity_id: null,
-          details: {},
-        }).then(() => {});
-      }
-      // Clean the URL so the toast doesn't fire again on remount
-      const url = new URL(window.location.href);
-      url.searchParams.delete("from");
-      window.history.replaceState({}, "", url.pathname + url.search);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // (Legacy ?from=instacart return-flow removed — no external checkout handoff.)
+
   }, []);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {

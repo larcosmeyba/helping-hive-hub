@@ -24,10 +24,10 @@ const features = [
   },
 ];
 
-const instacartBadges = [
+const krogerBadges = [
   { icon: Truck, text: "Delivery" },
   { icon: Store, text: "Pickup" },
-  { icon: CreditCard, text: "EBT Accepted at Participating Retailers" },
+  { icon: CreditCard, text: "EBT Accepted at Participating Stores" },
   { icon: MapPin, text: "Store Availability Based on ZIP Code" },
 ];
 
@@ -72,7 +72,7 @@ export function FeaturesSection() {
             Take your grocery list to Kroger for pickup or delivery.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            {instacartBadges.map(({ icon: Icon, text }) => (
+            {krogerBadges.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-1.5">
                 <Icon className="w-4 h-4 text-[#1F5A2C] shrink-0" />
                 <span className="text-sm font-medium text-[#1F5A2C]">{text}</span>
