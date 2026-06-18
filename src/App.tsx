@@ -87,6 +87,7 @@ const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback.tsx"));
 const AdminSystemHealth = lazy(() => import("./pages/admin/AdminSystemHealth.tsx"));
 const AdminKroger = lazy(() => import("./pages/admin/AdminKroger.tsx"));
 const AdminKrogerReadiness = lazy(() => import("./pages/admin/AdminKrogerReadiness.tsx"));
+const AdminKrogerSubmission = lazy(() => import("./pages/admin/AdminKrogerSubmission.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -187,6 +188,7 @@ const App = () => {
                     <Route path="system-health" element={<AdminSystemHealth />} />
                     <Route path="kroger" element={<AdminKroger />} />
                     <Route path="kroger/readiness" element={<AdminKrogerReadiness />} />
+                    <Route path="kroger/submission" element={<AdminKrogerSubmission />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
