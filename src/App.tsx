@@ -21,6 +21,7 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const Questionnaire = lazy(() => import("./pages/Questionnaire.tsx"));
+const KrogerOnboarding = lazy(() => import("./pages/onboarding/KrogerOnboarding.tsx"));
 const SampleMealPlan = lazy(() => import("./pages/SampleMealPlan.tsx"));
 const LegalPage = lazy(() => import("./pages/legal/LegalPage.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
@@ -133,6 +134,7 @@ const App = () => {
                   <Route path="/signup" element={native ? <Navigate to="/auth" replace /> : <Signup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/onboarding/kroger" element={<ProtectedRoute><KrogerOnboarding /></ProtectedRoute>} />
                   <Route path="/questionnaire" element={<ProtectedRoute><Questionnaire /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                     <Route index element={<DashboardHome />} />

@@ -11,6 +11,7 @@ import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
 import { estimateBasketRange, estimateBasketRangeFromDB, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
+import { KrogerConnectReminder } from "@/components/kroger/KrogerConnectReminder";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -380,6 +381,8 @@ export default function GroceryReviewPage() {
       <h1 className="text-center text-[20px] font-extrabold text-[#1a1a1a] mb-4">
         Review Grocery List
       </h1>
+      <KrogerConnectReminder />
+
 
       {/* Already Have */}
       {alreadyHave.length > 0 && (
