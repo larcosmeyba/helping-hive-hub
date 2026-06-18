@@ -603,12 +603,12 @@ function ConnectKrogerForPricing({
   return (
     <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 text-center space-y-2">
       <p className="text-[13px] font-extrabold text-[#1a1a1a]">
-        Connect Kroger for accurate pricing
+        Connect Kroger to view live store pricing.
       </p>
       <p className="text-[12px] text-[#6b6b6b] leading-relaxed">
         {needsStore
           ? "Pick your home Kroger store in Settings to see live prices and a total for this list."
-          : "We only show pricing when it comes directly from your Kroger store. Connect your Kroger account to see live prices and your weekly total."}
+          : "Pricing is only shown when it comes directly from your Kroger store."}
       </p>
       {needsStore ? (
         <a
