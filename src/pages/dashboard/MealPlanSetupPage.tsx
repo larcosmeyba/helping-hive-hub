@@ -286,6 +286,13 @@ export default function MealPlanSetupPage() {
         value={cooking} setValue={setCooking}
         saving={saving} onSave={() => saveProfile({ cooking_confidence: cooking }, "Cooking level updated")}
       />
+
+      <KrogerRequiredDialog
+        open={krogerPromptOpen}
+        onOpenChange={setKrogerPromptOpen}
+        onContinueWithout={() => { void runGenerate(); }}
+        redirectAfter="/dashboard/meal-plan/setup"
+      />
     </div>
   );
 }
