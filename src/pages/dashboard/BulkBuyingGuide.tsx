@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ResourceBackButton } from "@/components/dashboard/resources/ResourceBackButton";
 import { BULK_BUYING_ITEMS } from "@/data/bulkBuyingItems";
-import { SendToInstacartButton } from "@/components/dashboard/SendToInstacartButton";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function BulkBuyingGuide() {

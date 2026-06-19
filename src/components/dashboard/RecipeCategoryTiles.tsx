@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
+
 import imgBudgetFriendly from "@/assets/category-budget-friendly.jpg";
 import imgQuickMeals from "@/assets/category-quick-meals.jpg";
 import imgSlowCooker from "@/assets/category-slow-cooker.jpg";
@@ -301,25 +301,6 @@ export function RecipeCategoryTiles() {
                         </li>
                       ))}
                     </ul>
-                    <div className="flex flex-col items-center gap-1.5 mt-3">
-                      <SendToInstacartButton
-                        title={selectedRecipe.title}
-                        linkType="recipe"
-                        imageUrl={selectedRecipe.image_url || undefined}
-                        lineItems={parseJsonArray(selectedRecipe.ingredients).map<InstacartLineItem>((ing) => ({
-                          name: String(ing).replace(/^[\d./\s]+\w*\s+/, "").trim() || String(ing),
-                          display_text: String(ing),
-                          quantity: 1,
-                          unit: "each",
-                        }))}
-                        instructions={parseJsonArray(selectedRecipe.instructions).map(String)}
-                        label="Shop Ingredients"
-                        fullWidth
-                      />
-                      <p className="text-[10px] leading-snug text-muted-foreground text-center px-2">
-                        
-                      </p>
-                    </div>
                   </div>
                 )}
                 {parseJsonArray(selectedRecipe.instructions).length > 0 && (
