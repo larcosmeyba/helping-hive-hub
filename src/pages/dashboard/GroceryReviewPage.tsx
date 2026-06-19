@@ -202,20 +202,8 @@ export default function GroceryReviewPage() {
     }
   }, [toAdjust, toBuy, manualItems]);
 
-  const sendItems: InstacartLineItem[] = useMemo(() => {
-    const buyable = [...toAdjust, ...toBuy, ...manualItems];
-    // Sanitize recipe-portion strings into purchasable products before
-    // sending to Instacart. UI continues to display the original recipe
-    // text and the user-adjusted recipe quantity.
-    const sourceItems = buyable
-      .filter((it) => checked.has(it.name))
-      .map((it) => ({ name: it.name, rawQuantity: String(it.quantity ?? "") }));
-    return sanitizeForInstacart(sourceItems).map((s) => ({
-      name: s.name,
-      quantity: s.quantity,
-      unit: s.unit,
-    }));
-  }, [toAdjust, toBuy, manualItems, qtyOverride, checked]);
+
+
 
   const isDuplicate = (name: string) => {
     const norm = normalize(name);
