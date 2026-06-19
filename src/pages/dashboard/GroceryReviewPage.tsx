@@ -3,7 +3,6 @@ import { Check, Minus, Plus } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { useToast } from "@/hooks/use-toast";
 import { addItemsToGroceryList } from "@/lib/groceryList";

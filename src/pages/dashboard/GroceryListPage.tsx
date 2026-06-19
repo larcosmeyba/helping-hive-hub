@@ -11,7 +11,6 @@ import type { GroceryItem, PricingConfidenceSummary, SavingsSummary } from "@/ty
 import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
-import { SendToInstacartButton, type InstacartLineItem } from "@/components/dashboard/SendToInstacartButton";
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
