@@ -582,7 +582,6 @@ export default function MealPlanPage() {
                     >
                       <h4 className="font-semibold text-foreground">{alt.name}</h4>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
                         <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${alt.estimatedCost.toFixed(2)}</span>
                         {costDiff !== 0 && (
