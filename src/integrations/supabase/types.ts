@@ -2456,6 +2456,7 @@ export type Database = {
       meal_plan_meals: {
         Row: {
           calories_estimate: number | null
+          carbs_estimate: number | null
           cook_time_minutes: number | null
           cooked_at: string | null
           created_at: string
@@ -2464,7 +2465,9 @@ export type Database = {
           difficulty: string | null
           estimated_cost: number | null
           estimated_cost_per_serving: number | null
+          fats_estimate: number | null
           favorited: boolean
+          fiber_estimate: number | null
           food_waste_reason: string | null
           id: string
           image_url: string | null
@@ -2476,10 +2479,12 @@ export type Database = {
           prep_time_minutes: number | null
           protein_estimate: number | null
           recipe_id: string | null
+          sodium_estimate: number | null
           user_id: string
         }
         Insert: {
           calories_estimate?: number | null
+          carbs_estimate?: number | null
           cook_time_minutes?: number | null
           cooked_at?: string | null
           created_at?: string
@@ -2488,7 +2493,9 @@ export type Database = {
           difficulty?: string | null
           estimated_cost?: number | null
           estimated_cost_per_serving?: number | null
+          fats_estimate?: number | null
           favorited?: boolean
+          fiber_estimate?: number | null
           food_waste_reason?: string | null
           id?: string
           image_url?: string | null
@@ -2500,10 +2507,12 @@ export type Database = {
           prep_time_minutes?: number | null
           protein_estimate?: number | null
           recipe_id?: string | null
+          sodium_estimate?: number | null
           user_id: string
         }
         Update: {
           calories_estimate?: number | null
+          carbs_estimate?: number | null
           cook_time_minutes?: number | null
           cooked_at?: string | null
           created_at?: string
@@ -2512,7 +2521,9 @@ export type Database = {
           difficulty?: string | null
           estimated_cost?: number | null
           estimated_cost_per_serving?: number | null
+          fats_estimate?: number | null
           favorited?: boolean
+          fiber_estimate?: number | null
           food_waste_reason?: string | null
           id?: string
           image_url?: string | null
@@ -2524,6 +2535,7 @@ export type Database = {
           prep_time_minutes?: number | null
           protein_estimate?: number | null
           recipe_id?: string | null
+          sodium_estimate?: number | null
           user_id?: string
         }
         Relationships: [
@@ -3063,6 +3075,7 @@ export type Database = {
           created_at: string
           data_usage_opt_in: boolean
           dietary_preferences: string[] | null
+          disliked_foods: string[]
           display_name: string | null
           eligibility_category: string | null
           email: string | null
@@ -3138,6 +3151,7 @@ export type Database = {
           created_at?: string
           data_usage_opt_in?: boolean
           dietary_preferences?: string[] | null
+          disliked_foods?: string[]
           display_name?: string | null
           eligibility_category?: string | null
           email?: string | null
@@ -3213,6 +3227,7 @@ export type Database = {
           created_at?: string
           data_usage_opt_in?: boolean
           dietary_preferences?: string[] | null
+          disliked_foods?: string[]
           display_name?: string | null
           eligibility_category?: string | null
           email?: string | null
@@ -3410,11 +3425,14 @@ export type Database = {
           image_url: string | null
           ingredients: Json
           instructions: Json
+          is_active: boolean
           is_public: boolean | null
+          kid_friendly: boolean | null
           meal_type: string | null
           prep_time_minutes: number | null
           protein_g: number | null
           serving_size: number | null
+          sodium_mg: number | null
           source: string
           tags: string[]
           times_used: number
@@ -3439,11 +3457,14 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          is_active?: boolean
           is_public?: boolean | null
+          kid_friendly?: boolean | null
           meal_type?: string | null
           prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          sodium_mg?: number | null
           source?: string
           tags?: string[]
           times_used?: number
@@ -3468,11 +3489,14 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          is_active?: boolean
           is_public?: boolean | null
+          kid_friendly?: boolean | null
           meal_type?: string | null
           prep_time_minutes?: number | null
           protein_g?: number | null
           serving_size?: number | null
+          sodium_mg?: number | null
           source?: string
           tags?: string[]
           times_used?: number
