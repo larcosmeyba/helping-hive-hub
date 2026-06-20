@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, X, Flame, Clock, Users, Loader2 } from "lucide-react";
+import { ArrowRight, X, Clock, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -214,9 +214,6 @@ export function RecipeCategoryTiles() {
                     <div className="p-3 flex-1">
                       <p className="font-semibold text-foreground text-sm">{recipe.title}</p>
                       <div className="flex gap-2 mt-1.5 text-xs text-muted-foreground">
-                        {recipe.calories && (
-                          <span className="flex items-center gap-0.5"><Flame className="w-3 h-3" /> {recipe.calories}</span>
-                        )}
                         {recipe.cook_time_minutes && (
                           <span className="flex items-center gap-0.5">
                             <Clock className="w-3 h-3" />
@@ -259,11 +256,6 @@ export function RecipeCategoryTiles() {
               )}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 text-sm">
-                  {selectedRecipe.calories && (
-                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-1">
-                      <Flame className="w-3 h-3" /> {selectedRecipe.calories} cal
-                    </span>
-                  )}
                   {selectedRecipe.cook_time_minutes && (
                     <span className="bg-muted px-3 py-1 rounded-full flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {selectedRecipe.cook_time_minutes < 60 ? `${selectedRecipe.cook_time_minutes}m` : `${Math.floor(selectedRecipe.cook_time_minutes / 60)}h`}
@@ -275,22 +267,6 @@ export function RecipeCategoryTiles() {
                     </span>
                   )}
                 </div>
-                {(selectedRecipe.protein_g || selectedRecipe.carbs_g || selectedRecipe.fats_g) && (
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.protein_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Protein</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.carbs_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Carbs</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.fats_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Fats</p>
-                    </div>
-                  </div>
-                )}
                 {parseJsonArray(selectedRecipe.ingredients).length > 0 && (
                   <div>
                     <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>

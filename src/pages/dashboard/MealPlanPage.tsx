@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, X,
+  CalendarDays, RefreshCw, Loader2, Shuffle, Clock, DollarSign, X,
   AlertTriangle, Check, ChefHat, Share2, Minus, Plus, ArrowRight, ArrowLeft,
   Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper, History,
 } from "lucide-react";
@@ -19,22 +19,22 @@ import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
-    { type: "breakfast", name: "Greek Yogurt Parfait", calories: 320, protein: 18, carbs: 42, fats: 10, estimatedCost: 2.50, costPerServing: 2.50, cookTimeMinutes: 5, ingredients: ["Greek yogurt", "Granola", "Mixed berries", "Honey"], instructions: ["Layer yogurt in a bowl", "Add granola and berries", "Drizzle with honey"] },
-    { type: "breakfast", name: "Banana Oat Pancakes", calories: 380, protein: 12, carbs: 55, fats: 12, estimatedCost: 1.80, costPerServing: 1.80, cookTimeMinutes: 15, ingredients: ["Banana", "Oats", "Eggs", "Cinnamon", "Maple syrup"], instructions: ["Blend", "Cook", "Serve"] },
-    { type: "breakfast", name: "Veggie Scramble", calories: 340, protein: 22, carbs: 14, fats: 22, estimatedCost: 2.10, costPerServing: 2.10, cookTimeMinutes: 10, ingredients: ["Eggs", "Spinach", "Bell pepper", "Cheddar"], instructions: ["Sauté veg", "Add eggs", "Top with cheese"] },
-    { type: "breakfast", name: "Overnight Oats", calories: 410, protein: 14, carbs: 58, fats: 14, estimatedCost: 1.50, costPerServing: 1.50, cookTimeMinutes: 5, ingredients: ["Oats", "Milk", "Chia", "Berries"], instructions: ["Mix in jar", "Refrigerate overnight"] },
+    { type: "breakfast", name: "Greek Yogurt Parfait", estimatedCost: 2.50, costPerServing: 2.50, cookTimeMinutes: 5, ingredients: ["Greek yogurt", "Granola", "Mixed berries", "Honey"], instructions: ["Layer yogurt in a bowl", "Add granola and berries", "Drizzle with honey"] },
+    { type: "breakfast", name: "Banana Oat Pancakes", estimatedCost: 1.80, costPerServing: 1.80, cookTimeMinutes: 15, ingredients: ["Banana", "Oats", "Eggs", "Cinnamon", "Maple syrup"], instructions: ["Blend", "Cook", "Serve"] },
+    { type: "breakfast", name: "Veggie Scramble", estimatedCost: 2.10, costPerServing: 2.10, cookTimeMinutes: 10, ingredients: ["Eggs", "Spinach", "Bell pepper", "Cheddar"], instructions: ["Sauté veg", "Add eggs", "Top with cheese"] },
+    { type: "breakfast", name: "Overnight Oats", estimatedCost: 1.50, costPerServing: 1.50, cookTimeMinutes: 5, ingredients: ["Oats", "Milk", "Chia", "Berries"], instructions: ["Mix in jar", "Refrigerate overnight"] },
   ],
   lunch: [
-    { type: "lunch", name: "Turkey & Avocado Wrap", calories: 450, protein: 28, carbs: 38, fats: 22, estimatedCost: 3.50, costPerServing: 3.50, cookTimeMinutes: 10, ingredients: ["Tortilla", "Turkey", "Avocado", "Lettuce"], instructions: ["Layer", "Roll"] },
-    { type: "lunch", name: "Chickpea Salad Bowl", calories: 420, protein: 18, carbs: 52, fats: 16, estimatedCost: 2.80, costPerServing: 2.80, cookTimeMinutes: 10, ingredients: ["Chickpeas", "Cucumber", "Tomatoes", "Feta"], instructions: ["Combine", "Dress"] },
-    { type: "lunch", name: "Quinoa Veggie Bowl", calories: 440, protein: 16, carbs: 60, fats: 14, estimatedCost: 3.00, costPerServing: 3.00, cookTimeMinutes: 20, ingredients: ["Quinoa", "Roasted veg", "Hummus"], instructions: ["Cook quinoa", "Roast veg", "Combine"] },
-    { type: "lunch", name: "Black Bean Quesadilla", calories: 460, protein: 20, carbs: 52, fats: 18, estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 12, ingredients: ["Tortilla", "Beans", "Cheese", "Salsa"], instructions: ["Fill", "Cook 3 min/side"] },
+    { type: "lunch", name: "Turkey & Avocado Wrap", estimatedCost: 3.50, costPerServing: 3.50, cookTimeMinutes: 10, ingredients: ["Tortilla", "Turkey", "Avocado", "Lettuce"], instructions: ["Layer", "Roll"] },
+    { type: "lunch", name: "Chickpea Salad Bowl", estimatedCost: 2.80, costPerServing: 2.80, cookTimeMinutes: 10, ingredients: ["Chickpeas", "Cucumber", "Tomatoes", "Feta"], instructions: ["Combine", "Dress"] },
+    { type: "lunch", name: "Quinoa Veggie Bowl", estimatedCost: 3.00, costPerServing: 3.00, cookTimeMinutes: 20, ingredients: ["Quinoa", "Roasted veg", "Hummus"], instructions: ["Cook quinoa", "Roast veg", "Combine"] },
+    { type: "lunch", name: "Black Bean Quesadilla", estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 12, ingredients: ["Tortilla", "Beans", "Cheese", "Salsa"], instructions: ["Fill", "Cook 3 min/side"] },
   ],
   dinner: [
-    { type: "dinner", name: "Lemon Herb Chicken Thighs", calories: 520, protein: 38, carbs: 28, fats: 28, estimatedCost: 4.50, costPerServing: 4.50, cookTimeMinutes: 35, ingredients: ["Chicken thighs", "Lemon", "Garlic", "Potatoes"], instructions: ["Season", "Roast 30-35 min"] },
-    { type: "dinner", name: "Spaghetti Bolognese", calories: 550, protein: 30, carbs: 60, fats: 20, estimatedCost: 3.80, costPerServing: 3.80, cookTimeMinutes: 30, ingredients: ["Spaghetti", "Beef", "Tomatoes"], instructions: ["Cook pasta", "Brown beef", "Simmer"] },
-    { type: "dinner", name: "Sheet Pan Sausage & Veggies", calories: 510, protein: 24, carbs: 38, fats: 28, estimatedCost: 3.40, costPerServing: 3.40, cookTimeMinutes: 30, ingredients: ["Sausage", "Potatoes", "Peppers"], instructions: ["Toss", "Roast 25-30 min"] },
-    { type: "dinner", name: "White Bean & Kale Soup", calories: 380, protein: 18, carbs: 52, fats: 10, estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 25, ingredients: ["Beans", "Kale", "Broth"], instructions: ["Sauté", "Simmer", "Add kale"] },
+    { type: "dinner", name: "Lemon Herb Chicken Thighs", estimatedCost: 4.50, costPerServing: 4.50, cookTimeMinutes: 35, ingredients: ["Chicken thighs", "Lemon", "Garlic", "Potatoes"], instructions: ["Season", "Roast 30-35 min"] },
+    { type: "dinner", name: "Spaghetti Bolognese", estimatedCost: 3.80, costPerServing: 3.80, cookTimeMinutes: 30, ingredients: ["Spaghetti", "Beef", "Tomatoes"], instructions: ["Cook pasta", "Brown beef", "Simmer"] },
+    { type: "dinner", name: "Sheet Pan Sausage & Veggies", estimatedCost: 3.40, costPerServing: 3.40, cookTimeMinutes: 30, ingredients: ["Sausage", "Potatoes", "Peppers"], instructions: ["Toss", "Roast 25-30 min"] },
+    { type: "dinner", name: "White Bean & Kale Soup", estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 25, ingredients: ["Beans", "Kale", "Broth"], instructions: ["Sauté", "Simmer", "Add kale"] },
   ],
 };
 
@@ -124,7 +124,7 @@ export default function MealPlanPage() {
 
   const handleShare = async () => {
     if (!selectedMeal) return;
-    const text = `${selectedMeal.name}\n\n${selectedMeal.cookTimeMinutes} min · ${selectedMeal.calories} cal\n\nIngredients:\n${selectedMeal.ingredients.map((i) => `• ${i}`).join("\n")}\n\nInstructions:\n${selectedMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+    const text = `${selectedMeal.name}\n\n${selectedMeal.cookTimeMinutes} min\n\nIngredients:\n${selectedMeal.ingredients.map((i) => `• ${i}`).join("\n")}\n\nInstructions:\n${selectedMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
     try {
       if (navigator.share) await navigator.share({ title: selectedMeal.name, text });
       else { await navigator.clipboard.writeText(text); toast({ title: "Copied", description: "Recipe copied to clipboard." }); }
@@ -329,11 +329,6 @@ export default function MealPlanPage() {
                     const cookedKey = `${dayIndex}-${mealIndex}`;
                     const isCooked = cookedMeals.has(cookedKey);
                     const theme = getMealTheme(meal.type);
-                    const hasNutrition =
-                      typeof meal.calories === "number" && meal.calories > 0 &&
-                      typeof meal.protein === "number" &&
-                      typeof meal.carbs === "number" &&
-                      typeof meal.fats === "number";
                     return (
                       <div
                         key={`${day.day}-${mealIndex}`}
@@ -364,23 +359,8 @@ export default function MealPlanPage() {
                             </p>
                           </button>
 
-                          {/* Macros row */}
-                          {hasNutrition ? (
-                            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[12px] text-[#1a1a1a]">
-                              <span><span className="font-semibold">{meal.calories}</span> <span className="text-[#8a8a8a]">cal</span></span>
-                              <span><span className="font-semibold">{meal.protein}g</span> <span className="text-[#8a8a8a]">protein</span></span>
-                              <span><span className="font-semibold">{meal.carbs}g</span> <span className="text-[#8a8a8a]">carbs</span></span>
-                              <span><span className="font-semibold">{meal.fats}g</span> <span className="text-[#8a8a8a]">fat</span></span>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-[12px] text-[#a07a00] italic">Nutrition data missing</p>
-                          )}
-
-                          {/* Nutrition confidence + actions */}
-                          <div className="mt-2.5 flex items-center justify-between gap-2">
-                            <span className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
-                              {hasNutrition ? "Per Serving" : "Nutrition Unavailable"}
-                            </span>
+                          {/* Actions */}
+                          <div className="mt-2.5 flex items-center justify-end gap-2">
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
@@ -470,9 +450,6 @@ export default function MealPlanPage() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2 text-sm">
-                    <span className="bg-[#FFF4D6] text-[#B07E00] px-3 py-1 rounded-full flex items-center gap-1">
-                      <Flame className="w-3 h-3" /> {selectedMeal.calories} cal
-                    </span>
                     <span className="bg-muted px-3 py-1 rounded-full flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {selectedMeal.cookTimeMinutes} min
                     </span>
@@ -481,11 +458,6 @@ export default function MealPlanPage() {
                         <DollarSign className="w-3 h-3" /> ${(selectedMeal.costPerServing * servings).toFixed(2)}{servings > 1 ? ` total` : '/serving'}
                       </span>
                     )}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein * servings}g</p><p className="text-muted-foreground">Protein</p></div>
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.carbs * servings}g</p><p className="text-muted-foreground">Carbs</p></div>
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.fats * servings}g</p><p className="text-muted-foreground">Fats</p></div>
                   </div>
                   <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
                     <span className="text-sm font-medium text-foreground">Servings</span>
@@ -585,7 +557,6 @@ export default function MealPlanPage() {
                     >
                       <h4 className="font-semibold text-foreground">{alt.name}</h4>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {alt.calories} cal</span>
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alt.cookTimeMinutes}m</span>
                         <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> ${alt.estimatedCost.toFixed(2)}</span>
                         {costDiff !== 0 && (
