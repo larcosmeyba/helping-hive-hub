@@ -590,9 +590,19 @@ export default function PantryPage() {
                     <p className="text-xs font-medium text-foreground">{qty || "—"}</p>
                     <p className="text-[10px] text-muted-foreground">Added {fmtDate(it.created_at)}</p>
                   </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                    {badge.label}
-                  </span>
+                  {!it.expiration_date ? (
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[#F2A900] bg-[#FFF4D6] text-[#A56A00] flex items-center gap-1"
+                      title="Tap to add an expiration date and help fight food waste"
+                    >
+                      <AlertTriangle className="w-3 h-3" />
+                      Set expiry
+                    </span>
+                  ) : (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  )}
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
                 </button>
               );
