@@ -2036,7 +2036,10 @@ Deno.serve(async (req) => {
         ingredient_name: g.ingredient_name,
         quantity: g.quantity,
         category: g.category,
-        store_section: g.category,
+        // Phase A: encode bucket into store_section as "<bucket>:<category>"
+        // so the UI can group without a new column. Falls back to category
+        // when bucket is missing (no-bucket plan_data backfill).
+        store_section: `${(g as any).bucket ?? (g.already_have ? "already_have" : "need_to_buy")}:${g.category}`,
         estimated_price: g.estimated_price,
         already_have: g.already_have,
         instacart_search_term: g.instacart_search_term,
