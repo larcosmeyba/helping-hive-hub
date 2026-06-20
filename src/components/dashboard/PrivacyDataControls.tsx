@@ -1,18 +1,9 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Brain, BarChart3, Trash2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, Brain, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 /**
  * Privacy & Data Controls — GDPR/CCPA/Play Store-grade self-service:
