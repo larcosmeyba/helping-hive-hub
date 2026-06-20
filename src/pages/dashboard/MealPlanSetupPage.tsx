@@ -79,7 +79,8 @@ export default function MealPlanSetupPage() {
     setHousehold(profile.household_size ?? 2);
     setAdults(Math.max(1, (profile.household_size as number) ?? 2));
     setZip((profile.zip_code as string) ?? "");
-    setHomeStore((profile.home_store as string) ?? "");
+    setKrogerLocationId((profile.kroger_location_id as string | null) ?? null);
+    setKrogerStoreName((profile.kroger_store_name as string) ?? "");
     setDiet(((profile.dietary_preferences as string[]) ?? []));
     setAllergies(((profile.allergies as string[]) ?? []));
     setCooking(((profile.cooking_confidence as string) ?? "beginner"));
