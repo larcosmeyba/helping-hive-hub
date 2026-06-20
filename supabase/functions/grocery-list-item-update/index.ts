@@ -32,6 +32,25 @@ Deno.serve(async (req) => {
   if (!body?.item_id || !body?.action) {
     return json({ error: "item_id and action required" }, 400);
   }
+  // Bounds — reject absurd / malicious input early.
+  const MAX_NAME = 200;
+  const MAX_QTY = 64;
+  const MAX_CAT = 80;
+  const MAX_PRICE = 10000;
+  if (typeof body.ingredient_name === "string" && body.ingredient_name.length > MAX_NAME) {
+    return json({ error: `ingredient_name max ${MAX_NAME} chars` }, 400);
+  }
+  if (body.quantity != null && String(body.quantity).length > MAX_QTY) {
+    return json({ error: `quantity max ${MAX_QTY} chars` }, 400);
+  }
+  if (typeof body.category === "string" && body.category.length > MAX_CAT) {
+    return json({ error: `category max ${MAX_CAT} chars` }, 400);
+  }
+  if (typeof body.estimated_price === "number") {
+    if (!Number.isFinite(body.estimated_price) || body.estimated_price < 0 || body.estimated_price > MAX_PRICE) {
+      return json({ error: `estimated_price must be 0..${MAX_PRICE}` }, 400);
+    }
+  }
 
   const admin = adminClient();
   try {
