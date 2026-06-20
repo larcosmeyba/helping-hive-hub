@@ -19,22 +19,22 @@ import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
-    { type: "breakfast", name: "Greek Yogurt Parfait", calories: 320, protein: 18, carbs: 42, fats: 10, estimatedCost: 2.50, costPerServing: 2.50, cookTimeMinutes: 5, ingredients: ["Greek yogurt", "Granola", "Mixed berries", "Honey"], instructions: ["Layer yogurt in a bowl", "Add granola and berries", "Drizzle with honey"] },
-    { type: "breakfast", name: "Banana Oat Pancakes", calories: 380, protein: 12, carbs: 55, fats: 12, estimatedCost: 1.80, costPerServing: 1.80, cookTimeMinutes: 15, ingredients: ["Banana", "Oats", "Eggs", "Cinnamon", "Maple syrup"], instructions: ["Blend", "Cook", "Serve"] },
-    { type: "breakfast", name: "Veggie Scramble", calories: 340, protein: 22, carbs: 14, fats: 22, estimatedCost: 2.10, costPerServing: 2.10, cookTimeMinutes: 10, ingredients: ["Eggs", "Spinach", "Bell pepper", "Cheddar"], instructions: ["Sauté veg", "Add eggs", "Top with cheese"] },
-    { type: "breakfast", name: "Overnight Oats", calories: 410, protein: 14, carbs: 58, fats: 14, estimatedCost: 1.50, costPerServing: 1.50, cookTimeMinutes: 5, ingredients: ["Oats", "Milk", "Chia", "Berries"], instructions: ["Mix in jar", "Refrigerate overnight"] },
+    { type: "breakfast", name: "Greek Yogurt Parfait", estimatedCost: 2.50, costPerServing: 2.50, cookTimeMinutes: 5, ingredients: ["Greek yogurt", "Granola", "Mixed berries", "Honey"], instructions: ["Layer yogurt in a bowl", "Add granola and berries", "Drizzle with honey"] },
+    { type: "breakfast", name: "Banana Oat Pancakes", estimatedCost: 1.80, costPerServing: 1.80, cookTimeMinutes: 15, ingredients: ["Banana", "Oats", "Eggs", "Cinnamon", "Maple syrup"], instructions: ["Blend", "Cook", "Serve"] },
+    { type: "breakfast", name: "Veggie Scramble", estimatedCost: 2.10, costPerServing: 2.10, cookTimeMinutes: 10, ingredients: ["Eggs", "Spinach", "Bell pepper", "Cheddar"], instructions: ["Sauté veg", "Add eggs", "Top with cheese"] },
+    { type: "breakfast", name: "Overnight Oats", estimatedCost: 1.50, costPerServing: 1.50, cookTimeMinutes: 5, ingredients: ["Oats", "Milk", "Chia", "Berries"], instructions: ["Mix in jar", "Refrigerate overnight"] },
   ],
   lunch: [
-    { type: "lunch", name: "Turkey & Avocado Wrap", calories: 450, protein: 28, carbs: 38, fats: 22, estimatedCost: 3.50, costPerServing: 3.50, cookTimeMinutes: 10, ingredients: ["Tortilla", "Turkey", "Avocado", "Lettuce"], instructions: ["Layer", "Roll"] },
-    { type: "lunch", name: "Chickpea Salad Bowl", calories: 420, protein: 18, carbs: 52, fats: 16, estimatedCost: 2.80, costPerServing: 2.80, cookTimeMinutes: 10, ingredients: ["Chickpeas", "Cucumber", "Tomatoes", "Feta"], instructions: ["Combine", "Dress"] },
-    { type: "lunch", name: "Quinoa Veggie Bowl", calories: 440, protein: 16, carbs: 60, fats: 14, estimatedCost: 3.00, costPerServing: 3.00, cookTimeMinutes: 20, ingredients: ["Quinoa", "Roasted veg", "Hummus"], instructions: ["Cook quinoa", "Roast veg", "Combine"] },
-    { type: "lunch", name: "Black Bean Quesadilla", calories: 460, protein: 20, carbs: 52, fats: 18, estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 12, ingredients: ["Tortilla", "Beans", "Cheese", "Salsa"], instructions: ["Fill", "Cook 3 min/side"] },
+    { type: "lunch", name: "Turkey & Avocado Wrap", estimatedCost: 3.50, costPerServing: 3.50, cookTimeMinutes: 10, ingredients: ["Tortilla", "Turkey", "Avocado", "Lettuce"], instructions: ["Layer", "Roll"] },
+    { type: "lunch", name: "Chickpea Salad Bowl", estimatedCost: 2.80, costPerServing: 2.80, cookTimeMinutes: 10, ingredients: ["Chickpeas", "Cucumber", "Tomatoes", "Feta"], instructions: ["Combine", "Dress"] },
+    { type: "lunch", name: "Quinoa Veggie Bowl", estimatedCost: 3.00, costPerServing: 3.00, cookTimeMinutes: 20, ingredients: ["Quinoa", "Roasted veg", "Hummus"], instructions: ["Cook quinoa", "Roast veg", "Combine"] },
+    { type: "lunch", name: "Black Bean Quesadilla", estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 12, ingredients: ["Tortilla", "Beans", "Cheese", "Salsa"], instructions: ["Fill", "Cook 3 min/side"] },
   ],
   dinner: [
-    { type: "dinner", name: "Lemon Herb Chicken Thighs", calories: 520, protein: 38, carbs: 28, fats: 28, estimatedCost: 4.50, costPerServing: 4.50, cookTimeMinutes: 35, ingredients: ["Chicken thighs", "Lemon", "Garlic", "Potatoes"], instructions: ["Season", "Roast 30-35 min"] },
-    { type: "dinner", name: "Spaghetti Bolognese", calories: 550, protein: 30, carbs: 60, fats: 20, estimatedCost: 3.80, costPerServing: 3.80, cookTimeMinutes: 30, ingredients: ["Spaghetti", "Beef", "Tomatoes"], instructions: ["Cook pasta", "Brown beef", "Simmer"] },
-    { type: "dinner", name: "Sheet Pan Sausage & Veggies", calories: 510, protein: 24, carbs: 38, fats: 28, estimatedCost: 3.40, costPerServing: 3.40, cookTimeMinutes: 30, ingredients: ["Sausage", "Potatoes", "Peppers"], instructions: ["Toss", "Roast 25-30 min"] },
-    { type: "dinner", name: "White Bean & Kale Soup", calories: 380, protein: 18, carbs: 52, fats: 10, estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 25, ingredients: ["Beans", "Kale", "Broth"], instructions: ["Sauté", "Simmer", "Add kale"] },
+    { type: "dinner", name: "Lemon Herb Chicken Thighs", estimatedCost: 4.50, costPerServing: 4.50, cookTimeMinutes: 35, ingredients: ["Chicken thighs", "Lemon", "Garlic", "Potatoes"], instructions: ["Season", "Roast 30-35 min"] },
+    { type: "dinner", name: "Spaghetti Bolognese", estimatedCost: 3.80, costPerServing: 3.80, cookTimeMinutes: 30, ingredients: ["Spaghetti", "Beef", "Tomatoes"], instructions: ["Cook pasta", "Brown beef", "Simmer"] },
+    { type: "dinner", name: "Sheet Pan Sausage & Veggies", estimatedCost: 3.40, costPerServing: 3.40, cookTimeMinutes: 30, ingredients: ["Sausage", "Potatoes", "Peppers"], instructions: ["Toss", "Roast 25-30 min"] },
+    { type: "dinner", name: "White Bean & Kale Soup", estimatedCost: 2.20, costPerServing: 2.20, cookTimeMinutes: 25, ingredients: ["Beans", "Kale", "Broth"], instructions: ["Sauté", "Simmer", "Add kale"] },
   ],
 };
 
