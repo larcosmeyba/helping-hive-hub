@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, DollarSign, Users, Store, Leaf, Package,
-  ChefHat, Snowflake, AlertCircle, Plus, Loader2, Check,
+  ChefHat, Snowflake, AlertCircle, Plus, Check,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMealPlan } from "@/contexts/MealPlanContext";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useInstacartRetailers } from "@/hooks/useInstacartRetailers";
+import { KrogerStorePicker } from "@/components/kroger/KrogerStorePicker";
 import { KrogerRequiredDialog } from "@/components/kroger/KrogerRequiredDialog";
 import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 
