@@ -60,8 +60,8 @@ export default function MealPlanSetupPage() {
   );
   const [kids, setKids] = useState<number>(0);
   const [zip, setZip] = useState<string>((profile?.zip_code as string) ?? "");
-  const [homeStore, setHomeStore] = useState<string>((profile?.home_store as string) ?? "");
-  const [homeStoreKey, setHomeStoreKey] = useState<string>("");
+  const [krogerLocationId, setKrogerLocationId] = useState<string | null>((profile?.kroger_location_id as string | null) ?? null);
+  const [krogerStoreName, setKrogerStoreName] = useState<string>((profile?.kroger_store_name as string) ?? "");
   const [diet, setDiet] = useState<string[]>(
     ((profile?.dietary_preferences as string[]) ?? []),
   );
