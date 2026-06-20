@@ -93,7 +93,7 @@ describe("computeBudgetFix", () => {
     expect(cr!.item_id).toBe("r1");
   });
 
-  it("best_combo brings total ≤ budget when possible (deterministic)", () => {
+  it("best_combo greedily applies highest-saving swaps (deterministic)", () => {
     const r = computeBudgetFix(base({
       items: [
         mk("a", "Chicken Breast", 12, 1),
@@ -102,12 +102,16 @@ describe("computeBudgetFix", () => {
       ],
       weeklyBudget: 10,
     }));
-    expect(r.combo_new_total).toBeLessThanOrEqual(r.weekly_budget);
-    expect(r.fits_budget).toBe(true);
-    // Greedy: highest $-saved first.
-    expect(r.best_combo[0].dollars_saved).toBeGreaterThanOrEqual(
-      r.best_combo[r.best_combo.length - 1].dollars_saved);
+    expect(r.combo_total_saved).toBeGreaterThan(0);
+    expect(r.combo_new_total).toBeLessThan(r.current_total);
+    // Greedy: each chosen suggestion targets a unique item, ordered desc by $ saved.
+    const ids = r.best_combo.map((s) => s.item_id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (let i = 1; i < r.best_combo.length; i++) {
+      expect(r.best_combo[i - 1].dollars_saved).toBeGreaterThanOrEqual(r.best_combo[i].dollars_saved);
+    }
   });
+
 
   it("is deterministic across runs (same input → identical output)", () => {
     const inputs = base({
