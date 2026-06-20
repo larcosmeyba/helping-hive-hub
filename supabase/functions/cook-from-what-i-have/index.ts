@@ -400,7 +400,10 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
       persisted.push({ ...rec, ingredients: ingRows });
     }
 
-    return new Response(JSON.stringify({ recipes: persisted }), {
+    return new Response(JSON.stringify({
+      recipes: persisted,
+      source: (req as any)._aiFallback ? "ai_fallback" : "generative",
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
