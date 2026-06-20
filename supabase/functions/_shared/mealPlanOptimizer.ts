@@ -17,9 +17,21 @@ export const EXPIRING_BONUS = 6;       // per expiring-soon match
 export const BUDGET_WEIGHT = 4;        // applied to (avgCost - marginalCost)
 export const VARIETY_WEIGHT = 5;       // per repeated protein / cuisine
 export const RECENT_PENALTY = 12;      // if recipe id used recently
-export const MACRO_WEIGHT = 0.05;      // small secondary bonus
+export const MACRO_WEIGHT = 0.05;      // small secondary bonus (protein)
+// Phase A additions — tunable, additive, deterministic.
+export const KID_FRIENDLY_BONUS = 7;
+export const FAVORITE_BONUS = 10;
+export const SKILL_FIT_BONUS = 4;        // applied per "easier-than-cap" level
+export const KROGER_CONFIDENCE_BONUS = 3; // scaled by match_confidence (0..1)
+// Balanced-nutrition score — small weights across the full macro set.
+export const NUT_CAL_WEIGHT = 0.002;
+export const NUT_PROTEIN_WEIGHT = 0.05;
+export const NUT_CARB_WEIGHT = 0.005;
+export const NUT_FAT_WEIGHT = 0.005;
+export const NUT_FIBER_WEIGHT = 0.1;
+export const NUT_SODIUM_PENALTY = 0.001; // higher sodium → small penalty
 
-export type MealType = "breakfast" | "lunch" | "dinner";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export interface OptimizerCandidate {
   id: string;
@@ -32,6 +44,15 @@ export interface OptimizerCandidate {
   family_friendly?: boolean | null;
   calories?: number | null;
   protein_g?: number | null;
+  carbs_g?: number | null;
+  fats_g?: number | null;
+  fiber_g?: number | null;
+  sodium_mg?: number | null;
+  prep_time_minutes?: number | null;
+  cook_time_minutes?: number | null;
+  // Optional Kroger match confidence (0..1) — only meaningful when Kroger
+  // pricing has been pre-priced for a candidate. Absent → bonus skipped.
+  kroger_match_confidence?: number | null;
   [key: string]: any;
 }
 
@@ -42,6 +63,8 @@ export interface OptimizerPantryItem {
   location?: string | null;
 }
 
+export type CookingSkill = "beginner" | "intermediate" | "advanced";
+
 export interface OptimizerProfile {
   household_size: number;
   weekly_budget: number;
@@ -49,6 +72,8 @@ export interface OptimizerProfile {
   dietary_preferences: string[];
   disliked_foods?: string[];
   children_5_to_12?: number;
+  has_toddler?: boolean;
+  cooking_confidence?: CookingSkill | string | null;
 }
 
 export interface OptimizerSlot {
@@ -57,11 +82,20 @@ export interface OptimizerSlot {
 }
 
 export interface OptimizerInputs {
-  candidates: Record<MealType, OptimizerCandidate[]>;
+  // candidates may include an optional `snack` pool — backward compatible.
+  candidates: Partial<Record<MealType, OptimizerCandidate[]>> & {
+    breakfast: OptimizerCandidate[];
+    lunch: OptimizerCandidate[];
+    dinner: OptimizerCandidate[];
+  };
   pantryItems: OptimizerPantryItem[];
+  // Freezer items behave like pantry for $0-owned matching; passed
+  // separately so reporting can distinguish, but treated as owned.
+  freezerItems?: OptimizerPantryItem[];
   expiringSoon: OptimizerPantryItem[];
   profile: OptimizerProfile;
   recentRecipeIds: string[];
+  favoriteRecipeIds?: string[];
   slots: OptimizerSlot[];
   // Hard-filter helpers — passed in so this module stays free of project
   // helpers / imports. Each should return true if the recipe violates the
@@ -70,6 +104,8 @@ export interface OptimizerInputs {
   allergyTerms: string[];
   dietForbidden: string[];
   dislikedTerms: string[];
+  // Toddler choking-hazard terms (applied as a HARD filter when has_toddler).
+  toddlerHazards?: string[];
 }
 
 export interface OptimizerSelection {
@@ -95,6 +131,11 @@ export interface OptimizerDebug {
   ai_fill_count: number;
   unfilled_slots: OptimizerSlot[];
   meal_type_mismatch_dropped: number;
+  // distinct pantry/fridge/freezer items used / distinct ingredients needed
+  pantry_utilization_pct: number;
+  // Counts of HARD filter rejections — observability only.
+  skill_filtered_out: number;
+  toddler_filtered_out: number;
 }
 
 export interface OptimizerResult {
@@ -106,6 +147,7 @@ export interface OptimizerResult {
       breakfast?: { library_recipe_id: string; reason?: string };
       lunch?: { library_recipe_id: string; reason?: string };
       dinner?: { library_recipe_id: string; reason?: string };
+      snack?: { library_recipe_id: string; reason?: string };
     }>;
     why_this_plan: Record<string, unknown>;
   };
@@ -157,11 +199,35 @@ function expiringOverlap(r: OptimizerCandidate, expiringSet: Set<string>): numbe
   return pantryOverlap(r, expiringSet);
 }
 
+// Derive a difficulty level (0=beginner, 1=intermediate, 2=advanced)
+// from prep+cook time + ingredient count. Same rubric the prompt uses.
+function recipeDifficulty(r: OptimizerCandidate): 0 | 1 | 2 {
+  const prep = Number(r.prep_time_minutes) || 0;
+  const cook = Number(r.cook_time_minutes) || 0;
+  const total = prep + cook;
+  const ingCount = Array.isArray(r.ingredients) ? r.ingredients.length : 0;
+  if (total <= 30 && ingCount <= 8) return 0;
+  if (total <= 45 && ingCount <= 12) return 1;
+  return 2;
+}
+
+function skillCap(skill: CookingSkill | string | null | undefined): 0 | 1 | 2 {
+  const s = String(skill ?? "intermediate").toLowerCase();
+  if (s === "beginner") return 0;
+  if (s === "advanced") return 2;
+  return 1;
+}
+
 function isFeasible(
   r: OptimizerCandidate,
   slot: OptimizerSlot,
   inputs: OptimizerInputs,
-  onMealTypeMismatch?: (r: OptimizerCandidate) => void,
+  cap: 0 | 1 | 2,
+  hooks?: {
+    onMealTypeMismatch?: (r: OptimizerCandidate) => void;
+    onSkillReject?: (r: OptimizerCandidate) => void;
+    onToddlerReject?: (r: OptimizerCandidate) => void;
+  },
 ): boolean {
   if (!r?.id) return false;
   // Tolerate null / missing meal_type — candidates are pre-filtered by
@@ -171,13 +237,23 @@ function isFeasible(
   // in debug.meal_type_mismatch_dropped for observability.
   const mt = norm(r.meal_type);
   if (mt && mt !== slot.meal_type) {
-    onMealTypeMismatch?.(r);
+    hooks?.onMealTypeMismatch?.(r);
     return false;
   }
-  const { recipeContainsAny, allergyTerms, dietForbidden, dislikedTerms } = inputs;
+  const { recipeContainsAny, allergyTerms, dietForbidden, dislikedTerms, toddlerHazards, profile } = inputs;
   if (allergyTerms.length && recipeContainsAny(r, allergyTerms)) return false;
   if (dietForbidden.length && recipeContainsAny(r, dietForbidden)) return false;
   if (dislikedTerms.length && recipeContainsAny(r, dislikedTerms)) return false;
+  // Toddler-unsafe — HARD filter when household has a toddler.
+  if (profile.has_toddler && toddlerHazards && toddlerHazards.length && recipeContainsAny(r, toddlerHazards)) {
+    hooks?.onToddlerReject?.(r);
+    return false;
+  }
+  // Skill-too-hard — HARD filter for recipes above the user's cap.
+  if (recipeDifficulty(r) > cap) {
+    hooks?.onSkillReject?.(r);
+    return false;
+  }
   return true;
 }
 
@@ -185,9 +261,12 @@ interface ScoreCtx {
   pantrySet: Set<string>;
   expiringSet: Set<string>;
   recentSet: Set<string>;
+  favoriteSet: Set<string>;
   usedProteins: Map<string, number>;
   usedCuisines: Map<string, number>;
   avgCost: number;
+  cap: 0 | 1 | 2;
+  krogerConnected: boolean;
 }
 
 function scoreCandidate(r: OptimizerCandidate, ctx: ScoreCtx): { score: number; marginalCost: number; pantryUsed: number; expiringUsed: number } {
@@ -208,24 +287,61 @@ function scoreCandidate(r: OptimizerCandidate, ctx: ScoreCtx): { score: number; 
   score -= VARIETY_WEIGHT * (ctx.usedCuisines.get(cuisine) ?? 0);
   if (ctx.recentSet.has(r.id)) score -= RECENT_PENALTY;
 
+  // Balanced-nutrition score (replaces protein-only term).
   score += MACRO_WEIGHT * (Number(r.protein_g) || 0);
+  score += NUT_CAL_WEIGHT * Math.min(800, Number(r.calories) || 0);
+  score += NUT_PROTEIN_WEIGHT * (Number(r.protein_g) || 0);
+  score += NUT_CARB_WEIGHT * (Number(r.carbs_g) || 0);
+  score += NUT_FAT_WEIGHT * (Number(r.fats_g) || 0);
+  score += NUT_FIBER_WEIGHT * (Number(r.fiber_g) || 0);
+  score -= NUT_SODIUM_PENALTY * (Number(r.sodium_mg) || 0);
+
+  // Kid-friendly bonus (uses new column or legacy flag).
+  if (r.kid_friendly === true || r.family_friendly === true) score += KID_FRIENDLY_BONUS;
+
+  // Favorite boost.
+  if (ctx.favoriteSet.has(r.id)) score += FAVORITE_BONUS;
+
+  // Skill fit — closer to user cap = higher.
+  const diff = recipeDifficulty(r);
+  score += SKILL_FIT_BONUS * Math.max(0, ctx.cap - diff);
+
+  // Kroger price-confidence bonus — only when Kroger is connected and we
+  // have a numeric confidence for this candidate.
+  if (ctx.krogerConnected && typeof r.kroger_match_confidence === "number") {
+    score += KROGER_CONFIDENCE_BONUS * Math.max(0, Math.min(1, r.kroger_match_confidence));
+  }
 
   return { score, marginalCost, pantryUsed, expiringUsed };
 }
 
 export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
   const { candidates, pantryItems, expiringSoon, profile, recentRecipeIds, slots } = inputs;
+  const freezerItems = inputs.freezerItems ?? [];
 
-  const pantrySet = new Set(
-    pantryItems.map((p) => norm(p.normalized_name ?? p.item_name)).filter(Boolean),
-  );
+  // Owned-set for $0 matching combines pantry + freezer; expiring stays its own bucket.
+  const ownedNames: string[] = [
+    ...pantryItems.map((p) => norm(p.normalized_name ?? p.item_name)),
+    ...freezerItems.map((p) => norm(p.normalized_name ?? p.item_name)),
+  ].filter(Boolean);
+  const pantrySet = new Set(ownedNames);
   const expiringSet = new Set(
     expiringSoon.map((p) => norm(p.normalized_name ?? p.item_name)).filter(Boolean),
   );
   const recentSet = new Set(recentRecipeIds.filter(Boolean));
+  const favoriteSet = new Set((inputs.favoriteRecipeIds ?? []).filter(Boolean));
+  const cap = skillCap(profile.cooking_confidence);
+  const krogerConnected = (candidates.breakfast ?? []).some((c) => typeof c.kroger_match_confidence === "number")
+    || (candidates.lunch ?? []).some((c) => typeof c.kroger_match_confidence === "number")
+    || (candidates.dinner ?? []).some((c) => typeof c.kroger_match_confidence === "number");
 
   // Pre-compute average baseline cost across all candidates for budget scoring.
-  const allCands = [...(candidates.breakfast ?? []), ...(candidates.lunch ?? []), ...(candidates.dinner ?? [])];
+  const allCands = [
+    ...(candidates.breakfast ?? []),
+    ...(candidates.lunch ?? []),
+    ...(candidates.dinner ?? []),
+    ...(candidates.snack ?? []),
+  ];
   const avgCost = allCands.length
     ? allCands.reduce((s, c) => s + (Number(c.cost_per_serving) || FALLBACK_COST), 0) / allCands.length
     : FALLBACK_COST;
@@ -240,19 +356,28 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
   let subtotal = 0;
   let enforcedSubtotal = 0;
   let mealTypeMismatchDropped = 0;
-  const onMealTypeMismatch = () => { mealTypeMismatchDropped++; };
+  let skillFilteredOut = 0;
+  let toddlerFilteredOut = 0;
+  const hooks = {
+    onMealTypeMismatch: () => { mealTypeMismatchDropped++; },
+    onSkillReject: () => { skillFilteredOut++; },
+    onToddlerReject: () => { toddlerFilteredOut++; },
+  };
   const aiFillSlots: OptimizerSlot[] = [];
   let swaps = 0;
+  // Track distinct owned ingredients consumed for pantry_utilization_pct.
+  const ownedIngredientsConsumed = new Set<string>();
+  const allIngredientsNeeded = new Set<string>();
 
   // Stable slot order: as given (already deterministic from the caller).
   for (const slot of slots) {
-    const pool = candidates[slot.meal_type] ?? [];
-    const ctx: ScoreCtx = { pantrySet, expiringSet, recentSet, usedProteins, usedCuisines, avgCost };
+    const pool = (candidates[slot.meal_type] ?? []) as OptimizerCandidate[];
+    const ctx: ScoreCtx = { pantrySet, expiringSet, recentSet, favoriteSet, usedProteins, usedCuisines, avgCost, cap, krogerConnected };
 
     let best: { cand: OptimizerCandidate; score: number; marginalCost: number; pantryUsed: number; expiringUsed: number } | null = null;
     for (const c of pool) {
       if (chosenById.has(c.id)) continue;
-      if (!isFeasible(c, slot, inputs, onMealTypeMismatch)) continue;
+      if (!isFeasible(c, slot, inputs, cap, hooks)) continue;
       const s = scoreCandidate(c, ctx);
       if (
         !best ||
@@ -284,6 +409,14 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     enforcedSubtotal += (Number(best.cand.cost_per_serving) || FALLBACK_COST) * profile.household_size;
     pantryUsedTotal += best.pantryUsed;
     expiringUsedTotal += best.expiringUsed;
+    // Utilization tracking
+    for (const ing of ingredientNames(best.cand)) {
+      if (!ing) continue;
+      allIngredientsNeeded.add(ing);
+      for (const p of pantrySet) {
+        if (p && (ing.includes(p) || p.includes(ing))) { ownedIngredientsConsumed.add(ing); break; }
+      }
+    }
     const p = detectProtein(best.cand);
     const c = detectCuisine(best.cand);
     usedProteins.set(p, (usedProteins.get(p) ?? 0) + 1);
@@ -297,14 +430,14 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     let bestSwap: { idx: number; replacement: OptimizerCandidate; delta: number; rep: ReturnType<typeof scoreCandidate> } | null = null;
     for (let i = 0; i < selections.length; i++) {
       const sel = selections[i];
-      const currentRecipe = (candidates[sel.meal_type] ?? []).find((c) => c.id === sel.recipe_id);
+      const currentRecipe = ((candidates[sel.meal_type] ?? []) as OptimizerCandidate[]).find((c) => c.id === sel.recipe_id);
       if (!currentRecipe) continue;
       const currentCost = (Number(currentRecipe.cost_per_serving) || FALLBACK_COST) * profile.household_size;
-      const pool = candidates[sel.meal_type] ?? [];
-      const ctx: ScoreCtx = { pantrySet, expiringSet, recentSet, usedProteins, usedCuisines, avgCost };
+      const pool = (candidates[sel.meal_type] ?? []) as OptimizerCandidate[];
+      const ctx: ScoreCtx = { pantrySet, expiringSet, recentSet, favoriteSet, usedProteins, usedCuisines, avgCost, cap, krogerConnected };
       for (const cand of pool) {
         if (chosenById.has(cand.id)) continue;
-        if (!isFeasible(cand, { day_name: sel.day_name, meal_type: sel.meal_type }, inputs)) continue;
+        if (!isFeasible(cand, { day_name: sel.day_name, meal_type: sel.meal_type }, inputs, cap)) continue;
         const sc = scoreCandidate(cand, ctx);
         const candCost = sc.marginalCost * profile.household_size;
         const delta = currentCost - candCost;
@@ -316,7 +449,7 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     }
     if (!bestSwap) break;
     const sel = selections[bestSwap.idx];
-    const prevRecipe = (candidates[sel.meal_type] ?? []).find((c) => c.id === sel.recipe_id);
+    const prevRecipe = ((candidates[sel.meal_type] ?? []) as OptimizerCandidate[]).find((c) => c.id === sel.recipe_id);
     const prevRawCost = (Number(prevRecipe?.cost_per_serving) || FALLBACK_COST) * profile.household_size;
     const newRawCost = (Number(bestSwap.replacement.cost_per_serving) || FALLBACK_COST) * profile.household_size;
     chosenById.delete(sel.recipe_id);
@@ -332,7 +465,7 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
   const needsKidFriendly = (profile.children_5_to_12 ?? 0) > 0;
   if (needsKidFriendly) {
     const kfCount = () => selections.filter((s) => {
-      const r = (candidates[s.meal_type] ?? []).find((c) => c.id === s.recipe_id);
+      const r = ((candidates[s.meal_type] ?? []) as OptimizerCandidate[]).find((c) => c.id === s.recipe_id);
       return r?.kid_friendly === true || r?.family_friendly === true;
     }).length;
     let kg = 0;
@@ -341,13 +474,13 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
       let didSwap = false;
       for (let i = 0; i < selections.length; i++) {
         const sel = selections[i];
-        const cur = (candidates[sel.meal_type] ?? []).find((c) => c.id === sel.recipe_id);
+        const cur = ((candidates[sel.meal_type] ?? []) as OptimizerCandidate[]).find((c) => c.id === sel.recipe_id);
         if (cur?.kid_friendly === true || cur?.family_friendly === true) continue;
-        const pool = candidates[sel.meal_type] ?? [];
+        const pool = (candidates[sel.meal_type] ?? []) as OptimizerCandidate[];
         const alt = pool.find((c) =>
           !chosenById.has(c.id) &&
           (c.kid_friendly === true || c.family_friendly === true) &&
-          isFeasible(c, { day_name: sel.day_name, meal_type: sel.meal_type }, inputs),
+          isFeasible(c, { day_name: sel.day_name, meal_type: sel.meal_type }, inputs, cap),
         );
         if (alt) {
           chosenById.delete(sel.recipe_id);
@@ -383,6 +516,10 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     else days.push({ day_name: s.day_name });
   }
 
+  const utilization = allIngredientsNeeded.size > 0
+    ? Math.round((ownedIngredientsConsumed.size / allIngredientsNeeded.size) * 1000) / 10
+    : 0;
+
   const debug: OptimizerDebug = {
     pantry_items_used: pantryUsedTotal,
     expiring_items_used: expiringUsedTotal,
@@ -393,6 +530,9 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     ai_fill_count: aiFillSlots.length,
     unfilled_slots: aiFillSlots,
     meal_type_mismatch_dropped: mealTypeMismatchDropped,
+    pantry_utilization_pct: utilization,
+    skill_filtered_out: skillFilteredOut,
+    toddler_filtered_out: toddlerFilteredOut,
   };
 
   return {
@@ -401,12 +541,13 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
       days,
       why_this_plan: {
         engine: "algo_v2",
-        summary: `Built deterministically using ${pantryUsedTotal} pantry items (${expiringUsedTotal} expiring soon), $${debug.budget_subtotal.toFixed(2)} projected vs. $${profile.weekly_budget} budget, ${swaps} cost/variety swaps.`,
+        summary: `Built deterministically using ${pantryUsedTotal} pantry items (${expiringUsedTotal} expiring soon), $${debug.budget_subtotal.toFixed(2)} projected vs. $${profile.weekly_budget} budget, ${swaps} cost/variety swaps. Pantry utilization ${utilization}%.`,
         pantry_items_used: pantryUsedTotal,
         expiring_items_used: expiringUsedTotal,
         variety_score: debug.variety_score,
         budget_subtotal: debug.budget_subtotal,
         swaps_made: swaps,
+        pantry_utilization_pct: utilization,
       },
     },
     debug,
