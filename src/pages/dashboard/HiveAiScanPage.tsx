@@ -48,6 +48,19 @@ export default function HiveAiScanPage() {
     }
   };
 
+  if (!scanEnabled) {
+    return (
+      <div className="max-w-md mx-auto px-4 pb-8 pt-6 text-center">
+        <h1 className="text-[18px] font-extrabold text-[#1a1a1a] mb-2">Scan temporarily unavailable</h1>
+        <p className="text-[13px] text-[#6b6b6b]">
+          AI photo scanning is paused right now. You can still add pantry items manually.
+        </p>
+      </div>
+    );
+  }
+
+
+
   return (
     <div className="max-w-md mx-auto px-1 pb-8">
       <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-[14px] text-[#1a1a1a]">
