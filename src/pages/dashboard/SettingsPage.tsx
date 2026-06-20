@@ -85,7 +85,6 @@ export default function SettingsPage() {
   
   const { status: locationStatus } = useLocation();
   const { status: cameraStatus } = useCameraPermission();
-  const [showMacros, setShowMacros] = useShowMacros();
   const [notifPrefs, setNotifPrefs] = useState({
     meal_plan_reminders: true,
     snap_deposit_alerts: true,
