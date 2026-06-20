@@ -426,96 +426,29 @@ function FamilySheet({
   );
 }
 
-function StoreSheet({
-  open, onOpenChange, zip, setZip, homeStore, setHomeStore, homeStoreKey, setHomeStoreKey, saving, onSave,
-}: any) {
-  const cleanZip = /^\d{5}$/.test(zip) ? zip : null;
-  const { retailers, loading, error } = useInstacartRetailers(cleanZip);
+function KrogerStoreSheet({
+  open, onOpenChange, locationId, name, onSelect, saving, onSave,
+}: {
+  open: boolean; onOpenChange: (o: boolean) => void;
+  locationId: string | null; name: string;
+  onSelect: (s: { locationId: string; name: string }) => void;
+  saving?: boolean; onSave: () => void;
+}) {
   return (
-    <SheetShell open={open} onOpenChange={onOpenChange} title="Store"
-      footer={<SaveButton saving={saving} onClick={onSave} disabled={!homeStore} />}>
-      <div className="space-y-4">
-        <div>
-          <Label>ZIP code</Label>
-          <Input
-            inputMode="numeric" maxLength={5} value={zip}
-            onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-            placeholder="90210" className="mt-1.5"
-          />
-        </div>
-        <div>
-          <Label>Nearby stores</Label>
-          {!cleanZip && (
-            <p className="text-[12px] text-[#6b6b6b] mt-2">Enter a 5-digit ZIP to see stores.</p>
-          )}
-          {cleanZip && loading && (
-            <div className="flex items-center gap-2 text-[13px] text-[#6b6b6b] mt-3">
-              <Loader2 className="w-4 h-4 animate-spin" /> Looking up stores…
-            </div>
-          )}
-          {cleanZip && !loading && error && (
-            <p className="text-[12px] text-destructive mt-2">{error}</p>
-          )}
-          {cleanZip && !loading && !error && retailers.length === 0 && (
-            <p className="text-[12px] text-[#6b6b6b] mt-2">No stores found for this ZIP.</p>
-          )}
-          {cleanZip && !loading && !error && retailers.length > 0 && (
-            <p className="text-[12px] text-[#6b6b6b] mt-2">
-              Stores shown are typical grocery retailers in your ZIP code.
-            </p>
-          )}
-          <div className="mt-2 space-y-2">
-            {[...retailers]
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .sort((a, b) => {
-                if (homeStore === a.name) return -1;
-                if (homeStore === b.name) return 1;
-                return 0;
-              })
-              .map((r) => {
-                const active = homeStore === r.name;
-                return (
-                  <RetailerRow
-                    key={r.retailer_key}
-                    name={r.name}
-                    logoUrl={r.retailer_logo_url ?? null}
-                    active={active}
-                    onSelect={() => { setHomeStore(r.name); setHomeStoreKey(r.retailer_key); }}
-                  />
-                );
-              })}
-          </div>
-        </div>
+    <SheetShell open={open} onOpenChange={onOpenChange} title="Kroger Store"
+      footer={<SaveButton saving={saving} onClick={onSave} disabled={!locationId} />}>
+      <div className="space-y-3">
+        {name && (
+          <p className="text-[12px] text-[#6b6b6b]">
+            Current: <span className="font-semibold text-[#1a1a1a]">{name}</span>
+          </p>
+        )}
+        <KrogerStorePicker
+          selectedLocationId={locationId}
+          onSelect={(s) => onSelect({ locationId: s.locationId, name: s.name })}
+        />
       </div>
     </SheetShell>
-  );
-}
-
-function RetailerRow({
-  name, logoUrl, active, onSelect,
-}: {
-  name: string; logoUrl: string | null; active: boolean; onSelect: () => void;
-}) {
-  const [logoFailed, setLogoFailed] = useState(false);
-  const showLogo = !!logoUrl && !logoFailed;
-  return (
-    <button
-      onClick={onSelect}
-      className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-left transition-colors ${
-        active ? "bg-[#1F5A3D]/10 border-[#1F5A3D]" : "bg-white border-[#EEE7DA] hover:border-[#d9d2c4]"
-      }`}
-    >
-      {showLogo && (
-        <img
-          src={logoUrl!}
-          alt=""
-          className="w-9 h-9 rounded-md object-contain bg-white"
-          onError={() => setLogoFailed(true)}
-        />
-      )}
-      <span className="flex-1 text-[14px] font-semibold text-[#1a1a1a]">{name}</span>
-      {active && <Check className="w-5 h-5 text-[#1F5A3D]" />}
-    </button>
   );
 }
 
