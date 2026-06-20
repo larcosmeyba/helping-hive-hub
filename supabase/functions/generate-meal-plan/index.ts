@@ -25,7 +25,21 @@ type GenerationErrorCode =
   | "invalid_ai_json"
   | "database_insert_failed"
   | "grocery_list_failed"
-  | "budget_unfit";
+  | "budget_unfit"
+  | "kid_friendly_unfit"
+  | "serving_size_invalid"
+  | "grocery_list_invalid";
+
+// =========================================================
+// Phase A (algo_v2) — deterministic budget engine constants.
+// Soft scoring targets + running monitor; final hard gate stays at
+// total <= weeklyBudget so we never accept an actual over-budget plan.
+// =========================================================
+const TARGET_BUDGET_RATIO = 0.95;
+const MEAL_BUDGET_SPLIT = { breakfast: 0.25, lunch: 0.30, dinner: 0.35, snacks: 0.10 } as const;
+const CANDIDATE_POOL_SIZE = 30;
+const SNACK_POOL_SIZE = 15;
+const LOW_KROGER_CONFIDENCE_RATIO = 0.4; // >40% low-confidence lines → warn
 
 const BACKEND_STEPS: Record<JobStage, string[]> = {
   preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "recipe candidates fetched", "meal_plan_context created"],
