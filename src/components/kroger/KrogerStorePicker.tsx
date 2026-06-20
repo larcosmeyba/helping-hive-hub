@@ -70,7 +70,7 @@ export function KrogerStorePicker({ selectedLocationId, onSelect }: Props) {
             <Card
               key={s.locationId}
               className={`p-3 cursor-pointer flex items-start gap-3 ${selected ? "ring-2 ring-primary" : ""}`}
-              onClick={() => onSelect(s)}
+              onClick={() => handleSelect(s)}
             >
               <MapPin className="h-4 w-4 mt-1 text-primary" />
               <div className="flex-1">
