@@ -2072,6 +2072,43 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Phase A (Part N): surface data the client needs to emit PostHog events
+    // (recipe_candidates_filtered, kroger_price_match_completed,
+    // meal_plan_validation_passed, meal_plan_over_budget_corrected,
+    // grocery_list_generated). All events go through trackEvent so opt-out
+    // is honored. The server emits no events itself.
+    const eventData = {
+      algorithm_version: engine,
+      candidates_filtered: {
+        breakfast: breakfastCandidates.length,
+        lunch: lunchCandidates.length,
+        dinner: dinnerCandidates.length,
+        snack: snackCandidates.length,
+      },
+      kroger_match: krogerSummary
+        ? {
+          matched: krogerSummary.matched_count,
+          unmatched: krogerSummary.unmatched_count,
+          avg_confidence: (krogerSummary as any).avg_match_confidence ?? null,
+          low_confidence: (krogerSummary as any).low_confidence_count ?? null,
+        }
+        : null,
+      kroger_confidence_warning: krogerSummary
+        ? ((krogerSummary as any).low_confidence_count ?? 0) /
+            Math.max(1, krogerSummary.matched_count) > LOW_KROGER_CONFIDENCE_RATIO
+        : false,
+      budget: {
+        targets: budgetTargets,
+        delivered_total: estimatedTotalCost,
+        weekly: weeklyBudget,
+        over_budget: overBudgetAfterAdjust,
+      },
+      swaps_made: optimizerDebug?.swaps_made ?? null,
+      pantry_utilization_pct: optimizerDebug?.pantry_utilization_pct ?? null,
+      grocery_items: groceryList.length,
+      validation_passed: true,
+    };
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -2080,6 +2117,7 @@ Deno.serve(async (req) => {
         grocery_list_id: glRow.id,
         ...normalized,
         why_this_plan: parsed.why_this_plan ?? {},
+        event_data: eventData,
         pricing_disclaimer: pricingMode === "kroger"
           ? "Prices reflect live Kroger pricing for your home store. Final pricing is confirmed at checkout."
           : "Estimated pricing for planning only. Connect Kroger for live store pricing.",
