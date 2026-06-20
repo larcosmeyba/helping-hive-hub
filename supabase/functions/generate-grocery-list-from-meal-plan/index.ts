@@ -133,6 +133,10 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .eq("source_type", "meal_plan");
 
+    // Phase A: every row regenerated here is implicitly "need_to_buy" — the
+    // generator's bucket logic already removed already-have items. Encode the
+    // bucket into store_section so the UI sections grocery items the same
+    // way regardless of which edge function produced the list.
     const rows = Array.from(grouped.values()).map((g) => ({
       user_id: userId,
       grocery_list_id: list!.id,
@@ -142,6 +146,7 @@ Deno.serve(async (req) => {
       quantity: g.quantity,
       unit: g.unit,
       estimated_price: g.estimated_price || null,
+      store_section: "need_to_buy:Pantry",
       instacart_search_term: g.instacart_search_term,
       needed_for_meals: g.needed_for_meals,
       already_have: false,
