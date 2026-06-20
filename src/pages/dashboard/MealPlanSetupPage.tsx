@@ -300,6 +300,16 @@ export default function MealPlanSetupPage() {
         value={cooking} setValue={setCooking}
         saving={saving} onSave={() => saveProfile({ cooking_confidence: cooking }, "Cooking level updated")}
       />
+      <KrogerStoreSheet
+        open={openSheet === "store"} onOpenChange={(o) => !o && setOpenSheet(null)}
+        locationId={krogerLocationId} name={krogerStoreName}
+        onSelect={(s) => { setKrogerLocationId(s.locationId); setKrogerStoreName(s.name); }}
+        saving={saving}
+        onSave={() => saveProfile({
+          kroger_location_id: krogerLocationId,
+          kroger_store_name: krogerStoreName,
+        }, "Store updated")}
+      />
 
       <KrogerRequiredDialog
         open={krogerPromptOpen}
