@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 // ---- SSRF guard ----
 // Only allow https URLs OR data: URIs. Reject any URL whose hostname resolves
 // to a private/loopback/link-local IP, or is a bare IP literal in those ranges.
@@ -195,6 +196,7 @@ Rules:
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (error) {
+    try { captureEdgeError(error, { fn: "scan-pantry-photo" }); } catch { /* noop */ }
     console.error("Scan pantry photo error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),

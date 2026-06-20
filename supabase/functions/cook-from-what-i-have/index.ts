@@ -6,6 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 // OpenAI access is via _shared/openaiClient.ts (gpt-5.4-mini).
 
 function daysUntil(date: string | null): number | null {
@@ -370,6 +371,7 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    try { captureEdgeError(err, { fn: "cook-from-what-i-have" }); } catch { /* noop */ }
     console.error("cook-from-what-i-have error", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,

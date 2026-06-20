@@ -8,6 +8,7 @@ import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
 import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 interface Overrides {
   budget?: number;
   store?: string;
@@ -1862,6 +1863,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    try { captureEdgeError(err, { fn: "generate-meal-plan" }); } catch { /* noop */ }
     console.error("generate-meal-plan error", err);
     return new Response(JSON.stringify({ ok: false, error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
