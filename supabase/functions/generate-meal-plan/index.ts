@@ -479,13 +479,18 @@ Deno.serve(async (req) => {
       (recentUsage ?? []).filter((r: any) => !r.favorited).map((r: any) => r.recipe_id),
     );
 
-    // Fetch candidate pool per meal type
-    async function fetchCandidates(mealType: "breakfast" | "lunch" | "dinner"): Promise<any[]> {
-      // Pull a broad pool; we'll filter dietary/budget client-side for flexibility
+    // Fetch candidate pool per meal type. Phase A: snack supported, pool size 30 (15 for snacks),
+    // and recipes.is_active is a HARD filter.
+    async function fetchCandidates(mealType: "breakfast" | "lunch" | "dinner" | "snack"): Promise<any[]> {
+      const isSnack = mealType === "snack";
+      const limit = isSnack ? SNACK_POOL_SIZE : CANDIDATE_POOL_SIZE;
+      // Pull a broad pool; we'll filter dietary/budget client-side for flexibility.
+      // is_active is filtered server-side so inactive recipes never reach the optimizer.
       const { data, error } = await admin
         .from("recipes")
-        .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes, avg_rating, times_used, source, created_by_user_id")
+        .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, carbs_g, fats_g, fiber_g, sodium_mg, kid_friendly, is_active, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes, avg_rating, times_used, source, created_by_user_id")
         .eq("meal_type", mealType)
+        .eq("is_active", true)
         .or(`is_public.eq.true,created_by_user_id.eq.${userId}`)
         .limit(120);
       if (error) {
@@ -527,19 +532,21 @@ Deno.serve(async (req) => {
         return (a.times_used ?? 0) - (b.times_used ?? 0);
       });
 
-      return pool.slice(0, 12);
+      return pool.slice(0, limit);
     }
 
-    const [breakfastCandidates, lunchCandidates, dinnerCandidates] = await Promise.all([
+    const [breakfastCandidates, lunchCandidates, dinnerCandidates, snackCandidates] = await Promise.all([
       fetchCandidates("breakfast"),
       fetchCandidates("lunch"),
       fetchCandidates("dinner"),
+      fetchCandidates("snack"),
     ]);
 
     await advance("preparing", "recipe candidates fetched", "Picking from your recipe library", {
       breakfast_candidates: breakfastCandidates.length,
       lunch_candidates: lunchCandidates.length,
       dinner_candidates: dinnerCandidates.length,
+      snack_candidates: snackCandidates.length,
     });
 
     const candidatesById = new Map<string, any>();
