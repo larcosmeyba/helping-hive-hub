@@ -352,6 +352,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const overrides: Overrides = body.overrides ?? body ?? {};
 
+    // Engine selection — flag-driven from the client (PostHog
+    // `new-meal-plan-algorithm`). Default and unknown values → hybrid_v1
+    // so a flag outage cannot route traffic to the new path.
+    const requestedEngine = (body?.overrides?.algorithmVersion ?? body?.algorithmVersion) as string | undefined;
+    const engine: "hybrid_v1" | "algo_v2" = requestedEngine === "algo_v2" ? "algo_v2" : "hybrid_v1";
+
     const { data: jobRow, error: jobErr } = await admin
       .from("meal_plan_generation_jobs")
       .insert({
@@ -360,7 +366,7 @@ Deno.serve(async (req) => {
         current_stage: "preparing",
         current_step: BACKEND_STEPS.preparing[0],
         status_message: "Reviewing your profile & pantry",
-        metadata: { source: "generate-meal-plan", engine: "hybrid_v1" },
+        metadata: { source: "generate-meal-plan", engine },
       })
       .select("id")
       .single();
