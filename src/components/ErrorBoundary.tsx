@@ -1,5 +1,6 @@
 import React from "react";
 import { logClientError } from "@/lib/errorLogger";
+import { sentryCapture } from "@/lib/sentry";
 
 interface Props {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       source: "ErrorBoundary",
       componentStack: info.componentStack ?? undefined,
     });
+    sentryCapture(error, { react: { componentStack: info.componentStack } });
   }
 
   reset = () => {

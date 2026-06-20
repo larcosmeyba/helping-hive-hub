@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { sentryCapture } from "@/lib/sentry";
 
 interface Props {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ class RouteErrorBoundaryInner extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[RouteErrorBoundary]", error, info);
+    sentryCapture(error, { react: { componentStack: info.componentStack }, route: this.props.routeKey });
   }
 
   componentDidUpdate(prevProps: Props) {
