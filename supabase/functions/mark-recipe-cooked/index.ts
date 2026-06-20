@@ -41,7 +41,10 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { recipe_id } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { recipe_id } = body;
+    const public_recipe_id: string | null = body?.public_recipe_id ?? null;
+    const favorited: boolean | null = typeof body?.favorited === "boolean" ? body.favorited : null;
     if (!recipe_id) {
       return new Response(JSON.stringify({ error: "recipe_id required" }), {
         status: 400,
