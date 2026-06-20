@@ -470,9 +470,6 @@ export default function MealPlanPage() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2 text-sm">
-                    <span className="bg-[#FFF4D6] text-[#B07E00] px-3 py-1 rounded-full flex items-center gap-1">
-                      <Flame className="w-3 h-3" /> {selectedMeal.calories} cal
-                    </span>
                     <span className="bg-muted px-3 py-1 rounded-full flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {selectedMeal.cookTimeMinutes} min
                     </span>
