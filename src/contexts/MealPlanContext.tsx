@@ -259,6 +259,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
             errorMessage: rateLimitedMsg!,
             statusMessage: rateLimitedMsg!,
           }));
+          void trackEvent("meal_plan_generation_failed", { reason: "rate_limited", algorithmVersion });
           return;
         }
         throw new Error(latestJob?.error_message || error.message);
@@ -280,6 +281,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
           errorMessage: msg,
           statusMessage: msg,
         }));
+        void trackEvent("meal_plan_generation_failed", { reason: errCode, algorithmVersion });
         return;
       }
       if (data?.error) {
@@ -298,6 +300,12 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         errorMessage: (data as any).error_message ?? prev.errorMessage,
         statusMessage: (data as any).fallback ? "Showing fallback meal plan" : "Your meal plan is ready",
       }));
+      void trackEvent("meal_plan_generated", {
+        pricingMode: opts?.pricingMode ?? null,
+        algorithmVersion,
+        fallbackUsed: Boolean((data as any).fallback),
+        itemCount: Array.isArray((data as any).groceryList) ? (data as any).groceryList.length : null,
+      });
 
       if ((data as any).fallback) {
         toast({
@@ -330,6 +338,10 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         title: "Meal plan generation failed",
         description: latestJob?.error_message ?? err?.message ?? "Failed to generate meal plan",
         variant: "destructive",
+      });
+      void trackEvent("meal_plan_generation_failed", {
+        reason: latestJob?.error_code ?? "error",
+        algorithmVersion,
       });
       setGenerationStage(latestJob ? normalizeGenerationStage(latestJob.current_stage) : "idle");
     } finally {
