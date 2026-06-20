@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
     const sourceType: "cook_from_what_i_have" | "food_waste" =
       body?.source_type === "food_waste" ? "food_waste" : "cook_from_what_i_have";
     const maxRecipes = Math.min(Math.max(Number(body?.count) || 3, 1), 5);
+    const useDbMatch = body?.new_algorithm === true || body?.use_db_match === true;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
