@@ -435,12 +435,6 @@ export default function SampleMealPlan() {
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{meal.time}</span>
                           <span className="text-primary font-semibold">{meal.cost}</span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                          <span className="bg-muted/50 px-1.5 py-0.5 rounded">{meal.calories} cal</span>
-                          <span className="bg-muted/50 px-1.5 py-0.5 rounded">{meal.protein}g P</span>
-                          <span className="bg-muted/50 px-1.5 py-0.5 rounded">{meal.carbs}g C</span>
-                          <span className="bg-muted/50 px-1.5 py-0.5 rounded">{meal.fats}g F</span>
-                        </div>
                         <div className="mt-3 pt-3 border-t border-border/50">
                           <p className="text-[11px] text-muted-foreground">{meal.ingredients.join(" · ")}</p>
                         </div>
