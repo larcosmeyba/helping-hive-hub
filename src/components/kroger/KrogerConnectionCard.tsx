@@ -87,7 +87,7 @@ export function KrogerConnectionCard() {
             Connect Kroger to pull live product info and prices into your meal plan.
           </div>
         </div>
-        {conn && <Badge variant="secondary">Connected</Badge>}
+        {conn && <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100">Connected</Badge>}
       </div>
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
