@@ -14,6 +14,7 @@ export interface MealPlanMeal {
   /** Snake-case alias emitted by the meal-plan edge function & stored in plan_data. */
   image_url?: string;
   imageVerified?: boolean;
+  nutritionVerified?: boolean;
 }
 
 export interface MealPlanDay {

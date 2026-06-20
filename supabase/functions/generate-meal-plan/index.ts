@@ -64,8 +64,15 @@ COOKING SKILL RULES (binding):
 - advanced: no restriction.
 
 RECIPE OUTPUT RULES (binding):
-- For every new_meal you create, "instructions" MUST be a non-empty array of clear, numbered step-by-step cooking actions ("Heat skillet over medium heat", "Add olive oil and onions", "Cook 3-5 minutes", etc.). Empty or single-line instructions are NOT acceptable.
+- For every new_meal, "instructions" MUST be a non-empty array of HIGHLY DETAILED step-by-step cooking actions written for someone who has never cooked the dish before. Every step is one numbered action and MUST include:
+  * The pan/pot/tool to use ("12-inch nonstick skillet", "medium saucepan", "sheet pan lined with parchment").
+  * The exact heat level ("medium-high heat", "350°F / 175°C oven").
+  * The exact time range ("cook 4–5 minutes per side", "simmer uncovered 12 minutes", "bake 18 minutes").
+  * The visual or sensory doneness cue ("until golden brown and fragrant", "until internal temp reaches 165°F", "until liquid has reduced by half", "until edges curl and bottom is set").
+  * Any seasoning amounts ("½ tsp salt", "1 tbsp olive oil") whenever an ingredient is added.
+- Minimum 6 steps, target 8–12 steps. Include prep steps (washing, chopping with sizes like "¼-inch dice"), the cooking sequence, a doneness check, and a plating/serving step. Never produce vague steps like "cook until done" or "combine and serve" — always state the temperature, time, and visual cue.
 - Include prep_time_minutes and cook_time_minutes for every new_meal.
+- Always include calories_estimate, protein_estimate (g), carbs_estimate (g), and fat_estimate (g) per serving for every new_meal based on the recipe's ingredients and portion size. Be realistic, not round numbers.
 
 - Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
 - When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
@@ -116,6 +123,8 @@ const RESPONSE_SCHEMA = {
             estimated_cost_per_serving: { type: "number" },
             calories_estimate: { type: "integer" },
             protein_estimate: { type: "number" },
+            carbs_estimate: { type: "number" },
+            fat_estimate: { type: "number" },
             prep_time_minutes: { type: "integer" },
             cook_time_minutes: { type: "integer" },
             difficulty: { type: "string" },
@@ -863,6 +872,10 @@ Deno.serve(async (req) => {
               continue;
             }
             recipe = inserted;
+            // Stash AI-estimated macros not stored in DB columns.
+            recipe.carbs_g = nm.carbs_estimate ?? null;
+            recipe.fat_g = nm.fat_estimate ?? null;
+            recipe.nutrition_source = "ai_estimated";
           }
         } else {
           continue;
@@ -1546,23 +1559,29 @@ Deno.serve(async (req) => {
 
 
     // ===== INSTRUCTION ENFORCEMENT =====
-    // Every meal MUST have step-by-step instructions. Backfill obvious cases.
+    // Every meal MUST have detailed step-by-step instructions. Backfill stubs
+    // with a richer scaffold than "combine and serve".
     for (const day of resolvedDays) {
       for (const m of day.meals) {
         const r = m.recipe;
         const instr = Array.isArray(r.instructions) ? r.instructions.filter((s: any) => typeof s === "string" && s.trim()) : [];
-        if (instr.length === 0) {
+        if (instr.length < 4) {
           r.instructions = [
-            "Gather and measure all ingredients.",
-            "Heat a pan or pot over medium heat as needed for your main ingredient.",
-            "Cook proteins first until fully done; add vegetables and seasonings.",
-            "Combine all components, adjust seasoning to taste, and serve warm.",
+            "Gather all ingredients and measure them out before you start cooking (this is called 'mise en place' and prevents mistakes).",
+            "Wash and chop any vegetables into uniform ¼-inch pieces so they cook evenly.",
+            "Heat a 12-inch nonstick skillet or appropriately sized pot over medium heat for 1–2 minutes until warm.",
+            "Add 1 tablespoon of oil and any aromatics (onion, garlic). Cook 2–3 minutes, stirring often, until softened and fragrant.",
+            "Add your main protein. Cook 4–6 minutes, turning once, until browned on the outside and cooked through (internal temp 165°F for poultry, 145°F for fish, no pink for ground meat).",
+            "Add remaining vegetables and seasonings (½ tsp salt, ¼ tsp pepper to start). Stir and cook 3–5 minutes until vegetables are tender-crisp.",
+            "Add any liquids or sauces. Bring to a gentle simmer and cook 5–8 minutes until the sauce thickens and coats the back of a spoon.",
+            "Taste and adjust seasoning. Plate and serve warm, garnishing with fresh herbs if desired.",
           ];
         } else {
           r.instructions = instr;
         }
       }
     }
+
 
     const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
     let budgetWarningText: string | null = null;
@@ -1868,10 +1887,11 @@ function normalizePlanForClient(
       recipe_id: m.recipe.id,
       image_url: m.recipe.image_url,
       imageUrl: m.recipe.image_url,
-      calories: m.recipe.calories ?? 0,
-      protein: Number(m.recipe.protein_g) ?? 0,
-      carbs: 0,
-      fats: 0,
+      calories: Number(m.recipe.calories) || 0,
+      protein: Number(m.recipe.protein_g) || 0,
+      carbs: Number(m.recipe.carbs_g) || 0,
+      fats: Number(m.recipe.fat_g) || 0,
+      nutritionVerified: m.recipe.nutrition_source !== "ai_estimated" && (m.recipe.source ?? "library") !== "ai_generated",
       estimatedCost: m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) * householdSize : 0,
       costPerServing: m.recipe.cost_per_serving,
       cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
