@@ -714,6 +714,7 @@ Deno.serve(async (req) => {
 
     const { callOpenAI } = await import("../_shared/openaiClient.ts");
     let lastAttemptError: { code: GenerationErrorCode; message: string; details?: Record<string, unknown> } | null = null;
+    let optimizerDebug: any = null;
 
     async function attempt(attemptNum: number): Promise<any | null> {
       await advance("generating", "OpenAI request started", "Building your weekly meal plan", { attempt: attemptNum });
@@ -771,7 +772,83 @@ Deno.serve(async (req) => {
     const stubAllowed = Deno.env.get("LOADTEST_STUB_ALLOWED") === "true";
     const stubRequested = req.headers.get("x-loadtest-stub") === "true";
     let parsed: any;
-    if (stubAllowed && stubRequested) {
+    if (engine === "algo_v2") {
+      // ===== algo_v2: deterministic optimizer (no AI for selection) =====
+      // Reuses already-loaded candidates + pantry context. Pure function call;
+      // no extra network or DB I/O. Same OUTPUT contract as hybrid_v1's
+      // `parsed.days`, so the downstream resolver / pricing / save / normalize
+      // flow is unchanged.
+      await advance("generating", "algo_v2 optimizer started", "Building your weekly meal plan (deterministic)");
+      const { runOptimizer } = await import("../_shared/mealPlanOptimizer.ts");
+      const DAY_NAMES_V2 = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const slots: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" }> = [];
+      for (let i = 0; i < daysCount; i++) {
+        const d = DAY_NAMES_V2[i] || `Day ${i + 1}`;
+        for (const mt of ["breakfast", "lunch", "dinner"] as const) slots.push({ day_name: d, meal_type: mt });
+      }
+      const recentIds = (recentUsage ?? []).map((r: any) => r.recipe_id).filter(Boolean);
+      const dislikedTermsV2 = ((profile as any).disliked_foods ?? []).map((s: string) => String(s).toLowerCase()).filter(Boolean);
+      const optResult = runOptimizer({
+        candidates: {
+          breakfast: breakfastCandidates as any,
+          lunch: lunchCandidates as any,
+          dinner: dinnerCandidates as any,
+        },
+        pantryItems: pantryItems as any,
+        expiringSoon: expiringSoon as any,
+        profile: {
+          household_size: householdSize,
+          weekly_budget: weeklyBudget,
+          allergies,
+          dietary_preferences: dietaryPrefs,
+          disliked_foods: dislikedTermsV2,
+          children_5_to_12: Number((profile as any).children_5_to_12 ?? 0),
+        },
+        recentRecipeIds: recentIds,
+        slots,
+        recipeContainsAny: recipeContainsAny as any,
+        allergyTerms: expandAllergies(allergies),
+        dietForbidden: forbiddenForDiets(dietaryPrefs),
+        dislikedTerms: dislikedTermsV2,
+      });
+      parsed = optResult.parsed;
+      optimizerDebug = optResult.debug;
+      await advance("generating", "algo_v2 optimizer completed", "Building your weekly meal plan", {
+        pantry_items_used: optimizerDebug.pantry_items_used,
+        expiring_items_used: optimizerDebug.expiring_items_used,
+        budget_subtotal: optimizerDebug.budget_subtotal,
+        swaps_made: optimizerDebug.swaps_made,
+        ai_fill_count: optimizerDebug.ai_fill_count,
+      });
+
+      // AI-fill for any slot that had NO feasible candidate. Falls back to the
+      // existing safe-staple helper rather than failing — the rest of the
+      // pipeline (allergy resolver, budget gate) still runs.
+      if (optimizerDebug.unfilled_slots?.length) {
+        for (const us of optimizerDebug.unfilled_slots) {
+          const day = parsed.days.find((d: any) => d.day_name === us.day_name) ?? { day_name: us.day_name };
+          if (!parsed.days.includes(day)) parsed.days.push(day);
+          try {
+            const ai = await callOpenAI({
+              model: "gpt-5.4-mini",
+              system: "You are creating ONE compliant recipe for a specific meal slot. Honor allergies, dietary preferences, and disliked foods strictly. Output via the tool.",
+              user: `Create a ${us.meal_type} for ${householdSize} servings under $${(weeklyBudget / 21).toFixed(2)}/serving. Allergies: ${allergies.join(", ") || "none"}. Diet: ${dietaryPrefs.join(", ") || "none"}.`,
+              tools: [{ type: "function", function: { name: "return_meal", description: "Single recipe", parameters: { type: "object", properties: { meal_name: { type: "string" }, ingredients: { type: "array", items: { type: "string" } }, instructions: { type: "array", items: { type: "string" } }, estimated_cost_per_serving: { type: "number" } }, required: ["meal_name", "ingredients", "instructions"] } } }],
+              tool_choice: { type: "function", function: { name: "return_meal" } },
+              max_tokens: 800,
+              timeout_ms: 30000,
+              log: { admin, user_id: userId, request_type: "meal_plan_algo_v2_fill" },
+            });
+            const nm = ai.tool_arguments as any;
+            if (nm?.meal_name) {
+              day[us.meal_type] = { new_meal: { ...nm, prep_time_minutes: 10, cook_time_minutes: 20 }, reason: "Generated to fill an empty slot." };
+            }
+          } catch (e) {
+            console.warn("[generate-meal-plan algo_v2] AI fill failed", e);
+          }
+        }
+      }
+    } else if (stubAllowed && stubRequested) {
       await advance("generating", "OpenAI response received", "Building your weekly meal plan (loadtest stub)", { stub: true });
       parsed = buildServerFallback(daysCount, breakfastCandidates, lunchCandidates, dinnerCandidates);
     } else {
@@ -793,6 +870,7 @@ Deno.serve(async (req) => {
         });
       }
     }
+
 
     // ===== RESOLVE meals into server-truth data =====
     // For each day/slot: if library_recipe_id → load from recipes table.
