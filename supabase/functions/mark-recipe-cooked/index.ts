@@ -1,6 +1,10 @@
 // Marks a generated recipe as cooked: decrements pantry quantities for
 // ingredients flagged already_have, marks fully-used items checked_off,
-// and stamps the recipe with cooked_at + savings.
+// writes recipe_usage history (when a public recipe_id is supplied),
+// and stamps the recipe with cooked_at + savings. Supports a "favorited"
+// preference toggle for cook recipes.
+
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
