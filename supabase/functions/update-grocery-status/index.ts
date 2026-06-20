@@ -1,15 +1,18 @@
 // update-grocery-status: transition a meal_plan's grocery_status through
 // not_generated → generated → reviewed → sent_to_instacart → purchased.
 // Stores instacart_order_id + purchase_date when status = purchased.
+// Accepts "shopped" as an alias of "purchased" (Shop Groceries flow).
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, getUserIdFromAuth } from "../_shared/mealPlanContext.ts";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const ALLOWED = new Set([
   "not_generated",
   "generated",
   "reviewed",
   "sent_to_instacart",
+  "shopped",
   "purchased",
 ]);
 
@@ -26,16 +29,17 @@ Deno.serve(async (req) => {
 
     const { meal_plan_id, status, instacart_order_id } = await req.json().catch(() => ({}));
 
-    if (!status || !ALLOWED.has(status)) {
+    const rawStatus = status as string;
+    if (!rawStatus || !ALLOWED.has(rawStatus)) {
       return new Response(
         JSON.stringify({ error: `status must be one of ${[...ALLOWED].join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+    const normStatus = rawStatus === "shopped" ? "purchased" : rawStatus;
 
     const admin = adminClient();
 
-    // Resolve plan
     let planId = meal_plan_id as string | undefined;
     if (!planId) {
       const { data: active } = await admin
@@ -54,8 +58,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const update: Record<string, unknown> = { grocery_status: status };
-    if (status === "purchased") {
+    const update: Record<string, unknown> = { grocery_status: normStatus };
+    if (normStatus === "purchased") {
       update.grocery_purchase_date = new Date().toISOString();
       if (instacart_order_id) update.instacart_order_id = String(instacart_order_id);
     }
@@ -68,8 +72,7 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    // Mirror onto grocery_lists.status when applicable
-    if (status === "purchased") {
+    if (normStatus === "purchased") {
       await admin
         .from("grocery_lists")
         .update({ status: "purchased" })
@@ -77,10 +80,11 @@ Deno.serve(async (req) => {
         .eq("user_id", userId);
     }
 
-    return new Response(JSON.stringify({ ok: true, status }), {
+    return new Response(JSON.stringify({ ok: true, status: normStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    try { captureEdgeError(err, { fn: "update-grocery-status" }); } catch { /* */ }
     console.error("[update-grocery-status] error", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
