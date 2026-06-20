@@ -943,7 +943,7 @@ Deno.serve(async (req) => {
     // Else if new_meal → insert a private recipe row owned by user.
     const resolvedDays: Array<{
       day_name: string;
-      meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner"; recipe: any; reason?: string }>;
+      meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner" | "snack"; recipe: any; reason?: string }>;
     }> = [];
 
     const allergyTerms = expandAllergies(allergies);
