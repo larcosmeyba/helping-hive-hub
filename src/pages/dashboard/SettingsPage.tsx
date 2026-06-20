@@ -25,7 +25,7 @@ import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls"
 import { KrogerConnectionCard } from "@/components/kroger/KrogerConnectionCard";
 import { KrogerHomeStoreCard } from "@/components/kroger/KrogerHomeStoreCard";
 import { Switch } from "@/components/ui/switch";
-import { useShowMacros } from "@/hooks/useShowMacros";
+
 
 const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Shellfish", "Soy", "Eggs"];
 const DIET_OPTIONS = ["Vegetarian", "Vegan", "Keto", "Low-carb", "Halal", "Kosher", "Gluten-free", "Dairy-free", "Nut allergy", "No seafood"];
