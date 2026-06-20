@@ -83,10 +83,18 @@ export interface OptimizerDebug {
   pantry_items_used: number;
   expiring_items_used: number;
   variety_score: number;
+  // Pantry-discounted planning subtotal (uses marginalCost). This is the
+  // optimizer's internal scoring figure and will read lower than the
+  // generate-meal-plan budget gate, which enforces raw cost_per_serving.
+  // See `enforced_subtotal` below for the gate-parity number.
   budget_subtotal: number;
+  // Non-discounted subtotal using raw cost_per_serving * household_size,
+  // matching the downstream `budget_unfit` hard gate in generate-meal-plan.
+  enforced_subtotal: number;
   swaps_made: number;
   ai_fill_count: number;
   unfilled_slots: OptimizerSlot[];
+  meal_type_mismatch_dropped: number;
 }
 
 export interface OptimizerResult {
@@ -153,9 +161,19 @@ function isFeasible(
   r: OptimizerCandidate,
   slot: OptimizerSlot,
   inputs: OptimizerInputs,
+  onMealTypeMismatch?: (r: OptimizerCandidate) => void,
 ): boolean {
   if (!r?.id) return false;
-  if (norm(r.meal_type) !== slot.meal_type) return false;
+  // Tolerate null / missing meal_type — candidates are pre-filtered by
+  // meal_type at fetch, so an unset value most likely means the data
+  // source shape changed. Accept it for the slot rather than silently
+  // dropping. A real mismatch (e.g. "brunch" vs "breakfast") is counted
+  // in debug.meal_type_mismatch_dropped for observability.
+  const mt = norm(r.meal_type);
+  if (mt && mt !== slot.meal_type) {
+    onMealTypeMismatch?.(r);
+    return false;
+  }
   const { recipeContainsAny, allergyTerms, dietForbidden, dislikedTerms } = inputs;
   if (allergyTerms.length && recipeContainsAny(r, allergyTerms)) return false;
   if (dietForbidden.length && recipeContainsAny(r, dietForbidden)) return false;
@@ -220,6 +238,9 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
   let pantryUsedTotal = 0;
   let expiringUsedTotal = 0;
   let subtotal = 0;
+  let enforcedSubtotal = 0;
+  let mealTypeMismatchDropped = 0;
+  const onMealTypeMismatch = () => { mealTypeMismatchDropped++; };
   const aiFillSlots: OptimizerSlot[] = [];
   let swaps = 0;
 
