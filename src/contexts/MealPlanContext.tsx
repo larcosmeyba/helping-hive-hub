@@ -307,6 +307,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       void trackEvent("meal_plan_generated", {
         pricingMode: opts?.pricingMode ?? null,
         algorithmVersion,
+        algorithm_version: algorithmVersion,
         fallbackUsed: Boolean((data as any).fallback),
         itemCount: Array.isArray((data as any).groceryList) ? (data as any).groceryList.length : null,
       });
