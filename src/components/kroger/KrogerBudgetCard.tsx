@@ -137,6 +137,9 @@ export function KrogerBudgetCard({
   }, [connected, locationId, itemsKey]);
 
   if (connected === null) return null;
+  // Feature-flag kill switch — disable live pricing instantly if the
+  // Kroger API misbehaves. Defaults to ON when PostHog isn't initialized.
+  if (!livePricingEnabled) return null;
 
   if (!connected || !locationId) {
     return (

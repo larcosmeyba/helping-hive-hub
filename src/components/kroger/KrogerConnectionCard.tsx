@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingBag, Link2, Link2Off, Loader2 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface ConnectionRow {
   environment: string;
