@@ -1,157 +1,85 @@
-# Phase A — Extend algo_v2 Meal Plan Engine
+# Phase B — Shop Groceries (Kroger-only, additive, flag-gated)
 
-Scope is large, additive, and gated by the existing PostHog flag `new-meal-plan-algorithm`. hybrid_v1 remains the default and the fallback. Response contract, job lifecycle, and rate limits are not touched.
+Gated by existing PostHog flag `new-meal-plan-algorithm`. Old grocery pages remain as fallback. Reuses what's already in the codebase (3-bucket `store_section`, `kroger-match-grocery-list`, `KrogerBudgetCard`, `useKrogerConnection`, `ShopGroceriesButton`).
 
-## Order of execution
+## Execution order
 
-1. **DB migration (Part A)** — additive only. After approval, regenerate types, then code can rely on the new columns.
-2. **Shared helpers** — extend `mealPlanOptimizer.ts` and `krogerPricing.ts`.
-3. **Generator** — extend `generate-meal-plan/index.ts` (algo_v2 branch + shared steps).
-4. **Grocery list edge function** — align 3-bucket grouping.
-5. **Client analytics** — add/rename PostHog events with `algorithm_version`.
-6. **Tests** — extend `src/test/mealPlanOptimizer.test.ts`.
+1. **Pure helper + tests** — `supabase/functions/_shared/budgetFix.ts` + `src/test/budgetFix.test.ts`. No DB. Deterministic ranked swap engine for the 6 strategies in Part 5.
+2. **New edge fn** `grocery-list-item-update` — RLS-scoped mutate of `grocery_list_items` (remove / mark already_have / change qty / substitute). `captureEdgeError`. JWT-validated in code.
+3. **New edge fn** `pantry-bulk-add` — bulk insert bought Need-To-Buy items into `pantry_items` with estimated expirations + storage_location (mirrors `confirm-scanned-items` insert pattern). `captureEdgeError`.
+4. **`update-grocery-status`** — add `captureEdgeError`; accept `shopped` as alias for `purchased` if not already; set `grocery_purchase_date`. No contract change.
+5. **`ShopGroceriesPage.tsx`** (NEW) — Parts 1–9 wired through the above. Uses `KrogerBudgetCard` for price+audit, `useKrogerConnection` for fallback, `ShopGroceriesButton` for Kroger CTA, `trackEvent` for all PostHog events.
+6. **`App.tsx`** — add `/dashboard/grocery/shop` route, gated by `useFeatureFlag('new-meal-plan-algorithm')`. When off → redirect to existing `GrocerySummaryPage`.
+7. **Entry CTAs** — add "Shop Groceries" CTA on the meal-plan + grocery-summary pages (only when flag on), pointing at the new route. Existing CTAs untouched when flag off.
 
-## Part A — Migration (additive, inherits RLS)
+## Page architecture (`ShopGroceriesPage.tsx`)
 
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS disliked_foods text[] NOT NULL DEFAULT '{}';
-
-ALTER TABLE public.recipes
-  ADD COLUMN IF NOT EXISTS kid_friendly boolean,
-  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
-  ADD COLUMN IF NOT EXISTS sodium_mg numeric;
-
--- Backfill kid_friendly from the existing keyword/tag heuristic
-UPDATE public.recipes
-SET kid_friendly = (
-  (tags && ARRAY['kid-friendly','family-friendly','kids'])
-  OR lower(coalesce(name,'')) ~ '(mac.?cheese|chicken nugget|spaghetti|pancake|quesadilla|grilled cheese|pizza)'
-)
-WHERE kid_friendly IS NULL;
-
-ALTER TABLE public.meal_plan_meals
-  ADD COLUMN IF NOT EXISTS carbs_estimate numeric,
-  ADD COLUMN IF NOT EXISTS fats_estimate numeric,
-  ADD COLUMN IF NOT EXISTS fiber_estimate numeric,
-  ADD COLUMN IF NOT EXISTS sodium_estimate numeric;
+```text
+load: meal_plans (active) → grocery_lists (by meal_plan_id) → grocery_list_items
+parse store_section "<bucket>:<category>" → bucket + category
+section render:
+  ├─ Use First       (bucket = use_first)
+  ├─ Already Have    (bucket = already_have, $0, excluded from total)
+  └─ Need To Buy     (bucket = need_to_buy, grouped by category)
+on mount:
+  - emit shop_groceries_opened, pantry_items_removed_from_total
+  - if kroger.ready && location_id → invoke kroger-match-grocery-list
+      emit kroger_product_match_started / _completed
+  - else → estimated prices + Connect CTA
+budget audit:
+  weeklyBudget = profiles.weekly_budget
+  target = weeklyBudget * 0.95
+  total = Σ(need_to_buy item.unit_price × qty)
+  if total ≤ weeklyBudget → grocery_budget_audit_passed
+  else                   → grocery_budget_audit_failed + show Fix My Budget panel
+fix panel: lists ranked swaps from budgetFix.ts; "Fix My Budget" applies best combo via grocery-list-item-update → re-prices → emit budget_fix_applied
+manual edits: Remove / Substitute / Already Have / Qty → grocery-list-item-update → re-price
+checkout: final skipCache:true match → flag unavailable, suggest replacements (reuse budgetFix) → ShopGroceriesButton → emit shop_with_kroger_clicked
+post-shop: prompt "Add to pantry?" → update-grocery-status('purchased') + pantry-bulk-add → emit pantry_update_after_shop_clicked
 ```
 
-Freezer handled in code via the existing `pantry_items.storage_location` field; no new column unless that field is missing.
+## Budget Fix strategies (`budgetFix.ts`, pure)
 
-## Part B — User context
+Input: items[], pantry[], grocery_price_reference rows, weeklyBudget, current total.
+Output: ranked `Suggestion[] { item_id, type, fromName, toName, dollarsSaved, newQty?, newAlready_have? }` + `bestCombo` that brings total ≤ budget.
 
-- Split pantry into pantry / fridge / freezer / expiring (extend `index.ts` ~422). Freezer items treated as $0 owned, passed to optimizer.
-- `disliked_foods` now real — confirm wire into `dislikedTerms`.
-- Favorite recipe IDs passed as `favoriteRecipeIds` to optimizer for new `FAVORITE_BONUS`.
-
-## Part C — Budget engine (server-side, before selection)
-
-```
-TARGET_BUDGET_RATIO = 0.95
-MEAL_SPLIT = { breakfast: 0.25, lunch: 0.30, dinner: 0.35, snacks: 0.10 }
-targetWeeklySpend = weeklyBudget * 0.95
-dailyBudget = targetWeeklySpend / daysCount
-snackBudget allocated only if B+L+D leaves headroom; else 0
-```
-Used as soft scoring targets + running monitor. Hard gate stays at `<= weeklyBudget`.
-
-## Part D — Candidate pools
-
-- Per-meal-type pool: 12 → 30 (top-by-score slice after `.limit(120)` fetch).
-- Add `snack` to `fetchCandidates`; pool size 15.
-
-## Part E — Hard filters (fetch + `isFeasible`)
-
-- `recipes.is_active = true` at fetch.
-- Skill-too-hard: derive difficulty from prep+cook time + ingredient count; exclude above user `cooking_confidence`. Add to `isFeasible`.
-- Toddler-unsafe: when `hasToddler`, filter `TODDLER_CHOKING_HAZARDS` in `isFeasible` (not just the backfill resolver).
-
-## Part F — Pantry matching
-
-- Scale recipe ingredient qty by household servings when building grocery list.
-- Compute `pantry_utilization_pct = distinct owned items used / distinct ingredients needed`; include in `plan_data` + job metadata.
-
-## Part G — `krogerPricing.ts`
-
-- Prefer store/Kroger brand when multiple matches (rank by brand-match, then price).
-- Capture `availability` (stockLevel), `promo_price` separate from `regular_price`, size-normalized `unit_price`, computed `match_confidence` (name/size/unit similarity, not hardcoded 0.8).
-- Accept and use real recipe `quantity` (drop hardcoded 1 at call sites).
-- Pantry items still excluded ($0).
-
-## Part H — Scoring (additive constants)
-
-Keep existing weights. Add:
-- `KID_FRIENDLY_BONUS` (uses new column).
-- `SKILL_FIT_BONUS` (closer to user skill = higher).
-- Balanced-nutrition score across calories/protein/carbs/fat/fiber/sodium vs household targets (replaces protein-only).
-- `KROGER_CONFIDENCE_BONUS` (only when Kroger connected).
-- `FAVORITE_BONUS` for favorited recipe ids.
-- Deterministic; stable id tie-breaks.
-
-## Part I — Snacks E2E
-
-Optimizer adds snack slots only when `snackBudget > 0`, picks deterministically from top-15 snack pool under snack budget. OpenAI never selects snacks. Snacks optional.
-
-## Part J — Running budget monitor
-
-Keep existing repair. Emit `meal_plan_over_budget_corrected` event data (swaps count, dollars saved) for client.
-
-## Part K — Validation gates (all → `structuredError` + 200 + `failJob`)
-
-Keep: `budget_unfit`, `kid_friendly_unfit`, per-swap allergy re-check. Add:
-- Make `budget_unfit` fire on the estimated-pricing path too (today only warns).
-- Serving-size validation (every meal scaled to household).
-- Grocery-list validation (non-empty, every Need-To-Buy has price or `estimated` flag).
-- Kroger-confidence warning (do not hard-fail).
-Emit `meal_plan_validation_passed` / `meal_plan_validation_failed` (client).
-
-## Part L — Grocery list 3-bucket grouping
-
-Buckets: `use_first` (expiring used), `already_have` ($0 owned), `need_to_buy` (rest, deduped/summed, pantry-subtracted). Persist `bucket` field per `grocery_list_items` and in `plan_data`. Same logic mirrored in `generate-grocery-list-from-meal-plan/index.ts`.
-
-## Part M — Nutrition storage
-
-Persist calories/protein/carbs/fat/fiber/sodium to `meal_plan_meals`. No UI change.
-
-## Part N — Analytics events (client, via `trackEvent`)
-
-Add `algorithm_version` to every success/fail event. New/renamed:
-- `recipe_candidates_filtered`
-- `kroger_price_match_completed`
-- `meal_plan_validation_passed`
-- `meal_plan_validation_failed`
-- `meal_plan_generated_successfully` (alias of existing)
-- `meal_plan_over_budget_corrected`
-- `grocery_list_generated`
-- `shop_with_kroger_clicked` (alias added alongside `shop_at_kroger_clicked`)
-- `generation_error` (alias of `meal_plan_generation_failed`)
-
-Server returns the data each event needs in the response (filtered counts, kroger match stats, swap stats) so the client can emit.
-
-## Part O — Sentry (`captureEdgeError` with `{ fn }` tag)
-
-Add targeted captures around: Kroger pricing block, OpenAI gap-fill call, pricing/validation steps. Do NOT capture `budget_unfit` / `kid_friendly_unfit` (expected outcomes — already aligned with HTH-6).
+Strategies (deterministic, stable sort by $ saved desc, then item_id):
+1. `store_brand_swap` — match name → grocery_price_reference store-brand variant.
+2. `cheaper_protein` — table of canonical substitutions (breast→thighs, beef→turkey, salmon→tilapia…).
+3. `frozen_or_canned` — fresh produce → frozen; fresh tomato → canned.
+4. `drop_optional` — items flagged optional or in snack category when over budget.
+5. `use_more_pantry` — items whose name matches a pantry entry (fuzzy) → flip to already_have.
+6. `cheaper_recipe` — highest-cost meal in plan → suggest swap-meal (UI emits, server handled by existing swap-meal fn).
 
 ## Files
 
-- `supabase/migrations/<new>.sql` — new
-- `supabase/functions/_shared/mealPlanOptimizer.ts`
-- `supabase/functions/_shared/krogerPricing.ts`
-- `supabase/functions/generate-meal-plan/index.ts`
-- `supabase/functions/generate-grocery-list-from-meal-plan/index.ts`
-- `src/contexts/MealPlanContext.tsx`
-- `src/test/mealPlanOptimizer.test.ts`
+| File | Status |
+|---|---|
+| `supabase/functions/_shared/budgetFix.ts` | NEW |
+| `src/test/budgetFix.test.ts` | NEW |
+| `supabase/functions/grocery-list-item-update/index.ts` | NEW |
+| `supabase/functions/pantry-bulk-add/index.ts` | NEW |
+| `supabase/functions/update-grocery-status/index.ts` | EDIT (Sentry) |
+| `src/pages/dashboard/ShopGroceriesPage.tsx` | NEW |
+| `src/App.tsx` | EDIT (route + flag) |
+| `src/pages/dashboard/MealPlanPage.tsx` + `GrocerySummaryPage.tsx` | EDIT (entry CTA when flag on) |
+
+## Contracts preserved
+
+- `generate-meal-plan`, response contract, job lifecycle, rate limits, old grocery pages → unchanged.
+- `kroger-match-grocery-list` input/output unchanged.
+- All `grocery_list_items` mutations RLS-scoped to owner.
+- Kroger failure → estimated pricing, never a hard error.
 
 ## Rollback
 
-- Turn `new-meal-plan-algorithm` OFF → all traffic on hybrid_v1 (unchanged).
-- Migrations additive; reverting code leaves new columns harmlessly unused.
+- Flag OFF → new page unreachable, existing pages serve.
+- Pantry-bulk-add lives in its own commit so post-shop write can be reverted independently.
 
 ## Out of scope
 
-Prompt 2 (Shop Groceries / Budget Fix Engine) and Prompt 3 (Cook What I Have tiers) — not touched here. hybrid_v1 path, response contract, job lifecycle, and rate-limit numbers unchanged.
+Prompt 3 (Cook What I Have tiers), Kroger cart API (TODO comment in checkout), changes to meal-plan generation or existing grocery review pages.
 
 ## First step on approval
 
-Submit the additive migration (Part A) for review. After it runs and types regenerate, proceed with optimizer/generator/pricing/grocery/client/test edits in parallel batches.
+Write `budgetFix.ts` + its unit tests, then the two new edge functions in parallel, then the page + route + entry CTAs.
