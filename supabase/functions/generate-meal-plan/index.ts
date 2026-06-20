@@ -123,6 +123,8 @@ const RESPONSE_SCHEMA = {
             estimated_cost_per_serving: { type: "number" },
             calories_estimate: { type: "integer" },
             protein_estimate: { type: "number" },
+            carbs_estimate: { type: "number" },
+            fat_estimate: { type: "number" },
             prep_time_minutes: { type: "integer" },
             cook_time_minutes: { type: "integer" },
             difficulty: { type: "string" },
