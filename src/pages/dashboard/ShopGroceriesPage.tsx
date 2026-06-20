@@ -292,9 +292,10 @@ export default function ShopGroceriesPage() {
         });
         setItems((p) => p.map((i) => i.id === s.item_id ? { ...i, already_have: true, bucket: "already_have" } : i));
       } else if (s.type === "cheaper_recipe") {
-        // Recipe swap is suggested only — invoke existing swap-meal then reload list.
+        // Recipe swap is suggested only — invoke existing swap-meal then reload list + re-price.
         await supabase.functions.invoke("swap-meal", { body: { recipe_id: s.item_id } }).catch(() => null);
         await reloadItems();
+        await runMatch({ skipCache: true });
       } else {
         await supabase.functions.invoke("grocery-list-item-update", {
           body: {
