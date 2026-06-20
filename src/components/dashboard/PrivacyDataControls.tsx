@@ -1,35 +1,22 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Brain, BarChart3, Trash2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, Brain, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 /**
  * Privacy & Data Controls — GDPR/CCPA/Play Store-grade self-service:
  *  - Opt out of AI data usage
  *  - Opt out of analytics
  *  - Download all my data (JSON)
- *  - Immediate hard-delete of account
  */
 export function PrivacyDataControls() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [dataOptIn, setDataOptIn] = useState(true);
   const [analyticsOptIn, setAnalyticsOptIn] = useState(true);
-  const [busy, setBusy] = useState<"export" | "delete" | null>(null);
-  const [deletePassword, setDeletePassword] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -59,30 +46,8 @@ export function PrivacyDataControls() {
     }
   };
 
-
-  const handleDelete = async () => {
-    if (!user) return;
-    if (!deletePassword) {
-      toast({ title: "Password required", description: "Please enter your password to confirm.", variant: "destructive" });
-      return;
-    }
-    setBusy("delete");
-    try {
-      const { error } = await supabase.functions.invoke("delete-account", {
-        body: { password: deletePassword },
-      });
-      if (error) throw error;
-      toast({ title: "Account deleted", description: "All your data has been permanently removed." });
-      await signOut();
-      navigate("/");
-    } catch (e) {
-      toast({ title: "Deletion failed", description: e instanceof Error ? e.message : "Please contact support", variant: "destructive" });
-      setBusy(null);
-    }
-  };
-
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-5">
+    <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-6 space-y-5">
       <div>
         <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-primary" /> Privacy & Data Controls
@@ -119,47 +84,6 @@ export function PrivacyDataControls() {
         </div>
         <Switch checked={analyticsOptIn} onCheckedChange={(v) => updateToggle("analytics_opt_in", v)} />
       </div>
-
-      {/* Immediate delete */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="w-full" disabled={busy !== null}>
-            <Trash2 className="w-4 h-4 mr-2" /> Delete My Account Immediately
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This is immediate and irreversible. We will permanently remove your profile, meal plans,
-              grocery lists, pantry items, feedback, and any uploaded verification documents.
-              An anonymized audit record (date only) is retained for legal compliance.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="delete-password">Confirm with your password</Label>
-            <Input
-              id="delete-password"
-              type="password"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder="Your current password"
-              autoComplete="current-password"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletePassword("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
-              disabled={!deletePassword || busy === "delete"}
-            >
-              {busy === "delete" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Yes, delete everything now
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         Data is encrypted at rest and in transit. We never sell your information. See our{" "}
