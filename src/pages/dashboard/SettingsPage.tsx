@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, Sparkles, Trash2, Bell } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Settings, Save, LogOut, TrendingUp, DollarSign, ShoppingCart, PiggyBank, Target, MapPin, Camera, ExternalLink, Shield, Sparkles, Trash2, Bell, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,6 +91,9 @@ export default function SettingsPage() {
     new_features: true,
   });
 
+  const [isDirty, setIsDirty] = useState(false);
+  const budgetRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
@@ -176,6 +179,7 @@ export default function SettingsPage() {
       if (error) throw error;
       await refreshProfile?.();
       toast({ title: "Saved!", description: "Your settings have been updated." });
+      setIsDirty(false);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -204,22 +208,35 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">Changes will regenerate your meal plan</p>
       </div>
 
+      <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-6">PROFILE</div>
+
       {/* Budget Insights Summary */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-5">
+      <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-5">
         <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" /> Budget Overview
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Budget", value: `$${weeklyBudget}`, icon: Target, color: "text-primary" },
-            { label: "Est. Spend", value: `$${spent.toFixed(0)}`, icon: ShoppingCart, color: "text-accent" },
-            { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent" },
-            { label: "Est. Cost/Meal", value: `~$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary" },
+            { label: "Budget", value: `$${weeklyBudget}`, icon: Target, color: "text-primary", editable: true },
+            { label: "Est. Spend", value: `$${spent.toFixed(0)}`, icon: ShoppingCart, color: "text-accent", editable: false },
+            { label: "Saved", value: `$${saved > 0 ? saved.toFixed(0) : '0'}`, icon: PiggyBank, color: "text-accent", editable: false },
+            { label: "Est. Cost/Meal", value: `~$${costPerMeal.toFixed(2)}`, icon: DollarSign, color: "text-primary", editable: false },
           ].map((stat) => (
-            <div key={stat.label} className="bg-muted/30 rounded-xl p-3 text-center">
+            <div
+              key={stat.label}
+              onClick={() => {
+                if (stat.editable) {
+                  budgetRef.current?.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className={`rounded-xl p-3 text-center ${stat.editable ? "bg-[#FBF6E8] cursor-pointer" : "bg-white"}`}
+            >
               <stat.icon className={`w-4 h-4 ${stat.color} mx-auto mb-1`} />
               <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
+                {stat.value}
+                {stat.editable && <Pencil className="w-3 h-3 text-[#B8860B]" />}
+              </p>
             </div>
           ))}
         </div>
@@ -230,13 +247,13 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-6">
+      <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-6 space-y-6">
         <div>
           <Label>Household Size</Label>
           <div className="flex items-center gap-4 mt-2">
-            <Button variant="outline" size="icon" onClick={() => setHouseholdSize(Math.max(1, householdSize - 1))}>−</Button>
+            <Button variant="outline" size="icon" onClick={() => { setHouseholdSize(Math.max(1, householdSize - 1)); setIsDirty(true); }}>−</Button>
             <span className="text-2xl font-bold text-foreground w-10 text-center">{householdSize}</span>
-            <Button variant="outline" size="icon" onClick={() => setHouseholdSize(householdSize + 1)}>+</Button>
+            <Button variant="outline" size="icon" onClick={() => { setHouseholdSize(householdSize + 1); setIsDirty(true); }}>+</Button>
           </div>
         </div>
 
@@ -253,32 +270,32 @@ export default function SettingsPage() {
               <div key={row.label} className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
                 <span className="text-sm text-foreground">{row.label}</span>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(Math.max(0, row.val - 1))}>−</Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => { row.set(Math.max(0, row.val - 1)); setIsDirty(true); }}>−</Button>
                   <span className="w-6 text-center font-semibold text-foreground tabular-nums">{row.val}</span>
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => row.set(row.val + 1)}>+</Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => { row.set(row.val + 1); setIsDirty(true); }}>+</Button>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div>
+        <div ref={budgetRef}>
           <Label>Weekly Grocery Budget: ${weeklyBudget}</Label>
-          <input type="range" min={25} max={500} step={5} value={weeklyBudget} onChange={(e) => setWeeklyBudget(Number(e.target.value))} className="w-full mt-2 accent-primary" />
+          <input type="range" min={25} max={500} step={5} value={weeklyBudget} onChange={(e) => { setWeeklyBudget(Number(e.target.value)); setIsDirty(true); }} className="w-full mt-2 accent-primary" />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
           <div>
             <Label>ZIP Code</Label>
-            <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} maxLength={5} className="mt-1" />
+            <Input value={zipCode} onChange={(e) => { setZipCode(e.target.value); setIsDirty(true); }} maxLength={5} className="mt-1" />
           </div>
           <div>
             <Label>City</Label>
-            <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" />
+            <Input value={city} onChange={(e) => { setCity(e.target.value); setIsDirty(true); }} className="mt-1" />
           </div>
           <div>
             <Label>State</Label>
-            <Input value={stateCode} onChange={(e) => setStateCode(e.target.value)} maxLength={2} className="mt-1" />
+            <Input value={stateCode} onChange={(e) => { setStateCode(e.target.value); setIsDirty(true); }} maxLength={2} className="mt-1" />
           </div>
         </div>
 
@@ -287,10 +304,10 @@ export default function SettingsPage() {
 
         <div>
           <Label>Allergies</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="grid grid-cols-2 gap-2 mt-2">
             {ALLERGY_OPTIONS.map((item) => (
-              <button key={item} onClick={() => toggle(allergies, setAllergies, item)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${allergies.includes(item) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+              <button key={item} onClick={() => { toggle(allergies, setAllergies, item); setIsDirty(true); }}
+                className={`w-full px-3 py-1.5 rounded-full text-sm border transition-colors ${allergies.includes(item) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
                 {item}
               </button>
             ))}
@@ -299,10 +316,10 @@ export default function SettingsPage() {
 
         <div>
           <Label>Dietary Preferences</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="grid grid-cols-2 gap-2 mt-2">
             {DIET_OPTIONS.map((item) => (
-              <button key={item} onClick={() => toggle(dietaryPreferences, setDietaryPreferences, item)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${dietaryPreferences.includes(item) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+              <button key={item} onClick={() => { toggle(dietaryPreferences, setDietaryPreferences, item); setIsDirty(true); }}
+                className={`w-full px-3 py-1.5 rounded-full text-sm border transition-colors ${dietaryPreferences.includes(item) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
                 {item}
               </button>
             ))}
@@ -311,10 +328,10 @@ export default function SettingsPage() {
 
         <div>
           <Label>Cooking confidence</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="grid grid-cols-3 gap-2 mt-2">
             {COOKING_OPTIONS.map((opt) => (
-              <button key={opt.value} onClick={() => setCookingConfidence(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${cookingConfidence === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+              <button key={opt.value} onClick={() => { setCookingConfidence(opt.value); setIsDirty(true); }}
+                className={`w-full px-3 py-1.5 rounded-full text-sm border transition-colors ${cookingConfidence === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
                 {opt.label}
               </button>
             ))}
@@ -324,10 +341,10 @@ export default function SettingsPage() {
         <div>
           <Label>Family assistance needs</Label>
           <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Tap any that apply. Hive Family Assistance uses these to recommend resources.</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {ASSISTANCE_OPTIONS.map((opt) => (
-              <button key={opt.key} onClick={() => toggleMap(assistance, setAssistance, opt.key)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${assistance[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
+              <button key={opt.key} onClick={() => { toggleMap(assistance, setAssistance, opt.key); setIsDirty(true); }}
+                className={`w-full px-3 py-1.5 rounded-full text-sm border transition-colors ${assistance[opt.key] ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}>
                 {opt.label}
               </button>
             ))}
@@ -342,14 +359,14 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium text-foreground">Expiration alerts</p>
                 <p className="text-[11px] text-muted-foreground">Warn me before pantry items spoil.</p>
               </div>
-              <Switch checked={foodWasteAlerts} onCheckedChange={setFoodWasteAlerts} />
+              <Switch checked={foodWasteAlerts} onCheckedChange={(v) => { setFoodWasteAlerts(v); setIsDirty(true); }} />
             </div>
             <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
               <div>
                 <p className="text-sm font-medium text-foreground">Recipe suggestions for leftovers</p>
                 <p className="text-[11px] text-muted-foreground">"Use it up" recipes from current pantry.</p>
               </div>
-              <Switch checked={foodWasteSuggestions} onCheckedChange={setFoodWasteSuggestions} />
+              <Switch checked={foodWasteSuggestions} onCheckedChange={(v) => { setFoodWasteSuggestions(v); setIsDirty(true); }} />
             </div>
           </div>
         </div>
@@ -380,14 +397,26 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
-          <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Changes"}
-        </Button>
+        {!isDirty && (
+          <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
+            <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Changes"}
+          </Button>
+        )}
 
       </div>
 
+      {isDirty && (
+        <div className="sticky bottom-[80px] z-20 -mx-4 px-4 py-3 bg-gradient-to-t from-white via-white to-white/80 backdrop-blur">
+          <Button onClick={handleSave} disabled={loading} className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90">
+            <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      )}
+
+      <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-6">CONNECTIONS</div>
+
       {/* Permissions Section */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+      <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-6 space-y-4">
         <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" /> Permissions & Privacy
         </h2>
@@ -403,7 +432,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-              locationStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+              locationStatus === "granted" ? "bg-accent/15 text-accent" : locationStatus === "denied" ? "bg-muted text-muted-foreground" : "bg-slate-100 text-slate-600 border border-slate-200"
             }`}>
               {locationStatus === "granted" ? "On" : locationStatus === "denied" ? "Off" : "Not Set"}
             </span>
@@ -419,7 +448,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-              cameraStatus === "granted" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
+              cameraStatus === "granted" ? "bg-accent/15 text-accent" : cameraStatus === "denied" ? "bg-muted text-muted-foreground" : "bg-slate-100 text-slate-600 border border-slate-200"
             }`}>
               {cameraStatus === "granted" ? "On" : cameraStatus === "denied" ? "Off" : "Not Set"}
             </span>
@@ -452,13 +481,17 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Privacy & Data Controls */}
       <KrogerConnectionCard />
       <KrogerHomeStoreCard />
+
+      <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-6">PRIVACY & DATA</div>
+
       <PrivacyDataControls />
 
+      <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-6">APP</div>
+
       {/* Notification Preferences */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-4">
+      <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-6 space-y-4">
         <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" /> Notification Preferences
         </h2>
@@ -494,7 +527,7 @@ export default function SettingsPage() {
       </Button>
 
       {/* Delete Account */}
-      <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 space-y-3">
+      <div className="bg-destructive/5 rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-5 space-y-3">
         <h2 className="font-display text-lg font-semibold text-destructive flex items-center gap-2">
           <Trash2 className="w-5 h-5" /> Delete Account
         </h2>
