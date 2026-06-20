@@ -1,10 +1,10 @@
 export interface MealPlanMeal {
   type: string;
   name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fats?: number;
   estimatedCost: number;
   costPerServing?: number;
   cookTimeMinutes: number;
