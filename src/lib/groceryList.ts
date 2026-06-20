@@ -3,7 +3,7 @@
 // pantry skip, dedupe, and the active-list singleton.
 //
 // IMPORTANT: This does NOT touch the Instacart flow. The existing
-// SendToInstacartButton + instacart-create-list edge function remain the
+// ShopGroceriesButton + instacart-create-list edge function remain the
 // single approved path to Instacart.
 
 import { supabase } from "@/integrations/supabase/client";

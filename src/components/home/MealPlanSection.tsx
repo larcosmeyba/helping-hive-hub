@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ShoppingCart, Coffee, Salad, UtensilsCrossed } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import mealFamilyDinner from "@/assets/meal-family-dinner.jpg";
 import mealVariety from "@/assets/meal-variety.jpg";
 import mealSnapFriendly from "@/assets/meal-snap-friendly.jpg";
@@ -132,7 +132,7 @@ export function MealPlanSection() {
 
         {/* Pricing disclaimer */}
         <div className="max-w-3xl mx-auto mt-12">
-          <InstacartDisclaimer variant="inline" className="text-center" />
+          <PricingDisclaimer variant="inline" className="text-center" />
         </div>
       </div>
     </section>

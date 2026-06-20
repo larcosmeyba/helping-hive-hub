@@ -12,7 +12,7 @@ interface Props {
  * Generic pricing disclaimer. Originally Instacart-specific; now a neutral
  * "estimates only" note. Variant prop preserved so existing callers compile.
  */
-export function InstacartDisclaimer({ variant = "pricing", className = "" }: Props) {
+export function PricingDisclaimer({ variant = "pricing", className = "" }: Props) {
   if (variant === "inline" || variant === "why-instacart") {
     return (
       <p className={`text-[11px] text-muted-foreground leading-relaxed ${className}`}>

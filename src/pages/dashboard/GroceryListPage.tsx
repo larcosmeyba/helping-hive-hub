@@ -12,11 +12,11 @@ import { useLocation } from "@/contexts/LocationContext";
 import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedBanner";
 
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
-import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { useAdminRole } from "@/hooks/useAdminRole";
-import { sanitizeForInstacart, toDisplayProduct, dedupeKey } from "@/lib/instacartSanitizer";
+import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",

@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils";
  * to compile without per-file edits.
  */
 
-export type InstacartCTAVariant = "dark" | "light" | "white";
+export type GroceryCTAVariant = "dark" | "light" | "white";
 
 interface InstacartCTAButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  variant?: InstacartCTAVariant;
+  variant?: GroceryCTAVariant;
   loading?: boolean;
   showExternalIcon?: boolean;
   label?: string;
@@ -23,7 +23,7 @@ interface InstacartCTAButtonProps
 }
 
 const VARIANT_STYLES: Record<
-  InstacartCTAVariant,
+  GroceryCTAVariant,
   { bg: string; fg: string; border: string }
 > = {
   // Dark — used as the primary CTA. Honey gold on near-black for contrast.
@@ -34,7 +34,7 @@ const VARIANT_STYLES: Record<
   white: { bg: "#FFFFFF", fg: "#1A1A1A", border: "0.5px solid #E8E9EB" },
 };
 
-export const InstacartCTAButton = React.forwardRef<
+export const GroceryCTAButton = React.forwardRef<
   HTMLButtonElement,
   InstacartCTAButtonProps
 >(
@@ -100,7 +100,7 @@ export const InstacartCTAButton = React.forwardRef<
     );
   },
 );
-InstacartCTAButton.displayName = "InstacartCTAButton";
+GroceryCTAButton.displayName = "GroceryCTAButton";
 
 /**
  * Legacy disclosure component. Kept for backwards compatibility; the
