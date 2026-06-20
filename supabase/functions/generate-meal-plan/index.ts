@@ -958,8 +958,12 @@ Deno.serve(async (req) => {
       ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
     ];
 
-    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
-      const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner" | "snack", usedIds: Set<string>): any | null {
+      const pool =
+        mealType === "breakfast" ? breakfastCandidates :
+        mealType === "lunch" ? lunchCandidates :
+        mealType === "dinner" ? dinnerCandidates :
+        snackCandidates;
       for (const c of pool) {
         if (usedIds.has(c.id)) continue;
         if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
