@@ -1100,6 +1100,7 @@ Deno.serve(async (req) => {
       breakfast: breakfastCandidates,
       lunch: lunchCandidates,
       dinner: dinnerCandidates,
+      snack: snackCandidates,
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
