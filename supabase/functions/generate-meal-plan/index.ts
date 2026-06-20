@@ -718,7 +718,7 @@ Deno.serve(async (req) => {
       },
       weekly_grocery_budget: weeklyBudget,
       zip_code: profile.zip_code ?? null,
-      preferred_store: overrides.store ?? homeStore?.retailer_name ?? profile.home_store ?? null,
+      preferred_store: overrides.store ?? krogerStoreName ?? (profile as any).home_store ?? null,
       dietary_preferences: dietaryPrefs,
       allergies,
       cooking_confidence: profile.cooking_confidence ?? "intermediate",
