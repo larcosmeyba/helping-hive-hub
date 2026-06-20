@@ -252,7 +252,7 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     let best: { cand: OptimizerCandidate; score: number; marginalCost: number; pantryUsed: number; expiringUsed: number } | null = null;
     for (const c of pool) {
       if (chosenById.has(c.id)) continue;
-      if (!isFeasible(c, slot, inputs)) continue;
+      if (!isFeasible(c, slot, inputs, onMealTypeMismatch)) continue;
       const s = scoreCandidate(c, ctx);
       if (
         !best ||
@@ -281,6 +281,7 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
           : "Best fit for your budget and variety this week.",
     });
     subtotal += best.marginalCost * profile.household_size;
+    enforcedSubtotal += (Number(best.cand.cost_per_serving) || FALLBACK_COST) * profile.household_size;
     pantryUsedTotal += best.pantryUsed;
     expiringUsedTotal += best.expiringUsed;
     const p = detectProtein(best.cand);
@@ -315,11 +316,15 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     }
     if (!bestSwap) break;
     const sel = selections[bestSwap.idx];
+    const prevRecipe = (candidates[sel.meal_type] ?? []).find((c) => c.id === sel.recipe_id);
+    const prevRawCost = (Number(prevRecipe?.cost_per_serving) || FALLBACK_COST) * profile.household_size;
+    const newRawCost = (Number(bestSwap.replacement.cost_per_serving) || FALLBACK_COST) * profile.household_size;
     chosenById.delete(sel.recipe_id);
     chosenById.add(bestSwap.replacement.id);
     sel.recipe_id = bestSwap.replacement.id;
     sel.reason = "Swapped to keep your plan within your weekly grocery budget.";
     subtotal -= bestSwap.delta;
+    enforcedSubtotal += newRawCost - prevRawCost;
     swaps++;
   }
 
@@ -383,9 +388,11 @@ export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
     expiring_items_used: expiringUsedTotal,
     variety_score: usedProteins.size + usedCuisines.size,
     budget_subtotal: Math.round(subtotal * 100) / 100,
+    enforced_subtotal: Math.round(enforcedSubtotal * 100) / 100,
     swaps_made: swaps,
     ai_fill_count: aiFillSlots.length,
     unfilled_slots: aiFillSlots,
+    meal_type_mismatch_dropped: mealTypeMismatchDropped,
   };
 
   return {
