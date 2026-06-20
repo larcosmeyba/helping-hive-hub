@@ -153,4 +153,69 @@ describe("mealPlanOptimizer", () => {
     const b = runOptimizer(baseInputs());
     expect(a.selections.map((s) => s.recipe_id)).toEqual(b.selections.map((s) => s.recipe_id));
   });
+
+  it("kid-friendly repair brings >=3 kid-friendly meals when children 5–12 present", () => {
+    // Plain pool has zero kid_friendly; add kid-friendly alternatives that
+    // can be swapped in for each slot.
+    const candidates = {
+      breakfast: [
+        mkRecipe("b-plain-1", "breakfast", { cost_per_serving: 2 }),
+        mkRecipe("b-kf-1", "breakfast", { cost_per_serving: 2.5, kid_friendly: true }),
+      ],
+      lunch: [
+        mkRecipe("l-plain-1", "lunch", { cost_per_serving: 2 }),
+        mkRecipe("l-kf-1", "lunch", { cost_per_serving: 2.5, family_friendly: true }),
+      ],
+      dinner: [
+        mkRecipe("d-plain-1", "dinner", { cost_per_serving: 2 }),
+        mkRecipe("d-kf-1", "dinner", { cost_per_serving: 2.5, kid_friendly: true }),
+      ],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      profile: { household_size: 4, weekly_budget: 500, allergies: [], dietary_preferences: [], children_5_to_12: 2 },
+      slots: [
+        { day_name: "Monday", meal_type: "breakfast" },
+        { day_name: "Monday", meal_type: "lunch" },
+        { day_name: "Monday", meal_type: "dinner" },
+      ],
+    }));
+    const kfIds = ["b-kf-1", "l-kf-1", "d-kf-1"];
+    const kfPicked = res.selections.filter((s) => kfIds.includes(s.recipe_id)).length;
+    expect(kfPicked).toBeGreaterThanOrEqual(3);
+  });
+
+  it("excludes dietForbidden recipes via hard filter", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("bad", "breakfast", { ingredients: ["bacon", "eggs"] }),
+        mkRecipe("good", "breakfast", { ingredients: ["oats"] }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      dietForbidden: ["bacon", "pork"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("good");
+  });
+
+  it("excludes disliked-foods recipes via hard filter", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("mushroom", "breakfast", { ingredients: ["mushrooms", "eggs"], cost_per_serving: 2 }),
+        mkRecipe("ok", "breakfast", { ingredients: ["oats"], cost_per_serving: 3 }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      dislikedTerms: ["mushroom"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("ok");
+  });
 });
