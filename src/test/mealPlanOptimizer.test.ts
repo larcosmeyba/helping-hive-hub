@@ -1,0 +1,156 @@
+import { describe, it, expect } from "vitest";
+import {
+  runOptimizer,
+  type OptimizerInputs,
+  type OptimizerCandidate,
+} from "../../supabase/functions/_shared/mealPlanOptimizer";
+
+function recipeContainsAny(r: OptimizerCandidate, terms: string[]): boolean {
+  const hay = (
+    String(r.title ?? "") +
+    " " +
+    (Array.isArray(r.ingredients) ? r.ingredients.map((i: any) => (typeof i === "string" ? i : i?.item_name ?? "")).join(" ") : "")
+  ).toLowerCase();
+  return terms.some((t) => t && hay.includes(t.toLowerCase()));
+}
+
+const slots7 = (() => {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const out: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" }> = [];
+  for (const d of days) for (const m of ["breakfast", "lunch", "dinner"] as const) out.push({ day_name: d, meal_type: m });
+  return out;
+})();
+
+function mkRecipe(id: string, meal_type: string, opts: Partial<OptimizerCandidate> = {}): OptimizerCandidate {
+  return {
+    id,
+    title: opts.title ?? `Recipe ${id}`,
+    meal_type,
+    cost_per_serving: 3,
+    ingredients: [],
+    tags: [],
+    kid_friendly: false,
+    ...opts,
+  };
+}
+
+function baseInputs(overrides: Partial<OptimizerInputs> = {}): OptimizerInputs {
+  const make = (mt: string, n: number) =>
+    Array.from({ length: n }, (_, i) => mkRecipe(`${mt}-${i}`, mt, { cost_per_serving: 3 + i * 0.1 }));
+  return {
+    candidates: { breakfast: make("breakfast", 10), lunch: make("lunch", 10), dinner: make("dinner", 10) },
+    pantryItems: [],
+    expiringSoon: [],
+    profile: { household_size: 2, weekly_budget: 200, allergies: [], dietary_preferences: [] },
+    recentRecipeIds: [],
+    slots: slots7,
+    recipeContainsAny,
+    allergyTerms: [],
+    dietForbidden: [],
+    dislikedTerms: [],
+    ...overrides,
+  };
+}
+
+describe("mealPlanOptimizer", () => {
+  it("respects allergy hard constraints", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("b1", "breakfast", { ingredients: ["peanut butter", "bread"] }),
+        mkRecipe("b2", "breakfast", { ingredients: ["oats", "milk"] }),
+      ],
+      lunch: [mkRecipe("l1", "lunch", { ingredients: ["chicken"] })],
+      dinner: [mkRecipe("d1", "dinner", { ingredients: ["rice", "beans"] })],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      allergyTerms: ["peanut"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections.find((s) => s.meal_type === "breakfast")?.recipe_id).toBe("b2");
+  });
+
+  it("prefers pantry + expiring-soon items", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("plain", "breakfast", { ingredients: ["bread"], cost_per_serving: 2 }),
+        mkRecipe("uses-pantry", "breakfast", { ingredients: ["spinach", "eggs"], cost_per_serving: 2.5 }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      pantryItems: [{ normalized_name: "spinach" }, { normalized_name: "eggs" }],
+      expiringSoon: [{ normalized_name: "spinach" }],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("uses-pantry");
+    expect(res.debug.expiring_items_used).toBeGreaterThan(0);
+  });
+
+  it("budget-repair brings subtotal under weekly_budget when feasible", () => {
+    // Lots of cheap alternatives, but rank initially favors expensive (via expiring) — then repair swaps down.
+    const candidates = {
+      breakfast: [
+        mkRecipe("b-cheap", "breakfast", { cost_per_serving: 1 }),
+        mkRecipe("b-mid", "breakfast", { cost_per_serving: 2 }),
+        mkRecipe("b-exp", "breakfast", { cost_per_serving: 50 }),
+      ],
+      lunch: [mkRecipe("l-cheap", "lunch", { cost_per_serving: 1 })],
+      dinner: [mkRecipe("d-cheap", "dinner", { cost_per_serving: 1 })],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      profile: { household_size: 2, weekly_budget: 10, allergies: [], dietary_preferences: [] },
+      slots: [
+        { day_name: "Monday", meal_type: "breakfast" },
+        { day_name: "Monday", meal_type: "lunch" },
+        { day_name: "Monday", meal_type: "dinner" },
+      ],
+    }));
+    expect(res.debug.budget_subtotal).toBeLessThanOrEqual(10);
+  });
+
+  it("variety penalty avoids duplicate protein within the week", () => {
+    const make = (id: string) => mkRecipe(id, "dinner", { ingredients: ["chicken", "rice"], cost_per_serving: 3 });
+    const beef = mkRecipe("beef", "dinner", { ingredients: ["beef", "rice"], cost_per_serving: 3 });
+    const candidates = {
+      breakfast: [mkRecipe("bx", "breakfast")],
+      lunch: [mkRecipe("lx", "lunch")],
+      dinner: [make("c1"), make("c2"), make("c3"), beef],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      slots: [
+        { day_name: "Monday", meal_type: "dinner" },
+        { day_name: "Tuesday", meal_type: "dinner" },
+      ],
+    }));
+    const ids = res.selections.filter((s) => s.meal_type === "dinner").map((s) => s.recipe_id);
+    expect(ids).toContain("beef"); // variety pushed beef in as second
+  });
+
+  it("de-prioritizes recentRecipeIds", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("recent", "breakfast", { cost_per_serving: 2 }),
+        mkRecipe("fresh", "breakfast", { cost_per_serving: 2.5 }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      recentRecipeIds: ["recent"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("fresh");
+  });
+
+  it("is deterministic — same inputs produce the same plan", () => {
+    const a = runOptimizer(baseInputs());
+    const b = runOptimizer(baseInputs());
+    expect(a.selections.map((s) => s.recipe_id)).toEqual(b.selections.map((s) => s.recipe_id));
+  });
+});
