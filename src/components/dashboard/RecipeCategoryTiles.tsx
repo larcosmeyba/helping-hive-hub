@@ -267,22 +267,6 @@ export function RecipeCategoryTiles() {
                     </span>
                   )}
                 </div>
-                {(selectedRecipe.protein_g || selectedRecipe.carbs_g || selectedRecipe.fats_g) && (
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.protein_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Protein</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.carbs_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Carbs</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2">
-                      <p className="font-bold text-foreground">{selectedRecipe.fats_g ?? 0}g</p>
-                      <p className="text-muted-foreground">Fats</p>
-                    </div>
-                  </div>
-                )}
                 {parseJsonArray(selectedRecipe.ingredients).length > 0 && (
                   <div>
                     <h4 className="font-semibold text-foreground mb-2">Ingredients</h4>
