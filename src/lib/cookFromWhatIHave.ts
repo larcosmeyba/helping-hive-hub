@@ -101,12 +101,25 @@ export async function cookFromInventoryV2(opts?: {
   return (data ?? { source: "generative" }) as CookFromInventoryResponse;
 }
 
-export async function markRecipeCooked(recipe_id: string) {
+export async function markRecipeCooked(
+  recipe_id: string,
+  opts?: { public_recipe_id?: string | null; favorited?: boolean },
+) {
   const { data, error } = await supabase.functions.invoke("mark-recipe-cooked", {
-    body: { recipe_id },
+    body: {
+      recipe_id,
+      public_recipe_id: opts?.public_recipe_id ?? null,
+      favorited: opts?.favorited ?? null,
+    },
   });
   if (error) throw error;
-  return data as { ok: boolean; depleted: number; savings_estimate: number | null };
+  return data as {
+    ok: boolean;
+    depleted: number;
+    savings_estimate: number | null;
+    money_saved: number;
+    food_waste_prevented: number;
+  };
 }
 
 export async function addSingleIngredientToGroceryList(
