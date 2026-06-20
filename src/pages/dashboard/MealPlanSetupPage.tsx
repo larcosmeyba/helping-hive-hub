@@ -59,7 +59,7 @@ export default function MealPlanSetupPage() {
     Math.max(1, (profile?.household_size as number) ?? 2),
   );
   const [kids, setKids] = useState<number>(0);
-  const [zip, setZip] = useState<string>((profile?.zip_code as string) ?? "");
+  const [, setZip] = useState<string>((profile?.zip_code as string) ?? "");
   const [krogerLocationId, setKrogerLocationId] = useState<string | null>((profile?.kroger_location_id as string | null) ?? null);
   const [krogerStoreName, setKrogerStoreName] = useState<string>((profile?.kroger_store_name as string) ?? "");
   const [diet, setDiet] = useState<string[]>(
