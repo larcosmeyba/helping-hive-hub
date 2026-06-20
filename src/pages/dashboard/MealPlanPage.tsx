@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CalendarDays, RefreshCw, Loader2, Shuffle, Clock, Flame, DollarSign, X,
+  CalendarDays, RefreshCw, Loader2, Shuffle, Clock, DollarSign, X,
   AlertTriangle, Check, ChefHat, Share2, Minus, Plus, ArrowRight, ArrowLeft,
   Sparkles, ShoppingCart, BookOpen, ChevronDown, ChevronUp, PartyPopper, History,
 } from "lucide-react";
