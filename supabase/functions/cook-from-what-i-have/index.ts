@@ -137,6 +137,39 @@ Deno.serve(async (req) => {
       (a, b) => priorityOrder.indexOf(a.freshness) - priorityOrder.indexOf(b.freshness),
     );
 
+    // ────────────────────────────────────────────────────────────────────
+    // PHASE C — DB-match-first branch (gated by new_algorithm flag).
+    // Backend = matcher + safety + accountant. OpenAI = optional ranker.
+    // AI-generated fallback only when DB matches are empty.
+    // ────────────────────────────────────────────────────────────────────
+    if (useDbMatch) {
+      try {
+        const tierResp = await runDbMatchFlow({
+          admin,
+          userId,
+          inventory,
+          profile,
+          groceryItems: groceryItems ?? [],
+          purchasedItems,
+          sourceType,
+          maxRecipes,
+        });
+        if (tierResp.has_matches) {
+          return new Response(JSON.stringify(tierResp.payload), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        // No matches → fall through to generative path; mark fallback.
+        (req as any)._aiFallback = true;
+      } catch (err) {
+        try { captureEdgeError(err, { fn: "cook-from-what-i-have", phase: "db_match" }); } catch { /* */ }
+        console.error("[cook-from-what-i-have] db-match failed, falling back to AI", err);
+        (req as any)._aiFallback = true;
+      }
+    }
+
+
     const tools = [
       {
         type: "function",
