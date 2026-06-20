@@ -78,7 +78,7 @@ export function KrogerConnectionCard() {
   };
 
   return (
-    <Card className="p-5 space-y-3">
+    <Card className="p-5 space-y-3 border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)]">
       <div className="flex items-center gap-3">
         <ShoppingBag className="h-5 w-5 text-primary" />
         <div className="flex-1">
