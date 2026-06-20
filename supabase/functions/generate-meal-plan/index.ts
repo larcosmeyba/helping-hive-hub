@@ -1559,23 +1559,29 @@ Deno.serve(async (req) => {
 
 
     // ===== INSTRUCTION ENFORCEMENT =====
-    // Every meal MUST have step-by-step instructions. Backfill obvious cases.
+    // Every meal MUST have detailed step-by-step instructions. Backfill stubs
+    // with a richer scaffold than "combine and serve".
     for (const day of resolvedDays) {
       for (const m of day.meals) {
         const r = m.recipe;
         const instr = Array.isArray(r.instructions) ? r.instructions.filter((s: any) => typeof s === "string" && s.trim()) : [];
-        if (instr.length === 0) {
+        if (instr.length < 4) {
           r.instructions = [
-            "Gather and measure all ingredients.",
-            "Heat a pan or pot over medium heat as needed for your main ingredient.",
-            "Cook proteins first until fully done; add vegetables and seasonings.",
-            "Combine all components, adjust seasoning to taste, and serve warm.",
+            "Gather all ingredients and measure them out before you start cooking (this is called 'mise en place' and prevents mistakes).",
+            "Wash and chop any vegetables into uniform ¼-inch pieces so they cook evenly.",
+            "Heat a 12-inch nonstick skillet or appropriately sized pot over medium heat for 1–2 minutes until warm.",
+            "Add 1 tablespoon of oil and any aromatics (onion, garlic). Cook 2–3 minutes, stirring often, until softened and fragrant.",
+            "Add your main protein. Cook 4–6 minutes, turning once, until browned on the outside and cooked through (internal temp 165°F for poultry, 145°F for fish, no pink for ground meat).",
+            "Add remaining vegetables and seasonings (½ tsp salt, ¼ tsp pepper to start). Stir and cook 3–5 minutes until vegetables are tender-crisp.",
+            "Add any liquids or sauces. Bring to a gentle simmer and cook 5–8 minutes until the sauce thickens and coats the back of a spoon.",
+            "Taste and adjust seasoning. Plate and serve warm, garnishing with fresh herbs if desired.",
           ];
         } else {
           r.instructions = instr;
         }
       }
     }
+
 
     const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
     let budgetWarningText: string | null = null;
