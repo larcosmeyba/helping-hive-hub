@@ -45,5 +45,10 @@ export async function addItemsToGroceryList(
     body: { source_type, items },
   });
   if (error) throw error;
+  // Fire-and-forget analytics — never block the caller.
+  try {
+    const { trackEvent } = await import("@/lib/analytics");
+    void trackEvent("grocery_item_added", { source_type, count: items.length });
+  } catch { /* swallow */ }
   return data as AddItemsResult;
 }
