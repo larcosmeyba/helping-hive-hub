@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GeneratedMealPlan } from "@/types/mealPlan";
 import type { Database } from "@/integrations/supabase/types";
+import { trackEvent } from "@/lib/analytics";
+import { phIsFeatureEnabled } from "@/lib/posthog";
 
 export interface MealPlanHistoryEntry {
   id: string;
@@ -210,15 +212,23 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     setGenerationStage("preparing");
     setGenerationStatus(EMPTY_GENERATION_STATUS);
 
+    const algorithmVersion = phIsFeatureEnabled("new-meal-plan-algorithm") === true ? "v2" : "v1";
+    void trackEvent("meal_plan_generation_started", {
+      pricingMode: opts?.pricingMode ?? null,
+      algorithmVersion,
+    });
+
     try {
       await pollJob();
       pollHandle = setInterval(() => {
         void pollJob();
       }, 1200);
 
+      const body: Record<string, unknown> = { algorithmVersion };
+      if (opts?.pricingMode) body.pricingMode = opts.pricingMode;
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
-        body: opts?.pricingMode ? { pricingMode: opts.pricingMode } : {},
+        body,
       });
 
       await pollJob();
