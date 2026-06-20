@@ -51,6 +51,10 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const items = Array.isArray(body?.items) ? body.items : [];
   if (!items.length) return json({ error: "items[] required" }, 400);
+  const MAX_ITEMS = 100;
+  if (items.length > MAX_ITEMS) {
+    return json({ error: `Too many items: max ${MAX_ITEMS} per call` }, 413);
+  }
 
   try {
     const rows = items
