@@ -1926,9 +1926,10 @@ Deno.serve(async (req) => {
       completed_at: new Date().toISOString(),
       metadata: {
         grocery_list_id: glRow.id,
-        engine: "hybrid_v1",
+        engine,
         library_picks: usedRecipeIds.filter((id) => candidatesById.has(id)).length,
         ai_generated_picks: usedRecipeIds.filter((id) => !candidatesById.has(id)).length,
+        ...(optimizerDebug ? { optimizer: optimizerDebug } : {}),
       },
     });
 
