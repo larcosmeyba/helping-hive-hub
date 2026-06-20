@@ -33,7 +33,9 @@ export function KrogerStorePicker({ selectedLocationId, onSelect }: Props) {
       if (error) throw error;
       const found = data?.stores ?? [];
       setStores(found);
-      void trackEvent("kroger_store_searched", { zip: zip.trim(), results: found.length });
+      // ZIP coarsened to first 3 digits (ZIP3) for analytics — no full ZIP sent.
+      const zip3 = zip.trim().replace(/\D/g, "").slice(0, 3);
+      void trackEvent("kroger_store_searched", { zip3, results: found.length });
       if (!found.length) {
         toast({ title: "No Kroger stores found near that ZIP." });
       }

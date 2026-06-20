@@ -49,7 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       // Identify into PostHog + Sentry on sign-in; reset on sign-out.
       if (session?.user) {
-        phIdentify(session.user.id, { email_hash: undefined });
+        // Note: meaningful identify (tier/zip3/etc.) happens once the
+        // profile loads in the effect below — no empty-props call here.
         sentrySetUser({ id: session.user.id });
       } else if (event === "SIGNED_OUT") {
         phReset();
@@ -124,9 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (p.analytics_opt_in === false) phOptOut();
           else {
             phOptIn();
+            // Coarsen ZIP to first 3 digits (ZIP3) — standard de-identification.
+            // Per privacy policy, no full ZIP is sent to PostHog.
+            const zip3 = p.zip_code ? String(p.zip_code).replace(/\D/g, "").slice(0, 3) || undefined : undefined;
             phIdentify(user.id, {
               tier: p.tier ?? undefined,
-              zip: p.zip_code ?? undefined,
+              zip3,
               household_size: p.household_size ?? undefined,
               snap_status: p.snap_status ?? undefined,
             });
