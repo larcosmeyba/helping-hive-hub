@@ -31,10 +31,9 @@ export async function buildMealPlanContext(
   admin: SupabaseClient,
   userId: string,
 ): Promise<MealPlanContext> {
-  const [profileRes, homeStoreRes, pantryRes, activePlanRes, purchasedListsRes] =
+  const [profileRes, pantryRes, activePlanRes, purchasedListsRes] =
     await Promise.all([
       admin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      admin.from("instacart_home_store").select("*").eq("user_id", userId).maybeSingle(),
       admin.from("pantry_items").select("*").eq("user_id", userId),
       admin
         .from("meal_plans")
@@ -54,7 +53,6 @@ export async function buildMealPlanContext(
     ]);
 
   const profile = (profileRes.data ?? {}) as Record<string, unknown>;
-  const home = (homeStoreRes.data ?? {}) as Record<string, unknown>;
   const pantry = (pantryRes.data ?? []) as Array<Record<string, unknown>>;
 
   const byLocation = (loc: string) =>
