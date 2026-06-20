@@ -975,7 +975,7 @@ Deno.serve(async (req) => {
     const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+      for (const mealType of ["breakfast", "lunch", "dinner", "snack"] as const) {
         const slot = day[mealType];
         if (!slot) continue;
 
