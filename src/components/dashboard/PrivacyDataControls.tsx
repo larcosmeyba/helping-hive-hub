@@ -10,17 +10,13 @@ import { useToast } from "@/hooks/use-toast";
  *  - Opt out of AI data usage
  *  - Opt out of analytics
  *  - Download all my data (JSON)
- *  - Immediate hard-delete of account
  */
 export function PrivacyDataControls() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [dataOptIn, setDataOptIn] = useState(true);
   const [analyticsOptIn, setAnalyticsOptIn] = useState(true);
-  const [busy, setBusy] = useState<"export" | "delete" | null>(null);
-  const [deletePassword, setDeletePassword] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -50,30 +46,8 @@ export function PrivacyDataControls() {
     }
   };
 
-
-  const handleDelete = async () => {
-    if (!user) return;
-    if (!deletePassword) {
-      toast({ title: "Password required", description: "Please enter your password to confirm.", variant: "destructive" });
-      return;
-    }
-    setBusy("delete");
-    try {
-      const { error } = await supabase.functions.invoke("delete-account", {
-        body: { password: deletePassword },
-      });
-      if (error) throw error;
-      toast({ title: "Account deleted", description: "All your data has been permanently removed." });
-      await signOut();
-      navigate("/");
-    } catch (e) {
-      toast({ title: "Deletion failed", description: e instanceof Error ? e.message : "Please contact support", variant: "destructive" });
-      setBusy(null);
-    }
-  };
-
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-5">
+    <div className="bg-card rounded-xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),_0_1px_3px_rgba(15,23,42,0.06)] p-6 space-y-5">
       <div>
         <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-primary" /> Privacy & Data Controls
