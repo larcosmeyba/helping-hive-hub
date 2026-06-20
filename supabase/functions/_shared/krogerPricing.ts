@@ -20,12 +20,18 @@ interface KrogerProduct {
 export interface PricedLine {
   name: string;
   quantity: number;
-  unit_price: number;
-  line_total: number;
+  unit_price: number;          // size-normalized $/size (e.g. per oz)
+  package_price: number;       // price you actually pay per package
+  line_total: number;          // package_price * quantity
   matched: boolean;
   matched_name?: string | null;
   brand?: string | null;
   image_url?: string | null;
+  size?: string | null;
+  promo_price?: number | null; // sale price when present, separate from regular
+  regular_price?: number | null;
+  availability?: string | null; // stock level: HIGH / LOW / TEMPORARILY_OUT_OF_STOCK, etc.
+  match_confidence?: number;    // 0..1 — name/size/unit similarity
 }
 
 export interface PricedBasket {
@@ -33,6 +39,9 @@ export interface PricedBasket {
   subtotal: number;
   matched_count: number;
   unmatched_count: number;
+  // Mean match_confidence across matched lines, or 0 when none matched.
+  avg_match_confidence: number;
+  low_confidence_count: number; // matched lines with confidence < 0.6
 }
 
 const STOP_WORDS = new Set([
@@ -65,18 +74,83 @@ function pickImage(p: KrogerProduct): string | null {
   return persp.sizes.find((x) => x.size === "medium")?.url ?? persp.sizes[0]?.url ?? null;
 }
 
-async function searchKroger(term: string, locationId: string): Promise<KrogerProduct | null> {
+const STORE_BRANDS = ["kroger", "private selection", "simple truth", "heritage farm", "psst", "home chef"];
+
+function isStoreBrand(p: KrogerProduct): boolean {
+  const b = (p.brand ?? "").toLowerCase();
+  if (!b) return false;
+  return STORE_BRANDS.some((s) => b.includes(s));
+}
+
+function priceOf(p: KrogerProduct): { promo: number | null; regular: number | null; pay: number } {
+  const px = p.items?.[0]?.price ?? {};
+  const promo = typeof px.promo === "number" && px.promo > 0 ? px.promo : null;
+  const regular = typeof px.regular === "number" && px.regular > 0 ? px.regular : null;
+  const pay = promo ?? regular ?? 0;
+  return { promo, regular, pay };
+}
+
+function parseSize(size?: string | null): { qty: number; unit: string } | null {
+  if (!size) return null;
+  const m = String(size).match(/([\d.]+)\s*([a-z]+)/i);
+  if (!m) return null;
+  const qty = parseFloat(m[1]);
+  if (!isFinite(qty) || qty <= 0) return null;
+  return { qty, unit: m[2].toLowerCase() };
+}
+
+function computeUnitPrice(p: KrogerProduct): number {
+  const { pay } = priceOf(p);
+  const sz = parseSize(p.items?.[0]?.size);
+  if (!sz) return pay;
+  return Math.round((pay / sz.qty) * 10000) / 10000;
+}
+
+// Crude similarity: shared token ratio between simplified query and product name.
+function nameSimilarity(query: string, product: string): number {
+  const a = new Set(simplify(query).split(" ").filter(Boolean));
+  const b = new Set(simplify(product).split(" ").filter(Boolean));
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  return inter / Math.max(a.size, b.size);
+}
+
+function computeMatchConfidence(query: string, p: KrogerProduct): number {
+  const nameSim = nameSimilarity(query, p.description ?? "");
+  // Boost confidence for store-brand (catalog quality is typically higher).
+  const brandBoost = isStoreBrand(p) ? 0.1 : 0;
+  const sizeBoost = parseSize(p.items?.[0]?.size) ? 0.1 : 0;
+  return Math.max(0, Math.min(1, nameSim + brandBoost + sizeBoost));
+}
+
+async function searchKroger(term: string, locationId: string): Promise<KrogerProduct[]> {
   try {
     const data = await krogerGet<{ data: KrogerProduct[] }>("/products", {
       "filter.term": term,
       "filter.locationId": locationId,
       "filter.limit": 5,
     });
-    return (data.data ?? [])[0] ?? null;
+    return data.data ?? [];
   } catch (e) {
     console.warn("[krogerPricing] search failed", term, (e as Error).message);
-    return null;
+    return [];
   }
+}
+
+// Rank: prefer store-brand → then cheapest pay price → then highest name sim.
+function pickBest(query: string, results: KrogerProduct[]): KrogerProduct | null {
+  if (!results.length) return null;
+  const scored = results.map((p) => {
+    const { pay } = priceOf(p);
+    return { p, storeBrand: isStoreBrand(p), pay, sim: nameSimilarity(query, p.description ?? "") };
+  });
+  scored.sort((a, b) => {
+    if (a.storeBrand !== b.storeBrand) return a.storeBrand ? -1 : 1;
+    if (a.pay !== b.pay) return a.pay - b.pay;
+    return b.sim - a.sim;
+  });
+  return scored[0].p;
 }
 
 /**
@@ -95,6 +169,8 @@ export async function priceBasketWithKroger(
   let subtotal = 0;
   let matched_count = 0;
   let unmatched_count = 0;
+  let confSum = 0;
+  let lowConf = 0;
   const cacheCutoff = new Date(Date.now() - 24 * 3600_000).toISOString();
 
   for (const item of items) {
@@ -115,14 +191,19 @@ export async function priceBasketWithKroger(
       .maybeSingle();
 
     if (cached?.product_id) {
-      const price = Number(cached.unit_price ?? 0);
-      const lineTotal = price * qty;
+      const pay = Number(cached.unit_price ?? 0);
+      const lineTotal = pay * qty;
       subtotal += lineTotal;
       matched_count += 1;
+      // Cache doesn't carry confidence/availability — assume reasonable defaults.
+      const conf = 0.8;
+      confSum += conf;
       lines.push({
-        name: original, quantity: qty, unit_price: price, line_total: lineTotal,
+        name: original, quantity: qty,
+        unit_price: pay, package_price: pay, line_total: lineTotal,
         matched: true, matched_name: cached.matched_name, brand: cached.brand,
-        image_url: cached.image_url,
+        image_url: cached.image_url, size: cached.size,
+        promo_price: null, regular_price: pay, availability: null, match_confidence: conf,
       });
       continue;
     }
@@ -130,16 +211,17 @@ export async function priceBasketWithKroger(
     // Live search — full term then simplified
     const simplified = simplify(original);
     const terms = simplified !== original.toLowerCase() ? [original, simplified] : [original];
-    let best: KrogerProduct | null = null;
+    let results: KrogerProduct[] = [];
     for (const term of terms) {
-      best = await searchKroger(term, locationId);
-      if (best) break;
+      results = await searchKroger(term, locationId);
+      if (results.length) break;
     }
+    const best = pickBest(original, results);
 
     if (!best) {
       unmatched_count += 1;
       lines.push({
-        name: original, quantity: qty, unit_price: 0, line_total: 0, matched: false,
+        name: original, quantity: qty, unit_price: 0, package_price: 0, line_total: 0, matched: false,
       });
       insertRows.push({
         user_id: userId,
@@ -151,15 +233,23 @@ export async function priceBasketWithKroger(
       continue;
     }
 
-    const priceObj = best.items?.[0]?.price;
-    const price = Number(priceObj?.promo ?? priceObj?.regular ?? 0);
-    const lineTotal = price * qty;
+    const { promo, regular, pay } = priceOf(best);
+    const unitPrice = computeUnitPrice(best);
+    const lineTotal = pay * qty;
     subtotal += lineTotal;
     matched_count += 1;
     const img = pickImage(best);
+    const confidence = computeMatchConfidence(original, best);
+    confSum += confidence;
+    if (confidence < 0.6) lowConf += 1;
+    const availability = (best.items?.[0]?.inventory?.stockLevel ?? null) as string | null;
     lines.push({
-      name: original, quantity: qty, unit_price: price, line_total: lineTotal,
+      name: original, quantity: qty,
+      unit_price: unitPrice, package_price: pay, line_total: lineTotal,
       matched: true, matched_name: best.description, brand: best.brand ?? null, image_url: img,
+      size: best.items?.[0]?.size ?? null,
+      promo_price: promo, regular_price: regular,
+      availability, match_confidence: confidence,
     });
     insertRows.push({
       user_id: userId,
@@ -171,8 +261,8 @@ export async function priceBasketWithKroger(
       brand: best.brand ?? null,
       size: best.items?.[0]?.size ?? null,
       image_url: img,
-      unit_price: price,
-      confidence: 0.8,
+      unit_price: pay,
+      confidence,
       status: "matched",
       from_cache: false,
     });
@@ -186,7 +276,14 @@ export async function priceBasketWithKroger(
     }
   }
 
-  return { lines, subtotal: Math.round(subtotal * 100) / 100, matched_count, unmatched_count };
+  return {
+    lines,
+    subtotal: Math.round(subtotal * 100) / 100,
+    matched_count,
+    unmatched_count,
+    avg_match_confidence: matched_count ? Math.round((confSum / matched_count) * 100) / 100 : 0,
+    low_confidence_count: lowConf,
+  };
 }
 
 /** Returns the user's Kroger location id when their account is connected. */
