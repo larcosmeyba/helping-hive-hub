@@ -17,14 +17,14 @@
 // This file is pure (no React, no Supabase) so it's easy to unit test and
 // reuse from any client surface.
 
-export interface InstacartLineItemInput {
+export interface GroceryLineItemInput {
   /** Original ingredient name as parsed from the recipe / grocery list. */
   name: string;
   /** Raw recipe quantity string e.g. "1 tbsp", "2 cloves", "1/2 cup". */
   rawQuantity?: string;
 }
 
-export interface SanitizedInstacartLineItem {
+export interface SanitizedGroceryLineItem {
   /** Clean grocery-store search term sent to Instacart. */
   name: string;
   /** Always 1 by default — shoppers buy one product unit unless overridden. */
@@ -342,10 +342,10 @@ export function dedupeKey(product: string): string {
  * Main entry point. Takes the raw grocery list items (with their recipe-portion
  * quantity strings) and returns the deduplicated Instacart payload.
  */
-export function sanitizeForInstacart(
-  items: InstacartLineItemInput[],
-): SanitizedInstacartLineItem[] {
-  const merged = new Map<string, SanitizedInstacartLineItem>();
+export function sanitizeForGrocery(
+  items: GroceryLineItemInput[],
+): SanitizedGroceryLineItem[] {
+  const merged = new Map<string, SanitizedGroceryLineItem>();
 
   for (const item of items) {
     if (!item?.name) continue;
@@ -434,10 +434,10 @@ const DISPLAY_UNIT_HINTS = [
  * displayQuantity }` that should appear on the grocery list. Returns null
  * when the line should be filtered out entirely (e.g. recipe headers).
  *
- * Output mirrors what `sanitizeForInstacart` sends to Instacart so the two
+ * Output mirrors what `sanitizeForGrocery` sends to Instacart so the two
  * stay in sync — user sees exactly what gets shopped for.
  */
-export function toDisplayProduct(item: InstacartLineItemInput): {
+export function toDisplayProduct(item: GroceryLineItemInput): {
   displayName: string;
   displayQuantity: string;
 } | null {
@@ -465,7 +465,7 @@ export function toDisplayProduct(item: InstacartLineItemInput): {
  * raw → cleaned → product → payload pipeline for a single ingredient.
  */
 export function diagnoseSanitization(
-  item: InstacartLineItemInput,
+  item: GroceryLineItemInput,
 ): {
   raw: string;
   rawQuantity: string;

@@ -1,6 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
-import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
+import { GroceryCTAButton, type GroceryCTAVariant } from "@/components/grocery/GroceryCTAButton";
 
 /**
  * Per-recipe action button. Originally sent ingredients to Instacart; now
@@ -14,14 +14,14 @@ interface Props {
   instructions?: string[];
   imageUrl?: string;
   className?: string;
-  variant?: InstacartCTAVariant;
+  variant?: GroceryCTAVariant;
   label?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
   partnerLinkbackUrl?: string;
 }
 
-export function SendRecipeToInstacartButton({
+export function CopyIngredientsButton({
   title,
   ingredients,
   className,
@@ -60,7 +60,7 @@ export function SendRecipeToInstacartButton({
   };
 
   return (
-    <InstacartCTAButton
+    <GroceryCTAButton
       onClick={handleClick}
       disabled={!ingredients.length}
       variant={variant}

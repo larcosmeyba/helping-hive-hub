@@ -5,7 +5,7 @@
 //   the existing unified grocery list (which feeds the APPROVED Instacart flow).
 //
 // The Instacart flow itself is untouched — items just land in grocery_list_items
-// where the existing SendToInstacartButton picks them up.
+// where the existing ShopGroceriesButton picks them up.
 
 import { supabase } from "@/integrations/supabase/client";
 import { addItemsToGroceryList, type AddItemsResult } from "@/lib/groceryList";

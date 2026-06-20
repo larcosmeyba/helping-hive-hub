@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import type { MealPlanMeal } from "@/types/mealPlan";
 import { ReportIssueButton } from "./ReportIssueButton";
 import { MacroBadges } from "./MacroBadges";
-import { SendRecipeToInstacartButton } from "./SendRecipeToInstacartButton";
+import { CopyIngredientsButton } from "./CopyIngredientsButton";
 import { useShowMacros } from "@/hooks/useShowMacros";
 
 import { MealImage } from "./MealImage";
@@ -118,7 +118,7 @@ export function MealCard({ meal, compact, onClick }: Props) {
               </ol>
             </div>
             <div className="pt-1 flex flex-col items-center gap-1.5">
-              <SendRecipeToInstacartButton
+              <CopyIngredientsButton
                 title={meal.name}
                 ingredients={meal.ingredients}
                 instructions={meal.instructions}

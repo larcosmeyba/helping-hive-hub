@@ -31,10 +31,9 @@ export async function buildMealPlanContext(
   admin: SupabaseClient,
   userId: string,
 ): Promise<MealPlanContext> {
-  const [profileRes, homeStoreRes, pantryRes, activePlanRes, purchasedListsRes] =
+  const [profileRes, pantryRes, activePlanRes, purchasedListsRes] =
     await Promise.all([
       admin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      admin.from("instacart_home_store").select("*").eq("user_id", userId).maybeSingle(),
       admin.from("pantry_items").select("*").eq("user_id", userId),
       admin
         .from("meal_plans")
@@ -54,7 +53,6 @@ export async function buildMealPlanContext(
     ]);
 
   const profile = (profileRes.data ?? {}) as Record<string, unknown>;
-  const home = (homeStoreRes.data ?? {}) as Record<string, unknown>;
   const pantry = (pantryRes.data ?? []) as Array<Record<string, unknown>>;
 
   const byLocation = (loc: string) =>
@@ -84,9 +82,9 @@ export async function buildMealPlanContext(
     user_id: userId,
     household_size: (profile.household_size as number) ?? null,
     weekly_grocery_budget: (profile.weekly_grocery_budget as number) ?? null,
-    preferred_store: (home.retailer_name as string) ?? (profile.preferred_store as string) ?? null,
-    preferred_store_id: (home.retailer_key as string) ?? null,
-    zip_code: (home.postal_code as string) ?? (profile.zip_code as string) ?? null,
+    preferred_store: (profile.kroger_store_name as string) ?? (profile.preferred_store as string) ?? null,
+    preferred_store_id: (profile.kroger_location_id as string) ?? null,
+    zip_code: (profile.zip_code as string) ?? null,
     dietary_preferences: ((profile.dietary_preferences as string[]) ?? []) || [],
     allergies: ((profile.allergies as string[]) ?? []) || [],
     cooking_confidence: (profile.cooking_confidence as string) ?? null,

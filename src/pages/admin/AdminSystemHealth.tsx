@@ -97,7 +97,7 @@ export default function AdminSystemHealth() {
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold">System Health</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Live view of Instacart checkout, runtime errors, and email delivery.
+            Live view of grocery checkout, runtime errors, and email delivery.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -120,14 +120,14 @@ export default function AdminSystemHealth() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={<ShoppingBag className="w-4 h-4" />}
-          label="Instacart success rate"
+          label="Grocery checkout success rate"
           value={`${successRate}%`}
           sub={`${instacartSuccess}/${instacartClicks} sends`}
           tone={successRate >= 95 ? "good" : successRate >= 80 ? "warn" : "bad"}
         />
         <StatCard
           icon={<AlertTriangle className="w-4 h-4" />}
-          label="Instacart failures"
+          label="Grocery checkout failures"
           value={instacartErrors.length}
           tone={instacartErrors.length === 0 ? "good" : "bad"}
         />
@@ -149,11 +149,11 @@ export default function AdminSystemHealth() {
       <Card>
         <CardHeader className="flex flex-row items-center gap-2">
           <ShoppingBag className="w-4 h-4 text-primary" />
-          <CardTitle className="text-base">Recent Instacart failures</CardTitle>
+          <CardTitle className="text-base">Recent grocery checkout failures</CardTitle>
         </CardHeader>
         <CardContent>
           {instacartErrors.length === 0 ? (
-            <EmptyState message="No Instacart failures in this window. Checkout flow is healthy." />
+            <EmptyState message="No grocery checkout failures in this window. Flow is healthy." />
           ) : (
             <div className="space-y-2">
               {instacartErrors.slice(0, 25).map((row) => {

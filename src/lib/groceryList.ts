@@ -1,10 +1,8 @@
 // Client helper for adding items to the user's grocery list from any feature.
 // Routes through the `grocery-list-add-items` edge function which handles
 // pantry skip, dedupe, and the active-list singleton.
-//
-// IMPORTANT: This does NOT touch the Instacart flow. The existing
-// SendToInstacartButton + instacart-create-list edge function remain the
-// single approved path to Instacart.
+
+
 
 import { supabase } from "@/integrations/supabase/client";
 

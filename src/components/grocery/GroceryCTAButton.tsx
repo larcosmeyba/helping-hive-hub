@@ -3,19 +3,15 @@ import { Loader2, ExternalLink, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Generic primary grocery CTA. Originally an Instacart-branded button; now a
- * neutral Help The Hive primary CTA (honey gold) used for actions like
- * "Shop at Kroger", "Copy Grocery List", etc.
- *
- * The component name and export shape are preserved so all callers continue
- * to compile without per-file edits.
+ * Generic primary grocery CTA. A neutral Help The Hive primary CTA (honey
+ * gold) used for actions like "Shop at Kroger", "Copy Grocery List", etc.
  */
 
-export type InstacartCTAVariant = "dark" | "light" | "white";
+export type GroceryCTAVariant = "dark" | "light" | "white";
 
-interface InstacartCTAButtonProps
+interface GroceryCTAButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  variant?: InstacartCTAVariant;
+  variant?: GroceryCTAVariant;
   loading?: boolean;
   showExternalIcon?: boolean;
   label?: string;
@@ -23,20 +19,17 @@ interface InstacartCTAButtonProps
 }
 
 const VARIANT_STYLES: Record<
-  InstacartCTAVariant,
+  GroceryCTAVariant,
   { bg: string; fg: string; border: string }
 > = {
-  // Dark — used as the primary CTA. Honey gold on near-black for contrast.
   dark:  { bg: "#1A1A1A", fg: "#F2B233", border: "none" },
-  // Light — honey cream.
   light: { bg: "#F2B233", fg: "#1A1A1A", border: "0.5px solid #E0A52A" },
-  // White — outlined.
   white: { bg: "#FFFFFF", fg: "#1A1A1A", border: "0.5px solid #E8E9EB" },
 };
 
-export const InstacartCTAButton = React.forwardRef<
+export const GroceryCTAButton = React.forwardRef<
   HTMLButtonElement,
-  InstacartCTAButtonProps
+  GroceryCTAButtonProps
 >(
   (
     {
@@ -100,22 +93,4 @@ export const InstacartCTAButton = React.forwardRef<
     );
   },
 );
-InstacartCTAButton.displayName = "InstacartCTAButton";
-
-/**
- * Legacy disclosure component. Kept for backwards compatibility; the
- * Instacart-specific affiliate copy was removed.
- */
-export function InstacartDisclosure({ className }: { className?: string }) {
-  return (
-    <p
-      className={cn(
-        "text-[11px] leading-relaxed text-muted-foreground text-center px-2",
-        className,
-      )}
-    >
-      Prices are planning estimates. Final pricing and availability are
-      confirmed at your store at checkout.
-    </p>
-  );
-}
+GroceryCTAButton.displayName = "GroceryCTAButton";

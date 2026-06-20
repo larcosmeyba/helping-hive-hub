@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
-import { InstacartCTAButton, type InstacartCTAVariant } from "@/components/instacart/InstacartCTAButton";
+import { GroceryCTAButton, type GroceryCTAVariant } from "@/components/grocery/GroceryCTAButton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,7 +17,7 @@ import { Copy, Download, ExternalLink, ChevronDown } from "lucide-react";
  * Prop shape is preserved so existing callers compile unchanged.
  */
 
-export interface InstacartLineItem {
+export interface GroceryLineItem {
   name: string;
   quantity?: number;
   unit?: string;
@@ -26,25 +26,25 @@ export interface InstacartLineItem {
 
 interface Props {
   title: string;
-  lineItems: InstacartLineItem[];
+  lineItems: GroceryLineItem[];
   imageUrl?: string;
   linkType?: "shopping_list" | "recipe";
   instructions?: string[];
   className?: string;
-  variant?: InstacartCTAVariant;
+  variant?: GroceryCTAVariant;
   label?: string;
   partnerLinkbackUrl?: string;
   fullWidth?: boolean;
   showExternalIcon?: boolean;
 }
 
-function formatLine(item: InstacartLineItem): string {
+function formatLine(item: GroceryLineItem): string {
   if (item.display_text && item.display_text.trim()) return item.display_text.trim();
   const qty = item.quantity ? `${item.quantity}${item.unit ? " " + item.unit : ""} ` : "";
   return `${qty}${item.name}`.trim();
 }
 
-function toCsv(title: string, items: InstacartLineItem[]): string {
+function toCsv(title: string, items: GroceryLineItem[]): string {
   const esc = (v: unknown) => {
     const s = v === null || v === undefined ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -65,7 +65,7 @@ function downloadFile(filename: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-export function SendToInstacartButton({
+export function ShopGroceriesButton({
   title,
   lineItems,
   className,
@@ -113,7 +113,7 @@ export function SendToInstacartButton({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <span className={fullWidth ? "block" : "inline-block"}>
-          <InstacartCTAButton
+          <GroceryCTAButton
             disabled={empty}
             variant={variant}
             label={label}

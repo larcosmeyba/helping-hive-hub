@@ -414,10 +414,9 @@ Deno.serve(async (req) => {
 
     await advance("preparing", "profile loaded", "Reviewing your profile & pantry");
 
-    const [profileRes, pantryRes, homeStoreRes] = await Promise.all([
+    const [profileRes, pantryRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("pantry_items").select("*").eq("user_id", userId),
-      supabase.from("instacart_home_store").select("*").eq("user_id", userId).maybeSingle(),
     ]);
 
     const profile = profileRes.data ?? {};
@@ -441,7 +440,9 @@ Deno.serve(async (req) => {
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
     const pantryNormalized = new Set(pantryItems.map((i) => i.normalized_name).filter(Boolean));
-    const homeStore = homeStoreRes.data;
+    // Kroger home store from profiles (single source of truth used by live pricing).
+    const krogerLocationId: string | null = (profile as any).kroger_location_id ?? null;
+    const krogerStoreName: string | null = (profile as any).kroger_store_name ?? null;
 
     await advance("preparing", "pantry_items loaded", "Reviewing your profile & pantry", {
       pantry_items_count: pantryOnly.length,
@@ -717,7 +718,7 @@ Deno.serve(async (req) => {
       },
       weekly_grocery_budget: weeklyBudget,
       zip_code: profile.zip_code ?? null,
-      preferred_store: overrides.store ?? homeStore?.retailer_name ?? profile.home_store ?? null,
+      preferred_store: overrides.store ?? krogerStoreName ?? (profile as any).home_store ?? null,
       dietary_preferences: dietaryPrefs,
       allergies,
       cooking_confidence: profile.cooking_confidence ?? "intermediate",
@@ -1172,7 +1173,7 @@ Deno.serve(async (req) => {
     // higher range and shows "Over budget" — the exact bug just reported.
     // We mirror the client's lookup here so the cap = what the user sees.
     const storeCodeForPricing: string | null =
-      (homeStore?.retailer_name as string | undefined) ??
+      krogerStoreName ??
       ((profile as any).home_store as string | undefined) ??
       null;
     const stateCodeForPricing: string | null =

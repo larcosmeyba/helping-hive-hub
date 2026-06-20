@@ -9,9 +9,9 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { InstacartDisclaimer } from "@/components/InstacartDisclaimer";
+import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import type { GroceryItem } from "@/types/mealPlan";
-import { diagnoseSanitization, sanitizeForInstacart } from "@/lib/instacartSanitizer";
+import { diagnoseSanitization, sanitizeForGrocery } from "@/lib/grocerySanitizer";
 import { computeGroceryRange } from "@/lib/groceryConfidence";
 
 type Row = ReturnType<typeof diagnoseSanitization> & {
@@ -60,7 +60,7 @@ export default function GroceryDebugPage() {
 
   const sanitizedPayload = useMemo(
     () =>
-      sanitizeForInstacart(
+      sanitizeForGrocery(
         items.map((i) => ({ name: i.name, rawQuantity: String(i.quantity ?? "") })),
       ),
     [items],
@@ -248,7 +248,7 @@ export default function GroceryDebugPage() {
         </div>
       </div>
 
-      <InstacartDisclaimer variant="inline" className="text-xs" />
+      <PricingDisclaimer variant="inline" className="text-xs" />
     </div>
   );
 }
