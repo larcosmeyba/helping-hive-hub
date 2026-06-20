@@ -64,8 +64,15 @@ COOKING SKILL RULES (binding):
 - advanced: no restriction.
 
 RECIPE OUTPUT RULES (binding):
-- For every new_meal you create, "instructions" MUST be a non-empty array of clear, numbered step-by-step cooking actions ("Heat skillet over medium heat", "Add olive oil and onions", "Cook 3-5 minutes", etc.). Empty or single-line instructions are NOT acceptable.
+- For every new_meal, "instructions" MUST be a non-empty array of HIGHLY DETAILED step-by-step cooking actions written for someone who has never cooked the dish before. Every step is one numbered action and MUST include:
+  * The pan/pot/tool to use ("12-inch nonstick skillet", "medium saucepan", "sheet pan lined with parchment").
+  * The exact heat level ("medium-high heat", "350°F / 175°C oven").
+  * The exact time range ("cook 4–5 minutes per side", "simmer uncovered 12 minutes", "bake 18 minutes").
+  * The visual or sensory doneness cue ("until golden brown and fragrant", "until internal temp reaches 165°F", "until liquid has reduced by half", "until edges curl and bottom is set").
+  * Any seasoning amounts ("½ tsp salt", "1 tbsp olive oil") whenever an ingredient is added.
+- Minimum 6 steps, target 8–12 steps. Include prep steps (washing, chopping with sizes like "¼-inch dice"), the cooking sequence, a doneness check, and a plating/serving step. Never produce vague steps like "cook until done" or "combine and serve" — always state the temperature, time, and visual cue.
 - Include prep_time_minutes and cook_time_minutes for every new_meal.
+- Always include calories_estimate, protein_estimate (g), carbs_estimate (g), and fat_estimate (g) per serving for every new_meal based on the recipe's ingredients and portion size. Be realistic, not round numbers.
 
 - Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
 - When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
