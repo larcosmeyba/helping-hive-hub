@@ -129,4 +129,16 @@ describe("cookMatch", () => {
   it("normalize collapses whitespace and lowercases", () => {
     expect(normalize("  Olive   OIL ")).toBe("olive oil");
   });
+
+  it("zero-ingredient recipe is out_of_scope (not need_2_3)", () => {
+    const out = rankCandidates({
+      inventory: [inv("eggs")],
+      recipes: [rec("empty", "Empty Recipe", [])],
+      allergyTerms: [], dietForbidden: [], cookingConfidence: "medium",
+    });
+    expect(out.matches.length).toBe(0);
+    expect(out.tiers.make_now.length).toBe(0);
+    expect(out.tiers.need_1.length).toBe(0);
+    expect(out.tiers.need_2_3.length).toBe(0);
+  });
 });

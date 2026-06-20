@@ -943,7 +943,7 @@ Deno.serve(async (req) => {
     // Else if new_meal → insert a private recipe row owned by user.
     const resolvedDays: Array<{
       day_name: string;
-      meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner"; recipe: any; reason?: string }>;
+      meals: Array<{ meal_type: "breakfast" | "lunch" | "dinner" | "snack"; recipe: any; reason?: string }>;
     }> = [];
 
     const allergyTerms = expandAllergies(allergies);
@@ -958,8 +958,12 @@ Deno.serve(async (req) => {
       ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
     ];
 
-    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner", usedIds: Set<string>): any | null {
-      const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner" | "snack", usedIds: Set<string>): any | null {
+      const pool =
+        mealType === "breakfast" ? breakfastCandidates :
+        mealType === "lunch" ? lunchCandidates :
+        mealType === "dinner" ? dinnerCandidates :
+        snackCandidates;
       for (const c of pool) {
         if (usedIds.has(c.id)) continue;
         if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
@@ -971,7 +975,7 @@ Deno.serve(async (req) => {
     const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+      for (const mealType of ["breakfast", "lunch", "dinner", "snack"] as const) {
         const slot = day[mealType];
         if (!slot) continue;
 
@@ -1040,6 +1044,7 @@ Deno.serve(async (req) => {
       // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
       // fallbacks: unused safe candidate → reused safe candidate → minimum-
       // portion hardcoded staple meal. We NEVER leave a slot empty.
+      // Snacks are OPTIONAL and never backfilled.
       const present = new Set(dayMeals.map((m) => m.meal_type));
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
         if (present.has(mealType)) continue;
@@ -1061,9 +1066,9 @@ Deno.serve(async (req) => {
           reason: "Added at minimum portions to keep your day complete within budget.",
         });
       }
-      // Keep meals in canonical breakfast → lunch → dinner order.
+      // Keep meals in canonical breakfast → lunch → dinner → snack order.
       dayMeals.sort((a, b) => {
-        const order = { breakfast: 0, lunch: 1, dinner: 2 } as Record<string, number>;
+        const order = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 } as Record<string, number>;
         return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
       });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
@@ -1095,6 +1100,7 @@ Deno.serve(async (req) => {
       breakfast: breakfastCandidates,
       lunch: lunchCandidates,
       dinner: dinnerCandidates,
+      snack: snackCandidates,
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
