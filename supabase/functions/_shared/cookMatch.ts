@@ -194,8 +194,11 @@ export function rankCandidates(inputs: RankInputs): RankOutput {
 
   const matches: MatchedRecipe[] = filtered.map((r) => {
     const m = matchRecipe(r, inventoryNames, extraOwnedNames, expiringNames);
-    const pct = Math.round((m.owned / m.total) * 100);
-    const tier = assignTier(pct, m.missing.length, m.cost, { need_2_3_max_cost, need_2_3_max_missing });
+    const hasIngredients = recipeIngredients(r).length > 0;
+    const pct = hasIngredients ? Math.round((m.owned / m.total) * 100) : 0;
+    const tier: MatchedRecipe["tier"] = hasIngredients
+      ? assignTier(pct, m.missing.length, m.cost, { need_2_3_max_cost, need_2_3_max_missing })
+      : "out_of_scope";
     return {
       recipe: r,
       pantry_match_pct: pct,
