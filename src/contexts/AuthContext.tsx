@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useState, typ
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getAppUrl } from "@/lib/appUrl";
+import { phIdentify, phReset, phOptIn, phOptOut } from "@/lib/posthog";
+import { sentrySetUser } from "@/lib/sentry";
 
 interface ProfileLite {
   user_id: string;
@@ -42,9 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialized = false;
 
     // Set up listener FIRST (synchronous registration)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      // Identify into PostHog + Sentry on sign-in; reset on sign-out.
+      if (session?.user) {
+        phIdentify(session.user.id, { email_hash: undefined });
+        sentrySetUser({ id: session.user.id });
+      } else if (event === "SIGNED_OUT") {
+        phReset();
+        sentrySetUser(null);
+      }
       // Only flip loading off after initial session check has completed
       if (initialized) setLoading(false);
     });
