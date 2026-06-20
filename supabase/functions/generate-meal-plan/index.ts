@@ -829,20 +829,33 @@ Deno.serve(async (req) => {
       await advance("generating", "algo_v2 optimizer started", "Building your weekly meal plan (deterministic)");
       const { runOptimizer } = await import("../_shared/mealPlanOptimizer.ts");
       const DAY_NAMES_V2 = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      const slots: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" }> = [];
+      const slots: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" | "snack" }> = [];
       for (let i = 0; i < daysCount; i++) {
         const d = DAY_NAMES_V2[i] || `Day ${i + 1}`;
         for (const mt of ["breakfast", "lunch", "dinner"] as const) slots.push({ day_name: d, meal_type: mt });
       }
+      // Phase A snack slots: only allocated when there is budget headroom
+      // (snackHeadroom > 0). One snack per day. Snacks remain optional —
+      // the optimizer will skip a slot if no feasible/affordable candidate.
+      const includeSnacks = snackHeadroom > 0 && snackCandidates.length > 0;
+      if (includeSnacks) {
+        for (let i = 0; i < daysCount; i++) {
+          const d = DAY_NAMES_V2[i] || `Day ${i + 1}`;
+          slots.push({ day_name: d, meal_type: "snack" });
+        }
+      }
       const recentIds = (recentUsage ?? []).map((r: any) => r.recipe_id).filter(Boolean);
       const dislikedTermsV2 = ((profile as any).disliked_foods ?? []).map((s: string) => String(s).toLowerCase()).filter(Boolean);
+      const hasToddlerV2 = Number((profile as any).children_under_5 ?? 0) > 0;
       const optResult = runOptimizer({
         candidates: {
           breakfast: breakfastCandidates as any,
           lunch: lunchCandidates as any,
           dinner: dinnerCandidates as any,
+          snack: snackCandidates as any,
         },
-        pantryItems: pantryItems as any,
+        pantryItems: pantryOnly as any,
+        freezerItems: freezerItems as any,
         expiringSoon: expiringSoon as any,
         profile: {
           household_size: householdSize,
@@ -851,13 +864,17 @@ Deno.serve(async (req) => {
           dietary_preferences: dietaryPrefs,
           disliked_foods: dislikedTermsV2,
           children_5_to_12: Number((profile as any).children_5_to_12 ?? 0),
+          has_toddler: hasToddlerV2,
+          cooking_confidence: (profile as any).cooking_confidence ?? "intermediate",
         },
         recentRecipeIds: recentIds,
+        favoriteRecipeIds,
         slots,
         recipeContainsAny: recipeContainsAny as any,
         allergyTerms: expandAllergies(allergies),
         dietForbidden: forbiddenForDiets(dietaryPrefs),
         dislikedTerms: dislikedTermsV2,
+        toddlerHazards: TODDLER_CHOKING_HAZARDS,
       });
       parsed = optResult.parsed;
       optimizerDebug = optResult.debug;
