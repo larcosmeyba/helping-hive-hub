@@ -212,10 +212,11 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     setGenerationStage("preparing");
     setGenerationStatus(EMPTY_GENERATION_STATUS);
 
-    const algorithmVersion = phIsFeatureEnabled("new-meal-plan-algorithm") === true ? "v2" : "v1";
+    const algorithmVersion = phIsFeatureEnabled("new-meal-plan-algorithm") === true ? "algo_v2" : "hybrid_v1";
     void trackEvent("meal_plan_generation_started", {
       pricingMode: opts?.pricingMode ?? null,
       algorithmVersion,
+      algorithm_version: algorithmVersion,
     });
 
     try {
@@ -224,7 +225,10 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         void pollJob();
       }, 1200);
 
-      const body: Record<string, unknown> = { algorithmVersion };
+      const body: Record<string, unknown> = {
+        algorithmVersion,
+        overrides: { algorithmVersion },
+      };
       if (opts?.pricingMode) body.pricingMode = opts.pricingMode;
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
@@ -303,6 +307,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       void trackEvent("meal_plan_generated", {
         pricingMode: opts?.pricingMode ?? null,
         algorithmVersion,
+        algorithm_version: algorithmVersion,
         fallbackUsed: Boolean((data as any).fallback),
         itemCount: Array.isArray((data as any).groceryList) ? (data as any).groceryList.length : null,
       });
