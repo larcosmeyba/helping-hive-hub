@@ -416,3 +416,213 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
     });
   }
 });
+
+// ────────────────────────────────────────────────────────────────────
+// Phase C — DB-match flow helpers
+// ────────────────────────────────────────────────────────────────────
+
+// Local copies of the allergy/diet expansion maps (kept local to avoid
+// cross-importing the giant generate-meal-plan file at edge runtime).
+const COOK_ALLERGY_EXPANSIONS: Record<string, string[]> = {
+  nuts: ["nut","nuts","almond","walnut","pecan","peanut","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut","nut butter"],
+  "tree nuts": ["almond","walnut","pecan","cashew","hazelnut","pistachio","macadamia","brazil nut","pine nut"],
+  peanuts: ["peanut","peanuts","peanut butter","groundnut"],
+  dairy: ["milk","cheese","butter","yogurt","yoghurt","cream","whey","casein","lactose","ghee","parmesan","mozzarella","cheddar","feta","ricotta"],
+  milk: ["milk","cheese","butter","yogurt","cream","whey","casein","lactose"],
+  gluten: ["wheat","flour","bread","pasta","barley","rye","couscous","semolina","farro","spelt","bulgur","seitan"],
+  wheat: ["wheat","flour","bread","pasta","couscous","semolina"],
+  eggs: ["egg","eggs","mayonnaise","mayo","meringue"],
+  soy: ["soy","soya","tofu","tempeh","edamame","miso","soy sauce","tamari"],
+  shellfish: ["shrimp","prawn","crab","lobster","crawfish","scallop","clam","mussel","oyster"],
+  fish: ["fish","salmon","tuna","cod","tilapia","trout","anchovy","sardine","halibut","mackerel"],
+  sesame: ["sesame","tahini"],
+};
+const COOK_DIET_FORBIDDEN: Record<string, string[]> = {
+  vegan: ["beef","steak","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","fish","salmon","tuna","cod","tilapia","shrimp","prawn","crab","lobster","scallop","clam","oyster","mussel","anchovy","milk","cheese","butter","yogurt","cream","whey","casein","egg","eggs","honey","gelatin","lard","ghee"],
+  vegetarian: ["beef","steak","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","fish","salmon","tuna","cod","tilapia","shrimp","prawn","crab","lobster","scallop","clam","oyster","mussel","anchovy","gelatin","lard"],
+  pescatarian: ["beef","steak","pork","bacon","ham","sausage","chicken","turkey","lamb","veal","duck","gelatin","lard"],
+};
+function _expandAllergies(allergies: string[]): string[] {
+  const out = new Set<string>();
+  for (const a of allergies || []) {
+    const k = (a || "").toLowerCase().trim(); if (!k) continue;
+    out.add(k);
+    for (const t of COOK_ALLERGY_EXPANSIONS[k] || []) out.add(t);
+  }
+  return Array.from(out);
+}
+function _forbiddenForDiets(prefs: string[]): string[] {
+  const out = new Set<string>();
+  for (const p of prefs || []) {
+    const k = (p || "").toLowerCase().trim();
+    for (const t of COOK_DIET_FORBIDDEN[k] || []) out.add(t);
+  }
+  return Array.from(out);
+}
+
+async function runDbMatchFlow(args: {
+  admin: any;
+  userId: string;
+  inventory: Array<{ id: string; item_name: string; location?: string | null; freshness?: string | null }>;
+  profile: any;
+  groceryItems: any[];
+  purchasedItems: any[];
+  sourceType: "cook_from_what_i_have" | "food_waste";
+  maxRecipes: number;
+}): Promise<{ has_matches: boolean; payload: any }> {
+  const { admin, userId, inventory, profile, groceryItems, purchasedItems, sourceType, maxRecipes } = args;
+
+  // Fetch candidate pool — reuse generate-meal-plan pattern.
+  const { data: rawRecipes, error: recErr } = await admin
+    .from("recipes")
+    .select("id, title, description, ingredients, instructions, prep_time_minutes, cook_time_minutes, cost_per_serving, serving_size, estimated_recipe_cost, tags, image_url, is_active, is_public, created_by_user_id")
+    .eq("is_active", true)
+    .or(`is_public.eq.true,created_by_user_id.eq.${userId}`)
+    .limit(200);
+  if (recErr) throw recErr;
+
+  const allergyTerms = _expandAllergies((profile?.allergies ?? []) as string[]);
+  const dietForbidden = _forbiddenForDiets((profile?.dietary_preferences ?? []) as string[]);
+
+  const extraOwnedNames: string[] = [
+    ...((groceryItems ?? []) as any[]).map((g) => String(g.ingredient_name || "")),
+    ...((purchasedItems ?? []) as any[]).map((g) => String(g.ingredient_name || "")),
+  ];
+
+  const ranked = rankCandidates({
+    inventory: inventory.map((i) => ({
+      id: i.id,
+      item_name: i.item_name,
+      freshness: i.freshness ?? "good",
+    })),
+    recipes: (rawRecipes ?? []) as CandidateRecipe[],
+    allergyTerms,
+    dietForbidden,
+    cookingConfidence: profile?.cooking_confidence ?? "medium",
+    extraOwnedNames,
+  });
+
+  if (!ranked.matches.length) {
+    return { has_matches: false, payload: null };
+  }
+
+  // Cap at maxRecipes per tier for response payload sanity.
+  const cap = Math.max(maxRecipes, 5);
+  const make_now = ranked.tiers.make_now.slice(0, cap);
+  const need_1 = ranked.tiers.need_1.slice(0, cap);
+  const need_2_3 = ranked.tiers.need_2_3.slice(0, cap);
+
+  // OpenAI ranker pass (best-effort, advisory).
+  const shortlist = [...make_now, ...need_1, ...need_2_3].slice(0, 20);
+  let aiByRecipeId: Record<string, { rank?: number; why?: string; substitutions?: string[]; expiring_used?: string[] }> = {};
+  if (shortlist.length) {
+    try {
+      const { callOpenAI } = await import("../_shared/openaiClient.ts");
+      const tools = [{
+        type: "function" as const,
+        function: {
+          name: "return_ranking",
+          description: "Rank pre-matched recipes and explain why each works for the user's pantry.",
+          parameters: {
+            type: "object",
+            properties: {
+              rankings: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    recipe_id: { type: "string" },
+                    rank: { type: "number" },
+                    why: { type: "string" },
+                    substitutions: { type: "array", items: { type: "string" } },
+                    expiring_used: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["recipe_id", "why"],
+                },
+              },
+            },
+            required: ["rankings"],
+          },
+        },
+      }];
+      const sys = "You are Help The Hive's pantry chef ranker. You are given a SHORTLIST of recipes that have ALREADY been matched against the user's pantry. Do NOT invent recipes. For each recipe, return a one-sentence 'why this works', up to 3 ingredient substitutions, and which expiring items it rescues. Respect the user's allergies and dietary_preferences (already filtered).";
+      const userMsg = JSON.stringify({
+        allergies: profile?.allergies ?? [],
+        dietary_preferences: profile?.dietary_preferences ?? [],
+        cooking_confidence: profile?.cooking_confidence ?? "medium",
+        household_size: profile?.household_size ?? 2,
+        expiring_items: inventory
+          .filter((i) => i.freshness === "expiring_today" || i.freshness === "use_soon")
+          .map((i) => i.item_name),
+        shortlist: shortlist.map((m) => ({
+          recipe_id: m.recipe.id,
+          title: m.recipe.title,
+          pantry_match_pct: m.pantry_match_pct,
+          missing_items: m.missing_items.map((i) => i.item_name),
+          uses_expiring: m.uses_expiring,
+        })),
+      });
+      const ai = await callOpenAI({
+        model: "gpt-5.4-mini",
+        system: sys,
+        user: userMsg,
+        tools,
+        tool_choice: { type: "function", function: { name: "return_ranking" } },
+        log: { admin, user_id: userId, request_type: "cook_rank" },
+      });
+      const rankings = (ai.tool_arguments as any)?.rankings ?? [];
+      for (const r of rankings) {
+        if (!r?.recipe_id) continue;
+        aiByRecipeId[String(r.recipe_id)] = {
+          rank: typeof r.rank === "number" ? r.rank : undefined,
+          why: r.why,
+          substitutions: Array.isArray(r.substitutions) ? r.substitutions : [],
+          expiring_used: Array.isArray(r.expiring_used) ? r.expiring_used : [],
+        };
+      }
+    } catch (err) {
+      console.warn("[cook-from-what-i-have] OpenAI ranker failed, using deterministic order", err);
+      try { captureEdgeError(err, { fn: "cook-from-what-i-have", phase: "openai_rank" }); } catch { /* */ }
+    }
+  }
+
+  const toPayload = (m: any) => ({
+    public_recipe_id: m.recipe.id,
+    recipe_name: m.recipe.title,
+    description: m.recipe.description ?? null,
+    image_url: m.recipe.image_url ?? null,
+    instructions: Array.isArray(m.recipe.instructions)
+      ? m.recipe.instructions
+      : (m.recipe.instructions ? [String(m.recipe.instructions)] : []),
+    prep_time_minutes: m.recipe.prep_time_minutes ?? null,
+    cook_time_minutes: m.recipe.cook_time_minutes ?? null,
+    servings: m.recipe.serving_size ?? null,
+    pantry_match_pct: m.pantry_match_pct,
+    missing_items: m.missing_items,
+    missing_count: m.missing_count,
+    cost_to_complete: m.cost_to_complete,
+    uses_expiring: m.uses_expiring,
+    tier: m.tier,
+    why: aiByRecipeId[m.recipe.id]?.why ?? null,
+    substitutions: aiByRecipeId[m.recipe.id]?.substitutions ?? [],
+    expiring_used: aiByRecipeId[m.recipe.id]?.expiring_used ?? [],
+  });
+
+  return {
+    has_matches: true,
+    payload: {
+      source: "db_match",
+      source_type: sourceType,
+      tiers: {
+        make_now: make_now.map(toPayload),
+        need_1: need_1.map(toPayload),
+        need_2_3: need_2_3.map(toPayload),
+      },
+      tier_counts: {
+        make_now: make_now.length,
+        need_1: need_1.length,
+        need_2_3: need_2_3.length,
+      },
+    },
+  };
+}
