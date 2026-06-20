@@ -365,7 +365,7 @@ Generate up to ${maxRecipes} recipes. Include food_waste_reason naming the rescu
           savings_estimate: r.savings_estimate ?? null,
           food_waste_reason: r.food_waste_reason ?? null,
           instructions: r.instructions ?? [],
-          status: "suggested",
+          status: (req as any)._aiFallback ? "pending_review" : "suggested",
         })
         .select()
         .single();
