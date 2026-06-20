@@ -1294,6 +1294,13 @@ Deno.serve(async (req) => {
       return { low, avg, high, drivers: drivers.slice(0, 5), unmatched };
     }
 
+    // Phase A: 3-bucket grocery list. `bucket` ∈ {use_first, already_have, need_to_buy}.
+    // use_first  → expiring pantry/fridge/freezer items used by this plan
+    // already_have → owned items not expiring ($0)
+    // need_to_buy  → everything else, deduped + summed across recipes
+    const expiringNormalized = new Set(
+      expiringSoon.map((i: any) => i.normalized_name ?? normalizeName(i.item_name ?? "")).filter(Boolean),
+    );
     function buildGroceryListAndBasket(days: typeof resolvedDays) {
       const agg = new Map<string, {
         ingredient_name: string;
@@ -1301,6 +1308,7 @@ Deno.serve(async (req) => {
         category: string;
         estimated_price: number;
         already_have: boolean;
+        bucket: "use_first" | "already_have" | "need_to_buy";
         needed_for_meals: string[];
         instacart_search_term: string;
       }>();
@@ -1312,7 +1320,13 @@ Deno.serve(async (req) => {
             const parsed = parseIngredientString(raw);
             if (!parsed.normalized) continue;
             const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
-            const alreadyHave = pantryHas(parsed.normalized, pantryNormalized) || isStaple;
+            const isOwned = pantryHas(parsed.normalized, pantryNormalized);
+            const isExpiring = isOwned && Array.from(expiringNormalized).some((e) =>
+              parsed.normalized.includes(e) || e.includes(parsed.normalized)
+            );
+            const alreadyHave = isOwned || isStaple;
+            const bucket: "use_first" | "already_have" | "need_to_buy" =
+              isExpiring ? "use_first" : alreadyHave ? "already_have" : "need_to_buy";
             const category = categorizeIngredient(parsed.item);
             const catAvg = CATEGORY_AVG[category] ?? CATEGORY_AVG.Other;
             const existing = agg.get(parsed.normalized);
@@ -1320,6 +1334,8 @@ Deno.serve(async (req) => {
               if (!existing.needed_for_meals.includes(meal.recipe.title)) {
                 existing.needed_for_meals.push(meal.recipe.title);
               }
+              // Keep highest priority bucket (use_first > already_have > need_to_buy)
+              if (bucket === "use_first") existing.bucket = "use_first";
             } else {
               agg.set(parsed.normalized, {
                 ingredient_name: parsed.item || parsed.display,
@@ -1327,6 +1343,7 @@ Deno.serve(async (req) => {
                 category,
                 estimated_price: Math.round(catAvg * 100) / 100,
                 already_have: alreadyHave,
+                bucket,
                 needed_for_meals: [meal.recipe.title],
                 instacart_search_term: parsed.item,
               });
