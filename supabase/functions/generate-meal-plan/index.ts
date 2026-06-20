@@ -1781,6 +1781,29 @@ Deno.serve(async (req) => {
       budgetWarningText = `This budget covers reduced portions; consider adding $${shortfall} for full portions delivered with Instacart fees.`;
     }
 
+    // Phase A (Part K): apply budget_unfit gate on the ESTIMATED path too.
+    // Previously only the Kroger path hard-failed; the estimated path merely
+    // warned and saved an over-budget plan. Now any over-budget result on
+    // either path returns the same structured error (HTTP 200) before save.
+    if (overBudgetAfterAdjust && pricingMode === "estimated") {
+      const friendly =
+        "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+      await failJob("budget_unfit", friendly, {
+        delivered_total: finalDeliveredTotals.delivered_total,
+        weekly_budget: weeklyBudget,
+        pricing_mode: pricingMode,
+      });
+      return new Response(
+        JSON.stringify(structuredError("budget_unfit", friendly, {
+          job_id: jobId,
+          delivered_total: finalDeliveredTotals.delivered_total,
+          weekly_budget: weeklyBudget,
+          pricing_mode: pricingMode,
+        })),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Persist the DELIVERED total — what the user actually pays at checkout —
     // as the headline cost. UI/Budget/Remaining math is computed against it.
     const estimatedTotalCost = finalDeliveredTotals.delivered_total;
