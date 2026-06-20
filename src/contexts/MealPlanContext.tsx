@@ -286,6 +286,15 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
           statusMessage: msg,
         }));
         void trackEvent("meal_plan_generation_failed", { reason: errCode, algorithmVersion });
+        // Phase A (Part N): emit canonical validation event + generation_error alias.
+        void trackEvent("meal_plan_validation_failed", {
+          algorithm_version: algorithmVersion,
+          reason: errCode,
+        });
+        void trackEvent("generation_error", {
+          algorithm_version: algorithmVersion,
+          reason: errCode,
+        });
         return;
       }
       if (data?.error) {
@@ -304,13 +313,47 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         errorMessage: (data as any).error_message ?? prev.errorMessage,
         statusMessage: (data as any).fallback ? "Showing fallback meal plan" : "Your meal plan is ready",
       }));
-      void trackEvent("meal_plan_generated", {
+      // Phase A (Part N): emit the new PostHog events using server-returned
+      // event_data. All events carry algorithm_version. trackEvent honors
+      // analytics opt-out and falls back gracefully when no event_data.
+      const ed = (data as any).event_data ?? null;
+      const meta: Record<string, any> = {
         pricingMode: opts?.pricingMode ?? null,
         algorithmVersion,
         algorithm_version: algorithmVersion,
         fallbackUsed: Boolean((data as any).fallback),
         itemCount: Array.isArray((data as any).groceryList) ? (data as any).groceryList.length : null,
-      });
+      };
+      void trackEvent("meal_plan_generated", meta);
+      void trackEvent("meal_plan_generated_successfully", meta);
+      if (ed) {
+        void trackEvent("recipe_candidates_filtered", {
+          algorithm_version: algorithmVersion,
+          ...ed.candidates_filtered,
+        });
+        if (ed.kroger_match) {
+          void trackEvent("kroger_price_match_completed", {
+            algorithm_version: algorithmVersion,
+            ...ed.kroger_match,
+          });
+        }
+        if (ed.swaps_made && ed.swaps_made > 0) {
+          void trackEvent("meal_plan_over_budget_corrected", {
+            algorithm_version: algorithmVersion,
+            swaps: ed.swaps_made,
+            delivered_total: ed.budget?.delivered_total,
+            weekly: ed.budget?.weekly,
+          });
+        }
+        void trackEvent("grocery_list_generated", {
+          algorithm_version: algorithmVersion,
+          items: ed.grocery_items,
+          pantry_utilization_pct: ed.pantry_utilization_pct,
+        });
+        void trackEvent("meal_plan_validation_passed", {
+          algorithm_version: algorithmVersion,
+        });
+      }
 
       if ((data as any).fallback) {
         toast({

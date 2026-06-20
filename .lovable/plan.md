@@ -1,127 +1,157 @@
-## Help The Hive — Kroger-First Meal Planning, Questionnaire & Pantry Overhaul
+# Phase A — Extend algo_v2 Meal Plan Engine
 
-This is a large, multi-system change. I'll break it into phases so we can ship and verify incrementally. Each phase ends with something testable.
+Scope is large, additive, and gated by the existing PostHog flag `new-meal-plan-algorithm`. hybrid_v1 remains the default and the fallback. Response contract, job lifecycle, and rate limits are not touched.
 
----
+## Order of execution
 
-### Phase 1 — Questionnaire restructure (frontend only)
+1. **DB migration (Part A)** — additive only. After approval, regenerate types, then code can rely on the new columns.
+2. **Shared helpers** — extend `mealPlanOptimizer.ts` and `krogerPricing.ts`.
+3. **Generator** — extend `generate-meal-plan/index.ts` (algo_v2 branch + shared steps).
+4. **Grocery list edge function** — align 3-bucket grouping.
+5. **Client analytics** — add/rename PostHog events with `algorithm_version`.
+6. **Tests** — extend `src/test/mealPlanOptimizer.test.ts`.
 
-**File:** `src/pages/Questionnaire.tsx` (+ small additions to profile schema if needed)
+## Part A — Migration (additive, inherits RLS)
 
-New step order (12 steps):
-1. Household — adults count
-2. Children — count + ages (dynamic age inputs for 5–12 logic)
-3. Babies/Toddlers — count
-4. Weekly grocery budget
-5. Dietary preferences / allergies
-6. Cooking skill level (Beginner / Intermediate / Advanced) — **new explicit step**
-7. Pantry staples on hand (already exists)
-8. Disliked foods
-9. Food waste habits
-10. **Family Assistance needs** (SNAP, food, transport, housing, childcare, utilities, financial) — multi-select; drives prompt in Phase 6
-11. **Connect Kroger** — "Connect Kroger" + "Continue Without Kroger" buttons; uses existing `useKrogerConnection.connect()`
-12. Summary + "Finish & See My Plan"
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS disliked_foods text[] NOT NULL DEFAULT '{}';
 
-Profile columns needed (migration):
-- `adults_count int`, `children_count int`, `children_ages int[]`, `babies_count int`
-- `assistance_needs text[]` (already-ish via `assistance_needs` table, but we store the questionnaire snapshot on profile for fast read)
+ALTER TABLE public.recipes
+  ADD COLUMN IF NOT EXISTS kid_friendly boolean,
+  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS sodium_mg numeric;
 
-Pantry sync fix: on submit, write each pantry staple into `public.pantry_items` (insert rows with `user_id`, `item_name`, `location='pantry'`) in addition to updating `profiles.pantry_items`. Currently questionnaire only stores them on the profile JSON — that's the bug in item 7.
+-- Backfill kid_friendly from the existing keyword/tag heuristic
+UPDATE public.recipes
+SET kid_friendly = (
+  (tags && ARRAY['kid-friendly','family-friendly','kids'])
+  OR lower(coalesce(name,'')) ~ '(mac.?cheese|chicken nugget|spaghetti|pancake|quesadilla|grilled cheese|pizza)'
+)
+WHERE kid_friendly IS NULL;
 
----
+ALTER TABLE public.meal_plan_meals
+  ADD COLUMN IF NOT EXISTS carbs_estimate numeric,
+  ADD COLUMN IF NOT EXISTS fats_estimate numeric,
+  ADD COLUMN IF NOT EXISTS fiber_estimate numeric,
+  ADD COLUMN IF NOT EXISTS sodium_estimate numeric;
+```
 
-### Phase 2 — Kroger gating in meal plan generation (frontend)
+Freezer handled in code via the existing `pantry_items.storage_location` field; no new column unless that field is missing.
 
-**Files:** `src/pages/dashboard/MealPlanSetupPage.tsx`, `src/pages/dashboard/MealPlanPage.tsx`, new `src/components/kroger/KrogerRequiredBanner.tsx`
+## Part B — User context
 
-- Before "Generate Plan" runs, check `useKrogerConnection().ready`.
-- If not ready: show modal — "Connect Kroger for live pricing accuracy" with **Connect Kroger** / **Continue Without Kroger** buttons.
-- If user continues without: pass `pricing_mode: "estimated"` to the edge function and show a yellow "Pricing accuracy reduced" banner on the resulting plan.
+- Split pantry into pantry / fridge / freezer / expiring (extend `index.ts` ~422). Freezer items treated as $0 owned, passed to optimizer.
+- `disliked_foods` now real — confirm wire into `dislikedTerms`.
+- Favorite recipe IDs passed as `favoriteRecipeIds` to optimizer for new `FAVORITE_BONUS`.
 
----
+## Part C — Budget engine (server-side, before selection)
 
-### Phase 3 — Edge function: Kroger-priced budget enforcement loop
+```
+TARGET_BUDGET_RATIO = 0.95
+MEAL_SPLIT = { breakfast: 0.25, lunch: 0.30, dinner: 0.35, snacks: 0.10 }
+targetWeeklySpend = weeklyBudget * 0.95
+dailyBudget = targetWeeklySpend / daysCount
+snackBudget allocated only if B+L+D leaves headroom; else 0
+```
+Used as soft scoring targets + running monitor. Hard gate stays at `<= weeklyBudget`.
 
-**File:** `supabase/functions/generate-meal-plan/index.ts` + `supabase/functions/_shared/mealPlanContext.ts` + new `supabase/functions/_shared/krogerPricing.ts`
+## Part D — Candidate pools
 
-New flow when Kroger is connected:
-1. Generate plan with Gemini (existing).
-2. Build grocery list from meal ingredients (existing helper).
-3. For each grocery item, look up Kroger price via existing `kroger_product_matches` / `kroger_pricing_cache` (call Kroger Products API for misses, cache result).
-4. Sum priced subtotal.
-5. If `subtotal > weekly_budget`: re-prompt Gemini with `{over_budget_by, expensive_items}` and ask it to swap the N most expensive meals for cheaper equivalents. Loop up to 3 attempts.
-6. Persist final priced breakdown to `meal_plan_cost_breakdown`.
-7. If still over after 3 attempts, attach `budget_warning` and surface to UI (do not block — still ship the plan with warning).
+- Per-meal-type pool: 12 → 30 (top-by-score slice after `.limit(120)` fetch).
+- Add `snack` to `fetchCandidates`; pool size 15.
 
-When Kroger not connected: skip pricing loop, mark plan `pricing_mode='estimated'`, no Kroger calls.
+## Part E — Hard filters (fetch + `isFeasible`)
 
----
+- `recipes.is_active = true` at fetch.
+- Skill-too-hard: derive difficulty from prep+cook time + ingredient count; exclude above user `cooking_confidence`. Add to `isFeasible`.
+- Toddler-unsafe: when `hasToddler`, filter `TODDLER_CHOKING_HAZARDS` in `isFeasible` (not just the backfill resolver).
 
-### Phase 4 — Meal generation prompt: family size, kid-friendly, skill level, full instructions
+## Part F — Pantry matching
 
-**File:** `supabase/functions/generate-meal-plan/index.ts` (prompt + schema)
+- Scale recipe ingredient qty by household servings when building grocery list.
+- Compute `pantry_utilization_pct = distinct owned items used / distinct ingredients needed`; include in `plan_data` + job metadata.
 
-Prompt additions:
-- Inject `adults_count`, `children_count`, `children_ages`, `babies_count`, `cooking_confidence`.
-- Rule: if any child age is 5–12, ≥3 meals/week must be kid-friendly (tacos / pasta / breakfast burritos / rice bowls / sheet pan).
-- Rule: if `babies_count > 0`, grocery list must include milk + yogurt + soft fruit quantities scaled by `babies_count`.
-- Rule: recipe complexity matches `cooking_confidence` (beginner = ≤8 ingredients, ≤30 min, ≤6 steps; advanced = unrestricted).
-- Servings sized for `adults_count + children_count` (toddlers excluded — handled via grocery extras).
+## Part G — `krogerPricing.ts`
 
-Schema additions per meal (already partially present, enforce):
-- `ingredients: [{name, quantity, unit}]`
-- `instructions: string[]` — non-empty, numbered steps. Reject and regenerate if any meal has empty instructions.
+- Prefer store/Kroger brand when multiple matches (rank by brand-match, then price).
+- Capture `availability` (stockLevel), `promo_price` separate from `regular_price`, size-normalized `unit_price`, computed `match_confidence` (name/size/unit similarity, not hardcoded 0.8).
+- Accept and use real recipe `quantity` (drop hardcoded 1 at call sites).
+- Pantry items still excluded ($0).
 
----
+## Part H — Scoring (additive constants)
 
-### Phase 5 — Plan validation gate (frontend)
+Keep existing weights. Add:
+- `KID_FRIENDLY_BONUS` (uses new column).
+- `SKILL_FIT_BONUS` (closer to user skill = higher).
+- Balanced-nutrition score across calories/protein/carbs/fat/fiber/sodium vs household targets (replaces protein-only).
+- `KROGER_CONFIDENCE_BONUS` (only when Kroger connected).
+- `FAVORITE_BONUS` for favorited recipe ids.
+- Deterministic; stable id tie-breaks.
 
-**File:** new `src/lib/validateMealPlan.ts`, used by `MealPlanPage.tsx`
+## Part I — Snacks E2E
 
-Before rendering, validate:
-- Plan has 7 days × 3 meals
-- Every meal has ingredients + instructions (non-empty)
-- Family size matches profile
-- Kroger pricing present if `pricing_mode='kroger'`
-- Subtotal ≤ budget OR `budget_warning` set
+Optimizer adds snack slots only when `snackBudget > 0`, picks deterministically from top-15 snack pool under snack budget. OpenAI never selects snacks. Snacks optional.
 
-If any required check fails: show error card + "Regenerate" button instead of partial plan.
+## Part J — Running budget monitor
 
----
+Keep existing repair. Emit `meal_plan_over_budget_corrected` event data (swaps count, dollars saved) for client.
 
-### Phase 6 — Family Assistance prompt
+## Part K — Validation gates (all → `structuredError` + 200 + `failJob`)
 
-**Files:** `src/pages/dashboard/DashboardHome.tsx` (or first post-questionnaire screen), new `src/components/dashboard/FamilyAssistancePrompt.tsx`
+Keep: `budget_unfit`, `kid_friendly_unfit`, per-swap allergy re-check. Add:
+- Make `budget_unfit` fire on the estimated-pricing path too (today only warns).
+- Serving-size validation (every meal scaled to household).
+- Grocery-list validation (non-empty, every Need-To-Buy has price or `estimated` flag).
+- Kroger-confidence warning (do not hard-fail).
+Emit `meal_plan_validation_passed` / `meal_plan_validation_failed` (client).
 
-After questionnaire, if `assistance_needs.length > 0`, show dismissible banner:
-> "We found resources that may help your family."
-> **[Open Hive Family Assistance →]** → routes to `/dashboard/family-assistance` with the selected need types pre-filtered by ZIP.
+## Part L — Grocery list 3-bucket grouping
 
----
+Buckets: `use_first` (expiring used), `already_have` ($0 owned), `need_to_buy` (rest, deduped/summed, pantry-subtracted). Persist `bucket` field per `grocery_list_items` and in `plan_data`. Same logic mirrored in `generate-grocery-list-from-meal-plan/index.ts`.
 
-### Phase 7 — Pantry sync verification
+## Part M — Nutrition storage
 
-Covered by Phase 1 write into `pantry_items`. Add Playwright smoke test: complete questionnaire with 3 pantry staples → navigate to `/dashboard/pantry` → assert all 3 visible.
+Persist calories/protein/carbs/fat/fiber/sodium to `meal_plan_meals`. No UI change.
 
----
+## Part N — Analytics events (client, via `trackEvent`)
 
-### Technical notes
+Add `algorithm_version` to every success/fail event. New/renamed:
+- `recipe_candidates_filtered`
+- `kroger_price_match_completed`
+- `meal_plan_validation_passed`
+- `meal_plan_validation_failed`
+- `meal_plan_generated_successfully` (alias of existing)
+- `meal_plan_over_budget_corrected`
+- `grocery_list_generated`
+- `shop_with_kroger_clicked` (alias added alongside `shop_at_kroger_clicked`)
+- `generation_error` (alias of `meal_plan_generation_failed`)
 
-- **Migration** (Phase 1): add family-size columns + `pricing_mode` to `meal_plans` and `meal_plan_generation_jobs`.
-- **Kroger pricing cache**: reuse `kroger_pricing_cache` table; TTL 24h.
-- **Cost loop**: hard cap 3 Gemini re-prompts to control credits/latency. Each iteration logs to `meal_plan_generation_jobs.status_message` so the progress UI shows "Adjusting plan to fit budget…".
-- **Backward compat**: existing plans without `pricing_mode` default to `estimated` on read.
-- **No Instacart code touched.**
+Server returns the data each event needs in the response (filtered counts, kroger match stats, swap stats) so the client can emit.
 
----
+## Part O — Sentry (`captureEdgeError` with `{ fn }` tag)
 
-### Suggested ship order
+Add targeted captures around: Kroger pricing block, OpenAI gap-fill call, pricing/validation steps. Do NOT capture `budget_unfit` / `kid_friendly_unfit` (expected outcomes — already aligned with HTH-6).
 
-I recommend shipping in this order, verifying each before the next:
-1. Phase 1 + Phase 7 (questionnaire + pantry fix — visible immediately)
-2. Phase 6 (family assistance prompt)
-3. Phase 2 (Kroger gating UI)
-4. Phase 3 + Phase 4 (backend pricing loop + prompt rules)
-5. Phase 5 (validation gate)
+## Files
 
-**Want me to start with Phase 1 + 7, or ship all phases in one pass?**
+- `supabase/migrations/<new>.sql` — new
+- `supabase/functions/_shared/mealPlanOptimizer.ts`
+- `supabase/functions/_shared/krogerPricing.ts`
+- `supabase/functions/generate-meal-plan/index.ts`
+- `supabase/functions/generate-grocery-list-from-meal-plan/index.ts`
+- `src/contexts/MealPlanContext.tsx`
+- `src/test/mealPlanOptimizer.test.ts`
+
+## Rollback
+
+- Turn `new-meal-plan-algorithm` OFF → all traffic on hybrid_v1 (unchanged).
+- Migrations additive; reverting code leaves new columns harmlessly unused.
+
+## Out of scope
+
+Prompt 2 (Shop Groceries / Budget Fix Engine) and Prompt 3 (Cook What I Have tiers) — not touched here. hybrid_v1 path, response contract, job lifecycle, and rate-limit numbers unchanged.
+
+## First step on approval
+
+Submit the additive migration (Part A) for review. After it runs and types regenerate, proceed with optimizer/generator/pricing/grocery/client/test edits in parallel batches.

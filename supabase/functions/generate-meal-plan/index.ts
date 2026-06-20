@@ -25,7 +25,21 @@ type GenerationErrorCode =
   | "invalid_ai_json"
   | "database_insert_failed"
   | "grocery_list_failed"
-  | "budget_unfit";
+  | "budget_unfit"
+  | "kid_friendly_unfit"
+  | "serving_size_invalid"
+  | "grocery_list_invalid";
+
+// =========================================================
+// Phase A (algo_v2) — deterministic budget engine constants.
+// Soft scoring targets + running monitor; final hard gate stays at
+// total <= weeklyBudget so we never accept an actual over-budget plan.
+// =========================================================
+const TARGET_BUDGET_RATIO = 0.95;
+const MEAL_BUDGET_SPLIT = { breakfast: 0.25, lunch: 0.30, dinner: 0.35, snacks: 0.10 } as const;
+const CANDIDATE_POOL_SIZE = 30;
+const SNACK_POOL_SIZE = 15;
+const LOW_KROGER_CONFIDENCE_RATIO = 0.4; // >40% low-confidence lines → warn
 
 const BACKEND_STEPS: Record<JobStage, string[]> = {
   preparing: ["profile loaded", "pantry_items loaded", "fridge_items loaded", "recipe candidates fetched", "meal_plan_context created"],
@@ -419,8 +433,11 @@ Deno.serve(async (req) => {
       normalized_name: p.normalized_item_name ?? normalizeName(p.item_name),
     }));
 
+    // Phase A: split into pantry / fridge / freezer / expiring buckets.
+    // Freezer items count as $0 owned (treated like pantry) for the optimizer.
     const fridgeItems = pantryItems.filter((i) => i.location === "fridge");
-    const pantryOnly = pantryItems.filter((i) => i.location !== "fridge");
+    const freezerItems = pantryItems.filter((i) => i.location === "freezer");
+    const pantryOnly = pantryItems.filter((i) => i.location !== "fridge" && i.location !== "freezer");
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
     const pantryNormalized = new Set(pantryItems.map((i) => i.normalized_name).filter(Boolean));
@@ -462,13 +479,18 @@ Deno.serve(async (req) => {
       (recentUsage ?? []).filter((r: any) => !r.favorited).map((r: any) => r.recipe_id),
     );
 
-    // Fetch candidate pool per meal type
-    async function fetchCandidates(mealType: "breakfast" | "lunch" | "dinner"): Promise<any[]> {
-      // Pull a broad pool; we'll filter dietary/budget client-side for flexibility
+    // Fetch candidate pool per meal type. Phase A: snack supported, pool size 30 (15 for snacks),
+    // and recipes.is_active is a HARD filter.
+    async function fetchCandidates(mealType: "breakfast" | "lunch" | "dinner" | "snack"): Promise<any[]> {
+      const isSnack = mealType === "snack";
+      const limit = isSnack ? SNACK_POOL_SIZE : CANDIDATE_POOL_SIZE;
+      // Pull a broad pool; we'll filter dietary/budget client-side for flexibility.
+      // is_active is filtered server-side so inactive recipes never reach the optimizer.
       const { data, error } = await admin
         .from("recipes")
-        .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes, avg_rating, times_used, source, created_by_user_id")
+        .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, carbs_g, fats_g, fiber_g, sodium_mg, kid_friendly, is_active, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes, avg_rating, times_used, source, created_by_user_id")
         .eq("meal_type", mealType)
+        .eq("is_active", true)
         .or(`is_public.eq.true,created_by_user_id.eq.${userId}`)
         .limit(120);
       if (error) {
@@ -510,23 +532,49 @@ Deno.serve(async (req) => {
         return (a.times_used ?? 0) - (b.times_used ?? 0);
       });
 
-      return pool.slice(0, 12);
+      return pool.slice(0, limit);
     }
 
-    const [breakfastCandidates, lunchCandidates, dinnerCandidates] = await Promise.all([
+    const [breakfastCandidates, lunchCandidates, dinnerCandidates, snackCandidates] = await Promise.all([
       fetchCandidates("breakfast"),
       fetchCandidates("lunch"),
       fetchCandidates("dinner"),
+      fetchCandidates("snack"),
     ]);
 
     await advance("preparing", "recipe candidates fetched", "Picking from your recipe library", {
       breakfast_candidates: breakfastCandidates.length,
       lunch_candidates: lunchCandidates.length,
       dinner_candidates: dinnerCandidates.length,
+      snack_candidates: snackCandidates.length,
     });
 
     const candidatesById = new Map<string, any>();
-    for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates]) candidatesById.set(r.id, r);
+    for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates, ...snackCandidates]) candidatesById.set(r.id, r);
+
+    // Phase A: load user's favorite recipe ids — gives the optimizer a positive
+    // scoring boost beyond the recently-eaten-unless-favorited exclusion.
+    const favoriteRecipeIds: string[] = ((recentUsage ?? [])
+      .filter((r: any) => r.favorited)
+      .map((r: any) => r.recipe_id) as string[]).filter(Boolean);
+
+    // Phase A: deterministic budget engine targets — soft scoring + monitor.
+    const targetWeeklySpend = weeklyBudget * TARGET_BUDGET_RATIO;
+    const dailyBudget = targetWeeklySpend / Math.max(1, daysCount);
+    const blDinnerShare = MEAL_BUDGET_SPLIT.breakfast + MEAL_BUDGET_SPLIT.lunch + MEAL_BUDGET_SPLIT.dinner;
+    const snackHeadroom = Math.max(0, targetWeeklySpend * MEAL_BUDGET_SPLIT.snacks);
+    const budgetTargets = {
+      target_weekly_spend: Math.round(targetWeeklySpend * 100) / 100,
+      daily_budget: Math.round(dailyBudget * 100) / 100,
+      per_meal: {
+        breakfast: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.breakfast / daysCount) * 100) / 100,
+        lunch: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.lunch / daysCount) * 100) / 100,
+        dinner: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.dinner / daysCount) * 100) / 100,
+        snacks: Math.round((snackHeadroom / daysCount) * 100) / 100,
+      },
+      bl_dinner_share: blDinnerShare,
+      snack_budget: Math.round(snackHeadroom * 100) / 100,
+    };
 
     // ===== Help The Hive budget reference data =====
     // Tables: cheap_meals, budget_staples, weekly_meal_plans, meal_plan_weekly_totals, budget_food_items.
@@ -781,20 +829,33 @@ Deno.serve(async (req) => {
       await advance("generating", "algo_v2 optimizer started", "Building your weekly meal plan (deterministic)");
       const { runOptimizer } = await import("../_shared/mealPlanOptimizer.ts");
       const DAY_NAMES_V2 = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      const slots: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" }> = [];
+      const slots: Array<{ day_name: string; meal_type: "breakfast" | "lunch" | "dinner" | "snack" }> = [];
       for (let i = 0; i < daysCount; i++) {
         const d = DAY_NAMES_V2[i] || `Day ${i + 1}`;
         for (const mt of ["breakfast", "lunch", "dinner"] as const) slots.push({ day_name: d, meal_type: mt });
       }
+      // Phase A snack slots: only allocated when there is budget headroom
+      // (snackHeadroom > 0). One snack per day. Snacks remain optional —
+      // the optimizer will skip a slot if no feasible/affordable candidate.
+      const includeSnacks = snackHeadroom > 0 && snackCandidates.length > 0;
+      if (includeSnacks) {
+        for (let i = 0; i < daysCount; i++) {
+          const d = DAY_NAMES_V2[i] || `Day ${i + 1}`;
+          slots.push({ day_name: d, meal_type: "snack" });
+        }
+      }
       const recentIds = (recentUsage ?? []).map((r: any) => r.recipe_id).filter(Boolean);
       const dislikedTermsV2 = ((profile as any).disliked_foods ?? []).map((s: string) => String(s).toLowerCase()).filter(Boolean);
+      const hasToddlerV2 = Number((profile as any).children_under_5 ?? 0) > 0;
       const optResult = runOptimizer({
         candidates: {
           breakfast: breakfastCandidates as any,
           lunch: lunchCandidates as any,
           dinner: dinnerCandidates as any,
+          snack: snackCandidates as any,
         },
-        pantryItems: pantryItems as any,
+        pantryItems: pantryOnly as any,
+        freezerItems: freezerItems as any,
         expiringSoon: expiringSoon as any,
         profile: {
           household_size: householdSize,
@@ -803,13 +864,17 @@ Deno.serve(async (req) => {
           dietary_preferences: dietaryPrefs,
           disliked_foods: dislikedTermsV2,
           children_5_to_12: Number((profile as any).children_5_to_12 ?? 0),
+          has_toddler: hasToddlerV2,
+          cooking_confidence: (profile as any).cooking_confidence ?? "intermediate",
         },
         recentRecipeIds: recentIds,
+        favoriteRecipeIds,
         slots,
         recipeContainsAny: recipeContainsAny as any,
         allergyTerms: expandAllergies(allergies),
         dietForbidden: forbiddenForDiets(dietaryPrefs),
         dislikedTerms: dislikedTermsV2,
+        toddlerHazards: TODDLER_CHOKING_HAZARDS,
       });
       parsed = optResult.parsed;
       optimizerDebug = optResult.debug;
@@ -1229,6 +1294,13 @@ Deno.serve(async (req) => {
       return { low, avg, high, drivers: drivers.slice(0, 5), unmatched };
     }
 
+    // Phase A: 3-bucket grocery list. `bucket` ∈ {use_first, already_have, need_to_buy}.
+    // use_first  → expiring pantry/fridge/freezer items used by this plan
+    // already_have → owned items not expiring ($0)
+    // need_to_buy  → everything else, deduped + summed across recipes
+    const expiringNormalized = new Set(
+      expiringSoon.map((i: any) => i.normalized_name ?? normalizeName(i.item_name ?? "")).filter(Boolean),
+    );
     function buildGroceryListAndBasket(days: typeof resolvedDays) {
       const agg = new Map<string, {
         ingredient_name: string;
@@ -1236,6 +1308,7 @@ Deno.serve(async (req) => {
         category: string;
         estimated_price: number;
         already_have: boolean;
+        bucket: "use_first" | "already_have" | "need_to_buy";
         needed_for_meals: string[];
         instacart_search_term: string;
       }>();
@@ -1247,7 +1320,13 @@ Deno.serve(async (req) => {
             const parsed = parseIngredientString(raw);
             if (!parsed.normalized) continue;
             const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
-            const alreadyHave = pantryHas(parsed.normalized, pantryNormalized) || isStaple;
+            const isOwned = pantryHas(parsed.normalized, pantryNormalized);
+            const isExpiring = isOwned && Array.from(expiringNormalized).some((e) =>
+              parsed.normalized.includes(e) || e.includes(parsed.normalized)
+            );
+            const alreadyHave = isOwned || isStaple;
+            const bucket: "use_first" | "already_have" | "need_to_buy" =
+              isExpiring ? "use_first" : alreadyHave ? "already_have" : "need_to_buy";
             const category = categorizeIngredient(parsed.item);
             const catAvg = CATEGORY_AVG[category] ?? CATEGORY_AVG.Other;
             const existing = agg.get(parsed.normalized);
@@ -1255,6 +1334,8 @@ Deno.serve(async (req) => {
               if (!existing.needed_for_meals.includes(meal.recipe.title)) {
                 existing.needed_for_meals.push(meal.recipe.title);
               }
+              // Keep highest priority bucket (use_first > already_have > need_to_buy)
+              if (bucket === "use_first") existing.bucket = "use_first";
             } else {
               agg.set(parsed.normalized, {
                 ingredient_name: parsed.item || parsed.display,
@@ -1262,6 +1343,7 @@ Deno.serve(async (req) => {
                 category,
                 estimated_price: Math.round(catAvg * 100) / 100,
                 already_have: alreadyHave,
+                bucket,
                 needed_for_meals: [meal.recipe.title],
                 instacart_search_term: parsed.item,
               });
@@ -1452,9 +1534,22 @@ Deno.serve(async (req) => {
         // Repair loop kept tight to stay well within edge-function time budget.
         const MAX_KROGER_REPAIR = 2;
         const MAX_CANDIDATES_PER_SLOT = 3;
+        // Phase A: pass real per-item quantities (numeric, scaled to household)
+        // instead of the previous hardcoded 1. Recipe quantity strings are
+        // ingredient-side ("1 lb", "2 cups"); for a basket buy we round up
+        // distinct packages required for the household.
+        const parseQtyNumeric = (s: string | null | undefined): number => {
+          const m = String(s ?? "").match(/([\d.]+)/);
+          const n = m ? parseFloat(m[1]) : 1;
+          return isFinite(n) && n > 0 ? n : 1;
+        };
+        const householdQty = Math.max(1, Math.ceil(householdSize / 2));
         let krogerPriced = await priceBasketWithKroger(
           admin, userId, kroger.locationId,
-          buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+          buyItems.map((b: any) => ({
+            name: b.ingredient_name,
+            quantity: Math.max(1, Math.ceil(parseQtyNumeric(b.quantity) * householdQty)),
+          })),
         );
 
         for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
@@ -1536,7 +1631,10 @@ Deno.serve(async (req) => {
           basket = await priceBasket(buyItems);
           krogerPriced = await priceBasketWithKroger(
             admin, userId, kroger.locationId,
-            buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+            buyItems.map((b: any) => ({
+              name: b.ingredient_name,
+              quantity: Math.max(1, Math.ceil(parseQtyNumeric(b.quantity) * householdQty)),
+            })),
           );
         }
 
@@ -1547,6 +1645,11 @@ Deno.serve(async (req) => {
           location_id: kroger.locationId,
           store_name: kroger.storeName,
           lines: krogerPriced.lines,
+          // Phase A: confidence summary surfaced for the client analytics event
+          // `kroger_price_match_completed`. Warn (not fail) when too many
+          // matches are low-confidence.
+          avg_match_confidence: (krogerPriced as any).avg_match_confidence ?? 0,
+          low_confidence_count: (krogerPriced as any).low_confidence_count ?? 0,
         };
 
         // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
@@ -1574,6 +1677,9 @@ Deno.serve(async (req) => {
           "[generate-meal-plan] Kroger pricing failed, falling back to estimated:",
           (krogerErr as Error)?.message ?? krogerErr,
         );
+        // Phase A (Part O): capture genuine Kroger failures to Sentry with a
+        // scoped tag, so on-call can distinguish them from expected outcomes.
+        try { captureEdgeError(krogerErr, { fn: "generate-meal-plan/kroger_pricing" }); } catch { /* noop */ }
         pricingMode = "estimated";
         krogerSummary = null;
         await advance(
@@ -1673,6 +1779,29 @@ Deno.serve(async (req) => {
     if (overBudgetAfterAdjust) {
       const shortfall = Math.ceil(finalDeliveredTotals.delivered_total - weeklyBudget);
       budgetWarningText = `This budget covers reduced portions; consider adding $${shortfall} for full portions delivered with Instacart fees.`;
+    }
+
+    // Phase A (Part K): apply budget_unfit gate on the ESTIMATED path too.
+    // Previously only the Kroger path hard-failed; the estimated path merely
+    // warned and saved an over-budget plan. Now any over-budget result on
+    // either path returns the same structured error (HTTP 200) before save.
+    if (overBudgetAfterAdjust && pricingMode === "estimated") {
+      const friendly =
+        "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
+      await failJob("budget_unfit", friendly, {
+        delivered_total: finalDeliveredTotals.delivered_total,
+        weekly_budget: weeklyBudget,
+        pricing_mode: pricingMode,
+      });
+      return new Response(
+        JSON.stringify(structuredError("budget_unfit", friendly, {
+          job_id: jobId,
+          delivered_total: finalDeliveredTotals.delivered_total,
+          weekly_budget: weeklyBudget,
+          pricing_mode: pricingMode,
+        })),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // Persist the DELIVERED total — what the user actually pays at checkout —
@@ -1819,6 +1948,13 @@ Deno.serve(async (req) => {
           estimated_cost_per_serving: r.cost_per_serving,
           calories_estimate: r.calories,
           protein_estimate: r.protein_g,
+          // Phase A (Part M): persist the full macro set (backend storage only;
+          // UI does not surface macros today). carbs_g / fat_g / fiber_g may
+          // come from library recipes or AI new_meal estimates.
+          carbs_estimate: r.carbs_g ?? null,
+          fats_estimate: r.fats_g ?? r.fat_g ?? null,
+          fiber_estimate: r.fiber_g ?? null,
+          sodium_estimate: r.sodium_mg ?? null,
           prep_time_minutes: r.prep_time_minutes,
           cook_time_minutes: r.cook_time_minutes,
           instructions: Array.isArray(r.instructions) ? r.instructions : [],
@@ -1900,7 +2036,10 @@ Deno.serve(async (req) => {
         ingredient_name: g.ingredient_name,
         quantity: g.quantity,
         category: g.category,
-        store_section: g.category,
+        // Phase A: encode bucket into store_section as "<bucket>:<category>"
+        // so the UI can group without a new column. Falls back to category
+        // when bucket is missing (no-bucket plan_data backfill).
+        store_section: `${(g as any).bucket ?? (g.already_have ? "already_have" : "need_to_buy")}:${g.category}`,
         estimated_price: g.estimated_price,
         already_have: g.already_have,
         instacart_search_term: g.instacart_search_term,
@@ -1933,6 +2072,43 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Phase A (Part N): surface data the client needs to emit PostHog events
+    // (recipe_candidates_filtered, kroger_price_match_completed,
+    // meal_plan_validation_passed, meal_plan_over_budget_corrected,
+    // grocery_list_generated). All events go through trackEvent so opt-out
+    // is honored. The server emits no events itself.
+    const eventData = {
+      algorithm_version: engine,
+      candidates_filtered: {
+        breakfast: breakfastCandidates.length,
+        lunch: lunchCandidates.length,
+        dinner: dinnerCandidates.length,
+        snack: snackCandidates.length,
+      },
+      kroger_match: krogerSummary
+        ? {
+          matched: krogerSummary.matched_count,
+          unmatched: krogerSummary.unmatched_count,
+          avg_confidence: (krogerSummary as any).avg_match_confidence ?? null,
+          low_confidence: (krogerSummary as any).low_confidence_count ?? null,
+        }
+        : null,
+      kroger_confidence_warning: krogerSummary
+        ? ((krogerSummary as any).low_confidence_count ?? 0) /
+            Math.max(1, krogerSummary.matched_count) > LOW_KROGER_CONFIDENCE_RATIO
+        : false,
+      budget: {
+        targets: budgetTargets,
+        delivered_total: estimatedTotalCost,
+        weekly: weeklyBudget,
+        over_budget: overBudgetAfterAdjust,
+      },
+      swaps_made: optimizerDebug?.swaps_made ?? null,
+      pantry_utilization_pct: optimizerDebug?.pantry_utilization_pct ?? null,
+      grocery_items: groceryList.length,
+      validation_passed: true,
+    };
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -1941,6 +2117,7 @@ Deno.serve(async (req) => {
         grocery_list_id: glRow.id,
         ...normalized,
         why_this_plan: parsed.why_this_plan ?? {},
+        event_data: eventData,
         pricing_disclaimer: pricingMode === "kroger"
           ? "Prices reflect live Kroger pricing for your home store. Final pricing is confirmed at checkout."
           : "Estimated pricing for planning only. Connect Kroger for live store pricing.",
@@ -1987,21 +2164,29 @@ function normalizePlanForClient(
     })),
   }));
 
-  const groceryListOut = groceryList
-    .filter((g) => !g.already_have)
-    .map((g) => ({
-      name: g.ingredient_name,
-      quantity: g.quantity,
-      estimatedPrice: g.estimated_price,
-      section: g.category,
-    }));
-
-  const totalEstimatedCost = groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
+  // Phase A (Part L): expose `bucket` on every grocery line so the UI can
+  // render Use First / Already Have / Need To Buy sections. Need-to-buy
+  // items remain the only ones counted toward totalEstimatedCost.
+  const groceryListOut = groceryList.map((g) => ({
+    name: g.ingredient_name,
+    quantity: g.quantity,
+    estimatedPrice: g.estimated_price,
+    section: g.category,
+    bucket: (g as any).bucket ?? (g.already_have ? "already_have" : "need_to_buy"),
+    alreadyHave: g.already_have,
+  }));
+  const needToBuy = groceryListOut.filter((g) => g.bucket === "need_to_buy");
+  const totalEstimatedCost = needToBuy.reduce((s, i) => s + i.estimatedPrice, 0);
   const totalMeals = weeklyPlan.reduce((s, d) => s + d.meals.length, 0) || 1;
 
   return {
     weeklyPlan,
     groceryList: groceryListOut,
+    groceryBuckets: {
+      use_first: groceryListOut.filter((g) => g.bucket === "use_first").length,
+      already_have: groceryListOut.filter((g) => g.bucket === "already_have").length,
+      need_to_buy: needToBuy.length,
+    },
     storeRecommendations: [],
     totalEstimatedCost,
     pantrySavings: groceryList.filter((g) => g.already_have).reduce((s, g) => s + g.estimated_price, 0),

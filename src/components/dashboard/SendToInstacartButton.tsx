@@ -105,6 +105,8 @@ export function SendToInstacartButton({
     const url = `https://www.kroger.com/search?query=${q}`;
     window.open(url, "_blank", "noopener,noreferrer");
     void trackEvent("shop_at_kroger_clicked", { itemCount: lineItems.length, title });
+    // Phase A (Part N): align with new spec event name; emit both for now.
+    void trackEvent("shop_with_kroger_clicked", { itemCount: lineItems.length, title });
   };
 
   return (

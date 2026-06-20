@@ -218,4 +218,104 @@ describe("mealPlanOptimizer", () => {
     }));
     expect(res.selections[0].recipe_id).toBe("ok");
   });
+
+  // ===== Phase A coverage =====
+
+  it("excludes recipes above the user's cooking_confidence cap (skill hard filter)", () => {
+    const candidates = {
+      breakfast: [
+        // Above beginner cap (>30 min, >8 ingredients).
+        mkRecipe("hard", "breakfast", {
+          ingredients: ["a", "b", "c", "d", "e", "f", "g", "h", "i"],
+          prep_time_minutes: 30,
+          cook_time_minutes: 30,
+        }),
+        // Well within beginner cap.
+        mkRecipe("easy", "breakfast", {
+          ingredients: ["oats", "milk"],
+          prep_time_minutes: 5,
+          cook_time_minutes: 5,
+        }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      profile: { household_size: 2, weekly_budget: 200, allergies: [], dietary_preferences: [], cooking_confidence: "beginner" },
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("easy");
+    expect(res.debug.skill_filtered_out).toBeGreaterThan(0);
+  });
+
+  it("excludes toddler choking-hazard recipes when has_toddler is true (hard filter)", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("hazard", "breakfast", { ingredients: ["whole grapes", "yogurt"] }),
+        mkRecipe("safe", "breakfast", { ingredients: ["oats", "milk"] }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      profile: { household_size: 3, weekly_budget: 200, allergies: [], dietary_preferences: [], has_toddler: true },
+      toddlerHazards: ["whole grapes", "popcorn"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("safe");
+    expect(res.debug.toddler_filtered_out).toBeGreaterThan(0);
+  });
+
+  it("places snack slots when a snack pool is provided", () => {
+    const candidates = {
+      breakfast: [mkRecipe("b1", "breakfast")],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+      snack: [mkRecipe("s1", "snack", { cost_per_serving: 0.75 })],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      slots: [
+        { day_name: "Monday", meal_type: "breakfast" },
+        { day_name: "Monday", meal_type: "snack" },
+      ],
+    }));
+    const snackPick = res.selections.find((s) => s.meal_type === "snack");
+    expect(snackPick?.recipe_id).toBe("s1");
+  });
+
+  it("favorite_bonus picks a favorited recipe over a slightly-better-scoring alternative", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("normal", "breakfast", { cost_per_serving: 2 }),
+        mkRecipe("fav", "breakfast", { cost_per_serving: 2.5 }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      favoriteRecipeIds: ["fav"],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("fav");
+  });
+
+  it("reports pantry_utilization_pct based on owned items consumed", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("uses-pantry", "breakfast", { ingredients: ["spinach", "eggs", "salt"] }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      pantryItems: [{ normalized_name: "spinach" }, { normalized_name: "eggs" }],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.debug.pantry_utilization_pct).toBeGreaterThan(0);
+  });
 });
