@@ -11,6 +11,8 @@ import {
   type GeneratedRecipe,
   type GeneratedRecipeIngredient,
 } from "@/lib/cookFromWhatIHave";
+import { trackEvent } from "@/lib/analytics";
+
 
 export default function CookRecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -110,12 +112,15 @@ export default function CookRecipeDetailPage() {
         before: u.before ?? u.previous_quantity ?? "",
         after: u.after ?? u.new_quantity ?? (u.depleted ? "Used" : ""),
       }));
+      const money_saved = result?.money_saved ?? (recipe as any).estimated_savings ?? 0;
+      const food_waste_prevented = result?.food_waste_prevented ?? updated_items.length;
+      void trackEvent("cook_recipe_cooked", { money_saved, food_waste_prevented });
       navigate(`/dashboard/cook/recipes/${recipe.id}/cooked`, {
         state: {
           recipe_name: recipe.recipe_name,
           updated_items,
-          money_saved: result?.money_saved ?? (recipe as any).estimated_savings ?? 0,
-          food_waste_prevented: result?.food_waste_prevented ?? updated_items.length,
+          money_saved,
+          food_waste_prevented,
         },
       });
     } catch (err) {

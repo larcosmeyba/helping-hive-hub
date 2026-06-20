@@ -5,6 +5,7 @@ import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { buildFamilyAssistanceContext } from "../_shared/familyAssistanceContext.ts";
 import { adminClient, callOpenAI } from "../_shared/openaiClient.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 const NEED_TO_CATEGORIES: Record<string, string[]> = {
   needs_food_assistance: ["food_bank"],
   needs_snap: ["snap"],
@@ -127,6 +128,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ matches, disclaimer: "These results are informational. You may qualify — please confirm eligibility directly with each program." }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (err: any) {
+    try { captureEdgeError(err, { fn: "match-family-resources" }); } catch { /* noop */ }
     return new Response(JSON.stringify({ error: err.message ?? String(err) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 });

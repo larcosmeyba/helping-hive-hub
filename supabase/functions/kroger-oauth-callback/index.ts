@@ -5,6 +5,7 @@
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
+import { captureEdgeError } from "../_shared/sentry.ts";
   getKrogerBaseUrl,
   getKrogerCreds,
   getKrogerEnv,
@@ -129,6 +130,7 @@ Deno.serve(async (req) => {
     }
     return finish(target, "connected");
   } catch (e) {
+    try { captureEdgeError(e, { fn: "kroger-oauth-callback" }); } catch { /* noop */ }
     console.error("[kroger-oauth-callback] exception:", e);
     return finish(target, "error");
   }

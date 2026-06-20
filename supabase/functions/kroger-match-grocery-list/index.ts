@@ -9,6 +9,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getServiceClient, krogerGet } from "../_shared/kroger.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 interface KrogerProduct {
   productId: string;
   upc?: string;
@@ -248,6 +249,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
+    try { captureEdgeError(e, { fn: "kroger-match-grocery-list" }); } catch { /* noop */ }
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

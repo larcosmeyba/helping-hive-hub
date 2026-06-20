@@ -16,6 +16,7 @@ import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
+import { trackEvent } from "@/lib/analytics";
 
 const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   breakfast: [
@@ -92,6 +93,7 @@ export default function MealPlanPage() {
   const handleSwap = (dayIndex: number, mealIndex: number, newMeal: MealPlanMeal) => {
     setSwappedMeals((prev) => ({ ...prev, [`${dayIndex}-${mealIndex}`]: newMeal }));
     setSubstituteOpen(null);
+    void trackEvent("meal_swapped", { dayIndex, mealIndex, mealType: newMeal.type ?? null });
     toast({ title: "Meal swapped", description: `Replaced with ${newMeal.name}.` });
   };
 
@@ -102,6 +104,7 @@ export default function MealPlanPage() {
       else next.add(key);
       return next;
     });
+    void trackEvent("meal_marked_cooked", { key });
   };
 
   const toggleDay = (day: string) => {

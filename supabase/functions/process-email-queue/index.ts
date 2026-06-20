@@ -1,6 +1,7 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
@@ -47,7 +48,8 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
       .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
 
     return JSON.parse(atob(payload)) as Record<string, unknown>
-  } catch {
+  } catch (err) {
+    try { captureEdgeError(err, { fn: "process-email-queue" }); } catch { /* noop */ }
     return null
   }
 }

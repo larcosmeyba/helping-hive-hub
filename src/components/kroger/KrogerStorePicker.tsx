@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { trackEvent } from "@/lib/analytics";
 
 interface KrogerStore {
   locationId: string;
@@ -30,8 +31,10 @@ export function KrogerStorePicker({ selectedLocationId, onSelect }: Props) {
         body: { zip: zip.trim(), radiusInMiles: 25, limit: 15 },
       });
       if (error) throw error;
-      setStores(data?.stores ?? []);
-      if (!data?.stores?.length) {
+      const found = data?.stores ?? [];
+      setStores(found);
+      void trackEvent("kroger_store_searched", { zip: zip.trim(), results: found.length });
+      if (!found.length) {
         toast({ title: "No Kroger stores found near that ZIP." });
       }
     } catch (e) {
@@ -39,6 +42,11 @@ export function KrogerStorePicker({ selectedLocationId, onSelect }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelect = (s: KrogerStore) => {
+    void trackEvent("kroger_home_store_selected", { locationId: s.locationId });
+    onSelect(s);
   };
 
   return (
@@ -62,7 +70,7 @@ export function KrogerStorePicker({ selectedLocationId, onSelect }: Props) {
             <Card
               key={s.locationId}
               className={`p-3 cursor-pointer flex items-start gap-3 ${selected ? "ring-2 ring-primary" : ""}`}
-              onClick={() => onSelect(s)}
+              onClick={() => handleSelect(s)}
             >
               <MapPin className="h-4 w-4 mt-1 text-primary" />
               <div className="flex-1">

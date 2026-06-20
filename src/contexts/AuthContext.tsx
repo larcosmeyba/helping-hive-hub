@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useState, typ
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getAppUrl } from "@/lib/appUrl";
+import { phIdentify, phReset, phOptIn, phOptOut } from "@/lib/posthog";
+import { sentrySetUser } from "@/lib/sentry";
 
 interface ProfileLite {
   user_id: string;
@@ -42,9 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialized = false;
 
     // Set up listener FIRST (synchronous registration)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      // Identify into PostHog + Sentry on sign-in; reset on sign-out.
+      if (session?.user) {
+        phIdentify(session.user.id, { email_hash: undefined });
+        sentrySetUser({ id: session.user.id });
+      } else if (event === "SIGNED_OUT") {
+        phReset();
+        sentrySetUser(null);
+      }
       // Only flip loading off after initial session check has completed
       if (initialized) setLoading(false);
     });
@@ -108,7 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         if (cancelled) return;
         if (!error && data) {
-          setProfile(data as ProfileLite);
+          const p = data as ProfileLite;
+          setProfile(p);
+          // Apply analytics opt-out + identify person properties.
+          if (p.analytics_opt_in === false) phOptOut();
+          else {
+            phOptIn();
+            phIdentify(user.id, {
+              tier: p.tier ?? undefined,
+              zip: p.zip_code ?? undefined,
+              household_size: p.household_size ?? undefined,
+              snap_status: p.snap_status ?? undefined,
+            });
+          }
           return;
         }
         if (!error) return; // no row, no point retrying
@@ -144,6 +166,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    // Reset analytics + error monitoring user state.
+    phReset();
+    sentrySetUser(null);
     // Clear all user-scoped client state so a subsequent user on the same
     // device cannot see the previous user's cached data.
     setProfile(null);

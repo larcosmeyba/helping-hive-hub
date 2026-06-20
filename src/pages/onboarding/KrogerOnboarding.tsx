@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KrogerStorePicker } from "@/components/kroger/KrogerStorePicker";
 import { SEOHead } from "@/components/SEOHead";
 import logo from "@/assets/logo-transparent.png";
+import { trackEvent } from "@/lib/analytics";
 
 type Stage = "intro" | "store" | "done";
 
@@ -27,6 +28,7 @@ export default function KrogerOnboarding() {
     if (!status) return;
     if (status === "connected") {
       toast({ title: "Kroger connected", description: "Now pick your home store." });
+      void trackEvent("kroger_connected", { source: "onboarding" });
       setStage("store");
     } else {
       toast({
@@ -34,6 +36,7 @@ export default function KrogerOnboarding() {
         description: "You can try again or continue without it.",
         variant: "destructive",
       });
+      void trackEvent("kroger_connect_failed", { source: "onboarding", reason: status });
     }
     const next = new URLSearchParams(params);
     next.delete("kroger");
@@ -57,6 +60,7 @@ export default function KrogerOnboarding() {
 
   const connect = async () => {
     setWorking(true);
+    void trackEvent("kroger_connect_started", { source: "onboarding" });
     try {
       // On native, route Kroger's OAuth redirect to a web landing page that
       // deep-links the user back into the installed app via

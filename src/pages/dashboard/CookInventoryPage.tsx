@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateRecipesFromInventory } from "@/lib/cookFromWhatIHave";
+import { trackEvent } from "@/lib/analytics";
 
 type Location = "pantry" | "fridge" | "freezer";
 
@@ -76,6 +77,7 @@ export default function CookInventoryPage() {
       return;
     }
     setFinding(true);
+    void trackEvent("cook_find_meals", { inventory_count: items.length });
     try {
       const recipes = await generateRecipesFromInventory({ count: 3 });
       if (!recipes.length) {

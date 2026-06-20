@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GeneratedMealPlan } from "@/types/mealPlan";
 import type { Database } from "@/integrations/supabase/types";
+import { trackEvent } from "@/lib/analytics";
+import { phIsFeatureEnabled } from "@/lib/posthog";
 
 export interface MealPlanHistoryEntry {
   id: string;
@@ -210,15 +212,23 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
     setGenerationStage("preparing");
     setGenerationStatus(EMPTY_GENERATION_STATUS);
 
+    const algorithmVersion = phIsFeatureEnabled("new-meal-plan-algorithm") === true ? "v2" : "v1";
+    void trackEvent("meal_plan_generation_started", {
+      pricingMode: opts?.pricingMode ?? null,
+      algorithmVersion,
+    });
+
     try {
       await pollJob();
       pollHandle = setInterval(() => {
         void pollJob();
       }, 1200);
 
+      const body: Record<string, unknown> = { algorithmVersion };
+      if (opts?.pricingMode) body.pricingMode = opts.pricingMode;
       const { data, error } = await supabase.functions.invoke("generate-meal-plan", {
         method: "POST",
-        body: opts?.pricingMode ? { pricingMode: opts.pricingMode } : {},
+        body,
       });
 
       await pollJob();
@@ -249,6 +259,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
             errorMessage: rateLimitedMsg!,
             statusMessage: rateLimitedMsg!,
           }));
+          void trackEvent("meal_plan_generation_failed", { reason: "rate_limited", algorithmVersion });
           return;
         }
         throw new Error(latestJob?.error_message || error.message);
@@ -270,6 +281,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
           errorMessage: msg,
           statusMessage: msg,
         }));
+        void trackEvent("meal_plan_generation_failed", { reason: errCode, algorithmVersion });
         return;
       }
       if (data?.error) {
@@ -288,6 +300,12 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         errorMessage: (data as any).error_message ?? prev.errorMessage,
         statusMessage: (data as any).fallback ? "Showing fallback meal plan" : "Your meal plan is ready",
       }));
+      void trackEvent("meal_plan_generated", {
+        pricingMode: opts?.pricingMode ?? null,
+        algorithmVersion,
+        fallbackUsed: Boolean((data as any).fallback),
+        itemCount: Array.isArray((data as any).groceryList) ? (data as any).groceryList.length : null,
+      });
 
       if ((data as any).fallback) {
         toast({
@@ -320,6 +338,10 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
         title: "Meal plan generation failed",
         description: latestJob?.error_message ?? err?.message ?? "Failed to generate meal plan",
         variant: "destructive",
+      });
+      void trackEvent("meal_plan_generation_failed", {
+        reason: latestJob?.error_code ?? "error",
+        algorithmVersion,
       });
       setGenerationStage(latestJob ? normalizeGenerationStage(latestJob.current_stage) : "idle");
     } finally {

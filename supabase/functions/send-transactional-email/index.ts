@@ -3,6 +3,7 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
 const SITE_NAME = "helping-hive-hub"
@@ -69,7 +70,8 @@ Deno.serve(async (req) => {
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
     }
-  } catch {
+  } catch (err) {
+    try { captureEdgeError(err, { fn: "send-transactional-email" }); } catch { /* noop */ }
     return new Response(
       JSON.stringify({ error: 'Invalid JSON in request body' }),
       {

@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { scanInventoryPhoto } from "@/lib/hiveAi";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { trackEvent } from "@/lib/analytics";
 
 export default function HiveAiScanPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const scanEnabled = useFeatureFlag("hive-ai-pantry-scan", true);
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [base64, setBase64] = useState<string | null>(null);
@@ -33,6 +36,10 @@ export default function HiveAiScanPage() {
     setScanning(true);
     try {
       const res = await scanInventoryPhoto(base64, "fridge");
+      void trackEvent("pantry_photo_scanned", {
+        scan_type: "fridge",
+        detected: Array.isArray(res?.detected_items) ? res.detected_items.length : 0,
+      });
       navigate("/dashboard/hive-ai/scan/review", { state: { detected: res.detected_items, photo_id: res.photo_id } });
     } catch (err: any) {
       toast({ title: "Scan failed", description: err.message, variant: "destructive" });
@@ -40,6 +47,19 @@ export default function HiveAiScanPage() {
       setScanning(false);
     }
   };
+
+  if (!scanEnabled) {
+    return (
+      <div className="max-w-md mx-auto px-4 pb-8 pt-6 text-center">
+        <h1 className="text-[18px] font-extrabold text-[#1a1a1a] mb-2">Scan temporarily unavailable</h1>
+        <p className="text-[13px] text-[#6b6b6b]">
+          AI photo scanning is paused right now. You can still add pantry items manually.
+        </p>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="max-w-md mx-auto px-1 pb-8">

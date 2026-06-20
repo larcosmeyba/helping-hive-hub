@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingBag, Link2, Link2Off, Loader2 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface ConnectionRow {
   environment: string;
@@ -36,8 +37,10 @@ export function KrogerConnectionCard() {
     const status = url.searchParams.get("kroger");
     if (status === "connected") {
       toast({ title: "Kroger connected", description: "Your account is linked." });
+      void trackEvent("kroger_connected", { source: "settings" });
     } else if (status && status !== "connected") {
       toast({ title: "Kroger connection failed", description: status, variant: "destructive" });
+      void trackEvent("kroger_connect_failed", { source: "settings", reason: status });
     }
     if (status) {
       url.searchParams.delete("kroger");
@@ -48,6 +51,7 @@ export function KrogerConnectionCard() {
 
   const connect = async () => {
     setWorking(true);
+    void trackEvent("kroger_connect_started", { source: "settings" });
     try {
       const { data, error } = await supabase.functions.invoke("kroger-oauth-start", {
         body: { redirectAfter: "/dashboard/settings" },
@@ -56,6 +60,7 @@ export function KrogerConnectionCard() {
       window.location.href = data.authorizeUrl;
     } catch (e) {
       toast({ title: "Could not start Kroger sign-in", description: String(e), variant: "destructive" });
+      void trackEvent("kroger_connect_failed", { source: "settings", reason: String(e) });
       setWorking(false);
     }
   };
@@ -65,6 +70,7 @@ export function KrogerConnectionCard() {
     try {
       await supabase.functions.invoke("kroger-oauth-disconnect", { body: {} });
       setConn(null);
+      void trackEvent("kroger_disconnected");
       toast({ title: "Kroger disconnected" });
     } finally {
       setWorking(false);

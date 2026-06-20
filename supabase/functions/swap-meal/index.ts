@@ -4,6 +4,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, buildMealPlanContext, getUserIdFromAuth } from "../_shared/mealPlanContext.ts";
 import { callOpenAI } from "../_shared/openaiClient.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 const SYSTEM_PROMPT = `You are Help The Hive's meal-swap assistant.
 Replace ONE meal in the user's current week plan with a new, budget-friendly recipe
 that fits their household size, dietary preferences, allergies, pantry inventory,
@@ -169,6 +170,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    try { captureEdgeError(err, { fn: "swap-meal" }); } catch { /* noop */ }
     console.error("[swap-meal] error", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },

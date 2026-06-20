@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { trackEvent } from "@/lib/analytics";
 
 // ── Category model used by the new pantry tab ──────────────────────────────
 type CategoryKey =
@@ -299,6 +300,7 @@ export default function PantryPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pantry_items_v2"] });
       setAddForm(EMPTY_FORM); setAddOpen(false);
+      void trackEvent("pantry_item_added", { source: "manual" });
       toast({ title: "Added", description: "Item saved to your pantry." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -319,6 +321,7 @@ export default function PantryPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pantry_items_v2"] });
+      void trackEvent("pantry_item_deleted");
       toast({ title: "Removed", description: "Item removed." });
     },
   });
@@ -330,7 +333,10 @@ export default function PantryPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => toast({ title: "Added to grocery list", description: "Find it in the Grocery tab." }),
+    onSuccess: () => {
+      void trackEvent("pantry_low_stock_sent_to_grocery");
+      toast({ title: "Added to grocery list", description: "Find it in the Grocery tab." });
+    },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 

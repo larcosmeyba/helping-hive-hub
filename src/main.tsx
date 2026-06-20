@@ -6,6 +6,8 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { installGlobalErrorHandlers } from "@/lib/errorLogger";
+import { initPostHog } from "@/lib/posthog";
+import { initSentry } from "@/lib/sentry";
 
 // Mark native app on body for global CSS safe area handling
 if (Capacitor.isNativePlatform()) {
@@ -14,6 +16,10 @@ if (Capacitor.isNativePlatform()) {
 
 // Capture window errors and unhandled promise rejections into activity_logs
 installGlobalErrorHandlers();
+
+// Product analytics + error monitoring. Both no-op if env vars are missing.
+initPostHog();
+initSentry();
 
 // When the native app returns to foreground, refresh the auth session
 CapacitorApp.addListener("appStateChange", async ({ isActive }) => {

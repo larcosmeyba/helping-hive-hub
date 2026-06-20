@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { GroceryItem } from "@/types/mealPlan";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { trackEvent } from "@/lib/analytics";
 
 interface KrogerMatch {
   ingredient_name: string;
@@ -33,6 +35,7 @@ export function KrogerBudgetCard({
   weeklyBudget?: number | null;
 }) {
   const { user, profile } = useAuth();
+  const livePricingEnabled = useFeatureFlag("kroger-live-pricing", true);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +73,13 @@ export function KrogerBudgetCard({
         body: { items: payloadItems, locationId },
       });
       if (error) throw error;
-      setResult(data as MatchResponse);
+      const res = data as MatchResponse;
+      setResult(res);
+      void trackEvent("kroger_list_matched", {
+        matched: res?.totals?.matched ?? 0,
+        failed: res?.totals?.failed ?? 0,
+        estimatedTotal: res?.totals?.estimatedTotal ?? 0,
+      });
     } catch (e: any) {
       setError(e?.message ?? "Could not reach Kroger");
     } finally {
@@ -128,6 +137,9 @@ export function KrogerBudgetCard({
   }, [connected, locationId, itemsKey]);
 
   if (connected === null) return null;
+  // Feature-flag kill switch — disable live pricing instantly if the
+  // Kroger API misbehaves. Defaults to ON when PostHog isn't initialized.
+  if (!livePricingEnabled) return null;
 
   if (!connected || !locationId) {
     return (

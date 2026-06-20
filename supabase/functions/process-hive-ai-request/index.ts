@@ -31,6 +31,7 @@ import { buildMealPlanContext } from "../_shared/mealPlanContext.ts";
 import { buildHiveAiContext } from "../_shared/hiveAiContext.ts";
 import { buildFamilyAssistanceContext } from "../_shared/familyAssistanceContext.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 type RequestType =
   | "meal_plan_generation"
   | "meal_swap"
@@ -211,6 +212,7 @@ Deno.serve(async (req) => {
 
     return json({ ok: true, request_type, model_used: model, mocked, data, log_id }, 200, cors);
   } catch (err) {
+    try { captureEdgeError(err, { fn: "process-hive-ai-request" }); } catch { /* noop */ }
     const message = err instanceof Error ? err.message : String(err);
     return json({ ok: false, error: message }, 500, cors);
   }

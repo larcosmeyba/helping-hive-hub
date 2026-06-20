@@ -6,6 +6,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, getUserIdFromAuth } from "../_shared/mealPlanContext.ts";
 
+import { captureEdgeError } from "../_shared/sentry.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -171,6 +172,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    try { captureEdgeError(err, { fn: "generate-grocery-list-from-meal-plan" }); } catch { /* noop */ }
     console.error("[generate-grocery-list-from-meal-plan] error", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
