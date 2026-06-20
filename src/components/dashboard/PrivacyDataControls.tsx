@@ -120,47 +120,6 @@ export function PrivacyDataControls() {
         <Switch checked={analyticsOptIn} onCheckedChange={(v) => updateToggle("analytics_opt_in", v)} />
       </div>
 
-      {/* Immediate delete */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="w-full" disabled={busy !== null}>
-            <Trash2 className="w-4 h-4 mr-2" /> Delete My Account Immediately
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This is immediate and irreversible. We will permanently remove your profile, meal plans,
-              grocery lists, pantry items, feedback, and any uploaded verification documents.
-              An anonymized audit record (date only) is retained for legal compliance.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="delete-password">Confirm with your password</Label>
-            <Input
-              id="delete-password"
-              type="password"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder="Your current password"
-              autoComplete="current-password"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletePassword("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
-              disabled={!deletePassword || busy === "delete"}
-            >
-              {busy === "delete" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Yes, delete everything now
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         Data is encrypted at rest and in transit. We never sell your information. See our{" "}
         <a href="/privacy" className="underline text-primary">Privacy Policy</a> for full details.
