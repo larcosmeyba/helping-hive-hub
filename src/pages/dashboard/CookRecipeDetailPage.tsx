@@ -115,7 +115,7 @@ export default function CookRecipeDetailPage() {
       }
     };
 
-    const togglePreference = () => {
+    const togglePreference = async () => {
       const next = !favorited;
       setFavorited(next);
       void trackEvent("cook_preference_saved", {
@@ -123,6 +123,39 @@ export default function CookRecipeDetailPage() {
         favorited: next,
         algorithm_version: ALGO_VERSION,
       });
+      if (!user) return;
+      try {
+        // Persist the favorite immediately so it survives without cooking.
+        // Reuse the most recent recipe_usage row for this user+recipe;
+        // otherwise insert a fresh row (cooked_at=null, week_start=this Monday).
+        const { data: existing } = await supabase
+          .from("recipe_usage")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("recipe_id", t.public_recipe_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existing?.id) {
+          await supabase.from("recipe_usage").update({ favorited: next }).eq("id", existing.id);
+        } else {
+          const d = new Date();
+          const day = d.getUTCDay(); // 0..6 (Sun..Sat)
+          const diff = (day + 6) % 7; // back to Monday
+          d.setUTCDate(d.getUTCDate() - diff);
+          const week_start = d.toISOString().slice(0, 10);
+          await supabase.from("recipe_usage").insert({
+            user_id: user.id,
+            recipe_id: t.public_recipe_id,
+            week_start,
+            favorited: next,
+          });
+        }
+      } catch (err) {
+        // Roll back optimistic toggle on failure.
+        setFavorited(!next);
+        toast({ title: "Couldn't save favorite", description: (err as Error).message, variant: "destructive" });
+      }
     };
 
     return (
