@@ -1747,7 +1747,7 @@ Deno.serve(async (req) => {
       total_meals: totalMeals,
       savings_estimate: 0,
       why_this_plan: parsed.why_this_plan ?? {},
-      plan_data: { engine: "hybrid_v1", ...normalized, why_this_plan: parsed.why_this_plan ?? {} },
+      plan_data: { engine, ...normalized, why_this_plan: parsed.why_this_plan ?? {} },
       status: "active",
     }).select().single();
     if (planErr) {
