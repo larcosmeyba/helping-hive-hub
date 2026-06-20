@@ -12,7 +12,7 @@ import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
-import { MealImage } from "@/components/dashboard/MealImage";
+
 
 import { useToast } from "@/hooks/use-toast";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
@@ -38,12 +38,16 @@ const SUBSTITUTE_MEALS: Record<string, MealPlanMeal[]> = {
   ],
 };
 
-const MEAL_BADGE_COLORS: Record<string, string> = {
-  breakfast: "bg-[#F2A900] text-white",
-  lunch: "bg-[#E07A1F] text-white",
-  dinner: "bg-[#C24A1F] text-white",
-  snack: "bg-[#1F5A3D] text-white",
+// Premium text-first meal cards: each meal type gets a calm, distinct hue.
+// Used for the badge AND the thin vertical accent bar on the left of the card.
+const MEAL_TYPE_THEME: Record<string, { badge: string; bar: string; label: string }> = {
+  breakfast: { badge: "bg-[#F2A900] text-white",         bar: "bg-[#F2A900]", label: "Breakfast" }, // Honey Gold
+  lunch:     { badge: "bg-[#7A9471] text-white",         bar: "bg-[#7A9471]", label: "Lunch"     }, // Sage Green
+  dinner:    { badge: "bg-[#C24A1F] text-white",         bar: "bg-[#C24A1F]", label: "Dinner"    }, // Terracotta
+  snack:     { badge: "bg-[#6FA8DC] text-white",         bar: "bg-[#6FA8DC]", label: "Snack"     }, // Soft Blue
 };
+const getMealTheme = (type?: string) =>
+  MEAL_TYPE_THEME[(type || "").toLowerCase()] ?? { badge: "bg-muted text-foreground", bar: "bg-muted", label: type || "Meal" };
 
 export default function MealPlanPage() {
   const navigate = useNavigate();
@@ -324,62 +328,83 @@ export default function MealPlanPage() {
                     const meal = getMeal(dayIndex, mealIndex, originalMeal);
                     const cookedKey = `${dayIndex}-${mealIndex}`;
                     const isCooked = cookedMeals.has(cookedKey);
+                    const theme = getMealTheme(meal.type);
+                    const hasNutrition =
+                      typeof meal.calories === "number" && meal.calories > 0 &&
+                      typeof meal.protein === "number" &&
+                      typeof meal.carbs === "number" &&
+                      typeof meal.fats === "number";
                     return (
                       <div
                         key={`${day.day}-${mealIndex}`}
-                        className="bg-white rounded-2xl border border-[#EEE7DA] overflow-hidden flex items-stretch"
+                        className={`relative bg-white rounded-2xl border border-[#EEE7DA] overflow-hidden flex ${isCooked ? 'opacity-60' : ''}`}
                       >
-                        <button
-                          onClick={() => setSelectedMeal(meal)}
-                          className="relative shrink-0 w-20 h-20 md:w-24 md:h-24"
-                          aria-label={`Open ${meal.name}`}
-                        >
-                          <MealImage meal={meal} className="w-full h-full" imgClassName="w-full h-full object-cover" />
-                          {isCooked && (
-                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                              <Check className="w-6 h-6 text-white" strokeWidth={3} />
-                            </div>
-                          )}
-                        </button>
+                        {/* Thin vertical accent bar */}
+                        <div className={`w-1 shrink-0 ${theme.bar}`} aria-hidden="true" />
 
-                        <button
-                          onClick={() => setSelectedMeal(meal)}
-                          className="flex-1 min-w-0 text-left px-3 py-2"
-                        >
-                          <p className="text-[13px] md:text-[14px] font-semibold text-[#1a1a1a] line-clamp-1 leading-tight">
-                            {meal.name}
-                          </p>
-                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[11px] text-[#6a6a6a]">
-                            <span>{meal.calories} cal</span>
-                            <span>·</span>
-                            <span>{meal.protein}g protein</span>
-                            <span>·</span>
-                            <span>{meal.cookTimeMinutes} min</span>
+                        <div className="flex-1 min-w-0 px-3.5 py-3">
+                          {/* Type badge */}
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${theme.badge}`}>
+                              {theme.label}
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-[#6a6a6a]">
+                              <Clock className="w-3 h-3" />
+                              {meal.cookTimeMinutes} min
+                            </span>
                           </div>
-                        </button>
 
-                        <div className="flex items-center shrink-0 pr-2 gap-1">
-                          <button
-                            onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#6a6a6a] hover:bg-[#FBF5E8]"
-                            aria-label="Swap meal"
-                          >
-                            <Shuffle className="w-4 h-4" />
-                          </button>
+                          {/* Meal name */}
                           <button
                             onClick={() => setSelectedMeal(meal)}
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#6a6a6a] hover:bg-[#FBF5E8]"
-                            aria-label="View recipe"
+                            className="block w-full text-left"
                           >
-                            <BookOpen className="w-4 h-4" />
+                            <p className={`text-[14px] md:text-[15px] font-semibold text-[#1a1a1a] leading-snug ${isCooked ? 'line-through' : ''}`}>
+                              {meal.name}
+                            </p>
                           </button>
-                          <button
-                            onClick={() => toggleCooked(cookedKey)}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
-                            aria-label="Mark cooked"
-                          >
-                            <Check className="w-4 h-4" strokeWidth={3} />
-                          </button>
+
+                          {/* Macros row */}
+                          {hasNutrition ? (
+                            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[12px] text-[#1a1a1a]">
+                              <span><span className="font-semibold">{meal.calories}</span> <span className="text-[#8a8a8a]">cal</span></span>
+                              <span><span className="font-semibold">{meal.protein}g</span> <span className="text-[#8a8a8a]">protein</span></span>
+                              <span><span className="font-semibold">{meal.carbs}g</span> <span className="text-[#8a8a8a]">carbs</span></span>
+                              <span><span className="font-semibold">{meal.fats}g</span> <span className="text-[#8a8a8a]">fat</span></span>
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[12px] text-[#a07a00] italic">Nutrition data missing</p>
+                          )}
+
+                          {/* Nutrition confidence + actions */}
+                          <div className="mt-2.5 flex items-center justify-between gap-2">
+                            <span className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
+                              Estimated Nutrition
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
+                                className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
+                                aria-label="Swap meal"
+                              >
+                                <Shuffle className="w-3.5 h-3.5" /> Swap
+                              </button>
+                              <button
+                                onClick={() => setSelectedMeal(meal)}
+                                className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
+                                aria-label="View recipe"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" /> Recipe
+                              </button>
+                              <button
+                                onClick={() => toggleCooked(cookedKey)}
+                                className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
+                                aria-label={isCooked ? "Mark not cooked" : "Mark complete"}
+                              >
+                                <Check className="w-4 h-4" strokeWidth={3} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
@@ -402,11 +427,17 @@ export default function MealPlanPage() {
               <button onClick={() => setSelectedMeal(null)} className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center">
                 <X className="w-5 h-5 text-foreground" />
               </button>
-              {!cookingMode && (
-                <div className="rounded-xl overflow-hidden -mx-2 -mt-2 mb-3">
-                  <MealImage meal={selectedMeal} className="w-full h-48" imgClassName="w-full h-48 object-cover" />
-                </div>
-              )}
+              {!cookingMode && (() => {
+                const theme = getMealTheme(selectedMeal.type);
+                return (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`inline-block w-1.5 h-6 rounded-full ${theme.bar}`} aria-hidden="true" />
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${theme.badge}`}>
+                      {theme.label}
+                    </span>
+                  </div>
+                );
+              })()}
               <DialogHeader>
                 <DialogTitle className="font-display text-xl pr-12">{selectedMeal.name}</DialogTitle>
               </DialogHeader>
