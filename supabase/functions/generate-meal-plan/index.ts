@@ -2123,21 +2123,29 @@ function normalizePlanForClient(
     })),
   }));
 
-  const groceryListOut = groceryList
-    .filter((g) => !g.already_have)
-    .map((g) => ({
-      name: g.ingredient_name,
-      quantity: g.quantity,
-      estimatedPrice: g.estimated_price,
-      section: g.category,
-    }));
-
-  const totalEstimatedCost = groceryListOut.reduce((s, i) => s + i.estimatedPrice, 0);
+  // Phase A (Part L): expose `bucket` on every grocery line so the UI can
+  // render Use First / Already Have / Need To Buy sections. Need-to-buy
+  // items remain the only ones counted toward totalEstimatedCost.
+  const groceryListOut = groceryList.map((g) => ({
+    name: g.ingredient_name,
+    quantity: g.quantity,
+    estimatedPrice: g.estimated_price,
+    section: g.category,
+    bucket: (g as any).bucket ?? (g.already_have ? "already_have" : "need_to_buy"),
+    alreadyHave: g.already_have,
+  }));
+  const needToBuy = groceryListOut.filter((g) => g.bucket === "need_to_buy");
+  const totalEstimatedCost = needToBuy.reduce((s, i) => s + i.estimatedPrice, 0);
   const totalMeals = weeklyPlan.reduce((s, d) => s + d.meals.length, 0) || 1;
 
   return {
     weeklyPlan,
     groceryList: groceryListOut,
+    groceryBuckets: {
+      use_first: groceryListOut.filter((g) => g.bucket === "use_first").length,
+      already_have: groceryListOut.filter((g) => g.bucket === "already_have").length,
+      need_to_buy: needToBuy.length,
+    },
     storeRecommendations: [],
     totalEstimatedCost,
     pantrySavings: groceryList.filter((g) => g.already_have).reduce((s, g) => s + g.estimated_price, 0),
