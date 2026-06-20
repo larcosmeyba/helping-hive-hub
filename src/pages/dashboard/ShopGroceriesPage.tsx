@@ -601,10 +601,11 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   );
 }
 
-function Row({ item, onRemove, onToggleHave }: {
+function Row({ item, onRemove, onToggleHave, onSubstitute }: {
   item: ListItem;
   onRemove: (i: ListItem) => void;
   onToggleHave: (i: ListItem) => void;
+  onSubstitute: (i: ListItem) => void;
 }) {
   const price = item.unit_price ?? item.estimated_price ?? 0;
   const lineTotal = price * item.parsedQty;
@@ -630,6 +631,11 @@ function Row({ item, onRemove, onToggleHave }: {
         <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => onToggleHave(item)}>
           {isHave ? "Need" : "Have"}
         </Button>
+        {!isHave && (
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => onSubstitute(item)}>
+            Sub
+          </Button>
+        )}
         <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => onRemove(item)}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -637,3 +643,4 @@ function Row({ item, onRemove, onToggleHave }: {
     </li>
   );
 }
+
