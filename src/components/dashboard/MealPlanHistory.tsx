@@ -87,7 +87,6 @@ export function MealPlanHistory() {
                                 <span className="font-medium text-foreground truncate">{meal.name}</span>
                               </div>
                               <div className="flex gap-2 text-muted-foreground">
-                                <span>{meal.calories} cal</span>
                                 <span>${meal.estimatedCost?.toFixed(2)}</span>
                               </div>
                             </div>
