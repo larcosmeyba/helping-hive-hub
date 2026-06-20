@@ -355,13 +355,56 @@ export default function ShopGroceriesPage() {
     void trackEvent("marked_already_have", { item_id: item.id, already_have: next });
   };
 
+  const substituteItem = async (item: ListItem) => {
+    const raw = window.prompt(`Substitute "${item.ingredient_name}" with:`, item.ingredient_name);
+    if (!raw) return;
+    const to = raw.trim().slice(0, 200);
+    if (!to || to === item.ingredient_name) return;
+    const priceRaw = window.prompt("Estimated unit price (USD)?", String(item.unit_price ?? item.estimated_price ?? ""));
+    const newPrice = priceRaw != null && priceRaw !== "" ? Number(priceRaw) : undefined;
+    if (newPrice != null && (!Number.isFinite(newPrice) || newPrice < 0 || newPrice > 10000)) {
+      toast({ title: "Invalid price", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.functions.invoke("grocery-list-item-update", {
+      body: { item_id: item.id, action: "substitute", ingredient_name: to, estimated_price: newPrice },
+    });
+    if (error) {
+      toast({ title: "Could not substitute", description: error.message, variant: "destructive" });
+      return;
+    }
+    setItems((p) => p.map((i) => i.id === item.id
+      ? { ...i, ingredient_name: to, estimated_price: newPrice ?? i.estimated_price, unit_price: newPrice, matched_name: undefined }
+      : i));
+    void trackEvent("item_substituted", {
+      item_id: item.id,
+      from_name: item.ingredient_name,
+      to_name: to,
+      dollars_saved: 0,
+      source: "manual",
+    });
+  };
+
   // ---- Checkout ----------------------------------------------------------------
+  const markShopped = async () => {
+    if (!planId) return;
+    const { error } = await supabase.functions.invoke("update-grocery-status", {
+      body: { meal_plan_id: planId, status: "shopped" },
+    });
+    if (error) {
+      toast({ title: "Couldn't mark shopped", description: error.message, variant: "destructive" });
+      return false;
+    }
+    return true;
+  };
+
   const checkout = async () => {
     setShopping(true);
     // Final price check (live, skipping cache)
     await runMatch({ skipCache: true });
     void trackEvent("shop_with_kroger_clicked", { item_count: needToBuy.length, algorithm_version: "algo_v2" });
-    // ShopGroceriesButton opens kroger.com; we just surface the pantry prompt next.
+    // Persist "shopped" up front so dismissing the pantry prompt still records the action.
+    await markShopped();
     setShowPantryPrompt(true);
     setShopping(false);
   };
@@ -369,11 +412,8 @@ export default function ShopGroceriesPage() {
   const addBoughtToPantry = async () => {
     if (!planId) return;
     void trackEvent("pantry_update_after_shop_clicked", { meal_plan_id: planId, count: needToBuy.length });
-    // TODO: real Kroger cart creation when the cart API is available.
-    await supabase.functions.invoke("update-grocery-status", {
-      body: { meal_plan_id: planId, status: "shopped" },
-    });
-    const payload = needToBuy.map((i) => ({
+    // Status already persisted in checkout(); just sync the pantry.
+    const payload = needToBuy.slice(0, 100).map((i) => ({
       item_name: i.matched_name ?? i.ingredient_name,
       quantity: i.parsedQty, unit: i.unit, category: i.category,
     }));
@@ -386,6 +426,7 @@ export default function ShopGroceriesPage() {
     setShowPantryPrompt(false);
     navigate("/dashboard/pantry");
   };
+
 
   // ---- Render ------------------------------------------------------------------
   if (!flagOn) {
