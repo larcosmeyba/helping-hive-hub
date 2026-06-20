@@ -414,10 +414,9 @@ Deno.serve(async (req) => {
 
     await advance("preparing", "profile loaded", "Reviewing your profile & pantry");
 
-    const [profileRes, pantryRes, homeStoreRes] = await Promise.all([
+    const [profileRes, pantryRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("pantry_items").select("*").eq("user_id", userId),
-      supabase.from("instacart_home_store").select("*").eq("user_id", userId).maybeSingle(),
     ]);
 
     const profile = profileRes.data ?? {};
