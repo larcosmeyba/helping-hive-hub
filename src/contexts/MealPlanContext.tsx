@@ -286,6 +286,15 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
           statusMessage: msg,
         }));
         void trackEvent("meal_plan_generation_failed", { reason: errCode, algorithmVersion });
+        // Phase A (Part N): emit canonical validation event + generation_error alias.
+        void trackEvent("meal_plan_validation_failed", {
+          algorithm_version: algorithmVersion,
+          reason: errCode,
+        });
+        void trackEvent("generation_error", {
+          algorithm_version: algorithmVersion,
+          reason: errCode,
+        });
         return;
       }
       if (data?.error) {
