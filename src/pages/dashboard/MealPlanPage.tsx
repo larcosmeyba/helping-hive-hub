@@ -343,10 +343,6 @@ export default function MealPlanPage() {
                             <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${theme.badge}`}>
                               {theme.label}
                             </span>
-                            <span className="flex items-center gap-1 text-[11px] text-[#6a6a6a]">
-                              <Clock className="w-3 h-3" />
-                              {meal.cookTimeMinutes} min
-                            </span>
                           </div>
 
                           {/* Meal name */}
@@ -354,36 +350,78 @@ export default function MealPlanPage() {
                             onClick={() => setSelectedMeal(meal)}
                             className="block w-full text-left"
                           >
-                            <p className={`text-[14px] md:text-[15px] font-semibold text-[#1a1a1a] leading-snug ${isCooked ? 'line-through' : ''}`}>
+                            <p className={`text-[15px] md:text-[16px] font-semibold text-[#1a1a1a] leading-snug ${isCooked ? 'line-through' : ''}`}>
                               {meal.name}
                             </p>
                           </button>
 
+                          {/* Macro grid */}
+                          {(() => {
+                            const hasMacros = (meal.calories ?? 0) > 0 || (meal.protein ?? 0) > 0 || (meal.carbs ?? 0) > 0 || (meal.fats ?? 0) > 0;
+                            if (!hasMacros) return null;
+                            return (
+                              <div className="mt-2.5 grid grid-cols-4 gap-1 text-center">
+                                <div>
+                                  <div className="text-[13px] font-bold text-[#1a1a1a] leading-none">{Math.round(meal.calories ?? 0)}</div>
+                                  <div className="text-[10px] text-[#8a8a8a] mt-0.5">Calories</div>
+                                </div>
+                                <div>
+                                  <div className="text-[13px] font-bold text-[#1a1a1a] leading-none">{Math.round(meal.protein ?? 0)}g</div>
+                                  <div className="text-[10px] text-[#8a8a8a] mt-0.5">Protein</div>
+                                </div>
+                                <div>
+                                  <div className="text-[13px] font-bold text-[#1a1a1a] leading-none">{Math.round(meal.carbs ?? 0)}g</div>
+                                  <div className="text-[10px] text-[#8a8a8a] mt-0.5">Carbs</div>
+                                </div>
+                                <div>
+                                  <div className="text-[13px] font-bold text-[#1a1a1a] leading-none">{Math.round(meal.fats ?? 0)}g</div>
+                                  <div className="text-[10px] text-[#8a8a8a] mt-0.5">Fat</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Time + nutrition source */}
+                          <div className="mt-2.5 flex items-center gap-3 text-[11px] text-[#6a6a6a]">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {meal.cookTimeMinutes} min
+                            </span>
+                            {((meal.calories ?? 0) > 0 || (meal.protein ?? 0) > 0) && (
+                              meal.nutritionVerified ? (
+                                <span className="flex items-center gap-1 text-[#1F5A3D] font-medium">
+                                  <Check className="w-3 h-3" strokeWidth={3} /> Verified Nutrition
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[#8a8a8a]">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#F2A900]" /> Estimated Nutrition
+                                </span>
+                              )
+                            )}
+                          </div>
+
                           {/* Actions */}
-                          <div className="mt-2.5 flex items-center justify-end gap-2">
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
-                                className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
-                                aria-label="Swap meal"
-                              >
-                                <Shuffle className="w-3.5 h-3.5" /> Swap
-                              </button>
-                              <button
-                                onClick={() => setSelectedMeal(meal)}
-                                className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
-                                aria-label="View recipe"
-                              >
-                                <BookOpen className="w-3.5 h-3.5" /> Recipe
-                              </button>
-                              <button
-                                onClick={() => toggleCooked(cookedKey)}
-                                className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
-                                aria-label={isCooked ? "Mark not cooked" : "Mark complete"}
-                              >
-                                <Check className="w-4 h-4" strokeWidth={3} />
-                              </button>
-                            </div>
+                          <div className="mt-2.5 flex items-center justify-end gap-1 border-t border-[#F1ECDE] pt-2">
+                            <button
+                              onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
+                              className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
+                              aria-label="Swap meal"
+                            >
+                              <Shuffle className="w-3.5 h-3.5" /> Swap Meal
+                            </button>
+                            <button
+                              onClick={() => setSelectedMeal(meal)}
+                              className="h-8 px-2.5 rounded-full text-[11px] font-medium text-[#6a6a6a] hover:bg-[#FBF5E8] flex items-center gap-1"
+                              aria-label="View recipe"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" /> View Recipe
+                            </button>
+                            <button
+                              onClick={() => toggleCooked(cookedKey)}
+                              className={`h-8 px-2.5 rounded-full text-[11px] font-medium flex items-center gap-1 transition-colors ${isCooked ? 'bg-[#1F5A3D] text-white' : 'text-[#6a6a6a] hover:bg-[#FBF5E8]'}`}
+                              aria-label={isCooked ? "Mark not cooked" : "Mark complete"}
+                            >
+                              <Check className="w-3.5 h-3.5" strokeWidth={3} /> {isCooked ? 'Completed' : 'Mark Complete'}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -396,6 +434,11 @@ export default function MealPlanPage() {
           );
         })}
       </AnimatePresence>
+
+      {/* Nutrition disclaimer */}
+      <p className="text-center text-[11px] text-[#8a8a8a] mt-2 px-4">
+        Nutrition values are based on 1 serving.
+      </p>
 
 
 
