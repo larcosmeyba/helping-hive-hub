@@ -495,6 +495,7 @@ export default function GroceryReviewPage() {
             >
               {q.name}
             </button>
+          ))}
         </div>
         <p className="px-4 pb-3 text-[11px] text-[#8a8a8a] leading-relaxed">
           Anything you add here is priced live from your Kroger store and added to the Kroger Budget Estimate below.
