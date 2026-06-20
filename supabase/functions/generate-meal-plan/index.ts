@@ -440,7 +440,9 @@ Deno.serve(async (req) => {
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
     const pantryNormalized = new Set(pantryItems.map((i) => i.normalized_name).filter(Boolean));
-    const homeStore = homeStoreRes.data;
+    // Kroger home store from profiles (single source of truth used by live pricing).
+    const krogerLocationId: string | null = (profile as any).kroger_location_id ?? null;
+    const krogerStoreName: string | null = (profile as any).kroger_store_name ?? null;
 
     await advance("preparing", "pantry_items loaded", "Reviewing your profile & pantry", {
       pantry_items_count: pantryOnly.length,
