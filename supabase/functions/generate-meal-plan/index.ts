@@ -1631,7 +1631,10 @@ Deno.serve(async (req) => {
           basket = await priceBasket(buyItems);
           krogerPriced = await priceBasketWithKroger(
             admin, userId, kroger.locationId,
-            buyItems.map((b: any) => ({ name: b.ingredient_name, quantity: 1 })),
+            buyItems.map((b: any) => ({
+              name: b.ingredient_name,
+              quantity: Math.max(1, Math.ceil(parseQtyNumeric(b.quantity) * householdQty)),
+            })),
           );
         }
 
