@@ -433,8 +433,11 @@ Deno.serve(async (req) => {
       normalized_name: p.normalized_item_name ?? normalizeName(p.item_name),
     }));
 
+    // Phase A: split into pantry / fridge / freezer / expiring buckets.
+    // Freezer items count as $0 owned (treated like pantry) for the optimizer.
     const fridgeItems = pantryItems.filter((i) => i.location === "fridge");
-    const pantryOnly = pantryItems.filter((i) => i.location !== "fridge");
+    const freezerItems = pantryItems.filter((i) => i.location === "freezer");
+    const pantryOnly = pantryItems.filter((i) => i.location !== "fridge" && i.location !== "freezer");
     const expiringSoon = pantryItems.filter((i) => ["expiring_today", "use_soon"].includes(i.freshness_status));
     const expired = pantryItems.filter((i) => i.freshness_status === "expired");
     const pantryNormalized = new Set(pantryItems.map((i) => i.normalized_name).filter(Boolean));
