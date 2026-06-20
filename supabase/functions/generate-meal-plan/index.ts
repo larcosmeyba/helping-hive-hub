@@ -1948,6 +1948,13 @@ Deno.serve(async (req) => {
           estimated_cost_per_serving: r.cost_per_serving,
           calories_estimate: r.calories,
           protein_estimate: r.protein_g,
+          // Phase A (Part M): persist the full macro set (backend storage only;
+          // UI does not surface macros today). carbs_g / fat_g / fiber_g may
+          // come from library recipes or AI new_meal estimates.
+          carbs_estimate: r.carbs_g ?? null,
+          fats_estimate: r.fats_g ?? r.fat_g ?? null,
+          fiber_estimate: r.fiber_g ?? null,
+          sodium_estimate: r.sodium_mg ?? null,
           prep_time_minutes: r.prep_time_minutes,
           cook_time_minutes: r.cook_time_minutes,
           instructions: Array.isArray(r.instructions) ? r.instructions : [],
