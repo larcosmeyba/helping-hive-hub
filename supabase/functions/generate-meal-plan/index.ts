@@ -872,6 +872,10 @@ Deno.serve(async (req) => {
               continue;
             }
             recipe = inserted;
+            // Stash AI-estimated macros not stored in DB columns.
+            recipe.carbs_g = nm.carbs_estimate ?? null;
+            recipe.fat_g = nm.fat_estimate ?? null;
+            recipe.nutrition_source = "ai_estimated";
           }
         } else {
           continue;
