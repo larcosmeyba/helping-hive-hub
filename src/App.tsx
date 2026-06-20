@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,15 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 import { isNativeApp } from "@/hooks/useIsNativeApp";
+import { phCapture } from "@/lib/posthog";
+
+function PostHogPageview() {
+  const location = useLocation();
+  useEffect(() => {
+    phCapture("$pageview", { path: location.pathname + location.search });
+  }, [location.pathname, location.search]);
+  return null;
+}
 
 // Eager: homepage entry + most-common immediate next clicks.
 import Index from "./pages/Index.tsx";
@@ -116,6 +125,7 @@ const App = () => {
         <ErrorBoundary>
           <BrowserRouter>
             <AuthProvider>
+              <PostHogPageview />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
                   {/* Homepage: native app → splash screen, web → marketing page */}
