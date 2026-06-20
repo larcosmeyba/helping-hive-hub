@@ -124,7 +124,7 @@ export default function MealPlanPage() {
 
   const handleShare = async () => {
     if (!selectedMeal) return;
-    const text = `${selectedMeal.name}\n\n${selectedMeal.cookTimeMinutes} min · ${selectedMeal.calories} cal\n\nIngredients:\n${selectedMeal.ingredients.map((i) => `• ${i}`).join("\n")}\n\nInstructions:\n${selectedMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+    const text = `${selectedMeal.name}\n\n${selectedMeal.cookTimeMinutes} min\n\nIngredients:\n${selectedMeal.ingredients.map((i) => `• ${i}`).join("\n")}\n\nInstructions:\n${selectedMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
     try {
       if (navigator.share) await navigator.share({ title: selectedMeal.name, text });
       else { await navigator.clipboard.writeText(text); toast({ title: "Copied", description: "Recipe copied to clipboard." }); }
@@ -329,11 +329,6 @@ export default function MealPlanPage() {
                     const cookedKey = `${dayIndex}-${mealIndex}`;
                     const isCooked = cookedMeals.has(cookedKey);
                     const theme = getMealTheme(meal.type);
-                    const hasNutrition =
-                      typeof meal.calories === "number" && meal.calories > 0 &&
-                      typeof meal.protein === "number" &&
-                      typeof meal.carbs === "number" &&
-                      typeof meal.fats === "number";
                     return (
                       <div
                         key={`${day.day}-${mealIndex}`}
@@ -364,23 +359,8 @@ export default function MealPlanPage() {
                             </p>
                           </button>
 
-                          {/* Macros row */}
-                          {hasNutrition ? (
-                            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[12px] text-[#1a1a1a]">
-                              <span><span className="font-semibold">{meal.calories}</span> <span className="text-[#8a8a8a]">cal</span></span>
-                              <span><span className="font-semibold">{meal.protein}g</span> <span className="text-[#8a8a8a]">protein</span></span>
-                              <span><span className="font-semibold">{meal.carbs}g</span> <span className="text-[#8a8a8a]">carbs</span></span>
-                              <span><span className="font-semibold">{meal.fats}g</span> <span className="text-[#8a8a8a]">fat</span></span>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-[12px] text-[#a07a00] italic">Nutrition data missing</p>
-                          )}
-
-                          {/* Nutrition confidence + actions */}
-                          <div className="mt-2.5 flex items-center justify-between gap-2">
-                            <span className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
-                              {hasNutrition ? "Per Serving" : "Nutrition Unavailable"}
-                            </span>
+                          {/* Actions */}
+                          <div className="mt-2.5 flex items-center justify-end gap-2">
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => setSubstituteOpen({ dayIndex, mealIndex })}
@@ -478,11 +458,6 @@ export default function MealPlanPage() {
                         <DollarSign className="w-3 h-3" /> ${(selectedMeal.costPerServing * servings).toFixed(2)}{servings > 1 ? ` total` : '/serving'}
                       </span>
                     )}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.protein * servings}g</p><p className="text-muted-foreground">Protein</p></div>
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.carbs * servings}g</p><p className="text-muted-foreground">Carbs</p></div>
-                    <div className="bg-muted rounded-lg p-2"><p className="font-bold text-foreground">{selectedMeal.fats * servings}g</p><p className="text-muted-foreground">Fats</p></div>
                   </div>
                   <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
                     <span className="text-sm font-medium text-foreground">Servings</span>
