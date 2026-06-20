@@ -527,7 +527,7 @@ export default function ShopGroceriesPage() {
       {/* Use First */}
       {useFirst.length > 0 && (
         <Section title="Use First (expiring)" subtitle="From your pantry, used by this plan.">
-          {useFirst.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} />)}
+          {useFirst.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} onSubstitute={substituteItem} />)}
         </Section>
       )}
 
@@ -537,14 +537,14 @@ export default function ShopGroceriesPage() {
           title={`Already Have (${alreadyHave.length})`}
           subtitle={`$0 — saved ~$${alreadyHaveSaved.toFixed(2)}`}
         >
-          {alreadyHave.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} />)}
+          {alreadyHave.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} onSubstitute={substituteItem} />)}
         </Section>
       )}
 
       {/* Need To Buy by category */}
       {Object.entries(byCategory).map(([cat, list]) => (
         <Section key={cat} title={cat} subtitle={`${list.length} item(s)`}>
-          {list.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} />)}
+          {list.map((i) => <Row key={i.id} item={i} onRemove={removeItem} onToggleHave={toggleAlreadyHave} onSubstitute={substituteItem} />)}
         </Section>
       ))}
 
