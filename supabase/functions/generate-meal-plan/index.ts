@@ -1044,6 +1044,7 @@ Deno.serve(async (req) => {
       // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
       // fallbacks: unused safe candidate → reused safe candidate → minimum-
       // portion hardcoded staple meal. We NEVER leave a slot empty.
+      // Snacks are OPTIONAL and never backfilled.
       const present = new Set(dayMeals.map((m) => m.meal_type));
       for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
         if (present.has(mealType)) continue;
@@ -1065,9 +1066,9 @@ Deno.serve(async (req) => {
           reason: "Added at minimum portions to keep your day complete within budget.",
         });
       }
-      // Keep meals in canonical breakfast → lunch → dinner order.
+      // Keep meals in canonical breakfast → lunch → dinner → snack order.
       dayMeals.sort((a, b) => {
-        const order = { breakfast: 0, lunch: 1, dinner: 2 } as Record<string, number>;
+        const order = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 } as Record<string, number>;
         return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
       });
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
