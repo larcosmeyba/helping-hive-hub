@@ -379,7 +379,7 @@ export default function MealPlanPage() {
                           {/* Nutrition confidence + actions */}
                           <div className="mt-2.5 flex items-center justify-between gap-2">
                             <span className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
-                              Estimated Nutrition
+                              {hasNutrition ? "Per Serving" : "Nutrition Unavailable"}
                             </span>
                             <div className="flex items-center gap-1">
                               <button
