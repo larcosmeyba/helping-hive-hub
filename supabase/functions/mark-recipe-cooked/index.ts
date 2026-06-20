@@ -132,11 +132,41 @@ Deno.serve(async (req) => {
       .eq("id", recipe_id)
       .eq("user_id", userId);
 
+    // Recipe usage history — only when the cooked recipe is a real
+    // public recipes.id (e.g. a DB-matched Cook What I Have suggestion).
+    if (public_recipe_id) {
+      try {
+        const today = new Date();
+        const dow = today.getUTCDay(); // 0 = Sun
+        const monday = new Date(today);
+        monday.setUTCDate(today.getUTCDate() - ((dow + 6) % 7));
+        const weekStart = monday.toISOString().slice(0, 10);
+        await admin.from("recipe_usage").insert({
+          user_id: userId,
+          recipe_id: public_recipe_id,
+          week_start: weekStart,
+          cooked_at: new Date().toISOString(),
+          favorited: favorited ?? false,
+        });
+      } catch (err) {
+        console.warn("[mark-recipe-cooked] recipe_usage insert failed", err);
+      }
+    }
+
+    const money_saved = Number(recipe.savings_estimate ?? 0);
+    const food_waste_prevented = depleted;
     return new Response(
-      JSON.stringify({ ok: true, depleted, savings_estimate: recipe.savings_estimate }),
+      JSON.stringify({
+        ok: true,
+        depleted,
+        savings_estimate: recipe.savings_estimate,
+        money_saved,
+        food_waste_prevented,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    try { captureEdgeError(err, { fn: "mark-recipe-cooked" }); } catch { /* */ }
     console.error("mark-recipe-cooked error", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
