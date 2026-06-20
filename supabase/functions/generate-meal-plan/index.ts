@@ -1173,7 +1173,7 @@ Deno.serve(async (req) => {
     // higher range and shows "Over budget" — the exact bug just reported.
     // We mirror the client's lookup here so the cap = what the user sees.
     const storeCodeForPricing: string | null =
-      (homeStore?.retailer_name as string | undefined) ??
+      krogerStoreName ??
       ((profile as any).home_store as string | undefined) ??
       null;
     const stateCodeForPricing: string | null =
