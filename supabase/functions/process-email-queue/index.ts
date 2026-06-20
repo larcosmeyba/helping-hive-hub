@@ -49,7 +49,7 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
     return JSON.parse(atob(payload)) as Record<string, unknown>
   } catch (err) {
-    try { captureEdgeError(err, { fn: "process-email-queue" }); } catch { /* noop */ }
+    console.warn('Malformed JWT in Authorization header', { error: err })
     return null
   }
 }

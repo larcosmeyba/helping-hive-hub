@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       templateData = body.templateData
     }
   } catch (err) {
-    try { captureEdgeError(err, { fn: "send-transactional-email" }); } catch { /* noop */ }
+    console.warn('Invalid JSON in request body', { error: err })
     return new Response(
       JSON.stringify({ error: 'Invalid JSON in request body' }),
       {
