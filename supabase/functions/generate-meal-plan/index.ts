@@ -1645,6 +1645,11 @@ Deno.serve(async (req) => {
           location_id: kroger.locationId,
           store_name: kroger.storeName,
           lines: krogerPriced.lines,
+          // Phase A: confidence summary surfaced for the client analytics event
+          // `kroger_price_match_completed`. Warn (not fail) when too many
+          // matches are low-confidence.
+          avg_match_confidence: (krogerPriced as any).avg_match_confidence ?? 0,
+          low_confidence_count: (krogerPriced as any).low_confidence_count ?? 0,
         };
 
         // HARD GATE: if Kroger subtotal still exceeds budget, refuse to save.
@@ -1672,6 +1677,9 @@ Deno.serve(async (req) => {
           "[generate-meal-plan] Kroger pricing failed, falling back to estimated:",
           (krogerErr as Error)?.message ?? krogerErr,
         );
+        // Phase A (Part O): capture genuine Kroger failures to Sentry with a
+        // scoped tag, so on-call can distinguish them from expected outcomes.
+        try { captureEdgeError(krogerErr, { fn: "generate-meal-plan/kroger_pricing" }); } catch { /* noop */ }
         pricingMode = "estimated";
         krogerSummary = null;
         await advance(
