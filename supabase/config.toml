@@ -3,20 +3,8 @@ project_id = "ndbqbhghjsjkpgcvkvtq"
 [functions.generate-meal-plan]
 verify_jwt = false
 
-[functions.instacart-retailers]
-verify_jwt = false
-
-[functions.walmart-prices]
-verify_jwt = false
-
 [functions.process-email-queue]
 verify_jwt = true
-
-[functions.open-prices]
-verify_jwt = false
-
-[functions.serpapi-google-shopping]
-verify_jwt = false
 
 [functions.send-transactional-email]
 verify_jwt = true
