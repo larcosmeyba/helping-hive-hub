@@ -550,7 +550,31 @@ Deno.serve(async (req) => {
     });
 
     const candidatesById = new Map<string, any>();
-    for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates]) candidatesById.set(r.id, r);
+    for (const r of [...breakfastCandidates, ...lunchCandidates, ...dinnerCandidates, ...snackCandidates]) candidatesById.set(r.id, r);
+
+    // Phase A: load user's favorite recipe ids — gives the optimizer a positive
+    // scoring boost beyond the recently-eaten-unless-favorited exclusion.
+    const favoriteRecipeIds: string[] = ((recentUsage ?? [])
+      .filter((r: any) => r.favorited)
+      .map((r: any) => r.recipe_id) as string[]).filter(Boolean);
+
+    // Phase A: deterministic budget engine targets — soft scoring + monitor.
+    const targetWeeklySpend = weeklyBudget * TARGET_BUDGET_RATIO;
+    const dailyBudget = targetWeeklySpend / Math.max(1, daysCount);
+    const blDinnerShare = MEAL_BUDGET_SPLIT.breakfast + MEAL_BUDGET_SPLIT.lunch + MEAL_BUDGET_SPLIT.dinner;
+    const snackHeadroom = Math.max(0, targetWeeklySpend * MEAL_BUDGET_SPLIT.snacks);
+    const budgetTargets = {
+      target_weekly_spend: Math.round(targetWeeklySpend * 100) / 100,
+      daily_budget: Math.round(dailyBudget * 100) / 100,
+      per_meal: {
+        breakfast: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.breakfast / daysCount) * 100) / 100,
+        lunch: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.lunch / daysCount) * 100) / 100,
+        dinner: Math.round((targetWeeklySpend * MEAL_BUDGET_SPLIT.dinner / daysCount) * 100) / 100,
+        snacks: Math.round((snackHeadroom / daysCount) * 100) / 100,
+      },
+      bl_dinner_share: blDinnerShare,
+      snack_budget: Math.round(snackHeadroom * 100) / 100,
+    };
 
     // ===== Help The Hive budget reference data =====
     // Tables: cheap_meals, budget_staples, weekly_meal_plans, meal_plan_weekly_totals, budget_food_items.
