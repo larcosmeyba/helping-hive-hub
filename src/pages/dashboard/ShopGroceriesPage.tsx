@@ -252,6 +252,33 @@ export default function ShopGroceriesPage() {
     });
   }, [needToBuy, items, weeklyBudget]);
 
+  const reloadItems = async () => {
+    if (!user || !planId) return;
+    const { data: rows } = await supabase
+      .from("grocery_list_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("meal_plan_id", planId);
+    const parsed: ListItem[] = (rows ?? []).map((r: any) => {
+      const { bucket, category } = splitSection(r.store_section, r.already_have);
+      return {
+        id: r.id,
+        ingredient_name: r.ingredient_name,
+        quantity: r.quantity,
+        unit: r.unit,
+        category: category ?? r.category ?? "Other",
+        estimated_price: r.estimated_price,
+        already_have: r.already_have,
+        needed_for_meals: r.needed_for_meals,
+        store_section: r.store_section,
+        recipe_id: r.recipe_id,
+        bucket,
+        parsedQty: parseQty(r.quantity),
+      };
+    });
+    setItems(parsed);
+  };
+
   const applySuggestion = async (s: FixSuggestion): Promise<boolean> => {
     try {
       if (s.type === "drop_optional") {
@@ -265,8 +292,9 @@ export default function ShopGroceriesPage() {
         });
         setItems((p) => p.map((i) => i.id === s.item_id ? { ...i, already_have: true, bucket: "already_have" } : i));
       } else if (s.type === "cheaper_recipe") {
-        // Recipe swap is suggested only — invoke existing swap-meal.
+        // Recipe swap is suggested only — invoke existing swap-meal then reload list.
         await supabase.functions.invoke("swap-meal", { body: { recipe_id: s.item_id } }).catch(() => null);
+        await reloadItems();
       } else {
         await supabase.functions.invoke("grocery-list-item-update", {
           body: {
@@ -277,6 +305,14 @@ export default function ShopGroceriesPage() {
         setItems((p) => p.map((i) => i.id === s.item_id
           ? { ...i, ingredient_name: s.to_name, estimated_price: s.new_unit_price ?? i.estimated_price, unit_price: s.new_unit_price, matched_name: undefined }
           : i));
+        void trackEvent("item_substituted", {
+          item_id: s.item_id,
+          from_name: s.from_name,
+          to_name: s.to_name,
+          dollars_saved: s.dollars_saved,
+          source: "budget_fix",
+          strategy: s.type,
+        });
       }
       return true;
     } catch (e: any) {
@@ -298,6 +334,7 @@ export default function ShopGroceriesPage() {
     toast({ title: "Budget adjusted", description: `Saved $${applied.reduce((s, x) => s + x.dollars_saved, 0).toFixed(2)}.` });
     await runMatch({ skipCache: true });
   };
+
 
   // ---- Manual edits ------------------------------------------------------------
   const removeItem = async (item: ListItem) => {
