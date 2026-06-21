@@ -185,9 +185,12 @@ export default function ShopGroceriesPage() {
           ...it,
           matched_name: m.matched_name,
           brand: m.brand,
-          unit_price: m.unit_price,
+          unit_price: m.status === "matched" ? m.unit_price : undefined,
+          line_total: m.status === "matched" ? m.line_total : undefined,
+          packages: m.packages,
           availability: m.availability,
           confidence: m.confidence,
+          match_status: m.status,
         };
       }));
       const matched = matches.filter((m) => m.status === "matched");
