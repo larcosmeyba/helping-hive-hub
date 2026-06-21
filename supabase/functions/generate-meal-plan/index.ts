@@ -1633,7 +1633,7 @@ Deno.serve(async (req) => {
             admin, userId, kroger.locationId,
             buyItems.map((b: any) => ({
               name: b.ingredient_name,
-              quantity: Math.max(1, Math.ceil(parseQtyNumeric(b.quantity) * householdQty)),
+              quantity: b.quantity ?? 1,
             })),
           );
         }
