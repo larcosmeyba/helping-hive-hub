@@ -170,7 +170,11 @@ export function KrogerBudgetCard({
 
   const total = result?.totals.estimatedTotal ?? 0;
   const matched = result?.matches.filter((m) => m.status === "matched") ?? [];
-  const needsReview = result?.matches.filter((m) => m.status === "no_match") ?? [];
+  // "needs_review" = relevance gate rejected the top result; "no_match" =
+  // zero results at all. Both are surfaced under "Needs Review" for the user.
+  const needsReview = result?.matches.filter(
+    (m) => m.status === "needs_review" || m.status === "no_match",
+  ) ?? [];
   const hasBudget = typeof weeklyBudget === "number" && weeklyBudget > 0;
   const remaining = hasBudget ? (weeklyBudget as number) - total : 0;
   const over = hasBudget && remaining < 0;
