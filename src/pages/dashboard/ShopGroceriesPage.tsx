@@ -51,7 +51,7 @@ interface ListItem {
 
 interface KrogerMatch {
   ingredient_name: string;
-  status: "matched" | "no_match";
+  status: "matched" | "no_match" | "needs_review";
   matched_name?: string;
   brand?: string | null;
   unit_price?: number;
