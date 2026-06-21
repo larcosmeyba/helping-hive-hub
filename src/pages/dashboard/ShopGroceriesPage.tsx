@@ -58,6 +58,8 @@ interface KrogerMatch {
   matched_name?: string;
   brand?: string | null;
   unit_price?: number;
+  line_total?: number;
+  packages?: number;
   confidence?: number;
   availability?: string | null;
 }
