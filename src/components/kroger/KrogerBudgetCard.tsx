@@ -11,12 +11,14 @@ import { trackEvent } from "@/lib/analytics";
 
 interface KrogerMatch {
   ingredient_name: string;
-  status: "matched" | "no_match";
+  status: "matched" | "no_match" | "needs_review";
   matched_name?: string;
   brand?: string | null;
   size?: string | null;
   image_url?: string | null;
   unit_price?: number;
+  line_total?: number;
+  packages?: number;
   confidence?: number;
   availability?: string | null;
   from_cache?: boolean;
