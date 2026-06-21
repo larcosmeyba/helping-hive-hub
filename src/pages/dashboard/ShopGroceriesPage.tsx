@@ -44,17 +44,22 @@ interface ListItem {
   // Kroger live-match enrichment
   matched_name?: string;
   brand?: string | null;
-  unit_price?: number;
+  unit_price?: number;     // package price (one package)
+  line_total?: number;     // package_price * packages (authoritative)
+  packages?: number;
   availability?: string | null;
   confidence?: number;
+  match_status?: "matched" | "needs_review" | "no_match";
 }
 
 interface KrogerMatch {
   ingredient_name: string;
-  status: "matched" | "no_match";
+  status: "matched" | "no_match" | "needs_review";
   matched_name?: string;
   brand?: string | null;
   unit_price?: number;
+  line_total?: number;
+  packages?: number;
   confidence?: number;
   availability?: string | null;
 }
@@ -180,9 +185,12 @@ export default function ShopGroceriesPage() {
           ...it,
           matched_name: m.matched_name,
           brand: m.brand,
-          unit_price: m.unit_price,
+          unit_price: m.status === "matched" ? m.unit_price : undefined,
+          line_total: m.status === "matched" ? m.line_total : undefined,
+          packages: m.packages,
           availability: m.availability,
           confidence: m.confidence,
+          match_status: m.status,
         };
       }));
       const matched = matches.filter((m) => m.status === "matched");
@@ -209,8 +217,15 @@ export default function ShopGroceriesPage() {
   }, [kroger.ready, kroger.locationId, needToBuy.length]);
 
   // ---- Totals + audit ----------------------------------------------------------
+  // Use the matcher's authoritative line_total (package_price × packages).
+  // Items in "needs_review" are NEVER summed — they need user review first.
+  // Fall back to estimated_price * parsedQty only when no live match exists.
   const total = useMemo(
-    () => Math.round(needToBuy.reduce((s, i) => s + (i.unit_price ?? i.estimated_price ?? 0) * i.parsedQty, 0) * 100) / 100,
+    () => Math.round(needToBuy.reduce((s, i) => {
+      if (i.match_status === "needs_review" || i.match_status === "no_match") return s;
+      if (typeof i.line_total === "number") return s + i.line_total;
+      return s + (i.estimated_price ?? 0) * i.parsedQty;
+    }, 0) * 100) / 100,
     [needToBuy],
   );
   const target = Math.round(weeklyBudget * TARGET_BUDGET_RATIO * 100) / 100;
@@ -221,17 +236,30 @@ export default function ShopGroceriesPage() {
     return conf.length ? Math.round((conf.reduce((s, c) => s + c, 0) / conf.length) * 100) / 100 : null;
   }, [needToBuy]);
 
+  // When the live Kroger total exceeds the weekly budget, automatically
+  // run the deterministic Budget Fix engine to bring it within budget
+  // (instead of only flashing "Over budget"). Guarded by a ref so we only
+  // auto-fix once per pricing pass.
+  const [autoFixing, setAutoFixing] = useState(false);
+  const [autoFixedFor, setAutoFixedFor] = useState<string | null>(null);
   useEffect(() => {
-    if (!weeklyBudget || loading) return;
+    if (!weeklyBudget || loading || matching) return;
     if (over) {
       void trackEvent("grocery_budget_audit_failed", { total, weekly_budget: weeklyBudget, over_by: Math.abs(remaining) });
       setShowFix(true);
+      // Auto-apply best_combo once per (total, item-set) signature.
+      const sig = `${total.toFixed(2)}:${needToBuy.map((i) => i.id).join(",")}`;
+      if (!autoFixing && autoFixedFor !== sig && fix.best_combo.length > 0) {
+        setAutoFixedFor(sig);
+        setAutoFixing(true);
+        void fixMyBudget().finally(() => setAutoFixing(false));
+      }
     } else {
       void trackEvent("grocery_budget_audit_passed", { total, weekly_budget: weeklyBudget });
       setShowFix(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [total, weeklyBudget, over]);
+  }, [total, weeklyBudget, over, matching]);
 
   // ---- Budget Fix --------------------------------------------------------------
   const fix = useMemo(() => {
