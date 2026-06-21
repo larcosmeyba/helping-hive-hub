@@ -221,17 +221,30 @@ export default function ShopGroceriesPage() {
     return conf.length ? Math.round((conf.reduce((s, c) => s + c, 0) / conf.length) * 100) / 100 : null;
   }, [needToBuy]);
 
+  // When the live Kroger total exceeds the weekly budget, automatically
+  // run the deterministic Budget Fix engine to bring it within budget
+  // (instead of only flashing "Over budget"). Guarded by a ref so we only
+  // auto-fix once per pricing pass.
+  const [autoFixing, setAutoFixing] = useState(false);
+  const [autoFixedFor, setAutoFixedFor] = useState<string | null>(null);
   useEffect(() => {
-    if (!weeklyBudget || loading) return;
+    if (!weeklyBudget || loading || matching) return;
     if (over) {
       void trackEvent("grocery_budget_audit_failed", { total, weekly_budget: weeklyBudget, over_by: Math.abs(remaining) });
       setShowFix(true);
+      // Auto-apply best_combo once per (total, item-set) signature.
+      const sig = `${total.toFixed(2)}:${needToBuy.map((i) => i.id).join(",")}`;
+      if (!autoFixing && autoFixedFor !== sig && fix.best_combo.length > 0) {
+        setAutoFixedFor(sig);
+        setAutoFixing(true);
+        void fixMyBudget().finally(() => setAutoFixing(false));
+      }
     } else {
       void trackEvent("grocery_budget_audit_passed", { total, weekly_budget: weeklyBudget });
       setShowFix(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [total, weeklyBudget, over]);
+  }, [total, weeklyBudget, over, matching]);
 
   // ---- Budget Fix --------------------------------------------------------------
   const fix = useMemo(() => {
