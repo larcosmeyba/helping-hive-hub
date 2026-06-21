@@ -1541,21 +1541,14 @@ Deno.serve(async (req) => {
         // Repair loop kept tight to stay well within edge-function time budget.
         const MAX_KROGER_REPAIR = 2;
         const MAX_CANDIDATES_PER_SLOT = 3;
-        // Phase A: pass real per-item quantities (numeric, scaled to household)
-        // instead of the previous hardcoded 1. Recipe quantity strings are
-        // ingredient-side ("1 lb", "2 cups"); for a basket buy we round up
-        // distinct packages required for the household.
-        const parseQtyNumeric = (s: string | null | undefined): number => {
-          const m = String(s ?? "").match(/([\d.]+)/);
-          const n = m ? parseFloat(m[1]) : 1;
-          return isFinite(n) && n > 0 ? n : 1;
-        };
-        const householdQty = Math.max(1, Math.ceil(householdSize / 2));
+        // Pass the raw recipe-side quantity string ("2 cups", "1 tbsp").
+        // priceBasketWithKroger converts that into whole packages using the
+        // product's actual size — small amounts buy 1 package, not N.
         let krogerPriced = await priceBasketWithKroger(
           admin, userId, kroger.locationId,
           buyItems.map((b: any) => ({
             name: b.ingredient_name,
-            quantity: Math.max(1, Math.ceil(parseQtyNumeric(b.quantity) * householdQty)),
+            quantity: b.quantity ?? 1,
           })),
         );
 
