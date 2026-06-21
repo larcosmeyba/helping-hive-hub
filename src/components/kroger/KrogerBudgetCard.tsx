@@ -44,11 +44,14 @@ export function KrogerBudgetCard({
   const locationId = (profile as any)?.kroger_location_id as string | undefined;
   const storeName = (profile as any)?.kroger_store_name as string | undefined;
 
+  // Pass the RAW recipe-side quantity string (e.g. "2 cups") so the
+  // matcher can convert it into whole packages by product size. Sending
+  // just the number reintroduces the "2 cups → 2 whole bags" bug.
   const payloadItems = useMemo(
     () =>
       items.map((i) => ({
         name: i.name,
-        quantity: Number(String(i.quantity).match(/[\d.]+/)?.[0] ?? 1) || 1,
+        quantity: i.quantity ?? 1,
       })),
     [items],
   );
