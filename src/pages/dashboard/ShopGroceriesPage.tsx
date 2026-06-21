@@ -44,9 +44,12 @@ interface ListItem {
   // Kroger live-match enrichment
   matched_name?: string;
   brand?: string | null;
-  unit_price?: number;
+  unit_price?: number;     // package price (one package)
+  line_total?: number;     // package_price * packages (authoritative)
+  packages?: number;
   availability?: string | null;
   confidence?: number;
+  match_status?: "matched" | "needs_review" | "no_match";
 }
 
 interface KrogerMatch {
