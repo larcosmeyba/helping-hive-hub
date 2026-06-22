@@ -1442,22 +1442,20 @@ Deno.serve(async (req) => {
       basket = await priceBasket(buyItems);
     }
 
-    // ===== Channel-aware delivered total (THE budget the user actually pays) =====
-    // basket.high is the in-store, per-serving-summed estimate. Real shoppers
-    // must buy whole packages and pay Instacart markup + fees. Apply the
-    // package-waste multiplier (until package_prices is CSV-seeded), then
-    // layer channel markup + fees so the budget cap reflects the actual
-    // delivered cart price.
-    const channelCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "delivery");
+    // ===== In-store total (THE only total we show) =====
+    // Help The Hive is Kroger IN-STORE pickup. We do NOT add Instacart
+    // delivery/service/tip/markup fees. The honest headline is the in-store
+    // subtotal + tax. Per-item package rounding is handled by the Kroger
+    // pricing layer when connected; for the fallback estimate we use the
+    // average per-serving basket cost (basket.avg) without inflating it.
     const inStoreCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "in_store");
-    const inStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const inStoreSubtotalRaw = basket.avg;
     const inStoreTotals = computeChannelTotals(inStoreSubtotalRaw, inStoreCfg);
-    const deliveredTotals = computeChannelTotals(inStoreSubtotalRaw, channelCfg);
+    // Aliases retained so downstream persistence keeps its shape. Both point
+    // at the in-store total — NO Instacart markup, service, delivery, or tip.
+    const deliveredTotals = inStoreTotals;
 
-    // ===== Channel-aware budget repair (final pass) =====
-    // We previously repaired against basket.high (in-store). With markup/fees
-    // layered on, we may still be over. Run additional swap passes targeting
-    // the delivered_total directly.
+    // ===== Budget repair against the in-store total =====
     let deliveredNow = deliveredTotals.delivered_total;
     const MAX_DELIVERED_REPAIR = 5;
     let deliveredRepairAttempts = 0;
@@ -1489,7 +1487,7 @@ Deno.serve(async (req) => {
           resolvedDays[slot.di].meals[slot.mi] = {
             meal_type: old.meal_type,
             recipe: best.cand,
-            reason: "Swapped to keep your delivered total within budget (includes Instacart fees).",
+            reason: "Swapped to keep your plan within your weekly grocery budget.",
           };
           swapped = true;
           break;
@@ -1500,15 +1498,14 @@ Deno.serve(async (req) => {
       groceryList = rebuilt.list;
       buyItems = rebuilt.buy;
       basket = await priceBasket(buyItems);
-      const newInStore = basket.high * PACKAGE_WASTE_MULTIPLIER;
-      const newDelivered = computeChannelTotals(newInStore, channelCfg);
+      const newDelivered = computeChannelTotals(basket.avg, inStoreCfg);
       deliveredNow = newDelivered.delivered_total;
     }
 
-    // Recompute totals once after the repair loop settles
-    const finalInStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    // Recompute once after the repair loop settles
+    const finalInStoreSubtotalRaw = basket.avg;
     const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
-    const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
+    const finalDeliveredTotals = finalInStoreTotals;
 
     // ===== KROGER-PRICED BUDGET ENFORCEMENT =====
     // When the user has connected Kroger and chosen a home store, the Kroger
