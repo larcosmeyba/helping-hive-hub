@@ -240,6 +240,57 @@ function categoryFor(item: GroceryItem): string {
   return "other";
 }
 
+/**
+ * Parse the leading numeric quantity from a free-form ingredient quantity
+ * string ("2 lb", "1.5 cups", "3", "1/2 tbsp"). Used so the fallback
+ * estimate scales with how much the recipes actually call for instead of
+ * counting every line as one unit.
+ */
+function parseLeadingQty(q: unknown): number {
+  if (typeof q === "number") return q > 0 ? q : 1;
+  const s = String(q ?? "").trim();
+  if (!s) return 1;
+  // fractions like "1/2" or "1 1/2"
+  const mixed = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/);
+  if (mixed) {
+    const whole = Number(mixed[1]);
+    const num = Number(mixed[2]);
+    const den = Number(mixed[3]);
+    if (den > 0) return whole + num / den;
+  }
+  const frac = s.match(/^(\d+)\s*\/\s*(\d+)/);
+  if (frac) {
+    const num = Number(frac[1]);
+    const den = Number(frac[2]);
+    if (den > 0) return num / den;
+  }
+  const num = parseFloat(s);
+  if (!isNaN(num) && num > 0) return num;
+  return 1;
+}
+
+/**
+ * How much one "unit" of the parsed quantity roughly maps to a package buy.
+ * Small spice/condiment quantities ("1 tbsp") collapse to ~1 package, not
+ * N. Large quantities (lb of meat) scale more linearly.
+ */
+function quantityWeight(item: GroceryItem): number {
+  const qty = parseLeadingQty(item.quantity);
+  const unit = String(item.quantity ?? "").toLowerCase();
+  // Tiny units → cap at 1 unit (one jar/bottle).
+  if (/(tsp|tbsp|teaspoon|tablespoon|pinch|dash|clove|sprig)/.test(unit)) {
+    return 1;
+  }
+  // Per-pound — scale linearly.
+  if (/(lb|pound|kg)/.test(unit)) return Math.max(1, qty);
+  // Cups / oz / grams — half-linear, clipped to 4×.
+  if (/(cup|oz|ounce|gram|ml|liter|l\b)/.test(unit)) {
+    return Math.min(4, Math.max(1, qty * 0.5));
+  }
+  // Bare counts ("3", "2 cans") — linear, clipped.
+  return Math.min(5, Math.max(1, qty));
+}
+
 export function estimateBasketRange(
   items: GroceryItem[],
   opts: { storeMultiplier?: number; stateMultiplier?: number } = {},
@@ -248,7 +299,8 @@ export function estimateBasketRange(
   const mult = (opts.storeMultiplier ?? 1) * (opts.stateMultiplier ?? 1);
   let mid = 0;
   for (const item of items) {
-    mid += CATEGORY_AVG[categoryFor(item)] ?? CATEGORY_AVG.other;
+    const cat = CATEGORY_AVG[categoryFor(item)] ?? CATEGORY_AVG.other;
+    mid += cat * quantityWeight(item);
   }
   mid *= mult;
   const low = Math.max(0, Math.round(mid * 0.85));
