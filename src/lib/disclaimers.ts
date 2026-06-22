@@ -2,7 +2,7 @@
 // Update copy here once — every surface picks it up.
 
 export const GROCERY_PRICING_DISCLAIMER =
-  "Prices shown in Help The Hive are estimated for budgeting purposes only. Final pricing, taxes, promotions, availability, and discounts are confirmed at your store at checkout.";
+  "Estimated in-store total. Prices vary by store, promotions, and availability — confirm final pricing at the store. Connect Kroger for live prices.";
 
 export const STORE_AVAILABILITY_NOTE =
   "Store availability varies by ZIP code. Connect Kroger to see live product matches and estimates at your home store.";

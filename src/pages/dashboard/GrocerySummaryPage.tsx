@@ -76,19 +76,19 @@ export default function GrocerySummaryPage() {
         Your Grocery List
       </h1>
 
-      {/* Top stats card */}
+      {/* Top stats card — single source of truth = mealPlan.totalEstimatedCost */}
       {kroger.ready ? (
         <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: "#E8F3E4" }}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-wide text-[#2E7D32] font-semibold">
-                Estimated Kroger Total
+                Estimated Kroger Total (in-store)
               </p>
               <p className="text-[24px] font-extrabold text-[#1F5A3D] leading-none mt-1">
-                {formatBasketRange(range)}
+                ${(mealPlan.totalEstimatedCost ?? 0).toFixed(2)}
               </p>
               <p className="text-[10px] text-[#3a3a3a]/70 mt-1 italic">
-                Live Kroger pricing — final price confirmed at checkout
+                Live Kroger pricing — final price confirmed at the store
               </p>
             </div>
           </div>
@@ -104,11 +104,14 @@ export default function GrocerySummaryPage() {
           <div className="flex items-start gap-3">
             <ShoppingBag className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
-              <p className="text-[13px] font-extrabold text-[#1a1a1a]">
-                Connect Kroger for accurate pricing
+              <p className="text-[11px] uppercase tracking-wide text-[#8a6b00] font-semibold">
+                Estimate — connect Kroger for real prices
               </p>
-              <p className="text-[12px] text-[#3a3a3a]/80 mt-1 leading-relaxed">
-                We only show grocery totals when pricing comes directly from your Kroger store.
+              <p className="text-[22px] font-extrabold text-[#1a1a1a] leading-none mt-1">
+                ${(mealPlan.totalEstimatedCost ?? 0).toFixed(2)}
+              </p>
+              <p className="text-[12px] text-[#3a3a3a]/80 mt-2 leading-relaxed">
+                In-store estimate, no delivery fees. Connect Kroger for live store pricing.
               </p>
               <p className="text-[12px] text-[#3a3a3a] mt-2">
                 {items.length} item{items.length === 1 ? "" : "s"} on your list
@@ -124,6 +127,7 @@ export default function GrocerySummaryPage() {
           </button>
         </div>
       )}
+
 
       {/* Category tiles */}
       <div className="space-y-2 mb-5">

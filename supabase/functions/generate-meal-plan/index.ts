@@ -1442,22 +1442,20 @@ Deno.serve(async (req) => {
       basket = await priceBasket(buyItems);
     }
 
-    // ===== Channel-aware delivered total (THE budget the user actually pays) =====
-    // basket.high is the in-store, per-serving-summed estimate. Real shoppers
-    // must buy whole packages and pay Instacart markup + fees. Apply the
-    // package-waste multiplier (until package_prices is CSV-seeded), then
-    // layer channel markup + fees so the budget cap reflects the actual
-    // delivered cart price.
-    const channelCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "delivery");
+    // ===== In-store total (THE only total we show) =====
+    // Help The Hive is Kroger IN-STORE pickup. We do NOT add Instacart
+    // delivery/service/tip/markup fees. The honest headline is the in-store
+    // subtotal + tax. Per-item package rounding is handled by the Kroger
+    // pricing layer when connected; for the fallback estimate we use the
+    // average per-serving basket cost (basket.avg) without inflating it.
     const inStoreCfg = await loadChannelConfig(admin, mealPlanContext.preferred_store ?? null, "in_store");
-    const inStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    const inStoreSubtotalRaw = basket.avg;
     const inStoreTotals = computeChannelTotals(inStoreSubtotalRaw, inStoreCfg);
-    const deliveredTotals = computeChannelTotals(inStoreSubtotalRaw, channelCfg);
+    // Aliases retained so downstream persistence keeps its shape. Both point
+    // at the in-store total — NO Instacart markup, service, delivery, or tip.
+    const deliveredTotals = inStoreTotals;
 
-    // ===== Channel-aware budget repair (final pass) =====
-    // We previously repaired against basket.high (in-store). With markup/fees
-    // layered on, we may still be over. Run additional swap passes targeting
-    // the delivered_total directly.
+    // ===== Budget repair against the in-store total =====
     let deliveredNow = deliveredTotals.delivered_total;
     const MAX_DELIVERED_REPAIR = 5;
     let deliveredRepairAttempts = 0;
@@ -1489,7 +1487,7 @@ Deno.serve(async (req) => {
           resolvedDays[slot.di].meals[slot.mi] = {
             meal_type: old.meal_type,
             recipe: best.cand,
-            reason: "Swapped to keep your delivered total within budget (includes Instacart fees).",
+            reason: "Swapped to keep your plan within your weekly grocery budget.",
           };
           swapped = true;
           break;
@@ -1500,15 +1498,14 @@ Deno.serve(async (req) => {
       groceryList = rebuilt.list;
       buyItems = rebuilt.buy;
       basket = await priceBasket(buyItems);
-      const newInStore = basket.high * PACKAGE_WASTE_MULTIPLIER;
-      const newDelivered = computeChannelTotals(newInStore, channelCfg);
+      const newDelivered = computeChannelTotals(basket.avg, inStoreCfg);
       deliveredNow = newDelivered.delivered_total;
     }
 
-    // Recompute totals once after the repair loop settles
-    const finalInStoreSubtotalRaw = basket.high * PACKAGE_WASTE_MULTIPLIER;
+    // Recompute once after the repair loop settles
+    const finalInStoreSubtotalRaw = basket.avg;
     const finalInStoreTotals = computeChannelTotals(finalInStoreSubtotalRaw, inStoreCfg);
-    const finalDeliveredTotals = computeChannelTotals(finalInStoreSubtotalRaw, channelCfg);
+    const finalDeliveredTotals = finalInStoreTotals;
 
     // ===== KROGER-PRICED BUDGET ENFORCEMENT =====
     // When the user has connected Kroger and chosen a home store, the Kroger
@@ -1774,29 +1771,35 @@ Deno.serve(async (req) => {
     }
 
 
-    const overBudgetAfterAdjust = finalDeliveredTotals.delivered_total > weeklyBudget;
+    // Prefer the live Kroger in-store subtotal as the headline when available.
+    // Otherwise fall back to the fee-free in-store estimate. NEVER add
+    // Instacart fees — Help The Hive is in-store pickup.
+    const krogerHeadline = pricingMode === "kroger" && krogerSummary
+      ? Math.round(Number(krogerSummary.subtotal) * 100) / 100
+      : null;
+    const inStoreHeadline = finalInStoreTotals.delivered_total;
+    const headlineTotal = krogerHeadline ?? inStoreHeadline;
+
+    const overBudgetAfterAdjust = headlineTotal > weeklyBudget;
     let budgetWarningText: string | null = null;
     if (overBudgetAfterAdjust) {
-      const shortfall = Math.ceil(finalDeliveredTotals.delivered_total - weeklyBudget);
-      budgetWarningText = `This budget covers reduced portions; consider adding $${shortfall} for full portions delivered with Instacart fees.`;
+      const shortfall = Math.ceil(headlineTotal - weeklyBudget);
+      budgetWarningText = `This plan is about $${shortfall} over your weekly grocery budget. Try increasing the budget or swapping a few meals.`;
     }
 
     // Phase A (Part K): apply budget_unfit gate on the ESTIMATED path too.
-    // Previously only the Kroger path hard-failed; the estimated path merely
-    // warned and saved an over-budget plan. Now any over-budget result on
-    // either path returns the same structured error (HTTP 200) before save.
     if (overBudgetAfterAdjust && pricingMode === "estimated") {
       const friendly =
         "We couldn't build a meal plan within your budget yet. Try increasing your budget, reducing meal variety, or using more pantry items.";
       await failJob("budget_unfit", friendly, {
-        delivered_total: finalDeliveredTotals.delivered_total,
+        in_store_total: headlineTotal,
         weekly_budget: weeklyBudget,
         pricing_mode: pricingMode,
       });
       return new Response(
         JSON.stringify(structuredError("budget_unfit", friendly, {
           job_id: jobId,
-          delivered_total: finalDeliveredTotals.delivered_total,
+          in_store_total: headlineTotal,
           weekly_budget: weeklyBudget,
           pricing_mode: pricingMode,
         })),
@@ -1804,11 +1807,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Persist the DELIVERED total — what the user actually pays at checkout —
-    // as the headline cost. UI/Budget/Remaining math is computed against it.
-    const estimatedTotalCost = finalDeliveredTotals.delivered_total;
-    const estimatedTotalLow = finalInStoreTotals.delivered_total; // in-store = no fees/markup
-    const estimatedTotalAvg = Math.round(((estimatedTotalLow + estimatedTotalCost) / 2) * 100) / 100;
+    // Headline = live Kroger in-store subtotal (when connected) OR the
+    // fee-free in-store estimate. Both fit on the same scale.
+    const estimatedTotalCost = headlineTotal;
+    const estimatedTotalLow = finalInStoreTotals.in_store_subtotal;
+    const estimatedTotalAvg = headlineTotal;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
     const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
 
@@ -1817,13 +1820,9 @@ Deno.serve(async (req) => {
       unmatched_price_items: basket.unmatched,
     });
     await advance("saving", "estimated totals calculated", "Pricing your grocery list", {
-      delivered_total: estimatedTotalCost,
-      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
-      item_markup: finalDeliveredTotals.item_markup,
-      service_fee: finalDeliveredTotals.service_fee,
-      delivery_fee: finalDeliveredTotals.delivery_fee,
-      tip: finalDeliveredTotals.tip,
-      tax: finalDeliveredTotals.tax,
+      in_store_total: estimatedTotalCost,
+      in_store_subtotal: finalInStoreTotals.in_store_subtotal,
+      tax: finalInStoreTotals.tax,
       budget_exceeded: overBudgetAfterAdjust,
       top_cost_drivers: basket.drivers,
     });
@@ -1831,7 +1830,7 @@ Deno.serve(async (req) => {
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
     const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
-    // Expose budget context + full delivered breakdown to the client.
+    // Expose budget context + in-store breakdown to the client.
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
     (normalized as any).budgetExceeded = overBudgetAfterAdjust;
@@ -1841,27 +1840,28 @@ Deno.serve(async (req) => {
     (normalized as any).estimateHigh = estimatedTotalCost;
     (normalized as any).topCostDrivers = basket.drivers;
     (normalized as any).unmatchedPriceItems = basket.unmatched;
-    (normalized as any).totalEstimatedCost = estimatedTotalCost; // override to delivered
-    (normalized as any).channel = "delivery";
+    (normalized as any).totalEstimatedCost = estimatedTotalCost;
+    (normalized as any).channel = "in_store";
     (normalized as any).channelBreakdown = {
-      channel: "delivery",
-      store: finalDeliveredTotals.store,
-      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
-      item_markup: finalDeliveredTotals.item_markup,
-      service_fee: finalDeliveredTotals.service_fee,
-      delivery_fee: finalDeliveredTotals.delivery_fee,
-      bag_fee: finalDeliveredTotals.bag_fee,
-      tip: finalDeliveredTotals.tip,
-      tax: finalDeliveredTotals.tax,
-      delivered_total: finalDeliveredTotals.delivered_total,
+      channel: "in_store",
+      store: finalInStoreTotals.store,
+      in_store_subtotal: finalInStoreTotals.in_store_subtotal,
+      item_markup: 0,
+      service_fee: 0,
+      delivery_fee: 0,
+      bag_fee: 0,
+      tip: 0,
+      tax: finalInStoreTotals.tax,
+      delivered_total: estimatedTotalCost,
       in_store_only_total: finalInStoreTotals.delivered_total,
-      as_of_date: finalDeliveredTotals.as_of_date,
+      as_of_date: finalInStoreTotals.as_of_date,
     };
     (normalized as any).pricingMode = pricingMode;
     (normalized as any).krogerPricing = krogerSummary;
     (normalized as any).krogerConnected = kroger.connected;
     (normalized as any).krogerStoreName = kroger.storeName;
     (normalized as any).pricingAccuracyReduced = pricingMode === "estimated";
+
 
 
 
@@ -1888,23 +1888,23 @@ Deno.serve(async (req) => {
     const planId = planRow.id;
     await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
 
-    // Persist channel-aware cost breakdown — one row per generated plan.
+    // Persist cost breakdown — in-store only (no Instacart fees).
     await admin.from("meal_plan_cost_breakdown").insert({
       meal_plan_id: planId,
       user_id: userId,
-      channel: "delivery",
-      store: finalDeliveredTotals.store,
+      channel: "in_store",
+      store: finalInStoreTotals.store,
       zip_code: mealPlanContext.zip_code,
-      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
-      item_markup: finalDeliveredTotals.item_markup,
-      service_fee: finalDeliveredTotals.service_fee,
-      delivery_fee: finalDeliveredTotals.delivery_fee,
-      bag_fee: finalDeliveredTotals.bag_fee,
-      tip: finalDeliveredTotals.tip,
-      tax: finalDeliveredTotals.tax,
-      delivered_total: finalDeliveredTotals.delivered_total,
+      in_store_subtotal: finalInStoreTotals.in_store_subtotal,
+      item_markup: 0,
+      service_fee: 0,
+      delivery_fee: 0,
+      bag_fee: 0,
+      tip: 0,
+      tax: finalInStoreTotals.tax,
+      delivered_total: estimatedTotalCost,
       budget: weeklyBudget,
-      remaining: Math.max(0, Math.round((weeklyBudget - finalDeliveredTotals.delivered_total) * 100) / 100),
+      remaining: Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100),
       budget_exceeded: overBudgetAfterAdjust,
       warning_text: budgetWarningText,
       pantry_savings: (normalized as any).pantrySavings ?? 0,
@@ -1916,6 +1916,7 @@ Deno.serve(async (req) => {
         already_have: g.already_have,
       })),
     });
+
 
     // Persist days + meals + recipe_usage
     const usageRows: any[] = [];
