@@ -40,7 +40,7 @@ export default function MealPlanGeneratingPage() {
   const failureMessage = !generating && generationStage !== "done" ? generationStatus.errorMessage : null;
 
   return (
-    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-[hsl(43_100%_96%)] flex flex-col">
+    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center pt-12">
         <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center mb-6">
           <Loader2 className="w-10 h-10 text-primary animate-spin" />
