@@ -195,7 +195,7 @@ export default function MealPlanPage() {
   const weeklySavings = mealPlan.savingsSummary?.estimatedSavings
     ?? (pantrySavings > 0 ? Math.round(pantrySavings) : 22);
 
-  const monthlyBudget = 75; // weekly budget shown in screenshot
+  const monthlyBudget = (mealPlan as any).weeklyBudget ?? 0;
   const groceryItems = mealPlan.groceryList ?? [];
   const itemCount = groceryItems.length;
 
