@@ -1888,23 +1888,23 @@ Deno.serve(async (req) => {
     const planId = planRow.id;
     await advance("done", "meal_plan saved", "Finalizing your plan", { meal_plan_id: planId });
 
-    // Persist channel-aware cost breakdown — one row per generated plan.
+    // Persist cost breakdown — in-store only (no Instacart fees).
     await admin.from("meal_plan_cost_breakdown").insert({
       meal_plan_id: planId,
       user_id: userId,
-      channel: "delivery",
-      store: finalDeliveredTotals.store,
+      channel: "in_store",
+      store: finalInStoreTotals.store,
       zip_code: mealPlanContext.zip_code,
-      in_store_subtotal: finalDeliveredTotals.in_store_subtotal,
-      item_markup: finalDeliveredTotals.item_markup,
-      service_fee: finalDeliveredTotals.service_fee,
-      delivery_fee: finalDeliveredTotals.delivery_fee,
-      bag_fee: finalDeliveredTotals.bag_fee,
-      tip: finalDeliveredTotals.tip,
-      tax: finalDeliveredTotals.tax,
-      delivered_total: finalDeliveredTotals.delivered_total,
+      in_store_subtotal: finalInStoreTotals.in_store_subtotal,
+      item_markup: 0,
+      service_fee: 0,
+      delivery_fee: 0,
+      bag_fee: 0,
+      tip: 0,
+      tax: finalInStoreTotals.tax,
+      delivered_total: estimatedTotalCost,
       budget: weeklyBudget,
-      remaining: Math.max(0, Math.round((weeklyBudget - finalDeliveredTotals.delivered_total) * 100) / 100),
+      remaining: Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100),
       budget_exceeded: overBudgetAfterAdjust,
       warning_text: budgetWarningText,
       pantry_savings: (normalized as any).pantrySavings ?? 0,
@@ -1916,6 +1916,7 @@ Deno.serve(async (req) => {
         already_have: g.already_have,
       })),
     });
+
 
     // Persist days + meals + recipe_usage
     const usageRows: any[] = [];
