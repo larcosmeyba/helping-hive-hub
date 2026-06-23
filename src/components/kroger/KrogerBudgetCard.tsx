@@ -36,8 +36,31 @@ export function KrogerBudgetCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MatchResponse | null>(null);
+  const [locationId, setLocationId] = useState<string | undefined>(
+    (profile as any)?.kroger_location_id as string | undefined,
+  );
+  const zip = (profile as any)?.zip_code as string | undefined;
 
-  const locationId = (profile as any)?.kroger_location_id as string | undefined;
+  // Resolve a pricing location from the user's ZIP when none is saved.
+  // Kroger is a hidden pricing backend — the user never picks a store.
+  useEffect(() => {
+    if (locationId || !zip) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("kroger-locations", {
+          body: { zip, radiusInMiles: 25, limit: 5 },
+        });
+        const first = (data?.stores ?? [])[0];
+        if (!cancelled && first?.locationId) setLocationId(first.locationId);
+      } catch {
+        /* fall through — no estimate available */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [zip, locationId]);
 
   const payloadItems = useMemo(
     () => items.map((i) => ({ name: i.name, quantity: i.quantity ?? 1 })),
