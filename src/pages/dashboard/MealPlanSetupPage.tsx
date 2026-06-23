@@ -407,31 +407,6 @@ function FamilySheet({
   );
 }
 
-function KrogerStoreSheet({
-  open, onOpenChange, locationId, name, onSelect, saving, onSave,
-}: {
-  open: boolean; onOpenChange: (o: boolean) => void;
-  locationId: string | null; name: string;
-  onSelect: (s: { locationId: string; name: string }) => void;
-  saving?: boolean; onSave: () => void;
-}) {
-  return (
-    <SheetShell open={open} onOpenChange={onOpenChange} title="Kroger Store"
-      footer={<SaveButton saving={saving} onClick={onSave} disabled={!locationId} />}>
-      <div className="space-y-3">
-        {name && (
-          <p className="text-[12px] text-[#6b6b6b]">
-            Current: <span className="font-semibold text-[#1a1a1a]">{name}</span>
-          </p>
-        )}
-        <KrogerStorePicker
-          selectedLocationId={locationId}
-          onSelect={(s) => onSelect({ locationId: s.locationId, name: s.name })}
-        />
-      </div>
-    </SheetShell>
-  );
-}
 
 function ChipSheet({
   open, onOpenChange, title, options, selected, setSelected, saving, onSave,
