@@ -1961,7 +1961,13 @@ Deno.serve(async (req) => {
 
       for (const meal of day.meals) {
         const r = meal.recipe;
-        const costForMeal = r.cost_per_serving ? Number(r.cost_per_serving) * householdSize : null;
+        const costForMeal = r.cost_per_serving ? Number(r.cost_per_serving) * servingsMultiplier : null;
+        // Household-total macros = per-serving × cohort-weighted servings.
+        // Per-serving values stay on the recipe row; totals exposed via plan_data.
+        const householdCalories = r.calories ? Number(r.calories) * servingsMultiplier : null;
+        const householdProtein = r.protein_g ? Number(r.protein_g) * servingsMultiplier : null;
+        const householdCarbs = r.carbs_g ? Number(r.carbs_g) * servingsMultiplier : null;
+        const householdFats = (r.fats_g ?? r.fat_g) ? Number(r.fats_g ?? r.fat_g) * servingsMultiplier : null;
         const { data: mealRow, error: mealErr } = await admin.from("meal_plan_meals").insert({
           meal_plan_id: planId,
           day_id: dayRow.id,
