@@ -56,6 +56,59 @@ export default function GrocerySummaryPage() {
     return order.filter((k) => map.has(k)).map((k) => ({ key: k, items: map.get(k)! }));
   }, [items]);
 
+  const allItems: GroceryItem[] = useMemo(() => {
+    const seen = new Map<string, GroceryItem>();
+    for (const i of items) {
+      const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
+      if (!d) continue;
+      const key = dedupeKey(d.displayName);
+      if (seen.has(key)) continue;
+      seen.set(key, { ...i, name: d.displayName, quantity: d.displayQuantity });
+    }
+    return Array.from(seen.values());
+  }, [items]);
+
+  const handleShopWithInstacart = async () => {
+    if (allItems.length === 0) {
+      toast({ title: "Nothing to send yet", description: "Generate a meal plan first." });
+      return;
+    }
+    setInstacartLoading(true);
+    try {
+      const line_items = allItems.map((i) => {
+        const parsed = parseQty(i.quantity ?? "");
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (parsed.num > 0) item.quantity = parsed.num;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw error;
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
+
   if (!mealPlan || !items.length) {
     return (
       <div className="max-w-md mx-auto px-4 pt-6 pb-10">
