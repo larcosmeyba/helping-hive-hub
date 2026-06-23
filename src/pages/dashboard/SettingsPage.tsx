@@ -479,8 +479,6 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <KrogerConnectionCard />
-      <KrogerHomeStoreCard />
 
       <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-6">PRIVACY & DATA</div>
 
