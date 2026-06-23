@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
 import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { PricingModeBadge } from "@/components/grocery/PricingModeBadge";
 import { getAppUrl } from "@/lib/appUrl";
 import { trackEvent } from "@/lib/analytics";
 import { phCapture } from "@/lib/posthog";
