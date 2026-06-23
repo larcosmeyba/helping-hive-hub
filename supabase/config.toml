@@ -36,3 +36,6 @@ verify_jwt = true
 [functions.grocery-list-item-update]
 verify_jwt = true
 
+[functions.instacart-create-list]
+verify_jwt = true
+
