@@ -2,14 +2,20 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Loader2 } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
+import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { getAppUrl } from "@/lib/appUrl";
 import { trackEvent } from "@/lib/analytics";
 import { phCapture } from "@/lib/posthog";
+
+function parseQty(q: string): { num: number; unit: string } {
+  if (!q) return { num: 1, unit: "each" };
+  const m = q.match(/([\d.]+)\s*(.*)/);
+  return { num: m ? parseFloat(m[1]) || 1 : 1, unit: m && m[2] ? m[2].trim() : "each" };
+}
 
 const CATEGORY_META: Record<string, { label: string; Icon: typeof Leaf; iconBg: string; iconColor: string; match: string[] }> = {
   produce: { label: "Produce", Icon: Leaf, iconBg: "#E6F4E6", iconColor: "#2E7D32", match: ["produce", "fruit", "vegetable"] },
