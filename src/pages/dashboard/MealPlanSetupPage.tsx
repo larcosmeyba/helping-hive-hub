@@ -123,8 +123,6 @@ export default function MealPlanSetupPage() {
 
   const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const [saving, setSaving] = useState(false);
-  const [krogerPromptOpen, setKrogerPromptOpen] = useState(false);
-  const { ready: krogerReady, loading: krogerLoading } = useKrogerConnection();
 
   const saveProfile = async (patch: Record<string, unknown>, label = "Updated") => {
     if (!user) return;
