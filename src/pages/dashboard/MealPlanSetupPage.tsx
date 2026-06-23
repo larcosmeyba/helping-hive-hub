@@ -317,7 +317,7 @@ function SheetShell({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[88vh] overflow-y-auto bg-[hsl(43_100%_96%)]">
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[88vh] overflow-y-auto bg-white">
         <SheetHeader>
           <SheetTitle className="text-left text-[18px] font-extrabold text-[#1a1a1a]">{title}</SheetTitle>
         </SheetHeader>
