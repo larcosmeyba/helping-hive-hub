@@ -82,9 +82,34 @@ export default function AdminSystemHealth() {
     setLoading(false);
   };
 
+  const runKrogerSmoke = async () => {
+    setKrogerLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("kroger-smoke-test", { body: {} });
+      if (error) {
+        setKroger({
+          environment: "?",
+          baseUrl: "",
+          overall: "fail",
+          ranAt: new Date().toISOString(),
+          lastSuccessfulApiCall: null,
+          checks: [{ name: "Smoke test", status: "fail", detail: error.message }],
+        });
+      } else {
+        setKroger(data as KrogerSmokeResult);
+      }
+    } finally {
+      setKrogerLoading(false);
+    }
+  };
+
   useEffect(() => {
     void load();
   }, [range]);
+
+  useEffect(() => {
+    void runKrogerSmoke();
+  }, []);
 
   const dedupedEmails = useMemo(() => {
     const map = new Map<string, EmailRow>();
