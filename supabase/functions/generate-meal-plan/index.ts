@@ -2170,25 +2170,44 @@ function normalizePlanForClient(
   groceryList: any[],
   householdSize: number,
 ) {
+  const servings = householdSize; // already cohort-weighted when algo_v2 supplies it
   const weeklyPlan = resolvedDays.map((d) => ({
     day: d.day_name,
-    meals: d.meals.map((m) => ({
-      type: m.meal_type,
-      name: m.recipe.title,
-      recipe_id: m.recipe.id,
-      image_url: m.recipe.image_url,
-      imageUrl: m.recipe.image_url,
-      calories: Number(m.recipe.calories) || 0,
-      protein: Number(m.recipe.protein_g) || 0,
-      carbs: Number(m.recipe.carbs_g) || 0,
-      fats: Number(m.recipe.fat_g) || 0,
-      nutritionVerified: m.recipe.nutrition_source !== "ai_estimated" && (m.recipe.source ?? "library") !== "ai_generated",
-      estimatedCost: m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) * householdSize : 0,
-      costPerServing: m.recipe.cost_per_serving,
-      cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
-      ingredients: (Array.isArray(m.recipe.ingredients) ? m.recipe.ingredients : []).map(ingredientLine),
-      instructions: Array.isArray(m.recipe.instructions) ? m.recipe.instructions : [],
-    })),
+    meals: d.meals.map((m) => {
+      const caloriesPer = Number(m.recipe.calories) || 0;
+      const proteinPer = Number(m.recipe.protein_g) || 0;
+      const carbsPer = Number(m.recipe.carbs_g) || 0;
+      const fatsPer = Number(m.recipe.fat_g ?? m.recipe.fats_g) || 0;
+      const cps = m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) : 0;
+      return {
+        type: m.meal_type,
+        name: m.recipe.title,
+        recipe_id: m.recipe.id,
+        image_url: m.recipe.image_url,
+        imageUrl: m.recipe.image_url,
+        // Per-serving (legacy field names preserved for the existing UI).
+        calories: caloriesPer,
+        protein: proteinPer,
+        carbs: carbsPer,
+        fats: fatsPer,
+        // Cohort-aware additions (P1 data; P2 will surface in UI).
+        servings,
+        perServing: { calories: caloriesPer, protein: proteinPer, carbs: carbsPer, fats: fatsPer, costPerServing: cps },
+        householdTotals: {
+          calories: Math.round(caloriesPer * servings),
+          protein: Math.round(proteinPer * servings * 10) / 10,
+          carbs: Math.round(carbsPer * servings * 10) / 10,
+          fats: Math.round(fatsPer * servings * 10) / 10,
+          cost: Math.round(cps * servings * 100) / 100,
+        },
+        nutritionVerified: m.recipe.nutrition_source !== "ai_estimated" && (m.recipe.source ?? "library") !== "ai_generated",
+        estimatedCost: cps ? cps * servings : 0,
+        costPerServing: m.recipe.cost_per_serving,
+        cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
+        ingredients: (Array.isArray(m.recipe.ingredients) ? m.recipe.ingredients : []).map(ingredientLine),
+        instructions: Array.isArray(m.recipe.instructions) ? m.recipe.instructions : [],
+      };
+    }),
   }));
 
   // Phase A (Part L): expose `bucket` on every grocery line so the UI can
