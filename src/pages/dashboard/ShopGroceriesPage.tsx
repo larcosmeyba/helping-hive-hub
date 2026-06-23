@@ -584,6 +584,17 @@ export default function ShopGroceriesPage() {
 
       {/* Checkout */}
       <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-card p-3 shadow-md space-y-2">
+        {/* Estimate — Kroger pricing engine; Instacart confirms final price at checkout. */}
+        <div className="rounded-xl bg-muted/40 px-3 py-2 text-center">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Estimated Grocery Total
+          </p>
+          <p className="text-xl font-bold tabular-nums">${total.toFixed(2)}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Pricing estimate based on available retailer pricing. Final price confirmed at Instacart checkout.
+          </p>
+        </div>
+
         <ShopGroceriesButton
           title="Shop Groceries"
           lineItems={needToBuy.map((i) => ({
@@ -594,6 +605,13 @@ export default function ShopGroceriesPage() {
           fullWidth
           label={shopping ? "Re-pricing…" : `Shop at Kroger — $${total.toFixed(2)}`}
         />
+
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          disabled={instacartLoading || needToBuy.length === 0}
+          onClick={handleShopWithInstacart}
+        />
+
         <Button variant="outline" className="w-full" onClick={checkout} disabled={shopping || matching}>
           <CheckCircle2 className="h-4 w-4 mr-1.5" />
           Mark as shopped
