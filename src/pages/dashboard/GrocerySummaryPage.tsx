@@ -81,9 +81,6 @@ export default function GrocerySummaryPage() {
       </h1>
 
       {/* Category tiles */}
-
-
-      {/* Category tiles */}
       <div className="space-y-2 mb-5">
         {grouped.map(({ key, items: catItems }) => {
           const meta = CATEGORY_META[key];
