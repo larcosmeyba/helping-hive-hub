@@ -19,7 +19,10 @@ import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { ShopGroceriesButton } from "@/components/dashboard/ShopGroceriesButton";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
+import { phCapture } from "@/lib/posthog";
+import { getAppUrl } from "@/lib/appUrl";
 import {
   computeBudgetFix,
   type FixItem,
@@ -97,6 +100,71 @@ export default function ShopGroceriesPage() {
   const [shopping, setShopping] = useState(false);
   const [showPantryPrompt, setShowPantryPrompt] = useState(false);
   const [showFix, setShowFix] = useState(false);
+  const [instacartLoading, setInstacartLoading] = useState(false);
+
+  /**
+   * Hand off the Need-To-Buy list to Instacart via the products_link landing
+   * page (required by Instacart compliance — never bypass the landing page).
+   * We send only matched/confirmed items; "needs_review" / "no_match" stay on
+   * Help The Hive for the user to resolve.
+   */
+  const handleShopWithInstacart = async () => {
+    const eligible = needToBuy.filter(
+      (i) => i.match_status !== "needs_review" && i.match_status !== "no_match",
+    );
+    if (eligible.length === 0) {
+      toast({
+        title: "Nothing to send yet",
+        description: "Resolve any items that need review, then try again.",
+      });
+      return;
+    }
+    setInstacartLoading(true);
+    try {
+      const line_items = eligible.map((i) => {
+        const item: { name: string; quantity?: number; unit?: string; upcs?: string[] } = {
+          name: i.matched_name ?? i.ingredient_name,
+        };
+        if (i.parsedQty && i.parsedQty > 0) item.quantity = i.parsedQty;
+        if (i.unit) item.unit = i.unit;
+        return item;
+      });
+
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw error;
+      const url: string | undefined = data?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+
+      phCapture("shop_with_instacart_clicked", {
+        item_count: line_items.length,
+        estimated_total: total,
+      });
+      void trackEvent("shop_with_instacart_clicked", {
+        item_count: line_items.length,
+        estimated_total: total,
+      });
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
 
   const weeklyBudget = Number(profile?.weekly_budget ?? 0);
 
@@ -581,6 +649,17 @@ export default function ShopGroceriesPage() {
 
       {/* Checkout */}
       <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-card p-3 shadow-md space-y-2">
+        {/* Estimate — Kroger pricing engine; Instacart confirms final price at checkout. */}
+        <div className="rounded-xl bg-muted/40 px-3 py-2 text-center">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Estimated Grocery Total
+          </p>
+          <p className="text-xl font-bold tabular-nums">${total.toFixed(2)}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Pricing estimate based on available retailer pricing. Final price confirmed at Instacart checkout.
+          </p>
+        </div>
+
         <ShopGroceriesButton
           title="Shop Groceries"
           lineItems={needToBuy.map((i) => ({
@@ -591,6 +670,13 @@ export default function ShopGroceriesPage() {
           fullWidth
           label={shopping ? "Re-pricing…" : `Shop at Kroger — $${total.toFixed(2)}`}
         />
+
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          disabled={instacartLoading || needToBuy.length === 0}
+          onClick={handleShopWithInstacart}
+        />
+
         <Button variant="outline" className="w-full" onClick={checkout} disabled={shopping || matching}>
           <CheckCircle2 className="h-4 w-4 mr-1.5" />
           Mark as shopped
