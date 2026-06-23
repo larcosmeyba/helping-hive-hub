@@ -27,7 +27,7 @@ function bucketFor(section: string): string {
 export default function GrocerySummaryPage() {
   const navigate = useNavigate();
   const { mealPlan, generating, generate } = useMealPlan();
-  const kroger = useKrogerConnection();
+  
 
   const items = mealPlan?.groceryList ?? [];
 
