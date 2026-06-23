@@ -350,7 +350,7 @@ export default function GroceryReviewPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buyableNamesKey, storeCodeForPricing, stateCode, kroger.ready]);
+  }, [buyableNamesKey, storeCodeForPricing, stateCode, krogerReady]);
 
   const formatItemPrice = (p: EstimatedPrice | null | undefined): string | null => {
     if (!p) return null;
