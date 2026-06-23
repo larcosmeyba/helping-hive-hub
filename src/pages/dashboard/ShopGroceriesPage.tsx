@@ -18,7 +18,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
-import { ShopGroceriesButton } from "@/components/dashboard/ShopGroceriesButton";
+
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { phCapture } from "@/lib/posthog";
@@ -654,22 +654,14 @@ export default function ShopGroceriesPage() {
           </p>
         </div>
 
-        <ShopGroceriesButton
-          title="Shop Groceries"
-          lineItems={needToBuy.map((i) => ({
-            name: i.matched_name ?? i.ingredient_name,
-            quantity: i.parsedQty,
-            unit: i.unit ?? undefined,
-          }))}
-          fullWidth
-          label="Grocery List"
-        />
-
         <ShopWithInstacartButton
           loading={instacartLoading}
           disabled={instacartLoading || needToBuy.length === 0}
           onClick={handleShopWithInstacart}
         />
+        <p className="text-[11px] text-muted-foreground text-center leading-snug px-2">
+          Help The Hive may earn a commission when you shop with Instacart.
+        </p>
 
         <Button variant="outline" className="w-full" onClick={checkout} disabled={shopping || matching}>
           <CheckCircle2 className="h-4 w-4 mr-1.5" />
