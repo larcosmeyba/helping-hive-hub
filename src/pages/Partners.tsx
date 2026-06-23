@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Store, HeartHandshake, Sparkles, ArrowRight, Mail } from "lucide-react";
+import { Store, HeartHandshake, Sparkles, ArrowRight, Mail, ShoppingCart } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
