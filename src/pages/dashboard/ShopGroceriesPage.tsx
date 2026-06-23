@@ -644,14 +644,13 @@ export default function ShopGroceriesPage() {
 
       {/* Checkout */}
       <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-card p-3 shadow-md space-y-2">
-        {/* Estimate — Kroger pricing engine; Instacart confirms final price at checkout. */}
         <div className="rounded-xl bg-muted/40 px-3 py-2 text-center">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Estimated Grocery Total
+            Estimated total
           </p>
           <p className="text-xl font-bold tabular-nums">${total.toFixed(2)}</p>
           <p className="text-[11px] text-muted-foreground leading-snug">
-            Pricing estimate based on available retailer pricing. Final price confirmed at Instacart checkout.
+            Estimate only — final price confirmed at checkout.
           </p>
         </div>
 
@@ -663,7 +662,7 @@ export default function ShopGroceriesPage() {
             unit: i.unit ?? undefined,
           }))}
           fullWidth
-          label={shopping ? "Re-pricing…" : `Shop at Kroger — $${total.toFixed(2)}`}
+          label="Grocery List"
         />
 
         <ShopWithInstacartButton
