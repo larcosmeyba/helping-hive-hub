@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, DollarSign, Users, Store, Leaf, Package,
+  ArrowLeft, ChevronRight, DollarSign, Users, Leaf, Package,
   ChefHat, Snowflake, AlertCircle, Plus, Check,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { KrogerStorePicker } from "@/components/kroger/KrogerStorePicker";
-import { KrogerRequiredDialog } from "@/components/kroger/KrogerRequiredDialog";
-import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 
 const DIET_OPTIONS = [
   "Vegetarian", "Vegan", "Gluten-free", "Dairy-free",
