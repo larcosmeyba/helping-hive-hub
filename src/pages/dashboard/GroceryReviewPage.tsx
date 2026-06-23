@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Minus, Plus } from "lucide-react";
+import { Check } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { useToast } from "@/hooks/use-toast";
-import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
-import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
+import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
-import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { PricingDisclaimer } from "@/components/PricingDisclaimer";
+import { getAppUrl } from "@/lib/appUrl";
+import { trackEvent } from "@/lib/analytics";
+import { phCapture } from "@/lib/posthog";
+
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
@@ -207,24 +210,61 @@ export default function GroceryReviewPage() {
     return allItems.some((it) => normalize(it.name) === norm);
   };
 
-  const persistManualItem = async (item: GroceryItem) => {
-    if (!user) return;
+  const [instacartLoading, setInstacartLoading] = useState(false);
+
+  const persistManualItem = async (_item: GroceryItem) => {
+    // No-op: manual add UI removed from this page. Items added via other flows
+    // are persisted elsewhere.
+  };
+
+  const handleShopWithInstacart = async () => {
+    const eligible = [...toAdjust, ...toBuy, ...manualItems].filter((it) =>
+      checked.has(it.name),
+    );
+    if (eligible.length === 0) {
+      toast({
+        title: "Nothing to send yet",
+        description: "Select at least one item to shop.",
+      });
+      return;
+    }
+    setInstacartLoading(true);
     try {
-      await addItemsToGroceryList("manual_add", [
-        {
-          item_name: item.name,
-          quantity: item.quantity,
-          unit: parseQty(item.quantity).unit,
-          category: item.section,
-          estimated_price: item.estimatedPrice || undefined,
-          instacart_search_term: item.name,
+      const line_items = eligible.map((i) => {
+        const parsed = parseQty(i.quantity);
+        const qty = qtyOverride[i.name] ?? parsed.num;
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (qty > 0) item.quantity = qty;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
         },
-      ]);
-    } catch (err) {
-      console.error("Failed to persist manual item:", err);
-      // Still show in UI; persistence failure is non-blocking for the review flow
+      });
+      if (error) throw error;
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
     }
   };
+
 
   const addFromSearch = async () => {
     const name = searchQuery.trim();
@@ -439,14 +479,25 @@ export default function GroceryReviewPage() {
                       {isChecked ? "Added to list" : "Tap to add to list"}
                     </p>
                   </div>
-                  {isManual && (
-                    <button
-                      onClick={() => removeManualItem(it.name)}
-                      className="text-[11px] text-[#6b6b6b] underline shrink-0 ml-2"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="flex flex-col items-end shrink-0 ml-2 min-w-[64px]">
+                    {priceLabel ? (
+                      <span className="text-[13px] font-semibold text-[#1a1a1a] tabular-nums">
+                        {priceLabel}
+                      </span>
+                    ) : pricesLoading ? (
+                      <span className="text-[11px] text-[#bdbdbd]">…</span>
+                    ) : (
+                      <span className="text-[11px] text-[#bdbdbd]">—</span>
+                    )}
+                    {isManual && (
+                      <button
+                        onClick={() => removeManualItem(it.name)}
+                        className="text-[11px] text-[#6b6b6b] underline mt-1"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -454,65 +505,29 @@ export default function GroceryReviewPage() {
         </Section>
       )}
 
-      {/* Add More Food Items */}
-      <Section title="Add More Food Items" headerBg="#FFF8E1" titleColor="#B8860B">
-        <div className="px-4 pt-3 pb-2 flex gap-2">
-          <input
-            type="text"
-            placeholder="Search food item…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addFromSearch();
-              }
-            }}
-            className="flex-1 h-10 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-          <button
-            onClick={addFromSearch}
-            disabled={!searchQuery.trim() || isAdding}
-            className="h-10 px-4 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold disabled:opacity-50 active:scale-95 transition-transform"
-          >
-            + Add Food Item
-          </button>
-        </div>
-        <div className="px-4 pb-3 flex flex-wrap gap-2">
-          {QUICK_ADDS.map((q) => (
-            <button
-              key={q.name}
-              onClick={() => addQuickItem(q)}
-              disabled={isAdding || isDuplicate(q.name)}
-              className="px-3 py-1.5 rounded-full border border-border bg-background text-[13px] text-[#1a1a1a] font-medium hover:border-primary/50 transition-colors disabled:opacity-40"
-            >
-              {q.name}
-            </button>
-          ))}
-        </div>
-        <p className="px-4 pb-3 text-[11px] text-[#8a8a8a] leading-relaxed">
-          Anything you add here is included in your estimated total below.
-        </p>
-      </Section>
-
-      <KrogerBudgetCard
-        items={[...toAdjust, ...toBuy, ...manualItems]}
-        weeklyBudget={
-          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-        }
-      />
-
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
           {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
-        <p className="text-[11px] text-[#8a8a8a] text-center max-w-sm px-2">
-          Estimate only — final price confirmed at checkout.
+      </div>
+
+      <div className="mt-4">
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          disabled={instacartLoading || selectedItemsAll.length === 0}
+          onClick={handleShopWithInstacart}
+          label="Shop ingredients with Instacart"
+        />
+        <p className="mt-2 text-[11px] text-[#8a8a8a] text-center px-2 leading-relaxed">
+          We may earn a commission when you shop via Instacart. Estimate only —
+          final price confirmed at checkout.
         </p>
+        <PricingDisclaimer variant="inline" className="mt-2 text-center" />
       </div>
     </div>
   );
 }
+
 
 
 function Section({
