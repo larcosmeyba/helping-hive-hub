@@ -19,7 +19,10 @@ import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { ShopGroceriesButton } from "@/components/dashboard/ShopGroceriesButton";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
+import { phCapture } from "@/lib/posthog";
+import { getAppUrl } from "@/lib/appUrl";
 import {
   computeBudgetFix,
   type FixItem,
