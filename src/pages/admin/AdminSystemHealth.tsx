@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, CheckCircle2, Mail, RefreshCw, ShoppingBag } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Mail, RefreshCw, ShoppingBag, PlayCircle, XCircle, Loader2, ShoppingCart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 type Range = "24h" | "7d" | "30d";
@@ -26,11 +26,28 @@ interface EmailRow {
   created_at: string;
 }
 
+interface KrogerSmokeCheck {
+  name: string;
+  status: "pass" | "fail" | "skip";
+  detail?: string;
+  durationMs?: number;
+}
+interface KrogerSmokeResult {
+  environment: string;
+  baseUrl: string;
+  overall: "pass" | "fail";
+  ranAt: string;
+  lastSuccessfulApiCall: string | null;
+  checks: KrogerSmokeCheck[];
+}
+
 export default function AdminSystemHealth() {
   const [range, setRange] = useState<Range>("7d");
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [emails, setEmails] = useState<EmailRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kroger, setKroger] = useState<KrogerSmokeResult | null>(null);
+  const [krogerLoading, setKrogerLoading] = useState(false);
 
   const since = useMemo(() => {
     const d = new Date();
@@ -65,9 +82,34 @@ export default function AdminSystemHealth() {
     setLoading(false);
   };
 
+  const runKrogerSmoke = async () => {
+    setKrogerLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("kroger-smoke-test", { body: {} });
+      if (error) {
+        setKroger({
+          environment: "?",
+          baseUrl: "",
+          overall: "fail",
+          ranAt: new Date().toISOString(),
+          lastSuccessfulApiCall: null,
+          checks: [{ name: "Smoke test", status: "fail", detail: error.message }],
+        });
+      } else {
+        setKroger(data as KrogerSmokeResult);
+      }
+    } finally {
+      setKrogerLoading(false);
+    }
+  };
+
   useEffect(() => {
     void load();
   }, [range]);
+
+  useEffect(() => {
+    void runKrogerSmoke();
+  }, []);
 
   const dedupedEmails = useMemo(() => {
     const map = new Map<string, EmailRow>();
@@ -145,6 +187,91 @@ export default function AdminSystemHealth() {
           tone={emailFailed === 0 ? "good" : "warn"}
         />
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-4 h-4 text-primary" />
+            <CardTitle className="text-base">Kroger status</CardTitle>
+            {kroger && (
+              <Badge
+                className={
+                  kroger.overall === "pass"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-destructive hover:bg-destructive"
+                }
+              >
+                {kroger.overall.toUpperCase()}
+              </Badge>
+            )}
+            {kroger && (
+              <Badge variant={kroger.environment === "production" ? "default" : "secondary"} className="text-[10px]">
+                {kroger.environment.toUpperCase()}
+              </Badge>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={runKrogerSmoke} disabled={krogerLoading}>
+            {krogerLoading
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <PlayCircle className="w-4 h-4" />}
+            <span className="ml-2">Re-run check</span>
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Live OAuth + Products API check against the active Kroger environment. Read-only — does not change pricing logic.
+          </p>
+          {!kroger && krogerLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Running…
+            </div>
+          )}
+          {kroger && (
+            <>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                <span className="font-mono">
+                  <span className="text-muted-foreground">Base URL:</span> {kroger.baseUrl || "—"}
+                </span>
+                <span>
+                  <span className="text-muted-foreground">Last successful API call:</span>{" "}
+                  {kroger.lastSuccessfulApiCall
+                    ? formatDistanceToNow(new Date(kroger.lastSuccessfulApiCall), { addSuffix: true })
+                    : "—"}
+                </span>
+                <span>
+                  <span className="text-muted-foreground">Ran:</span>{" "}
+                  {formatDistanceToNow(new Date(kroger.ranAt), { addSuffix: true })}
+                </span>
+              </div>
+              <div className="divide-y border rounded-md">
+                {kroger.checks.map((c) => (
+                  <div key={c.name} className="flex items-start gap-3 p-3">
+                    {c.status === "pass"
+                      ? <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                      : c.status === "fail"
+                        ? <XCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                        : <AlertTriangle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-medium text-sm">{c.name}</div>
+                        {typeof c.durationMs === "number" && (
+                          <div className="text-[10px] text-muted-foreground">{c.durationMs}ms</div>
+                        )}
+                      </div>
+                      {c.detail && (
+                        <div className={`text-xs mt-0.5 break-words ${c.status === "fail" ? "text-destructive" : "text-muted-foreground"}`}>
+                          {c.detail}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-2">

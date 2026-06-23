@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
+import { PricingModeBadge } from "@/components/grocery/PricingModeBadge";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 
 
@@ -233,9 +234,14 @@ export default function MealPlanPage() {
         </button>
       </div>
 
-      {(mealPlan as any)?.pricingAccuracyReduced && (
-        <div className="bg-[#FFF6E1] border border-[#F2D78A] rounded-2xl p-3 text-[12px] text-[#5a4a1a]">
-          <span className="font-bold">Estimated pricing.</span> Final price confirmed at checkout.
+      {(mealPlan as any)?.pricingMode && (
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <PricingModeBadge mode={(mealPlan as any).pricingMode} />
+          {(mealPlan as any).pricingMode === "estimated" && (
+            <span className="text-[11px] text-muted-foreground">
+              Final price confirmed at checkout.
+            </span>
+          )}
         </div>
       )}
 
