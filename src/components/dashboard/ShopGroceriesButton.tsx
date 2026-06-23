@@ -5,7 +5,7 @@ import { GroceryCTAButton, type GroceryCTAVariant } from "@/components/grocery/G
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Copy, Download, ExternalLink, ChevronDown } from "lucide-react";
+import { Copy, Download } from "lucide-react";
 
 /**
  * Grocery-list action button. Originally sent the list to Instacart; now
