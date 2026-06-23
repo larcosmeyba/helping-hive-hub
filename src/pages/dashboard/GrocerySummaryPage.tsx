@@ -1,10 +1,9 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Loader2, ShoppingBag } from "lucide-react";
+import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Loader2 } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import type { GroceryItem } from "@/types/mealPlan";
 import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
-import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 
 const CATEGORY_META: Record<string, { label: string; Icon: typeof Leaf; iconBg: string; iconColor: string; match: string[] }> = {
   produce: { label: "Produce", Icon: Leaf, iconBg: "#E6F4E6", iconColor: "#2E7D32", match: ["produce", "fruit", "vegetable"] },
