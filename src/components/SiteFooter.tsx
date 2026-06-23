@@ -197,7 +197,7 @@ export function SiteFooter() {
       {/* Disclaimer */}
       <div className="container mx-auto px-4 py-8">
         <p className="text-center text-[11px] text-white/40 leading-relaxed max-w-3xl mx-auto mb-4">
-          Help The Hive is an independent grocery budgeting service.
+          Help The Hive is an independent grocery budgeting service. Partnered with Instacart for fulfillment.
         </p>
         <div className="flex items-center justify-center gap-3 mb-4">
           <p className="text-xs text-white/30">
