@@ -26,11 +26,28 @@ interface EmailRow {
   created_at: string;
 }
 
+interface KrogerSmokeCheck {
+  name: string;
+  status: "pass" | "fail" | "skip";
+  detail?: string;
+  durationMs?: number;
+}
+interface KrogerSmokeResult {
+  environment: string;
+  baseUrl: string;
+  overall: "pass" | "fail";
+  ranAt: string;
+  lastSuccessfulApiCall: string | null;
+  checks: KrogerSmokeCheck[];
+}
+
 export default function AdminSystemHealth() {
   const [range, setRange] = useState<Range>("7d");
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [emails, setEmails] = useState<EmailRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kroger, setKroger] = useState<KrogerSmokeResult | null>(null);
+  const [krogerLoading, setKrogerLoading] = useState(false);
 
   const since = useMemo(() => {
     const d = new Date();
