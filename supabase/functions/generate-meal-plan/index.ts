@@ -1851,7 +1851,11 @@ Deno.serve(async (req) => {
 
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
-    const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
+    const normalized = normalizePlanForClient(resolvedDays, groceryList, servingsMultiplier);
+    // Expose cohort-aware servings so the client/data layer can render per-serving
+    // AND household totals consistently. Both engines populate this.
+    (normalized as any).householdServings = householdServings;
+    (normalized as any).servingsMultiplier = servingsMultiplier;
     // Expose budget context + in-store breakdown to the client.
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
