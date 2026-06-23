@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { MealPlanSkeleton } from "@/components/dashboard/MealPlanSkeleton";
 import { MealPlanHistory } from "@/components/dashboard/MealPlanHistory";
+import { PricingModeBadge } from "@/components/grocery/PricingModeBadge";
 import type { MealPlanMeal, GeneratedMealPlan } from "@/types/mealPlan";
 
 
