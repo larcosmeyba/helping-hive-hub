@@ -7,6 +7,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
 import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
+import { computeHouseholdServings, scaleIngredientQuantity } from "../_shared/householdScaling.ts";
 
 import { captureEdgeError } from "../_shared/sentry.ts";
 interface Overrides {
