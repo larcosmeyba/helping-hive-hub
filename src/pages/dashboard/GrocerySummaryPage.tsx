@@ -136,9 +136,14 @@ export default function GrocerySummaryPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 pt-3 pb-10">
-      <h1 className="text-center text-[20px] font-extrabold text-[#1a1a1a] mb-4">
+      <h1 className="text-center text-[20px] font-extrabold text-[#1a1a1a] mb-2">
         Your Grocery List
       </h1>
+      {(mealPlan as any)?.pricingMode && (
+        <div className="flex justify-center mb-4">
+          <PricingModeBadge mode={(mealPlan as any).pricingMode} />
+        </div>
+      )}
 
       {/* Category tiles */}
       <div className="space-y-2 mb-5">
