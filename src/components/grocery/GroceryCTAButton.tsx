@@ -36,7 +36,7 @@ export const GroceryCTAButton = React.forwardRef<
       variant = "dark",
       loading = false,
       showExternalIcon = false,
-      label = "Shop at Kroger",
+      label = "Grocery List",
       fullWidth = false,
       className,
       disabled,
