@@ -491,34 +491,23 @@ export default function GroceryReviewPage() {
           ))}
         </div>
         <p className="px-4 pb-3 text-[11px] text-[#8a8a8a] leading-relaxed">
-          Anything you add here is priced live from your Kroger store and added to the Kroger Budget Estimate below.
+          Anything you add here is included in your estimated total below.
         </p>
       </Section>
 
-      {/* Pricing surface — Kroger-only. No Instacart fees, markup, delivery,
-          or tip estimates. Pricing is shown ONLY when the user is connected
-          to Kroger with a saved home store; otherwise we prompt to connect. */}
-      {kroger.ready ? (
-        <KrogerBudgetCard
-          items={[...toAdjust, ...toBuy, ...manualItems]}
-          weeklyBudget={
-            (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
-          }
-        />
-      ) : (
-        <ConnectKrogerForPricing
-          loading={kroger.loading}
-          connected={kroger.connected}
-          onConnect={() => kroger.connect()}
-        />
-      )}
+      <KrogerBudgetCard
+        items={[...toAdjust, ...toBuy, ...manualItems]}
+        weeklyBudget={
+          (mealPlan as any)?.weeklyBudget ?? (profile as any)?.weekly_budget ?? null
+        }
+      />
 
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
           {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
         <p className="text-[11px] text-[#8a8a8a] text-center max-w-sm px-2">
-          Bring this list with you — pricing reflects your Kroger store and is confirmed at checkout.
+          Estimate only — final price confirmed at checkout.
         </p>
       </div>
     </div>
@@ -543,53 +532,6 @@ function Section({
         <p className="text-[13px] font-extrabold" style={{ color: titleColor }}>{title}</p>
       </div>
       {children}
-    </div>
-  );
-}
-
-
-function ConnectKrogerForPricing({
-  loading,
-  connected,
-  onConnect,
-}: {
-  loading: boolean;
-  connected: boolean;
-  onConnect: () => void | Promise<void>;
-}) {
-  const needsStore = connected && !loading;
-  return (
-    <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 text-center space-y-2">
-      <p className="text-[13px] font-extrabold text-[#1a1a1a]">
-        Connect Kroger to view live store pricing.
-      </p>
-      <p className="text-[12px] text-[#6b6b6b] leading-relaxed">
-        {needsStore
-          ? "Pick your home Kroger store in Settings to see live prices and a total for this list."
-          : "Pricing is only shown when it comes directly from your Kroger store."}
-      </p>
-      {needsStore ? (
-        <a
-          href="/dashboard/settings"
-          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold"
-        >
-          Choose home store
-        </a>
-      ) : (
-        <button
-          onClick={() => onConnect()}
-          disabled={loading}
-          className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#1F5A3D] text-white text-sm font-semibold disabled:opacity-60"
-        >
-          {loading ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Checking…
-            </span>
-          ) : (
-            "Connect Kroger"
-          )}
-        </button>
-      )}
     </div>
   );
 }
