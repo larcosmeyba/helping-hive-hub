@@ -1,9 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Leaf, Beef, Milk, Package, ShoppingBasket, Sparkles, Loader2 } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
-import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER } from "@/lib/pricingService";
+import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { getAppUrl } from "@/lib/appUrl";
+import { trackEvent } from "@/lib/analytics";
+import { phCapture } from "@/lib/posthog";
+
+function parseQty(q: string): { num: number; unit: string } {
+  if (!q) return { num: 1, unit: "each" };
+  const m = q.match(/([\d.]+)\s*(.*)/);
+  return { num: m ? parseFloat(m[1]) || 1 : 1, unit: m && m[2] ? m[2].trim() : "each" };
+}
 
 const CATEGORY_META: Record<string, { label: string; Icon: typeof Leaf; iconBg: string; iconColor: string; match: string[] }> = {
   produce: { label: "Produce", Icon: Leaf, iconBg: "#E6F4E6", iconColor: "#2E7D32", match: ["produce", "fruit", "vegetable"] },
@@ -27,11 +39,10 @@ function bucketFor(section: string): string {
 export default function GrocerySummaryPage() {
   const navigate = useNavigate();
   const { mealPlan, generating, generate } = useMealPlan();
-  
+  const { toast } = useToast();
+  const [instacartLoading, setInstacartLoading] = useState(false);
 
   const items = mealPlan?.groceryList ?? [];
-
-  const range = useMemo(() => estimateBasketRange(items), [items]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, GroceryItem[]>();
@@ -44,6 +55,59 @@ export default function GrocerySummaryPage() {
     const order = ["produce", "protein", "dairy", "pantry", "frozen", "beverages", "snacks", "other"];
     return order.filter((k) => map.has(k)).map((k) => ({ key: k, items: map.get(k)! }));
   }, [items]);
+
+  const allItems: GroceryItem[] = useMemo(() => {
+    const seen = new Map<string, GroceryItem>();
+    for (const i of items) {
+      const d = toDisplayProduct({ name: i.name, rawQuantity: String(i.quantity ?? "") });
+      if (!d) continue;
+      const key = dedupeKey(d.displayName);
+      if (seen.has(key)) continue;
+      seen.set(key, { ...i, name: d.displayName, quantity: d.displayQuantity });
+    }
+    return Array.from(seen.values());
+  }, [items]);
+
+  const handleShopWithInstacart = async () => {
+    if (allItems.length === 0) {
+      toast({ title: "Nothing to send yet", description: "Generate a meal plan first." });
+      return;
+    }
+    setInstacartLoading(true);
+    try {
+      const line_items = allItems.map((i) => {
+        const parsed = parseQty(i.quantity ?? "");
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (parsed.num > 0) item.quantity = parsed.num;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw error;
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
 
   if (!mealPlan || !items.length) {
     return (
@@ -75,26 +139,6 @@ export default function GrocerySummaryPage() {
         Your Grocery List
       </h1>
 
-      {/* Top stats card — single source of truth = mealPlan.totalEstimatedCost */}
-      <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: "hsl(43 100% 96%)" }}>
-        <p className="text-[11px] uppercase tracking-wide text-[#6b6b6b] font-semibold">
-          Estimated total
-        </p>
-        <p className="text-[24px] font-extrabold text-[#1a1a1a] leading-none mt-1">
-          ${(mealPlan.totalEstimatedCost ?? 0).toFixed(2)}
-        </p>
-        <p className="text-[11px] text-[#6b6b6b] mt-1.5 italic">
-          Estimate only — final price confirmed at checkout.
-        </p>
-        <p className="text-[12px] text-[#3a3a3a] mt-2">
-          {items.length} item{items.length === 1 ? "" : "s"}
-        </p>
-        <p className="text-[10px] text-[#3a3a3a]/70 mt-2 leading-relaxed">
-          {PRICING_DISCLAIMER}
-        </p>
-      </div>
-
-
       {/* Category tiles */}
       <div className="space-y-2 mb-5">
         {grouped.map(({ key, items: catItems }) => {
@@ -125,12 +169,17 @@ export default function GrocerySummaryPage() {
       </div>
 
       {/* Primary CTA */}
-      <button
-        onClick={() => navigate("/dashboard/grocery-list/review")}
-        className="w-full h-[52px] rounded-2xl bg-[#1F5A3D] text-white font-bold text-[15px] active:opacity-90 transition-opacity"
-      >
-        Review Grocery List
-      </button>
+      <div className="space-y-3">
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          fullWidth
+          label="Shop ingredients with Instacart"
+          onClick={handleShopWithInstacart}
+        />
+        <p className="text-[11px] text-center text-muted-foreground px-2">
+          We may earn a commission when you shop via Instacart. Estimate only — final price confirmed at checkout.
+        </p>
+      </div>
     </div>
   );
 }
