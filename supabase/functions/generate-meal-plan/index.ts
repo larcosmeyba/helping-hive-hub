@@ -1835,7 +1835,7 @@ Deno.serve(async (req) => {
     const estimatedTotalLow = finalInStoreTotals.in_store_subtotal;
     const estimatedTotalAvg = headlineTotal;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
-    const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
+    const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * servingsMultiplier) : 0;
 
     await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
       grocery_items_count: groceryList.length,
