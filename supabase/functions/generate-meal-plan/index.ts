@@ -1121,7 +1121,7 @@ Deno.serve(async (req) => {
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
-      (Number(r?.cost_per_serving) || FALLBACK_COST_PER_SERVING) * householdSize;
+      (Number(r?.cost_per_serving) || FALLBACK_COST_PER_SERVING) * servingsMultiplier;
     const projectedTotal = () =>
       resolvedDays.reduce((s, d) => s + d.meals.reduce((s2, m) => s2 + mealCost(m.recipe), 0), 0);
 
