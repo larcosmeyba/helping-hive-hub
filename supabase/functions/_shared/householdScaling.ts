@@ -75,11 +75,10 @@ const QTY_REGEX =
   /^([\d/.\s]+)\s*((?:cup|cups|tbsp|tsp|oz|lb|lbs|g|kg|ml|l|can|cans|cloves?|inch|inches|pkg|package)?)\s+(.*)$/i;
 
 const STAPLE_KEYWORDS = ["salt", "pepper", "olive oil", "water", "oil"];
-// Units where fractional amounts make sense (cooking volumes/weights).
-const FRACTIONAL_UNITS = new Set([
-  "cup", "cups", "tbsp", "tsp", "oz", "lb", "lbs",
-  "g", "kg", "ml", "l",
-]);
+// Volume units where fractional amounts make sense in cooking. Weight
+// units (oz/lb/g/kg) round UP to the next whole unit since that maps
+// cleanly to package sizes the user actually buys.
+const FRACTIONAL_UNITS = new Set(["cup", "cups", "tbsp", "tsp", "ml", "l"]);
 
 function parseLeadingNumber(s: string): number | null {
   const trimmed = s.trim();
