@@ -591,11 +591,6 @@ export default function ShopGroceriesPage() {
         {avgConfidence !== null && (
           <p className="text-[11px] text-muted-foreground pt-1">Price confidence: {(avgConfidence * 100).toFixed(0)}%</p>
         )}
-        {!kroger.ready && (
-          <Button size="sm" variant="outline" className="mt-2" onClick={() => kroger.connect("/dashboard/grocery/shop")}>
-            Connect Kroger for live pricing
-          </Button>
-        )}
       </div>
 
       {/* Fix My Budget */}
