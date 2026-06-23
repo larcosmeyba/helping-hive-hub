@@ -210,24 +210,61 @@ export default function GroceryReviewPage() {
     return allItems.some((it) => normalize(it.name) === norm);
   };
 
-  const persistManualItem = async (item: GroceryItem) => {
-    if (!user) return;
+  const [instacartLoading, setInstacartLoading] = useState(false);
+
+  const persistManualItem = async (_item: GroceryItem) => {
+    // No-op: manual add UI removed from this page. Items added via other flows
+    // are persisted elsewhere.
+  };
+
+  const handleShopWithInstacart = async () => {
+    const eligible = [...toAdjust, ...toBuy, ...manualItems].filter((it) =>
+      checked.has(it.name),
+    );
+    if (eligible.length === 0) {
+      toast({
+        title: "Nothing to send yet",
+        description: "Select at least one item to shop.",
+      });
+      return;
+    }
+    setInstacartLoading(true);
     try {
-      await addItemsToGroceryList("manual_add", [
-        {
-          item_name: item.name,
-          quantity: item.quantity,
-          unit: parseQty(item.quantity).unit,
-          category: item.section,
-          estimated_price: item.estimatedPrice || undefined,
-          instacart_search_term: item.name,
+      const line_items = eligible.map((i) => {
+        const parsed = parseQty(i.quantity);
+        const qty = qtyOverride[i.name] ?? parsed.num;
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (qty > 0) item.quantity = qty;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
         },
-      ]);
-    } catch (err) {
-      console.error("Failed to persist manual item:", err);
-      // Still show in UI; persistence failure is non-blocking for the review flow
+      });
+      if (error) throw error;
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
     }
   };
+
 
   const addFromSearch = async () => {
     const name = searchQuery.trim();
