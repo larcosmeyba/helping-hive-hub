@@ -1339,8 +1339,13 @@ Deno.serve(async (req) => {
       for (const day of days) {
         for (const meal of day.meals) {
           const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
-          for (const raw of ings) {
-            if (typeof raw !== "string") continue;
+          for (const rawOriginal of ings) {
+            if (typeof rawOriginal !== "string") continue;
+            // algo_v2: scale qty by cohort-weighted servings before parsing,
+            // so the grocery line + Kroger basket reflect the household.
+            const raw = engine === "algo_v2"
+              ? scaleIngredientQuantity(rawOriginal, servingsMultiplier)
+              : rawOriginal;
             const parsed = parseIngredientString(raw);
             if (!parsed.normalized) continue;
             const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
