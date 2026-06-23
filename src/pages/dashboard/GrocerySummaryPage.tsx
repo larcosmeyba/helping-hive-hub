@@ -145,31 +145,57 @@ export default function GrocerySummaryPage() {
         </div>
       )}
 
-      {/* Category tiles */}
-      <div className="space-y-2 mb-5">
+      {/* Category sections with items */}
+      <div className="space-y-3 mb-5">
         {grouped.map(({ key, items: catItems }) => {
           const meta = CATEGORY_META[key];
           const Icon = meta.Icon;
           return (
-            <button
-              key={key}
-              onClick={() => navigate("/dashboard/grocery-list/review", { state: { section: meta.label } })}
-              className="w-full bg-card border border-border rounded-2xl px-4 py-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: meta.iconBg }}
+            <div key={key} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <button
+                onClick={() => navigate("/dashboard/grocery-list/review", { state: { section: meta.label } })}
+                className="w-full px-4 py-3 flex items-center gap-3 active:bg-muted/40 transition-colors"
               >
-                <Icon className="w-5 h-5" style={{ color: meta.iconColor }} />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-[15px] font-bold text-[#1a1a1a] leading-tight">{meta.label}</p>
-                <p className="text-[12px] text-[#6b6b6b] mt-0.5">
-                  {catItems.length} item{catItems.length === 1 ? "" : "s"}
-                </p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#9a9a9a] shrink-0" />
-            </button>
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: meta.iconBg }}
+                >
+                  <Icon className="w-5 h-5" style={{ color: meta.iconColor }} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[15px] font-bold text-[#1a1a1a] leading-tight">{meta.label}</p>
+                  <p className="text-[12px] text-[#6b6b6b] mt-0.5">
+                    {catItems.length} item{catItems.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#9a9a9a] shrink-0" />
+              </button>
+              <ul className="border-t border-border divide-y divide-border">
+                {catItems.map((it, idx) => {
+                  const d = toDisplayProduct({ name: it.name, rawQuantity: String(it.quantity ?? "") });
+                  const name = d?.displayName ?? it.name;
+                  const qty = d?.displayQuantity ?? String(it.quantity ?? "");
+                  const priceRaw =
+                    (it as any).estimatedPrice ?? (it as any).estimated_price ?? null;
+                  const price = typeof priceRaw === "number" ? priceRaw : null;
+                  return (
+                    <li key={`${key}-${idx}`} className="px-4 py-2.5 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-semibold text-[#1a1a1a] leading-tight truncate">{name}</p>
+                        {qty && (
+                          <p className="text-[12px] text-[#6b6b6b] mt-0.5">{qty}</p>
+                        )}
+                      </div>
+                      {price !== null && (
+                        <span className="text-[13px] font-semibold text-[#1a1a1a] tabular-nums shrink-0">
+                          ${price.toFixed(2)}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           );
         })}
       </div>
