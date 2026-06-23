@@ -373,7 +373,6 @@ export default function GroceryReviewPage() {
       <h1 className="text-center text-[20px] font-extrabold text-[#1a1a1a] mb-4">
         Review Grocery List
       </h1>
-      <KrogerConnectReminder />
 
 
       {/* Already Have */}
