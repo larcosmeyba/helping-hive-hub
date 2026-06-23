@@ -453,6 +453,22 @@ Deno.serve(async (req) => {
     });
 
     const householdSize = overrides.household_size ?? profile.household_size ?? 2;
+    // Cohort-weighted "effective servings" — replaces the crude
+    // ceil(household/2) heuristic when algo_v2 is selected. On hybrid_v1
+    // we still compute it (so downstream code can read it) but keep the
+    // legacy multipliers untouched.
+    const householdServings = computeHouseholdServings({
+      household_size: householdSize,
+      children_under_5: (profile as any).children_under_5,
+      children_5_to_12: (profile as any).children_5_to_12,
+      children_ages: (profile as any).children_ages,
+      teenagers: (profile as any).teenagers,
+      seniors_65_plus: (profile as any).seniors_65_plus,
+    });
+    // The multiplier we apply to ingredients / macros / cost. algo_v2
+    // uses the cohort weight; hybrid_v1 keeps the historical householdSize
+    // so existing behavior is byte-identical.
+    const servingsMultiplier = engine === "algo_v2" ? householdServings : householdSize;
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
     const allergies: string[] = (profile.allergies ?? []) as string[];
