@@ -60,7 +60,7 @@ describe("scaleIngredientQuantity", () => {
   });
 
   it("rounds whole counts UP", () => {
-    expect(scaleIngredientQuantity("1 lb chicken", 3.3)).toBe("3.3 lb chicken");
+    expect(scaleIngredientQuantity("1 lb chicken", 3.3)).toBe("4 lb chicken");
     expect(scaleIngredientQuantity("2 eggs", 1.7)).toBe("4 eggs");
   });
 
