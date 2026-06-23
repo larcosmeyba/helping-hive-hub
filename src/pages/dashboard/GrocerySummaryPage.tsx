@@ -169,12 +169,17 @@ export default function GrocerySummaryPage() {
       </div>
 
       {/* Primary CTA */}
-      <button
-        onClick={() => navigate("/dashboard/grocery-list/review")}
-        className="w-full h-[52px] rounded-2xl bg-[#1F5A3D] text-white font-bold text-[15px] active:opacity-90 transition-opacity"
-      >
-        Review Grocery List
-      </button>
+      <div className="space-y-3">
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          fullWidth
+          label="Shop ingredients with Instacart"
+          onClick={handleShopWithInstacart}
+        />
+        <p className="text-[11px] text-center text-muted-foreground px-2">
+          We may earn a commission when you shop via Instacart. Estimate only — final price confirmed at checkout.
+        </p>
+      </div>
     </div>
   );
 }
