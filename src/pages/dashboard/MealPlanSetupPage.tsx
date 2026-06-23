@@ -164,7 +164,7 @@ export default function MealPlanSetupPage() {
 
 
   return (
-    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-[hsl(43_100%_96%)]">
+    <div className="w-full max-w-3xl mx-auto -mx-4 px-4 pb-6 min-h-full bg-white">
       <div className="flex items-center gap-3 pt-2 pb-3">
         <button onClick={() => navigate(-1)} aria-label="Back" className="p-2 -ml-2">
           <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
@@ -317,12 +317,12 @@ function SheetShell({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[88vh] overflow-y-auto bg-[hsl(43_100%_96%)]">
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[88vh] overflow-y-auto bg-white">
         <SheetHeader>
           <SheetTitle className="text-left text-[18px] font-extrabold text-[#1a1a1a]">{title}</SheetTitle>
         </SheetHeader>
         <div className="py-4">{children}</div>
-        <SheetFooter className="sticky bottom-0 bg-[hsl(43_100%_96%)] pt-3">
+        <SheetFooter className="sticky bottom-0 bg-white pt-3">
           {footer}
         </SheetFooter>
       </SheetContent>
