@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { trackEvent } from "@/lib/analytics";
 
 export interface KrogerConnectionState {
   loading: boolean;
   connected: boolean;
   hasHomeStore: boolean;
-  /** True only when both a Kroger account is linked AND a home store is saved. */
   ready: boolean;
   locationId?: string;
   storeName?: string;
@@ -17,71 +14,55 @@ export interface KrogerConnectionState {
 }
 
 /**
- * Centralized Kroger connection status used by user-facing pricing UI.
- * Pricing should only ever be displayed when `ready === true`.
+ * Kroger is now a HIDDEN pricing backend. Users never connect, see, or pick
+ * a Kroger store. This hook resolves a pricing locationId automatically:
+ *   1. profile.kroger_location_id when present (legacy)
+ *   2. nearest Kroger to profile.zip_code (via kroger-locations)
+ *
+ * `ready` is true once we have any locationId (or while we attempt to
+ * resolve one). `connect()` is a no-op so existing callers compile.
  */
 export function useKrogerConnection(): KrogerConnectionState {
-  const { user, profile } = useAuth();
-  const { toast } = useToast();
-  const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
+  const { profile } = useAuth();
+  const savedLocation = (profile as any)?.kroger_location_id as string | undefined;
+  const zip = (profile as any)?.zip_code as string | undefined;
 
-  const locationId = (profile as any)?.kroger_location_id as string | undefined;
-  const storeName = (profile as any)?.kroger_store_name as string | undefined;
+  const [resolved, setResolved] = useState<string | undefined>(savedLocation);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setConnected(false);
-      setLoading(false);
+    if (savedLocation) {
+      setResolved(savedLocation);
       return;
     }
+    if (!zip) return;
     let cancelled = false;
     setLoading(true);
-    supabase
-      .from("kroger_user_tokens")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle()
+    supabase.functions
+      .invoke("kroger-locations", { body: { zip, radiusInMiles: 25, limit: 5 } })
       .then(({ data }) => {
         if (cancelled) return;
-        setConnected(!!data);
-        setLoading(false);
+        const first = (data?.stores ?? [])[0];
+        if (first?.locationId) setResolved(first.locationId);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [user?.id, tick]);
+  }, [savedLocation, zip]);
 
-  const connect = async (redirectAfter?: string) => {
-    void trackEvent("kroger_connect_started", { source: "hook" });
-    try {
-      const { data, error } = await supabase.functions.invoke("kroger-oauth-start", {
-        body: {
-          redirectAfter:
-            redirectAfter ?? window.location.pathname + window.location.search,
-        },
-      });
-      if (error || !data?.authorizeUrl) throw error ?? new Error("No authorize URL");
-      window.location.href = data.authorizeUrl;
-    } catch (e: any) {
-      void trackEvent("kroger_connect_failed", { source: "hook", reason: e?.message ?? String(e) });
-      toast({
-        title: "Could not start Kroger sign-in",
-        description: e?.message ?? String(e),
-        variant: "destructive",
-      });
-    }
-  };
-
+  const locationId = resolved;
   return {
     loading,
-    connected,
+    connected: true,
     hasHomeStore: !!locationId,
-    ready: connected && !!locationId,
+    ready: !!locationId,
     locationId,
-    storeName,
-    connect,
-    refresh: () => setTick((t) => t + 1),
+    storeName: undefined,
+    connect: async () => {},
+    refresh: () => {},
   };
 }

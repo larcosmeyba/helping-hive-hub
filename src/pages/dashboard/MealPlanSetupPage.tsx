@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, DollarSign, Users, Store, Leaf, Package,
+  ArrowLeft, ChevronRight, DollarSign, Users, Leaf, Package,
   ChefHat, Snowflake, AlertCircle, Plus, Check,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { KrogerStorePicker } from "@/components/kroger/KrogerStorePicker";
-import { KrogerRequiredDialog } from "@/components/kroger/KrogerRequiredDialog";
-import { useKrogerConnection } from "@/hooks/useKrogerConnection";
 
 const DIET_OPTIONS = [
   "Vegetarian", "Vegan", "Gluten-free", "Dairy-free",
@@ -126,8 +123,6 @@ export default function MealPlanSetupPage() {
 
   const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const [saving, setSaving] = useState(false);
-  const [krogerPromptOpen, setKrogerPromptOpen] = useState(false);
-  const { ready: krogerReady, loading: krogerLoading } = useKrogerConnection();
 
   const saveProfile = async (patch: Record<string, unknown>, label = "Updated") => {
     if (!user) return;
@@ -158,20 +153,13 @@ export default function MealPlanSetupPage() {
   };
 
   const handleGenerate = async () => {
-    // Confirm before throwing away an existing plan — generation is expensive
-    // (OpenAI + Kroger pricing) and limited to 3 regenerations per hour.
     if (mealPlan) {
       const ok = window.confirm(
         "You already have a meal plan and grocery list for this week.\n\nRegenerate and replace them?\n\nTo control costs, plan regenerations are limited to 3 per hour.",
       );
       if (!ok) return;
     }
-    // Strongly encourage Kroger connection for accurate pricing before generating.
-    if (!krogerLoading && !krogerReady) {
-      setKrogerPromptOpen(true);
-      return;
-    }
-    await runGenerate("kroger");
+    await runGenerate();
   };
 
 
@@ -197,11 +185,6 @@ export default function MealPlanSetupPage() {
           icon={<Users className="w-5 h-5 text-white" />} iconBg="#7A6BD8"
           label="Family Size" value={`${household} ${household === 1 ? "Person" : "People"}`}
           onClick={() => setOpenSheet("family")}
-        />
-        <SettingRow
-          icon={<Store className="w-5 h-5 text-white" />} iconBg="#1F5A3D"
-          label="Kroger Store" value={krogerStoreName || "Not selected"}
-          onClick={() => setOpenSheet("store")}
         />
         <SettingRow
           icon={<Leaf className="w-5 h-5 text-white" />} iconBg="#3FAE5A"
@@ -299,23 +282,6 @@ export default function MealPlanSetupPage() {
         open={openSheet === "cooking"} onOpenChange={(o) => !o && setOpenSheet(null)}
         value={cooking} setValue={setCooking}
         saving={saving} onSave={() => saveProfile({ cooking_confidence: cooking }, "Cooking level updated")}
-      />
-      <KrogerStoreSheet
-        open={openSheet === "store"} onOpenChange={(o) => !o && setOpenSheet(null)}
-        locationId={krogerLocationId} name={krogerStoreName}
-        onSelect={(s) => { setKrogerLocationId(s.locationId); setKrogerStoreName(s.name); }}
-        saving={saving}
-        onSave={() => saveProfile({
-          kroger_location_id: krogerLocationId,
-          kroger_store_name: krogerStoreName,
-        }, "Store updated")}
-      />
-
-      <KrogerRequiredDialog
-        open={krogerPromptOpen}
-        onOpenChange={setKrogerPromptOpen}
-        onContinueWithout={() => { void runGenerate("estimated"); }}
-        redirectAfter="/dashboard/meal-plan/setup"
       />
     </div>
   );
@@ -441,31 +407,6 @@ function FamilySheet({
   );
 }
 
-function KrogerStoreSheet({
-  open, onOpenChange, locationId, name, onSelect, saving, onSave,
-}: {
-  open: boolean; onOpenChange: (o: boolean) => void;
-  locationId: string | null; name: string;
-  onSelect: (s: { locationId: string; name: string }) => void;
-  saving?: boolean; onSave: () => void;
-}) {
-  return (
-    <SheetShell open={open} onOpenChange={onOpenChange} title="Kroger Store"
-      footer={<SaveButton saving={saving} onClick={onSave} disabled={!locationId} />}>
-      <div className="space-y-3">
-        {name && (
-          <p className="text-[12px] text-[#6b6b6b]">
-            Current: <span className="font-semibold text-[#1a1a1a]">{name}</span>
-          </p>
-        )}
-        <KrogerStorePicker
-          selectedLocationId={locationId}
-          onSelect={(s) => onSelect({ locationId: s.locationId, name: s.name })}
-        />
-      </div>
-    </SheetShell>
-  );
-}
 
 function ChipSheet({
   open, onOpenChange, title, options, selected, setSelected, saving, onSave,

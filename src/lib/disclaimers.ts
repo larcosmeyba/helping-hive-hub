@@ -2,12 +2,12 @@
 // Update copy here once — every surface picks it up.
 
 export const GROCERY_PRICING_DISCLAIMER =
-  "Estimated in-store total. Prices vary by store, promotions, and availability — confirm final pricing at the store. Connect Kroger for live prices.";
+  "Help The Hive estimates grocery totals from regional pricing and USDA data so you can plan within your budget. Final price is confirmed at checkout.";
 
 export const STORE_AVAILABILITY_NOTE =
-  "Store availability varies by ZIP code. Connect Kroger to see live product matches and estimates at your home store.";
+  "Estimates may vary by ZIP code, store, promotions, and availability. Final price is confirmed at checkout.";
 
 // Legacy exports kept so previously-importing code continues to compile.
 export const INSTACART_PRICING_DISCLAIMER = GROCERY_PRICING_DISCLAIMER;
 export const INSTACART_PARTNERSHIP_EXPLAINER =
-  "Help The Hive estimates grocery totals using Kroger product data (when connected) plus our internal regional pricing and USDA nutrition data, so you can plan your week with confidence.";
+  "Help The Hive estimates grocery totals from regional pricing and USDA data so you can plan within your budget.";

@@ -13,7 +13,7 @@ const pills = [
 
 const trustItems = [
   "Free To Use",
-  "Shop at Kroger",
+  "Budget Friendly",
   "AI-Powered",
   "Built For Real Families",
 ];

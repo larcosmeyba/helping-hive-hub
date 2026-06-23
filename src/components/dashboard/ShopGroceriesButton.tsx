@@ -5,7 +5,7 @@ import { GroceryCTAButton, type GroceryCTAVariant } from "@/components/grocery/G
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Copy, Download, ExternalLink, ChevronDown } from "lucide-react";
+import { Copy, Download } from "lucide-react";
 
 /**
  * Grocery-list action button. Originally sent the list to Instacart; now
@@ -70,7 +70,7 @@ export function ShopGroceriesButton({
   lineItems,
   className,
   variant = "dark",
-  label = "Shop at Kroger",
+  label = "Grocery List",
   fullWidth = false,
   showExternalIcon = false,
 }: Props) {
@@ -99,16 +99,6 @@ export function ShopGroceriesButton({
     void trackEvent("grocery_list_exported", { itemCount: lineItems.length, title });
   };
 
-  const handleShopKroger = () => {
-    if (empty) return;
-    const q = encodeURIComponent(lineItems.slice(0, 8).map((i) => i.name).join(" "));
-    const url = `https://www.kroger.com/search?query=${q}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-    void trackEvent("shop_at_kroger_clicked", { itemCount: lineItems.length, title });
-    // Phase A (Part N): align with new spec event name; emit both for now.
-    void trackEvent("shop_with_kroger_clicked", { itemCount: lineItems.length, title });
-  };
-
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -120,7 +110,6 @@ export function ShopGroceriesButton({
             fullWidth={fullWidth}
             showExternalIcon={showExternalIcon}
             className={className}
-            // append a tiny chevron via a sibling span below
           />
         </span>
       </DropdownMenuTrigger>
@@ -130,9 +119,6 @@ export function ShopGroceriesButton({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Grocery List
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleShopKroger}>
-          <ExternalLink className="h-4 w-4 mr-2" /> Shop at Kroger
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
