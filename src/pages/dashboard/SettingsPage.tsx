@@ -22,8 +22,6 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "@/contexts/LocationContext";
 import { useCameraPermission } from "@/hooks/usePermissions";
 import { PrivacyDataControls } from "@/components/dashboard/PrivacyDataControls";
-import { KrogerConnectionCard } from "@/components/kroger/KrogerConnectionCard";
-import { KrogerHomeStoreCard } from "@/components/kroger/KrogerHomeStoreCard";
 import { Switch } from "@/components/ui/switch";
 
 
