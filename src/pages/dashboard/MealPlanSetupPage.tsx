@@ -322,7 +322,7 @@ function SheetShell({
           <SheetTitle className="text-left text-[18px] font-extrabold text-[#1a1a1a]">{title}</SheetTitle>
         </SheetHeader>
         <div className="py-4">{children}</div>
-        <SheetFooter className="sticky bottom-0 bg-[hsl(43_100%_96%)] pt-3">
+        <SheetFooter className="sticky bottom-0 bg-white pt-3">
           {footer}
         </SheetFooter>
       </SheetContent>
