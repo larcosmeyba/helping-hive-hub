@@ -33,11 +33,10 @@ function bucketFor(section: string): string {
 export default function GrocerySummaryPage() {
   const navigate = useNavigate();
   const { mealPlan, generating, generate } = useMealPlan();
-  
+  const { toast } = useToast();
+  const [instacartLoading, setInstacartLoading] = useState(false);
 
   const items = mealPlan?.groceryList ?? [];
-
-  const range = useMemo(() => estimateBasketRange(items), [items]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, GroceryItem[]>();
