@@ -411,24 +411,50 @@ export async function priceBasketWithKroger(
   };
 }
 
-/** Returns the user's Kroger location id when their account is connected. */
+/**
+ * Resolve a Kroger pricing location for a user.
+ *
+ * Order of preference:
+ *   1. profile.kroger_location_id (legacy — user previously picked a store)
+ *   2. Nearest Kroger to profile.zip_code (resolved via app-token /locations call)
+ *
+ * Kroger is a HIDDEN pricing backend now: pricing uses the app-level token
+ * (client_credentials) and only needs a locationId. No user OAuth required.
+ * `connected` is always reported true so existing callers fall through.
+ */
 export async function getUserKrogerLocation(
   admin: any,
   userId: string,
 ): Promise<{ locationId: string | null; storeName: string | null; connected: boolean }> {
-  const { data: token } = await admin
-    .from("kroger_user_tokens")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
   const { data: profile } = await admin
     .from("profiles")
-    .select("kroger_location_id, kroger_store_name")
+    .select("kroger_location_id, kroger_store_name, zip_code")
     .eq("user_id", userId)
     .maybeSingle();
-  return {
-    locationId: (profile?.kroger_location_id as string | null) ?? null,
-    storeName: (profile?.kroger_store_name as string | null) ?? null,
-    connected: !!token,
-  };
+
+  let locationId = (profile?.kroger_location_id as string | null) ?? null;
+  let storeName = (profile?.kroger_store_name as string | null) ?? null;
+
+  if (!locationId && profile?.zip_code) {
+    try {
+      const data = await krogerGet<{ data: Array<{ locationId: string; name: string; chain?: string }> }>(
+        "/locations",
+        {
+          "filter.zipCode.near": String(profile.zip_code),
+          "filter.radiusInMiles": 25,
+          "filter.limit": 10,
+        },
+      );
+      const first = (data.data ?? [])[0];
+      if (first) {
+        locationId = first.locationId;
+        storeName = first.name;
+      }
+    } catch (e) {
+      console.warn("[krogerPricing] ZIP location lookup failed", (e as Error).message);
+    }
+  }
+
+  return { locationId, storeName, connected: true };
 }
+
