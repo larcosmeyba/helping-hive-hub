@@ -80,24 +80,7 @@ export default function GrocerySummaryPage() {
         Your Grocery List
       </h1>
 
-      {/* Top stats card — single source of truth = mealPlan.totalEstimatedCost */}
-      <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: "hsl(43 100% 96%)" }}>
-        <p className="text-[11px] uppercase tracking-wide text-[#6b6b6b] font-semibold">
-          Estimated total
-        </p>
-        <p className="text-[24px] font-extrabold text-[#1a1a1a] leading-none mt-1">
-          ${(mealPlan.totalEstimatedCost ?? 0).toFixed(2)}
-        </p>
-        <p className="text-[11px] text-[#6b6b6b] mt-1.5 italic">
-          Estimate only — final price confirmed at checkout.
-        </p>
-        <p className="text-[12px] text-[#3a3a3a] mt-2">
-          {items.length} item{items.length === 1 ? "" : "s"}
-        </p>
-        <p className="text-[10px] text-[#3a3a3a]/70 mt-2 leading-relaxed">
-          {PRICING_DISCLAIMER}
-        </p>
-      </div>
+      {/* Category tiles */}
 
 
       {/* Category tiles */}
