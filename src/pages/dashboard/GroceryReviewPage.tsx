@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Minus, Plus } from "lucide-react";
+import { Check } from "lucide-react";
 import { useMealPlan } from "@/contexts/MealPlanContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { useToast } from "@/hooks/use-toast";
-import { addItemsToGroceryList } from "@/lib/groceryList";
 import type { GroceryItem } from "@/types/mealPlan";
-import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
+import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
-import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { PricingDisclaimer } from "@/components/PricingDisclaimer";
+import { getAppUrl } from "@/lib/appUrl";
+import { trackEvent } from "@/lib/analytics";
+import { phCapture } from "@/lib/posthog";
+
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
