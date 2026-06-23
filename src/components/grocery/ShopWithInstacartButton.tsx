@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /**
  * "Shop with Instacart" CTA — built to match Instacart Developer Platform
  * brand guidelines (approved wording + carrot mark, minimum 46px tall,
- * black-on-white with the orange carrot). Do NOT restyle without re-review.
+ * dark green #003D29 background). Do NOT restyle without re-review.
  *
  * The CTA is purely a handoff — pricing is the Kroger estimate shown above;
  * final price is confirmed inside the Instacart landing page at checkout.
@@ -18,14 +18,16 @@ interface Props
 }
 
 export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props>(
-  ({ loading = false, fullWidth = true, label = "Shop with Instacart", className, disabled, style, ...rest }, ref) => {
+  ({ loading = false, fullWidth = true, label = "Shop ingredients", className, disabled, style, ...rest }, ref) => {
     const base: React.CSSProperties = {
       height: 46,
       borderRadius: 9999,
-      paddingLeft: 22,
-      paddingRight: 22,
-      backgroundColor: "#000000",
-      color: "#FFFFFF",
+      paddingLeft: 18,
+      paddingRight: 18,
+      paddingTop: 16,
+      paddingBottom: 16,
+      backgroundColor: "#003D29",
+      color: "#FAF1E5",
       border: "none",
       fontFamily:
         '"SF Pro Text", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -55,12 +57,18 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
         {loading ? (
           <Loader2 className="animate-spin" size={18} />
         ) : (
-          // Instacart carrot mark (orange). Inline SVG so we don't ship a
+          // Instacart full-color carrot mark (orange + green). Inline SVG so we don't ship a
           // raster asset; shape matches Instacart's official carrot logo.
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width={22} height={22} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
+            {/* Carrot body — orange */}
             <path
               d="M12 2c.7 0 1.4.3 1.9.8.5.5.8 1.2.8 1.9 0 .4-.1.8-.2 1.1 1.5.4 2.7 1.6 3.1 3.1.3-.1.7-.2 1.1-.2.7 0 1.4.3 1.9.8.5.5.8 1.2.8 1.9 0 .7-.3 1.4-.8 1.9l-9.1 9.1c-.6.6-1.4 1-2.3 1.1L4 22.7c-.4 0-.7-.3-.7-.7l.2-5.2c.1-.9.4-1.7 1.1-2.3l9.1-9.1c.5-.5 1.2-.8 1.9-.8.4 0 .8.1 1.1.2-.4-1.5-1.6-2.7-3.1-3.1.1-.3.2-.7.2-1.1 0-.7-.3-1.4-.8-1.9C13.4 2.3 12.7 2 12 2z"
               fill="#FF7009"
+            />
+            {/* Carrot leaf — green */}
+            <path
+              d="M12 2c-.3 0-.6.1-.8.2.2-.1.5-.2.8-.2zM10.5 3.5c-.2.2-.3.5-.3.8 0-.3.1-.6.3-.8z"
+              fill="#0AAD0A"
             />
           </svg>
         )}
