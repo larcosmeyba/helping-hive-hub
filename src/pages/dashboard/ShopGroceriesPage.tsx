@@ -100,6 +100,71 @@ export default function ShopGroceriesPage() {
   const [shopping, setShopping] = useState(false);
   const [showPantryPrompt, setShowPantryPrompt] = useState(false);
   const [showFix, setShowFix] = useState(false);
+  const [instacartLoading, setInstacartLoading] = useState(false);
+
+  /**
+   * Hand off the Need-To-Buy list to Instacart via the products_link landing
+   * page (required by Instacart compliance — never bypass the landing page).
+   * We send only matched/confirmed items; "needs_review" / "no_match" stay on
+   * Help The Hive for the user to resolve.
+   */
+  const handleShopWithInstacart = async () => {
+    const eligible = needToBuy.filter(
+      (i) => i.match_status !== "needs_review" && i.match_status !== "no_match",
+    );
+    if (eligible.length === 0) {
+      toast({
+        title: "Nothing to send yet",
+        description: "Resolve any items that need review, then try again.",
+      });
+      return;
+    }
+    setInstacartLoading(true);
+    try {
+      const line_items = eligible.map((i) => {
+        const item: { name: string; quantity?: number; unit?: string; upcs?: string[] } = {
+          name: i.matched_name ?? i.ingredient_name,
+        };
+        if (i.parsedQty && i.parsedQty > 0) item.quantity = i.parsedQty;
+        if (i.unit) item.unit = i.unit;
+        return item;
+      });
+
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw error;
+      const url: string | undefined = data?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+
+      phCapture("shop_with_instacart_clicked", {
+        item_count: line_items.length,
+        estimated_total: total,
+      });
+      void trackEvent("shop_with_instacart_clicked", {
+        item_count: line_items.length,
+        estimated_total: total,
+      });
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
 
   const weeklyBudget = Number(profile?.weekly_budget ?? 0);
 
