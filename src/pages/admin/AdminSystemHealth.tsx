@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, CheckCircle2, Mail, RefreshCw, ShoppingBag } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Mail, RefreshCw, ShoppingBag, PlayCircle, XCircle, Loader2, ShoppingCart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 type Range = "24h" | "7d" | "30d";
