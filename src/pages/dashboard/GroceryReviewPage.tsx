@@ -10,9 +10,6 @@ import type { GroceryItem } from "@/types/mealPlan";
 import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { KrogerBudgetCard } from "@/components/kroger/KrogerBudgetCard";
-import { KrogerConnectReminder } from "@/components/kroger/KrogerConnectReminder";
-import { useKrogerConnection } from "@/hooks/useKrogerConnection";
-import { Loader2 } from "lucide-react";
 
 function normalize(name: string) {
   return name.toLowerCase().trim().replace(/s$/, "");
