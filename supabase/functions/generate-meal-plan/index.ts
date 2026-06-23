@@ -7,6 +7,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { enforceRateLimit } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
 import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
+import { computeHouseholdServings, scaleIngredientQuantity } from "../_shared/householdScaling.ts";
 
 import { captureEdgeError } from "../_shared/sentry.ts";
 interface Overrides {
@@ -452,6 +453,22 @@ Deno.serve(async (req) => {
     });
 
     const householdSize = overrides.household_size ?? profile.household_size ?? 2;
+    // Cohort-weighted "effective servings" — replaces the crude
+    // ceil(household/2) heuristic when algo_v2 is selected. On hybrid_v1
+    // we still compute it (so downstream code can read it) but keep the
+    // legacy multipliers untouched.
+    const householdServings = computeHouseholdServings({
+      household_size: householdSize,
+      children_under_5: (profile as any).children_under_5,
+      children_5_to_12: (profile as any).children_5_to_12,
+      children_ages: (profile as any).children_ages,
+      teenagers: (profile as any).teenagers,
+      seniors_65_plus: (profile as any).seniors_65_plus,
+    });
+    // The multiplier we apply to ingredients / macros / cost. algo_v2
+    // uses the cohort weight; hybrid_v1 keeps the historical householdSize
+    // so existing behavior is byte-identical.
+    const servingsMultiplier = engine === "algo_v2" ? householdServings : householdSize;
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
     const allergies: string[] = (profile.allergies ?? []) as string[];
@@ -1104,7 +1121,7 @@ Deno.serve(async (req) => {
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
-      (Number(r?.cost_per_serving) || FALLBACK_COST_PER_SERVING) * householdSize;
+      (Number(r?.cost_per_serving) || FALLBACK_COST_PER_SERVING) * servingsMultiplier;
     const projectedTotal = () =>
       resolvedDays.reduce((s, d) => s + d.meals.reduce((s2, m) => s2 + mealCost(m.recipe), 0), 0);
 
@@ -1322,8 +1339,13 @@ Deno.serve(async (req) => {
       for (const day of days) {
         for (const meal of day.meals) {
           const ings = Array.isArray(meal.recipe.ingredients) ? meal.recipe.ingredients : [];
-          for (const raw of ings) {
-            if (typeof raw !== "string") continue;
+          for (const rawOriginal of ings) {
+            if (typeof rawOriginal !== "string") continue;
+            // algo_v2: scale qty by cohort-weighted servings before parsing,
+            // so the grocery line + Kroger basket reflect the household.
+            const raw = engine === "algo_v2"
+              ? scaleIngredientQuantity(rawOriginal, servingsMultiplier)
+              : rawOriginal;
             const parsed = parseIngredientString(raw);
             if (!parsed.normalized) continue;
             const isStaple = STAPLE_KEYWORDS.some((s) => parsed.normalized.includes(s));
@@ -1813,7 +1835,7 @@ Deno.serve(async (req) => {
     const estimatedTotalLow = finalInStoreTotals.in_store_subtotal;
     const estimatedTotalAvg = headlineTotal;
     const totalMeals = resolvedDays.reduce((s, d) => s + d.meals.length, 0);
-    const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * householdSize) : 0;
+    const estimatedCostPerServing = totalMeals > 0 ? estimatedTotalCost / (totalMeals * servingsMultiplier) : 0;
 
     await advance("saving", "grocery_list_items generated", "Pricing your grocery list", {
       grocery_items_count: groceryList.length,
@@ -1829,7 +1851,11 @@ Deno.serve(async (req) => {
 
     // ===== Persist meal_plan =====
     const weekStart = new Date().toISOString().slice(0, 10);
-    const normalized = normalizePlanForClient(resolvedDays, groceryList, householdSize);
+    const normalized = normalizePlanForClient(resolvedDays, groceryList, servingsMultiplier);
+    // Expose cohort-aware servings so the client/data layer can render per-serving
+    // AND household totals consistently. Both engines populate this.
+    (normalized as any).householdServings = householdServings;
+    (normalized as any).servingsMultiplier = servingsMultiplier;
     // Expose budget context + in-store breakdown to the client.
     (normalized as any).weeklyBudget = weeklyBudget;
     (normalized as any).budgetRemaining = Math.max(0, Math.round((weeklyBudget - estimatedTotalCost) * 100) / 100);
@@ -1935,7 +1961,7 @@ Deno.serve(async (req) => {
 
       for (const meal of day.meals) {
         const r = meal.recipe;
-        const costForMeal = r.cost_per_serving ? Number(r.cost_per_serving) * householdSize : null;
+        const costForMeal = r.cost_per_serving ? Number(r.cost_per_serving) * servingsMultiplier : null;
         const { data: mealRow, error: mealErr } = await admin.from("meal_plan_meals").insert({
           meal_plan_id: planId,
           day_id: dayRow.id,
@@ -2144,25 +2170,44 @@ function normalizePlanForClient(
   groceryList: any[],
   householdSize: number,
 ) {
+  const servings = householdSize; // already cohort-weighted when algo_v2 supplies it
   const weeklyPlan = resolvedDays.map((d) => ({
     day: d.day_name,
-    meals: d.meals.map((m) => ({
-      type: m.meal_type,
-      name: m.recipe.title,
-      recipe_id: m.recipe.id,
-      image_url: m.recipe.image_url,
-      imageUrl: m.recipe.image_url,
-      calories: Number(m.recipe.calories) || 0,
-      protein: Number(m.recipe.protein_g) || 0,
-      carbs: Number(m.recipe.carbs_g) || 0,
-      fats: Number(m.recipe.fat_g) || 0,
-      nutritionVerified: m.recipe.nutrition_source !== "ai_estimated" && (m.recipe.source ?? "library") !== "ai_generated",
-      estimatedCost: m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) * householdSize : 0,
-      costPerServing: m.recipe.cost_per_serving,
-      cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
-      ingredients: (Array.isArray(m.recipe.ingredients) ? m.recipe.ingredients : []).map(ingredientLine),
-      instructions: Array.isArray(m.recipe.instructions) ? m.recipe.instructions : [],
-    })),
+    meals: d.meals.map((m) => {
+      const caloriesPer = Number(m.recipe.calories) || 0;
+      const proteinPer = Number(m.recipe.protein_g) || 0;
+      const carbsPer = Number(m.recipe.carbs_g) || 0;
+      const fatsPer = Number(m.recipe.fat_g ?? m.recipe.fats_g) || 0;
+      const cps = m.recipe.cost_per_serving ? Number(m.recipe.cost_per_serving) : 0;
+      return {
+        type: m.meal_type,
+        name: m.recipe.title,
+        recipe_id: m.recipe.id,
+        image_url: m.recipe.image_url,
+        imageUrl: m.recipe.image_url,
+        // Per-serving (legacy field names preserved for the existing UI).
+        calories: caloriesPer,
+        protein: proteinPer,
+        carbs: carbsPer,
+        fats: fatsPer,
+        // Cohort-aware additions (P1 data; P2 will surface in UI).
+        servings,
+        perServing: { calories: caloriesPer, protein: proteinPer, carbs: carbsPer, fats: fatsPer, costPerServing: cps },
+        householdTotals: {
+          calories: Math.round(caloriesPer * servings),
+          protein: Math.round(proteinPer * servings * 10) / 10,
+          carbs: Math.round(carbsPer * servings * 10) / 10,
+          fats: Math.round(fatsPer * servings * 10) / 10,
+          cost: Math.round(cps * servings * 100) / 100,
+        },
+        nutritionVerified: m.recipe.nutrition_source !== "ai_estimated" && (m.recipe.source ?? "library") !== "ai_generated",
+        estimatedCost: cps ? cps * servings : 0,
+        costPerServing: m.recipe.cost_per_serving,
+        cookTimeMinutes: (m.recipe.cook_time_minutes ?? 0) + (m.recipe.prep_time_minutes ?? 0),
+        ingredients: (Array.isArray(m.recipe.ingredients) ? m.recipe.ingredients : []).map(ingredientLine),
+        instructions: Array.isArray(m.recipe.instructions) ? m.recipe.instructions : [],
+      };
+    }),
   }));
 
   // Phase A (Part L): expose `bucket` on every grocery line so the UI can
