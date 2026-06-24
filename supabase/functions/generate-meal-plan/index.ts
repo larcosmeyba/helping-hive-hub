@@ -2264,41 +2264,75 @@ function buildMinimumPortionStaple(
   allergies: string[],
   dietaryPrefs: string[],
 ): any {
-  const a = (allergies || []).map((x) => (x || "").toLowerCase());
   const d = (dietaryPrefs || []).map((x) => (x || "").toLowerCase());
-  const hasAllergy = (term: string) => a.some((x) => x.includes(term) || term.includes(x));
   const isVegan = d.includes("vegan");
   const isVeg = isVegan || d.includes("vegetarian");
-  const noGluten = d.includes("gluten-free") || hasAllergy("gluten") || hasAllergy("wheat");
-  const noDairy = isVegan || d.includes("dairy-free") || hasAllergy("dairy") || hasAllergy("milk");
-  const noEggs = isVegan || hasAllergy("egg");
-  const noPeanuts = hasAllergy("peanut") || hasAllergy("nut") || d.includes("nut-free");
 
-  // Pick a hardy staple per meal type, dodging forbidden ingredients.
-  const choose = () => {
-    if (mealType === "breakfast") {
-      if (!noGluten && !noDairy) return { title: "Oatmeal with milk", ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"], cal: 280, p: 11 };
-      if (!noGluten) return { title: "Oatmeal with water", ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"], cal: 200, p: 6 };
-      if (!noEggs) return { title: "Scrambled eggs", ings: ["2 eggs", "1 tsp oil", "salt", "pepper"], cal: 220, p: 14 };
-      return { title: "Banana with peanut butter", ings: ["1 banana", noPeanuts ? "1 tbsp sunflower seed butter" : "1 tbsp peanut butter"], cal: 200, p: 5 };
-    }
-    if (mealType === "lunch") {
-      if (!noGluten && !noPeanuts && !isVegan === false ? true : true) {
-        // PB sandwich path
-        if (!noGluten && !noPeanuts) return { title: "Peanut butter sandwich", ings: ["2 slices bread", "2 tbsp peanut butter"], cal: 380, p: 14 };
-      }
-      if (!isVeg) return { title: "Tuna and rice bowl", ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"], cal: 380, p: 22 };
-      return { title: "Beans and rice", ings: ["1 cup cooked rice", "1/2 cup canned black beans", "salt", "1 tsp oil"], cal: 340, p: 12 };
-    }
-    // dinner
-    if (!isVeg) return { title: "Chicken and pasta", ings: ["3 oz cooked chicken", noGluten ? "1 cup cooked rice" : "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28 };
-    if (!noDairy && !noGluten) return { title: "Pasta with cheese", ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"], cal: 420, p: 16 };
-    return { title: "Lentils and rice", ings: ["1/2 cup cooked lentils", "1 cup cooked rice", "1 tsp oil", "salt"], cal: 380, p: 16 };
+  // Allergy/diet safety terms — same filter used for library recipes.
+  const safetyTerms = [
+    ...expandAllergies(allergies || []),
+    ...forbiddenForDiets(dietaryPrefs || []),
+  ];
+
+  type Cand = {
+    title: string;
+    ings: string[];
+    cal: number; p: number; c: number; f: number; fb?: number;
+    veg?: boolean; vegan?: boolean;
   };
 
-  const pick = choose();
+  const breakfast: Cand[] = [
+    { title: "Oatmeal with milk",       ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"],            cal: 280, p: 11, c: 42, f: 7, fb: 4, veg: true },
+    { title: "Oatmeal with water",      ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"],           cal: 200, p: 6,  c: 38, f: 3, fb: 4, veg: true, vegan: true },
+    { title: "Scrambled eggs and toast",ings: ["2 eggs", "1 slice bread", "1 tsp oil", "salt", "pepper"],      cal: 300, p: 16, c: 16, f: 18,         veg: true },
+    { title: "Banana with sunflower seed butter", ings: ["1 banana", "1 tbsp sunflower seed butter"],          cal: 200, p: 5,  c: 30, f: 9,  fb: 3, veg: true, vegan: true },
+    { title: "Banana with peanut butter",ings: ["1 banana", "1 tbsp peanut butter"],                            cal: 200, p: 5,  c: 30, f: 9,  fb: 3, veg: true, vegan: true },
+    { title: "Rice with banana",        ings: ["1 cup cooked rice", "1 banana", "1 tsp sugar"],                cal: 320, p: 5,  c: 72, f: 1,         veg: true, vegan: true },
+  ];
+
+  const lunch: Cand[] = [
+    { title: "Peanut butter sandwich",  ings: ["2 slices bread", "2 tbsp peanut butter"],                       cal: 380, p: 14, c: 38, f: 18, fb: 3, veg: true, vegan: true },
+    { title: "Sunflower seed butter sandwich", ings: ["2 slices bread", "2 tbsp sunflower seed butter"],        cal: 360, p: 11, c: 36, f: 20, fb: 3, veg: true, vegan: true },
+    { title: "Tuna and rice bowl",      ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"],        cal: 380, p: 22, c: 46, f: 9 },
+    { title: "Beans and rice",          ings: ["1 cup cooked rice", "1/2 cup canned black beans", "salt", "1 tsp oil"], cal: 340, p: 12, c: 60, f: 5, fb: 8, veg: true, vegan: true },
+    { title: "Chickpeas and rice",      ings: ["1 cup cooked rice", "1/2 cup canned chickpeas", "1 tsp olive oil", "salt"], cal: 360, p: 11, c: 60, f: 7, fb: 6, veg: true, vegan: true },
+    { title: "Potato with olive oil",   ings: ["1 large potato, baked", "1 tbsp olive oil", "salt"],            cal: 320, p: 5,  c: 50, f: 14, fb: 5, veg: true, vegan: true },
+  ];
+
+  const dinner: Cand[] = [
+    { title: "Chicken and pasta",       ings: ["3 oz cooked chicken", "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28, c: 42, f: 16 },
+    { title: "Chicken and rice",        ings: ["3 oz cooked chicken", "1 cup cooked rice", "1 tbsp olive oil"],  cal: 440, p: 28, c: 46, f: 12 },
+    { title: "Pasta with cheese",       ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"],cal: 420, p: 16, c: 44, f: 18, veg: true },
+    { title: "Lentils and rice",        ings: ["1/2 cup cooked lentils", "1 cup cooked rice", "1 tsp oil", "salt"], cal: 380, p: 16, c: 64, f: 5, fb: 9, veg: true, vegan: true },
+    { title: "Beans and rice (dinner)", ings: ["1 cup cooked rice", "3/4 cup canned black beans", "1 tsp olive oil", "salt"], cal: 420, p: 14, c: 70, f: 6, fb: 10, veg: true, vegan: true },
+    { title: "Potato with beans",       ings: ["1 large potato, baked", "1/2 cup canned black beans", "1 tsp olive oil", "salt"], cal: 380, p: 11, c: 68, f: 6, fb: 12, veg: true, vegan: true },
+  ];
+
+  const pool = mealType === "breakfast" ? breakfast : mealType === "lunch" ? lunch : dinner;
+
+  const dietOk = (c: Cand) => {
+    if (isVegan && !c.vegan) return false;
+    if (isVeg && !c.veg) return false;
+    return true;
+  };
+
+  // Pick the first staple that passes diet + word-filter safety.
+  let pick: Cand | null = null;
+  for (const c of pool) {
+    if (!dietOk(c)) continue;
+    const pseudo = { title: c.title, ingredients: c.ings };
+    if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) continue;
+    pick = c;
+    break;
+  }
+
+  // Absolute last resort: plain rice (no common allergens / fully vegan).
+  if (!pick) {
+    pick = { title: "Rice with olive oil", ings: ["1 cup cooked rice", "1 tsp olive oil", "salt"], cal: 240, p: 4, c: 45, f: 5, veg: true, vegan: true };
+  }
+
   return {
-    id: null, // signals not-a-library-recipe; downstream insert handles null
+    id: null,
     title: `${pick.title} (minimum portion)`,
     description: "Budget-safety meal: kept your day complete at the lowest possible cost.",
     meal_type: mealType,
@@ -2306,6 +2340,9 @@ function buildMinimumPortionStaple(
     instructions: ["Cook staple per package instructions.", "Combine and serve."],
     calories: pick.cal,
     protein_g: pick.p,
+    carbs_g: pick.c,
+    fat_g: pick.f,
+    fiber_g: pick.fb ?? 0,
     cost_per_serving: 0.85,
     serving_size: 1,
     prep_time_minutes: 5,
@@ -2313,6 +2350,8 @@ function buildMinimumPortionStaple(
     image_url: null,
     tags: ["minimum_portion", "staple"],
     source: "minimum_portion_fallback",
+    nutrition_source: "ai_estimated",
   };
 }
+
 
