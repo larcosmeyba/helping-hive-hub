@@ -155,7 +155,10 @@ const RESPONSE_SCHEMA = {
 
 // ===== Allergy + dietary safety helpers =====
 const ALLERGY_EXPANSIONS: Record<string, string[]> = {
-  nuts: ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline"],
+  nuts: ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nut butter", "nutella", "marzipan", "praline"],
+  "nut allergy": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nut butter", "nutella", "marzipan", "praline"],
+  "nut allergies": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nut butter", "nutella", "marzipan", "praline"],
+  "no nuts": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nut butter", "nutella", "marzipan", "praline"],
   "tree nuts": ["almond", "walnut", "pecan", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut"],
   peanuts: ["peanut", "peanuts", "peanut butter", "groundnut"],
   dairy: ["milk", "cheese", "butter", "yogurt", "yoghurt", "cream", "whey", "casein", "lactose", "ghee", "parmesan", "mozzarella", "cheddar", "feta", "ricotta"],
@@ -174,7 +177,9 @@ const DIET_FORBIDDEN: Record<string, string[]> = {
   pescatarian: ["beef", "steak", "pot roast", "pork", "bacon", "ham", "sausage", "chicken", "turkey", "lamb", "veal", "duck", "gelatin", "lard", "tallow"],
   "gluten-free": ["wheat", "flour", "bread", "pasta", "barley", "rye", "couscous", "semolina", "farro", "spelt", "bulgur", "seitan", "soy sauce", "breadcrumbs", "tortilla", "noodle", "noodles"],
   "dairy-free": ["milk", "cheese", "butter", "yogurt", "yoghurt", "cream", "whey", "casein", "lactose", "ghee", "parmesan", "mozzarella", "cheddar", "feta", "ricotta"],
-  "nut-free": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline", "nut butter"],
+  "nut-free": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline", "nut butter"],
+  "nut allergy": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline", "nut butter"],
+  "nut allergies": ["nut", "nuts", "almond", "walnut", "pecan", "peanut", "peanuts", "peanut butter", "groundnut", "cashew", "hazelnut", "pistachio", "macadamia", "brazil nut", "pine nut", "nutella", "marzipan", "praline", "nut butter"],
   keto: ["sugar", "bread", "pasta", "rice", "potato", "potatoes", "corn", "flour", "tortilla", "noodle", "noodles", "oats", "cereal", "banana", "honey", "syrup"],
   paleo: ["bread", "pasta", "rice", "flour", "tortilla", "noodle", "noodles", "oats", "cereal", "beans", "lentil", "chickpea", "peanut", "soy", "tofu", "milk", "cheese", "butter", "yogurt", "cream", "sugar"],
   halal: ["pork", "bacon", "ham", "sausage", "pepperoni", "prosciutto", "lard", "wine", "beer", "rum", "vodka", "whiskey", "alcohol"],
