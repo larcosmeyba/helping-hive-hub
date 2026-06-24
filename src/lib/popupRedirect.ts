@@ -16,7 +16,20 @@ export type PendingWindow = Window | null;
 
 export function openPendingWindow(): PendingWindow {
   try {
-    return window.open("about:blank", "_blank", "noopener,noreferrer");
+    // Do NOT pass `noopener` here. Browsers intentionally return `null` for
+    // noopener windows, which means the async Instacart URL cannot be assigned
+    // later and users are left on about:blank. We null the opener immediately
+    // after opening instead, keeping the handle long enough to redirect.
+    const pending = window.open("about:blank", "_blank");
+    if (pending) {
+      try {
+        pending.opener = null;
+      } catch {
+        // Some browsers may block this assignment; redirect still matters more
+        // than leaving the shopper stranded on a blank popup.
+      }
+    }
+    return pending;
   } catch {
     return null;
   }
@@ -25,7 +38,7 @@ export function openPendingWindow(): PendingWindow {
 export function redirectPendingWindow(w: PendingWindow, url: string): void {
   if (w && !w.closed) {
     try {
-      w.location.href = url;
+      w.location.replace(url);
       return;
     } catch {
       // fallthrough
