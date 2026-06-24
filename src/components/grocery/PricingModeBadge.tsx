@@ -15,7 +15,7 @@ export function PricingModeBadge({ mode, className = "" }: Props) {
   if (!mode) return null;
   const isLive = mode === "kroger";
   const Icon = isLive ? CheckCircle2 : Info;
-  const label = isLive ? "Live Kroger pricing" : "Estimated pricing";
+  const label = isLive ? "Pricing" : "Estimated pricing";
   const tone = isLive
     ? "bg-[#E6F4EA] text-[#1F5A3D] border-[#BFE0CB]"
     : "bg-[#FFF6E1] text-[#5a4a1a] border-[#F2D78A]";
