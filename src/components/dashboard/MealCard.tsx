@@ -70,12 +70,17 @@ export function MealCard({ meal, compact, onClick }: Props) {
           )}
         </div>
         {showMacros && (
-          <MacroBadges
-            protein={meal.protein}
-            carbs={meal.carbs}
-            fats={meal.fats}
-            size={compact ? "xs" : "sm"}
-          />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <MacroBadges
+              protein={meal.protein}
+              carbs={meal.carbs}
+              fats={meal.fats}
+              size={compact ? "xs" : "sm"}
+            />
+            <span className={`${compact ? 'text-[8px]' : 'text-[10px]'} text-muted-foreground italic`}>
+              estimated
+            </span>
+          </div>
         )}
 
         {!compact && (

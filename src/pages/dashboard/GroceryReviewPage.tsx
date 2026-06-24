@@ -12,6 +12,7 @@ import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { getAppUrl } from "@/lib/appUrl";
 import { trackEvent } from "@/lib/analytics";
 import { phCapture } from "@/lib/posthog";
+import { openPendingWindow, redirectPendingWindow } from "@/lib/popupRedirect";
 
 
 function normalize(name: string) {
@@ -228,6 +229,8 @@ export default function GroceryReviewPage() {
       });
       return;
     }
+    // Safari/iOS popup-block fix: open destination window synchronously.
+    const pending = openPendingWindow();
     setInstacartLoading(true);
     try {
       const line_items = eligible.map((i) => {
@@ -248,13 +251,16 @@ export default function GroceryReviewPage() {
           expires_in: 30,
         },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message || "Edge function returned an error");
+      const errPayload = (data as any)?.error;
+      if (errPayload) throw new Error(typeof errPayload === "string" ? errPayload : JSON.stringify(errPayload));
       const url: string | undefined = (data as any)?.products_link_url;
       if (!url) throw new Error("Instacart did not return a products_link_url");
       phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
       void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
-      window.open(url, "_blank", "noopener,noreferrer");
+      redirectPendingWindow(pending, url);
     } catch (e: any) {
+      if (pending && !pending.closed) pending.close();
       toast({
         title: "Couldn't open Instacart",
         description: e?.message ?? "Please try again.",
