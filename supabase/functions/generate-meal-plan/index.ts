@@ -491,7 +491,16 @@ Deno.serve(async (req) => {
     const servingsMultiplier = engine === "algo_v2" ? householdServings : householdSize;
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
-    const allergies: string[] = (profile.allergies ?? []) as string[];
+    // Merge profile allergies with this week's questionnaire allergies (union, case-insensitive).
+    const _profAllergies: string[] = (profile.allergies ?? []) as string[];
+    const _weeklyAllergies: string[] = (weeklyQ?.allergies ?? []) as string[];
+    const _mergedAllergyMap = new Map<string, string>();
+    for (const a of [..._profAllergies, ..._weeklyAllergies]) {
+      if (!a) continue;
+      const k = String(a).trim().toLowerCase();
+      if (k && !_mergedAllergyMap.has(k)) _mergedAllergyMap.set(k, String(a).trim());
+    }
+    const allergies: string[] = Array.from(_mergedAllergyMap.values());
     // 7 days × 3 meals (breakfast/lunch/dinner) is the contract. Snack only
     // if delivered total stays ≤90% of budget after the 3 meals are placed.
     const daysCount = 7;
