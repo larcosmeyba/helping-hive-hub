@@ -420,10 +420,25 @@ Deno.serve(async (req) => {
 
     await advance("preparing", "profile loaded", "Reviewing your profile & pantry");
 
-    const [profileRes, pantryRes] = await Promise.all([
+    // Compute Monday of the current week to load the user's weekly preferences row.
+    const _today = new Date();
+    const _dow = _today.getDay();
+    const _mondayShift = _dow === 0 ? -6 : 1 - _dow;
+    const _monday = new Date(_today);
+    _monday.setDate(_today.getDate() + _mondayShift);
+    const weekStartIso = _monday.toISOString().slice(0, 10);
+
+    const [profileRes, pantryRes, weeklyQRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("pantry_items").select("*").eq("user_id", userId),
+      supabase
+        .from("weekly_meal_questionnaires")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("week_start", weekStartIso)
+        .maybeSingle(),
     ]);
+    const weeklyQ: any = (weeklyQRes as any)?.data ?? null;
 
     const profile = profileRes.data ?? {};
     const pantryItems = (pantryRes.data ?? []).map((p: any) => ({
@@ -476,7 +491,16 @@ Deno.serve(async (req) => {
     const servingsMultiplier = engine === "algo_v2" ? householdServings : householdSize;
     const weeklyBudget = overrides.budget ?? profile.weekly_budget ?? 75;
     const dietaryPrefs: string[] = (overrides.dietary_preferences ?? profile.dietary_preferences ?? []) as string[];
-    const allergies: string[] = (profile.allergies ?? []) as string[];
+    // Merge profile allergies with this week's questionnaire allergies (union, case-insensitive).
+    const _profAllergies: string[] = (profile.allergies ?? []) as string[];
+    const _weeklyAllergies: string[] = (weeklyQ?.allergies ?? []) as string[];
+    const _mergedAllergyMap = new Map<string, string>();
+    for (const a of [..._profAllergies, ..._weeklyAllergies]) {
+      if (!a) continue;
+      const k = String(a).trim().toLowerCase();
+      if (k && !_mergedAllergyMap.has(k)) _mergedAllergyMap.set(k, String(a).trim());
+    }
+    const allergies: string[] = Array.from(_mergedAllergyMap.values());
     // 7 days × 3 meals (breakfast/lunch/dinner) is the contract. Snack only
     // if delivered total stays ≤90% of budget after the 3 meals are placed.
     const daysCount = 7;
@@ -752,6 +776,30 @@ Deno.serve(async (req) => {
       meals_per_type: mealsPerType,
       days_count: daysCount,
       week_start_date: new Date().toISOString().slice(0, 10),
+      weekly_food_preferences: weeklyQ ? {
+        breakfast: {
+          carbs: weeklyQ.breakfast_carbs ?? [],
+          proteins: weeklyQ.breakfast_proteins ?? [],
+          fats: weeklyQ.breakfast_fats ?? [],
+          snacks: weeklyQ.breakfast_snacks ?? [],
+        },
+        lunch: {
+          carbs: weeklyQ.lunch_carbs ?? [],
+          proteins: weeklyQ.lunch_proteins ?? [],
+          fats: weeklyQ.lunch_fats ?? [],
+          snacks: weeklyQ.lunch_snacks ?? [],
+        },
+        dinner: {
+          carbs: weeklyQ.dinner_carbs ?? [],
+          proteins: weeklyQ.dinner_proteins ?? [],
+          fats: weeklyQ.dinner_fats ?? [],
+        },
+        evening_snacks: weeklyQ.evening_snacks ?? [],
+        vegetables: weeklyQ.vegetables ?? [],
+        foods_to_avoid: weeklyQ.foods_to_avoid ?? "",
+        extra_cart_items: weeklyQ.extra_cart_items ?? "",
+        note: "These are the foods the user chose for THIS WEEK. Treat them as strong preferences when picking meals; avoid the foods_to_avoid list. extra_cart_items should be appended to the grocery list at the end.",
+      } : null,
       candidates_breakfast: breakfastCandidates.map(compactCandidate),
       candidates_lunch: lunchCandidates.map(compactCandidate),
       candidates_dinner: dinnerCandidates.map(compactCandidate),

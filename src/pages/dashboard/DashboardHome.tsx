@@ -8,6 +8,7 @@ import basketImg from "@/assets/home-basket.png";
 import fridgeImg from "@/assets/home-fridge.png";
 import produceBoxImg from "@/assets/home-produce-box.png";
 import { FamilyAssistancePrompt } from "@/components/dashboard/FamilyAssistancePrompt";
+import { WeeklyQuestionnaireReminder } from "@/components/dashboard/WeeklyQuestionnaireReminder";
 
 // Bundled in /public so the native (Capacitor) app can load them locally.
 // CDN pointers under /__l5e/ only resolve on Lovable web hosts.
@@ -42,6 +43,8 @@ export default function DashboardHome() {
           Let's save money, eat better, and feel your best.
         </p>
       </div>
+
+      <WeeklyQuestionnaireReminder />
 
       <FamilyAssistancePrompt />
 

@@ -152,7 +152,24 @@ export default function MealPlanSetupPage() {
     await generate(mode ? { pricingMode: mode } : undefined);
   };
 
+  const [weeklyQDone, setWeeklyQDone] = useState<boolean>(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) return;
+      const { fetchCurrentWeekQuestionnaire } = await import("@/lib/weeklyQuestionnaire");
+      const row = await fetchCurrentWeekQuestionnaire(user.id);
+      if (!cancelled) setWeeklyQDone(!!row);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const handleGenerate = async () => {
+    // If the user hasn't filled this week's questionnaire yet, send them there first.
+    if (!weeklyQDone) {
+      navigate("/dashboard/meal-plan/weekly-questionnaire");
+      return;
+    }
     if (mealPlan) {
       const ok = window.confirm(
         "You already have a meal plan and grocery list for this week.\n\nRegenerate and replace them?\n\nTo control costs, plan regenerations are limited to 3 per hour.",
@@ -221,7 +238,7 @@ export default function MealPlanSetupPage() {
         disabled={generating}
         className="mt-6 w-full bg-[#1F5A3D] disabled:opacity-60 text-white font-bold py-4 rounded-2xl text-[16px] active:scale-[0.99] transition-transform"
       >
-        {generating ? "Generating…" : "Generate Plan"}
+        {generating ? "Generating…" : weeklyQDone ? "Generate Plan" : "Next"}
       </button>
 
       <p className="text-[11px] text-[#6b6b6b] mt-3 text-center px-4">
