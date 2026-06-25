@@ -238,7 +238,7 @@ export default function MealPlanSetupPage() {
         disabled={generating}
         className="mt-6 w-full bg-[#1F5A3D] disabled:opacity-60 text-white font-bold py-4 rounded-2xl text-[16px] active:scale-[0.99] transition-transform"
       >
-        {generating ? "Generating…" : "Generate Plan"}
+        {generating ? "Generating…" : weeklyQDone ? "Generate Plan" : "Next"}
       </button>
 
       <p className="text-[11px] text-[#6b6b6b] mt-3 text-center px-4">
