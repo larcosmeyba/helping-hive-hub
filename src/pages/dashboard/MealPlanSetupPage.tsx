@@ -152,7 +152,24 @@ export default function MealPlanSetupPage() {
     await generate(mode ? { pricingMode: mode } : undefined);
   };
 
+  const [weeklyQDone, setWeeklyQDone] = useState<boolean>(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) return;
+      const { fetchCurrentWeekQuestionnaire } = await import("@/lib/weeklyQuestionnaire");
+      const row = await fetchCurrentWeekQuestionnaire(user.id);
+      if (!cancelled) setWeeklyQDone(!!row);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const handleGenerate = async () => {
+    // If the user hasn't filled this week's questionnaire yet, send them there first.
+    if (!weeklyQDone) {
+      navigate("/dashboard/meal-plan/weekly-questionnaire");
+      return;
+    }
     if (mealPlan) {
       const ok = window.confirm(
         "You already have a meal plan and grocery list for this week.\n\nRegenerate and replace them?\n\nTo control costs, plan regenerations are limited to 3 per hour.",
