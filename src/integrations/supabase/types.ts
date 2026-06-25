@@ -3031,6 +3031,7 @@ export type Database = {
           kroger_store_zip: string | null
           last_active: string | null
           last_engagement_email_at: string | null
+          last_weekly_questionnaire_at: string | null
           latitude: number | null
           longitude: number | null
           meal_repetition: string | null
@@ -3107,6 +3108,7 @@ export type Database = {
           kroger_store_zip?: string | null
           last_active?: string | null
           last_engagement_email_at?: string | null
+          last_weekly_questionnaire_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meal_repetition?: string | null
@@ -3183,6 +3185,7 @@ export type Database = {
           kroger_store_zip?: string | null
           last_active?: string | null
           last_engagement_email_at?: string | null
+          last_weekly_questionnaire_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meal_repetition?: string | null
@@ -4070,6 +4073,81 @@ export type Database = {
           supports_people?: number
           updated_at?: string
           weekly_budget?: number
+        }
+        Relationships: []
+      }
+      weekly_meal_questionnaires: {
+        Row: {
+          allergies: string[]
+          breakfast_carbs: string[]
+          breakfast_fats: string[]
+          breakfast_proteins: string[]
+          breakfast_snacks: string[]
+          completed_at: string
+          created_at: string
+          dinner_carbs: string[]
+          dinner_fats: string[]
+          dinner_proteins: string[]
+          evening_snacks: string[]
+          extra_cart_items: string
+          foods_to_avoid: string
+          id: string
+          lunch_carbs: string[]
+          lunch_fats: string[]
+          lunch_proteins: string[]
+          lunch_snacks: string[]
+          updated_at: string
+          user_id: string
+          vegetables: string[]
+          week_start: string
+        }
+        Insert: {
+          allergies?: string[]
+          breakfast_carbs?: string[]
+          breakfast_fats?: string[]
+          breakfast_proteins?: string[]
+          breakfast_snacks?: string[]
+          completed_at?: string
+          created_at?: string
+          dinner_carbs?: string[]
+          dinner_fats?: string[]
+          dinner_proteins?: string[]
+          evening_snacks?: string[]
+          extra_cart_items?: string
+          foods_to_avoid?: string
+          id?: string
+          lunch_carbs?: string[]
+          lunch_fats?: string[]
+          lunch_proteins?: string[]
+          lunch_snacks?: string[]
+          updated_at?: string
+          user_id: string
+          vegetables?: string[]
+          week_start: string
+        }
+        Update: {
+          allergies?: string[]
+          breakfast_carbs?: string[]
+          breakfast_fats?: string[]
+          breakfast_proteins?: string[]
+          breakfast_snacks?: string[]
+          completed_at?: string
+          created_at?: string
+          dinner_carbs?: string[]
+          dinner_fats?: string[]
+          dinner_proteins?: string[]
+          evening_snacks?: string[]
+          extra_cart_items?: string
+          foods_to_avoid?: string
+          id?: string
+          lunch_carbs?: string[]
+          lunch_fats?: string[]
+          lunch_proteins?: string[]
+          lunch_snacks?: string[]
+          updated_at?: string
+          user_id?: string
+          vegetables?: string[]
+          week_start?: string
         }
         Relationships: []
       }
