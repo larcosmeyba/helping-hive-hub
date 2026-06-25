@@ -420,10 +420,25 @@ Deno.serve(async (req) => {
 
     await advance("preparing", "profile loaded", "Reviewing your profile & pantry");
 
-    const [profileRes, pantryRes] = await Promise.all([
+    // Compute Monday of the current week to load the user's weekly preferences row.
+    const _today = new Date();
+    const _dow = _today.getDay();
+    const _mondayShift = _dow === 0 ? -6 : 1 - _dow;
+    const _monday = new Date(_today);
+    _monday.setDate(_today.getDate() + _mondayShift);
+    const weekStartIso = _monday.toISOString().slice(0, 10);
+
+    const [profileRes, pantryRes, weeklyQRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("pantry_items").select("*").eq("user_id", userId),
+      supabase
+        .from("weekly_meal_questionnaires")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("week_start", weekStartIso)
+        .maybeSingle(),
     ]);
+    const weeklyQ: any = (weeklyQRes as any)?.data ?? null;
 
     const profile = profileRes.data ?? {};
     const pantryItems = (pantryRes.data ?? []).map((p: any) => ({
