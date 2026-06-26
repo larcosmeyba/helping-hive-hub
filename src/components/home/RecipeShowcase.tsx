@@ -8,7 +8,7 @@ const results = [
     meals: 18,
     total: "$73",
     savings: "$12",
-    store: "Albertsons",
+    store: "Local pricing",
   },
   {
     family: "Single Adult",
@@ -16,7 +16,7 @@ const results = [
     meals: 12,
     total: "$38",
     savings: "$8",
-    store: "Walmart",
+    store: "Local pricing",
   },
   {
     family: "Couple",
@@ -24,7 +24,7 @@ const results = [
     meals: 14,
     total: "$53",
     savings: "$10",
-    store: "Kroger",
+    store: "Local pricing",
   },
 ];
 
