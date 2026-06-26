@@ -84,11 +84,13 @@ export default function GroceryListPage() {
   const { toast } = useToast();
   const { role: adminRole } = useAdminRole();
   const homeStore = profile?.home_store ?? "";
-  const [checked, setChecked] = useState<Set<string>>(new Set());
+  // `selected` = items the user wants to SEND to Instacart. Defaults to all
+  // items selected once the grocery list loads, so the Instacart cart matches
+  // the visible list by default. Users uncheck anything they want to skip.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedInitialized, setSelectedInitialized] = useState(false);
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
-  
-  
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
