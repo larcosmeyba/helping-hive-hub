@@ -264,6 +264,62 @@ export default function GroceryListPage() {
     ? `$${dbBasket.low} – $${dbBasket.high}`
     : formatBasketRange(basketRange);
 
+  // Send the user's grocery list (unchecked = still need to buy) + any extras
+  // to Instacart via the `instacart-create-list` edge function. Items already
+  // checked off are considered "purchased" and skipped.
+  const handleShopWithInstacart = async () => {
+    const toSend = [
+      ...groceryItems
+        .filter((i) => !checked.has(i.name))
+        .map((i) => ({ name: i.name, quantity: i.quantity ?? "" })),
+      ...extraItems.map((i) => ({ name: i.name, quantity: "" })),
+    ];
+    if (toSend.length === 0) {
+      toast({ title: "Nothing to send", description: "All items are checked off." });
+      return;
+    }
+    // Safari/iOS: open the destination window SYNCHRONOUSLY inside the click
+    // handler before any await, otherwise the popup is blocked.
+    const pending = openPendingWindow();
+    setInstacartLoading(true);
+    try {
+      const line_items = toSend.map((i) => {
+        const parsed = parseQty(i.quantity);
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (parsed.num > 0) item.quantity = parsed.num;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw new Error(error.message || "Edge function returned an error");
+      const errPayload = (data as any)?.error;
+      if (errPayload) throw new Error(typeof errPayload === "string" ? errPayload : JSON.stringify(errPayload));
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length, source: "grocery_list_page" });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      redirectPendingWindow(pending, url);
+    } catch (e: any) {
+      if (pending && !pending.closed) pending.close();
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
       {/* Subtle store + items caption */}
