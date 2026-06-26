@@ -292,17 +292,19 @@ export default function ShopGroceriesPage() {
   }, [kroger.ready, kroger.locationId, needToBuy.length]);
 
   // ---- Totals + audit ----------------------------------------------------------
-  // Use the matcher's authoritative line_total (package_price × packages).
-  // Items in "needs_review" are NEVER summed — they need user review first.
-  // Fall back to estimated_price * parsedQty only when no live match exists.
+  // ZIP-based local pricing only — single source of truth. No fallback to
+  // estimated_price (the old grocery_price_reference value). Items without a
+  // live Kroger match are excluded from the total; the UI shows
+  // LOCAL_PRICING_UNAVAILABLE_MESSAGE when nothing matched.
   const total = useMemo(
     () => Math.round(needToBuy.reduce((s, i) => {
       if (i.match_status === "needs_review" || i.match_status === "no_match") return s;
       if (typeof i.line_total === "number") return s + i.line_total;
-      return s + (i.estimated_price ?? 0) * i.parsedQty;
+      return s;
     }, 0) * 100) / 100,
     [needToBuy],
   );
+  const pricingAvailable = needToBuy.some((i) => typeof i.line_total === "number");
   const target = Math.round(weeklyBudget * TARGET_BUDGET_RATIO * 100) / 100;
   const over = weeklyBudget > 0 && total > weeklyBudget;
   const remaining = Math.round((weeklyBudget - total) * 100) / 100;
