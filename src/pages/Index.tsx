@@ -27,6 +27,7 @@ const Index = () => {
       <Navbar />
       <main id="main-content" className="flex-1">
         <HeroSection />
+        <InstacartPartnerSection />
         <HowItWorksSection />
         <FeaturesSection />
         <WhoWeHelpSection />
@@ -34,7 +35,6 @@ const Index = () => {
         <BudgetResultsSection />
         <WhyDifferentSection />
         <TrustSection />
-        <InstacartPartnerSection />
         <CTASection />
       </main>
       <SiteFooter />

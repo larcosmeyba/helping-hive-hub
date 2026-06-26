@@ -522,7 +522,7 @@ export default function GroceryReviewPage() {
           loading={instacartLoading}
           disabled={instacartLoading || selectedItemsAll.length === 0}
           onClick={handleShopWithInstacart}
-          label="Shop ingredients with Instacart"
+          label="Shop ingredients"
         />
         <p className="mt-2 text-[11px] text-[#8a8a8a] text-center px-2 leading-relaxed">
           We may earn a commission when you shop via Instacart. Estimate only —

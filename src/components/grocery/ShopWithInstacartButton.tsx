@@ -1,25 +1,29 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-import carrotAsset from "@/assets/instacart/carrot.png.asset.json";
 
 /**
- * "Shop with Instacart" CTA — built to match Instacart Developer Platform
- * brand guidelines (approved wording + official carrot mark, minimum 46px
- * tall, dark green #003D29 background). Do NOT restyle without re-review.
+ * Instacart CTA — built EXACTLY to the Instacart Developer Platform
+ * brand spec (do not restyle without re-review):
  *
- * The CTA is purely a handoff — pricing is the internal estimate shown above;
- * final price is confirmed inside the Instacart® app/landing page at checkout.
+ *  - Height: 46px
+ *  - Padding: 16px vertical, 18px horizontal
+ *  - Background: #003D29
+ *  - Foreground text: #FAF1E5
+ *  - Approved copy: "Shop ingredients" or "Shop on Instacart" (A/B tested)
+ *  - Trailing external-link glyph (22px)
+ *  - Fully rounded pill, no stroke
  */
 interface Props
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   loading?: boolean;
   fullWidth?: boolean;
-  label?: string;
+  /** Approved copy only: "Shop ingredients" (default) or "Shop on Instacart". */
+  label?: "Shop ingredients" | "Shop on Instacart";
 }
 
 export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props>(
-  ({ loading = false, fullWidth = true, label = "Shop ingredients", className, disabled, style, ...rest }, ref) => {
+  ({ loading = false, fullWidth = false, label = "Shop ingredients", className, disabled, style, ...rest }, ref) => {
     const base: React.CSSProperties = {
       height: 46,
       borderRadius: 9999,
@@ -39,7 +43,7 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      gap: 10,
+      gap: 8,
       transition: "opacity 150ms ease",
       cursor: disabled || loading ? "not-allowed" : "pointer",
       opacity: disabled || loading ? 0.7 : 1,
@@ -50,27 +54,21 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
         ref={ref}
         type="button"
         disabled={disabled || loading}
-        aria-label={`${label} with Instacart`}
+        aria-label={`${label} on Instacart (opens in a new tab)`}
         className={cn("instacart-cta", className)}
         style={{ ...base, ...style }}
         {...rest}
       >
+        <span>{loading ? "Opening Instacart…" : label}</span>
         {loading ? (
-          <Loader2 className="animate-spin" size={18} />
+          <Loader2 className="animate-spin" size={16} aria-hidden="true" />
         ) : (
-          <img
-            src={carrotAsset.url}
-            alt=""
-            aria-hidden="true"
-            style={{ height: 22, width: "auto", display: "block" }}
-          />
+          <ExternalLink size={16} strokeWidth={2.25} aria-hidden="true" />
         )}
-        <span>
-          {loading ? "Opening Instacart…" : label} with Instacart<sup style={{ fontSize: 9 }}>®</sup>
-        </span>
       </button>
     );
   },
 );
 ShopWithInstacartButton.displayName = "ShopWithInstacartButton";
+
 

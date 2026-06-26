@@ -266,7 +266,7 @@ export default function GrocerySummaryPage() {
         <ShopWithInstacartButton
           loading={instacartLoading}
           fullWidth
-          label="Shop ingredients with Instacart"
+          label="Shop ingredients"
           onClick={handleShopWithInstacart}
         />
         <p className="text-[11px] text-center text-muted-foreground px-2">
