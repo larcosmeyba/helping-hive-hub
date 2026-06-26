@@ -10,6 +10,7 @@ import { MealPlanSection } from "@/components/home/MealPlanSection";
 import { BudgetResultsSection } from "@/components/home/RecipeShowcase";
 import { WhyDifferentSection } from "@/components/home/WhyDifferentSection";
 import { TrustSection } from "@/components/home/TrustSection";
+import { InstacartPartnerSection } from "@/components/home/InstacartPartnerSection";
 
 import { CTASection } from "@/components/home/CTASection";
 
@@ -33,7 +34,7 @@ const Index = () => {
         <BudgetResultsSection />
         <WhyDifferentSection />
         <TrustSection />
-        
+        <InstacartPartnerSection />
         <CTASection />
       </main>
       <SiteFooter />
