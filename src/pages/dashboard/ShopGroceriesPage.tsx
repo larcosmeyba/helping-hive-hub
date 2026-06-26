@@ -278,7 +278,7 @@ export default function ShopGroceriesPage() {
         avg_confidence: Math.round(avgConf * 100) / 100,
       });
     } catch (e: any) {
-      toast({ title: "Kroger pricing unavailable", description: e?.message ?? "Showing estimates.", variant: "default" });
+      toast({ title: "Live pricing unavailable", description: e?.message ?? "Showing estimated local pricing.", variant: "default" });
     } finally {
       setMatching(false);
     }
