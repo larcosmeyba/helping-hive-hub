@@ -1223,6 +1223,10 @@ Deno.serve(async (req) => {
       lunch: lunchCandidates,
       dinner: dinnerCandidates,
       snack: snackCandidates,
+      // Snack slot aliases so swap/budget loops keyed by meal_type resolve correctly.
+      morning_snack: snackCandidates,
+      afternoon_snack: snackCandidates,
+      after_dinner_snack: snackCandidates,
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
