@@ -1098,9 +1098,12 @@ Deno.serve(async (req) => {
     const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner", "snack"] as const) {
-        const slot = day[mealType];
+      for (const slotKey of SLOT_KEYS) {
+        const slot = day[slotKey];
         if (!slot) continue;
+        const isSnackSlot = (SNACK_SLOT_KEYS as string[]).includes(slotKey);
+        // AI may use either "new_meal" or "new_snack" for snack slots; accept both.
+        const newMealPayload = slot.new_meal ?? slot.new_snack;
 
         let recipe: any = null;
         let reason: string | undefined = slot.reason;
@@ -1109,17 +1112,18 @@ Deno.serve(async (req) => {
           const cand = candidatesById.get(slot.library_recipe_id);
           if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) {
             console.warn("[generate-meal-plan] AI chose unsafe library recipe — replacing", cand.title);
-            recipe = findSafeCandidate(mealType, usedIds);
+            recipe = findSafeCandidate(slotKey, usedIds);
             reason = "Swapped to honor your dietary preferences and allergies.";
           } else {
             recipe = cand;
           }
-        } else if (slot.new_meal) {
-          const nm = slot.new_meal;
-          const pseudo = { title: nm.meal_name, description: nm.description, ingredients: nm.ingredients };
+        } else if (newMealPayload) {
+          const nm = newMealPayload;
+          const nmName = nm.meal_name ?? nm.name ?? "Custom item";
+          const pseudo = { title: nmName, description: nm.description, ingredients: nm.ingredients };
           if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) {
-            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nm.meal_name);
-            recipe = findSafeCandidate(mealType, usedIds);
+            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nmName);
+            recipe = findSafeCandidate(slotKey, usedIds);
             reason = "Swapped to honor your dietary preferences and allergies.";
           } else {
             const cost = Number(nm.estimated_cost_per_serving) || null;
@@ -1127,21 +1131,22 @@ Deno.serve(async (req) => {
             const { data: inserted, error: insErr } = await admin
               .from("recipes")
               .insert({
-                title: String(nm.meal_name || "Custom meal").slice(0, 200),
+                title: String(nmName).slice(0, 200),
                 description: nm.description ?? null,
-                meal_type: mealType,
+                meal_type: slotToCategory(slotKey),
                 ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
-                instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
+                // Snacks intentionally have no cooking instructions.
+                instructions: isSnackSlot ? [] : (Array.isArray(nm.instructions) ? nm.instructions : []),
                 calories: nm.calories_estimate ?? null,
                 protein_g: nm.protein_estimate ?? null,
-                prep_time_minutes: nm.prep_time_minutes ?? null,
-                cook_time_minutes: nm.cook_time_minutes ?? null,
+                prep_time_minutes: isSnackSlot ? 0 : (nm.prep_time_minutes ?? null),
+                cook_time_minutes: isSnackSlot ? 0 : (nm.cook_time_minutes ?? null),
                 serving_size: servings,
                 estimated_recipe_cost: cost ? cost * servings : null,
                 source: "ai_generated",
                 is_public: false,
                 created_by_user_id: userId,
-                tags: Array.isArray(nm.tags) ? nm.tags : [],
+                tags: Array.isArray(nm.tags) ? nm.tags : (isSnackSlot ? ["snack", "no-cook"] : []),
               })
               .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
               .single();
@@ -1150,7 +1155,6 @@ Deno.serve(async (req) => {
               continue;
             }
             recipe = inserted;
-            // Stash AI-estimated macros not stored in DB columns.
             recipe.carbs_g = nm.carbs_estimate ?? null;
             recipe.fat_g = nm.fat_estimate ?? null;
             recipe.nutrition_source = "ai_estimated";
@@ -1159,58 +1163,53 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        if (!recipe) continue; // no safe substitute available — skip slot rather than serve unsafe food
+        if (!recipe) continue;
         if (recipe.id) usedIds.add(recipe.id);
-        dayMeals.push({ meal_type: mealType, recipe, reason });
+        // meal_type stored on the per-day meal preserves slot identity so the
+        // UI can render six discrete slots; recipes.meal_type stays in the
+        // breakfast/lunch/dinner/snack vocabulary.
+        dayMeals.push({ meal_type: slotKey, recipe, reason });
       }
-      // Backfill missing meal slots — families need a full 3 meals per day.
-      // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
-      // fallbacks: unused safe candidate → reused safe candidate → minimum-
-      // portion hardcoded staple meal. We NEVER leave a slot empty.
-      // Snacks are OPTIONAL and never backfilled.
+      // Backfill any missing slot — full 6-slot days are required.
       const present = new Set(dayMeals.map((m) => m.meal_type));
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-        if (present.has(mealType)) continue;
-        let fill: any = findSafeCandidate(mealType, usedIds);
+      for (const slotKey of SLOT_KEYS) {
+        if (present.has(slotKey)) continue;
+        let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
-          // Allow reusing a previously-placed safe candidate before dropping a meal.
-          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          const pool = poolFor(slotKey);
           fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
         }
-        if (!fill) {
-          // No library option fits the safety filters at all — inject a
-          // minimum-portion staple meal so the user still gets 3 meals.
-          fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (!fill && !(SNACK_SLOT_KEYS as string[]).includes(slotKey)) {
+          fill = buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs);
         }
+        if (!fill) continue; // snack slot with no safe pool item — skip rather than fabricate
         if (fill.id) usedIds.add(fill.id);
         dayMeals.push({
-          meal_type: mealType,
+          meal_type: slotKey,
           recipe: fill,
-          reason: "Added at minimum portions to keep your day complete within budget.",
+          reason: "Added to complete your day.",
         });
       }
-      // Keep meals in canonical breakfast → lunch → dinner → snack order.
-      dayMeals.sort((a, b) => {
-        const order = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 } as Record<string, number>;
-        return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
-      });
+      dayMeals.sort((a, b) => (SLOT_ORDER[a.meal_type] ?? 9) - (SLOT_ORDER[b.meal_type] ?? 9));
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
-    // If the AI returned fewer than `daysCount` days, top up so we always
-    // emit a full week of 3 meals/day. Builds each missing day the same way.
+    // Top up missing days so we always emit a full week with all 6 slots.
     const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     while (resolvedDays.length < daysCount) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-        let fill: any = findSafeCandidate(mealType, usedIds);
+      for (const slotKey of SLOT_KEYS) {
+        let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
-          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          const pool = poolFor(slotKey);
           fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
         }
-        if (!fill) fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (!fill && !(SNACK_SLOT_KEYS as string[]).includes(slotKey)) {
+          fill = buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs);
+        }
+        if (!fill) continue;
         if (fill.id) usedIds.add(fill.id);
-        dayMeals.push({ meal_type: mealType, recipe: fill, reason: "Added to complete your week." });
+        dayMeals.push({ meal_type: slotKey, recipe: fill, reason: "Added to complete your week." });
       }
       resolvedDays.push({ day_name: DAY_NAMES[resolvedDays.length] || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
