@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { phCapture } from "@/lib/posthog";
 import { getAppUrl } from "@/lib/appUrl";
