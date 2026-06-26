@@ -513,7 +513,7 @@ export default function GroceryListPage() {
                     })()}
                     {isChecked && (
                       <p className="text-[11px] font-bold text-primary mt-1">
-                        added
+                        ✓ will send to Instacart
                       </p>
                     )}
                   </div>
