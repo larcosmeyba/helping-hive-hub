@@ -52,21 +52,27 @@ const BACKEND_STEPS: Record<JobStage, string[]> = {
 const SYSTEM_PROMPT = `You are Help The Hive's meal planning AI using a HYBRID library-first strategy.
 
 You are given a pool of CURATED RECIPES (each with id, title, meal_type, cost_per_serving, brief tags).
-Your job is to SELECT recipes from the pool to fill each day's breakfast/lunch/dinner slots.
+Your job is to SELECT recipes from the pool to fill each day's six eating slots: breakfast, morning_snack, lunch, afternoon_snack, dinner, after_dinner_snack.
 
 ABSOLUTE SAFETY RULES — VIOLATION CAN HARM THE USER:
 - The user's "allergies" array lists ingredients they CANNOT eat. NEVER select or create a meal containing ANY allergen — including derivatives (e.g. "nuts" forbids almond, walnut, pecan, peanut, cashew, hazelnut, pistachio, macadamia, brazil nut, pine nut, nut butter; "dairy" forbids milk, cheese, butter, yogurt, cream, whey; "gluten" forbids wheat, flour, bread, pasta, barley, rye).
 - The user's "dietary_preferences" array is BINDING and hard-enforced for: vegan, vegetarian, pescatarian, gluten-free, dairy-free, nut-free, keto, paleo, halal, kosher. "vegan" = NO meat/poultry/fish/seafood/eggs/dairy/honey/gelatin. "vegetarian" = NO meat/poultry/fish/seafood/gelatin. "pescatarian" = NO meat or poultry. "gluten-free" = NO wheat/flour/bread/pasta/barley/rye/soy sauce. "dairy-free" = NO milk/cheese/butter/yogurt/cream/whey. "halal" = NO pork or alcohol. "kosher" = NO pork or shellfish.
-- You MUST output exactly 3 meals for every day: breakfast, lunch, AND dinner. Never skip a slot. If no candidate fits, return a safe new_meal for that slot.
-- If a recipe's title, description, or any ingredient could violate these rules, SKIP IT. Better to return a safe new_meal than to harm the user.
+- You MUST output exactly 6 eating slots for every day: breakfast, morning_snack, lunch, afternoon_snack, dinner, and after_dinner_snack. Never skip a slot. If no candidate fits, return a safe new_meal (for cooked slots) or a safe new_snack (for snack slots) for that slot.
+- If a recipe's title, description, or any ingredient could violate these rules, SKIP IT. Better to return a safe new_meal/new_snack than to harm the user.
 
 OTHER RULES:
-- PREFER library recipes. For each meal slot, choose a recipe from candidates_<meal_type> by returning its library_recipe_id.
-- Vary protein/cuisine across the week — don't pick the same recipe twice.
-- Only create a new_meal when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes — and must also follow every allergy and dietary rule above.
+- PREFER library recipes. For breakfast/lunch/dinner, choose from candidates_<meal_type>. For snack slots, choose from candidates_morning_snack / candidates_afternoon_snack / candidates_after_dinner_snack (these may share the same snack pool).
+- Vary protein/cuisine across the week — don't repeat the same full meal twice (snacks may repeat sparingly).
+- Only create a new_meal/new_snack when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes — and must follow every allergy and dietary rule above.
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
 - Stay within the weekly grocery budget.
+
+SNACK RULES (binding — applies to morning_snack, afternoon_snack, after_dinner_snack):
+- Snacks are NOT recipes. They are simple grab-and-go items requiring NO cooking and NO real preparation.
+- Examples: Greek yogurt, string cheese, apple with peanut butter (only if no nut allergy), banana, cottage cheese, protein bar, crackers and cheese, fruit cup, trail mix (only if no nut allergy), veggies with hummus, hard-boiled egg.
+- DO NOT generate multi-step snack recipes. DO NOT require cooking snacks. The 6–12 step cooking-instruction rule does NOT apply to snacks.
+- For a new_snack, return ONLY: name, short description, ingredients (1–4 items), calories/macros estimate, cost estimate. NO instructions array required.
 
 FAMILY & CHILD RULES (binding):
 - "household.adults_count", "household.children_ages_5_to_12", "household.babies_under_5" are present in the context. Servings must be sized for adults_count + children_5_to_12 (toddlers eat from the same pot at reduced portions).
@@ -106,8 +112,11 @@ const RESPONSE_SCHEMA = {
         properties: {
           day_name: { type: "string" },
           breakfast: { $ref: "#/$defs/slot" },
+          morning_snack: { $ref: "#/$defs/snack_slot" },
           lunch: { $ref: "#/$defs/slot" },
+          afternoon_snack: { $ref: "#/$defs/snack_slot" },
           dinner: { $ref: "#/$defs/slot" },
+          after_dinner_snack: { $ref: "#/$defs/snack_slot" },
         },
       },
     },
@@ -148,6 +157,29 @@ const RESPONSE_SCHEMA = {
           },
         },
         reason: { type: "string", description: "Brief reason for choice." },
+      },
+    },
+    snack_slot: {
+      type: "object",
+      description: "A simple grab-and-go snack slot. NEVER a multi-step recipe.",
+      properties: {
+        library_recipe_id: { type: "string", description: "UUID of a snack from the candidate pool. Prefer this." },
+        new_snack: {
+          type: "object",
+          description: "Only when no candidate fits. Simple ready-to-eat item, no cooking.",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            ingredients: { type: "array", items: { type: "string" }, maxItems: 4 },
+            estimated_cost_per_serving: { type: "number" },
+            calories_estimate: { type: "integer" },
+            protein_estimate: { type: "number" },
+            carbs_estimate: { type: "number" },
+            fat_estimate: { type: "number" },
+          },
+          required: ["name", "ingredients"],
+        },
+        reason: { type: "string" },
       },
     },
   },
@@ -803,6 +835,10 @@ Deno.serve(async (req) => {
       candidates_breakfast: breakfastCandidates.map(compactCandidate),
       candidates_lunch: lunchCandidates.map(compactCandidate),
       candidates_dinner: dinnerCandidates.map(compactCandidate),
+      // Snack pools — Phase: a single snack library powers all three snack slots.
+      candidates_morning_snack: snackCandidates.map(compactCandidate),
+      candidates_afternoon_snack: snackCandidates.map(compactCandidate),
+      candidates_after_dinner_snack: snackCandidates.map(compactCandidate),
       // Help The Hive budget reference (planning estimates — NOT exact store prices)
       budget_reference: {
         notice: "Prices are PLANNING ESTIMATES, not exact store prices. Prioritize low-cost, high-protein, family-friendly, shelf-stable, widely available foods.",
@@ -841,7 +877,7 @@ Deno.serve(async (req) => {
         const ai = await callOpenAI({
           model: "gpt-5.4-mini",
           system: SYSTEM_PROMPT,
-          user: `Select recipes from candidates_breakfast / candidates_lunch / candidates_dinner to fill ${daysCount} days. Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
+          user: `Fill ${daysCount} days with the 6 daily slots (breakfast, morning_snack, lunch, afternoon_snack, dinner, after_dinner_snack). Pick from candidates_breakfast / candidates_lunch / candidates_dinner for cooked meals, and candidates_morning_snack / candidates_afternoon_snack / candidates_after_dinner_snack for snacks. Snacks must stay simple grab-and-go (no cooking). Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
           tools: [{
             type: "function",
             function: {
@@ -1028,13 +1064,30 @@ Deno.serve(async (req) => {
       ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
     ];
 
-    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner" | "snack", usedIds: Set<string>): any | null {
-      const pool =
-        mealType === "breakfast" ? breakfastCandidates :
-        mealType === "lunch" ? lunchCandidates :
-        mealType === "dinner" ? dinnerCandidates :
-        snackCandidates;
-      for (const c of pool) {
+    // Slot keys vs. underlying meal_type category. The plan exposes six daily
+    // slots (breakfast, morning_snack, lunch, afternoon_snack, dinner,
+    // after_dinner_snack); all three snack slots draw from the snack pool and
+    // are categorized as "snack" for the recipes table.
+    type SlotKey = "breakfast" | "morning_snack" | "lunch" | "afternoon_snack" | "dinner" | "after_dinner_snack";
+    type MealCategory = "breakfast" | "lunch" | "dinner" | "snack";
+    const SLOT_KEYS: SlotKey[] = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "after_dinner_snack"];
+    const SNACK_SLOT_KEYS: SlotKey[] = ["morning_snack", "afternoon_snack", "after_dinner_snack"];
+    const slotToCategory = (s: string): MealCategory =>
+      (SNACK_SLOT_KEYS as string[]).includes(s) ? "snack" : (s as MealCategory);
+    const SLOT_ORDER: Record<string, number> = {
+      breakfast: 0, morning_snack: 1, lunch: 2, afternoon_snack: 3, dinner: 4, after_dinner_snack: 5,
+    };
+
+    function poolFor(slotKey: string): any[] {
+      const cat = slotToCategory(slotKey);
+      return cat === "breakfast" ? breakfastCandidates
+        : cat === "lunch" ? lunchCandidates
+        : cat === "dinner" ? dinnerCandidates
+        : snackCandidates;
+    }
+
+    function findSafeCandidate(slotKey: string, usedIds: Set<string>): any | null {
+      for (const c of poolFor(slotKey)) {
         if (usedIds.has(c.id)) continue;
         if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
         return c;
@@ -1045,9 +1098,12 @@ Deno.serve(async (req) => {
     const usedIds = new Set<string>();
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner", "snack"] as const) {
-        const slot = day[mealType];
+      for (const slotKey of SLOT_KEYS) {
+        const slot = day[slotKey];
         if (!slot) continue;
+        const isSnackSlot = (SNACK_SLOT_KEYS as string[]).includes(slotKey);
+        // AI may use either "new_meal" or "new_snack" for snack slots; accept both.
+        const newMealPayload = slot.new_meal ?? slot.new_snack;
 
         let recipe: any = null;
         let reason: string | undefined = slot.reason;
@@ -1056,17 +1112,18 @@ Deno.serve(async (req) => {
           const cand = candidatesById.get(slot.library_recipe_id);
           if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) {
             console.warn("[generate-meal-plan] AI chose unsafe library recipe — replacing", cand.title);
-            recipe = findSafeCandidate(mealType, usedIds);
+            recipe = findSafeCandidate(slotKey, usedIds);
             reason = "Swapped to honor your dietary preferences and allergies.";
           } else {
             recipe = cand;
           }
-        } else if (slot.new_meal) {
-          const nm = slot.new_meal;
-          const pseudo = { title: nm.meal_name, description: nm.description, ingredients: nm.ingredients };
+        } else if (newMealPayload) {
+          const nm = newMealPayload;
+          const nmName = nm.meal_name ?? nm.name ?? "Custom item";
+          const pseudo = { title: nmName, description: nm.description, ingredients: nm.ingredients };
           if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) {
-            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nm.meal_name);
-            recipe = findSafeCandidate(mealType, usedIds);
+            console.warn("[generate-meal-plan] AI new_meal violates allergy/diet — replacing", nmName);
+            recipe = findSafeCandidate(slotKey, usedIds);
             reason = "Swapped to honor your dietary preferences and allergies.";
           } else {
             const cost = Number(nm.estimated_cost_per_serving) || null;
@@ -1074,21 +1131,22 @@ Deno.serve(async (req) => {
             const { data: inserted, error: insErr } = await admin
               .from("recipes")
               .insert({
-                title: String(nm.meal_name || "Custom meal").slice(0, 200),
+                title: String(nmName).slice(0, 200),
                 description: nm.description ?? null,
-                meal_type: mealType,
+                meal_type: slotToCategory(slotKey),
                 ingredients: Array.isArray(nm.ingredients) ? nm.ingredients : [],
-                instructions: Array.isArray(nm.instructions) ? nm.instructions : [],
+                // Snacks intentionally have no cooking instructions.
+                instructions: isSnackSlot ? [] : (Array.isArray(nm.instructions) ? nm.instructions : []),
                 calories: nm.calories_estimate ?? null,
                 protein_g: nm.protein_estimate ?? null,
-                prep_time_minutes: nm.prep_time_minutes ?? null,
-                cook_time_minutes: nm.cook_time_minutes ?? null,
+                prep_time_minutes: isSnackSlot ? 0 : (nm.prep_time_minutes ?? null),
+                cook_time_minutes: isSnackSlot ? 0 : (nm.cook_time_minutes ?? null),
                 serving_size: servings,
                 estimated_recipe_cost: cost ? cost * servings : null,
                 source: "ai_generated",
                 is_public: false,
                 created_by_user_id: userId,
-                tags: Array.isArray(nm.tags) ? nm.tags : [],
+                tags: Array.isArray(nm.tags) ? nm.tags : (isSnackSlot ? ["snack", "no-cook"] : []),
               })
               .select("id, title, description, meal_type, cost_per_serving, budget_tier, serving_size, calories, protein_g, ingredients, instructions, image_url, tags, prep_time_minutes, cook_time_minutes")
               .single();
@@ -1097,7 +1155,6 @@ Deno.serve(async (req) => {
               continue;
             }
             recipe = inserted;
-            // Stash AI-estimated macros not stored in DB columns.
             recipe.carbs_g = nm.carbs_estimate ?? null;
             recipe.fat_g = nm.fat_estimate ?? null;
             recipe.nutrition_source = "ai_estimated";
@@ -1106,61 +1163,96 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        if (!recipe) continue; // no safe substitute available — skip slot rather than serve unsafe food
+        if (!recipe) continue;
         if (recipe.id) usedIds.add(recipe.id);
-        dayMeals.push({ meal_type: mealType, recipe, reason });
+        // meal_type stored on the per-day meal preserves slot identity so the
+        // UI can render six discrete slots; recipes.meal_type stays in the
+        // breakfast/lunch/dinner/snack vocabulary.
+        dayMeals.push({ meal_type: slotKey, recipe, reason });
       }
-      // Backfill missing meal slots — families need a full 3 meals per day.
-      // GUARANTEE: every day ends with breakfast + lunch + dinner. Order of
-      // fallbacks: unused safe candidate → reused safe candidate → minimum-
-      // portion hardcoded staple meal. We NEVER leave a slot empty.
-      // Snacks are OPTIONAL and never backfilled.
+      // Backfill any missing slot — full 6-slot days are required.
       const present = new Set(dayMeals.map((m) => m.meal_type));
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-        if (present.has(mealType)) continue;
-        let fill: any = findSafeCandidate(mealType, usedIds);
+      for (const slotKey of SLOT_KEYS) {
+        if (present.has(slotKey)) continue;
+        let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
-          // Allow reusing a previously-placed safe candidate before dropping a meal.
-          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          const pool = poolFor(slotKey);
           fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
         }
-        if (!fill) {
-          // No library option fits the safety filters at all — inject a
-          // minimum-portion staple meal so the user still gets 3 meals.
-          fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (!fill && !(SNACK_SLOT_KEYS as string[]).includes(slotKey)) {
+          fill = buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs);
         }
+        if (!fill) continue; // snack slot with no safe pool item — skip rather than fabricate
         if (fill.id) usedIds.add(fill.id);
         dayMeals.push({
-          meal_type: mealType,
+          meal_type: slotKey,
           recipe: fill,
-          reason: "Added at minimum portions to keep your day complete within budget.",
+          reason: "Added to complete your day.",
         });
       }
-      // Keep meals in canonical breakfast → lunch → dinner → snack order.
-      dayMeals.sort((a, b) => {
-        const order = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 } as Record<string, number>;
-        return (order[a.meal_type] ?? 9) - (order[b.meal_type] ?? 9);
-      });
+      dayMeals.sort((a, b) => (SLOT_ORDER[a.meal_type] ?? 9) - (SLOT_ORDER[b.meal_type] ?? 9));
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
-    // If the AI returned fewer than `daysCount` days, top up so we always
-    // emit a full week of 3 meals/day. Builds each missing day the same way.
+    // Top up missing days so we always emit a full week with all 6 slots.
     const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     while (resolvedDays.length < daysCount) {
       const dayMeals: any[] = [];
-      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-        let fill: any = findSafeCandidate(mealType, usedIds);
+      for (const slotKey of SLOT_KEYS) {
+        let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
-          const pool = mealType === "breakfast" ? breakfastCandidates : mealType === "lunch" ? lunchCandidates : dinnerCandidates;
+          const pool = poolFor(slotKey);
           fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
         }
-        if (!fill) fill = buildMinimumPortionStaple(mealType, allergies, dietaryPrefs);
+        if (!fill && !(SNACK_SLOT_KEYS as string[]).includes(slotKey)) {
+          fill = buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs);
+        }
+        if (!fill) continue;
         if (fill.id) usedIds.add(fill.id);
-        dayMeals.push({ meal_type: mealType, recipe: fill, reason: "Added to complete your week." });
+        dayMeals.push({ meal_type: slotKey, recipe: fill, reason: "Added to complete your week." });
       }
       resolvedDays.push({ day_name: DAY_NAMES[resolvedDays.length] || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
+
+    // ===== Plan shape validation =====
+    // Enforce the 6-slot/day contract before saving. Log violations loudly so
+    // they show up in edge function logs; downstream safety enforcement
+    // (allergies, dietary prefs, budget) still runs in dedicated passes.
+    {
+      const issues: string[] = [];
+      if (resolvedDays.length !== daysCount) {
+        issues.push(`expected ${daysCount} days, got ${resolvedDays.length}`);
+      }
+      const seenRecipeIds = new Set<string>();
+      for (const d of resolvedDays) {
+        const slotSet = new Set(d.meals.map((m: any) => m.meal_type));
+        for (const k of SLOT_KEYS) {
+          if (!slotSet.has(k)) issues.push(`${d.day_name}: missing slot ${k}`);
+        }
+        if (d.meals.length !== SLOT_KEYS.length) {
+          issues.push(`${d.day_name}: expected ${SLOT_KEYS.length} slots, got ${d.meals.length}`);
+        }
+        for (const m of d.meals) {
+          const isSnack = (SNACK_SLOT_KEYS as string[]).includes(m.meal_type);
+          // No-cook check for snacks: warn if AI sneaks in cook time.
+          if (isSnack && Number(m.recipe?.cook_time_minutes) > 0) {
+            issues.push(`${d.day_name}/${m.meal_type}: snack should be no-cook (cook_time=${m.recipe.cook_time_minutes})`);
+          }
+          // No repeated full meals (snacks may repeat).
+          if (!isSnack && m.recipe?.id) {
+            if (seenRecipeIds.has(m.recipe.id)) {
+              issues.push(`${d.day_name}/${m.meal_type}: duplicate cooked recipe ${m.recipe.id}`);
+            }
+            seenRecipeIds.add(m.recipe.id);
+          }
+        }
+      }
+      if (issues.length) {
+        console.warn("[generate-meal-plan] plan validation issues", issues);
+      }
+    }
+
+
 
     // ===== Budget enforcement (hard cap) =====
     // The estimated grocery total must NEVER exceed the user's weekly budget.
@@ -1171,6 +1263,10 @@ Deno.serve(async (req) => {
       lunch: lunchCandidates,
       dinner: dinnerCandidates,
       snack: snackCandidates,
+      // Snack slot aliases so swap/budget loops keyed by meal_type resolve correctly.
+      morning_snack: snackCandidates,
+      afternoon_snack: snackCandidates,
+      after_dinner_snack: snackCandidates,
     };
     const FALLBACK_COST_PER_SERVING = 3.5; // conservative for missing prices
     const mealCost = (r: any): number =>
