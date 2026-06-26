@@ -493,20 +493,16 @@ export default function GroceryListPage() {
                           </p>
                         );
                       }
-                      if (!p) {
+                      if (!p || !p.matched || p.price == null) {
                         return (
                           <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
-                            Price varies by store
+                            Final price confirmed in Instacart
                           </p>
                         );
                       }
-                      const range =
-                        p.low === p.high
-                          ? `$${p.estimate.toFixed(2)}`
-                          : `$${p.low.toFixed(2)} – $${p.high.toFixed(2)}`;
                       return (
                         <p className="text-[11px] font-semibold text-primary mt-0.5">
-                          {range}
+                          ~${p.price.toFixed(2)}
                           <span className="text-muted-foreground font-normal ml-1">est.</span>
                         </p>
                       );
