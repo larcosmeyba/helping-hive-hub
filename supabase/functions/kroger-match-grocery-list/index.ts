@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        pricing_available: true,
         matches,
         totals: {
           matched: basket.matched_count,
