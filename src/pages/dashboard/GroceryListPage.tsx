@@ -597,16 +597,26 @@ export default function GroceryListPage() {
           )}
           <div className="border-t border-border pt-3 flex justify-between items-baseline">
             <div>
-              <span className="font-semibold text-foreground text-base">Estimated Weekly Grocery Cost</span>
-              <p className="text-[10px] text-muted-foreground italic mt-0.5">range, not exact</p>
+              <span className="font-semibold text-foreground text-base">Estimated Local Grocery Total</span>
+              <p className="text-[10px] text-muted-foreground italic mt-0.5">
+                {pricingAvailable === false ? "Local pricing unavailable" : "Final price confirmed at Instacart checkout"}
+              </p>
             </div>
-            <span className="font-bold text-2xl text-primary">
-              {totalRangeLabel}
+            <span className="font-bold text-2xl text-primary text-right">
+              {pricingAvailable === false ? (
+                <span className="text-sm text-muted-foreground font-medium">
+                  {LOCAL_PRICING_UNAVAILABLE_MESSAGE}
+                </span>
+              ) : (
+                totalRangeLabel
+              )}
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
-            {PRICING_DISCLAIMER}
-          </p>
+          {pricingAvailable !== false && (
+            <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
+              {GROCERY_PRICING_DISCLAIMER}
+            </p>
+          )}
           {mealPlan.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-primary" />
@@ -624,6 +634,24 @@ export default function GroceryListPage() {
           label="Shop ingredients"
           onClick={handleShopWithInstacart}
         />
+        {(() => {
+          const weeklyBudget = Number(profile?.weekly_budget ?? 0);
+          const projected = pricingSubtotal + extrasTotal;
+          if (
+            pricingAvailable &&
+            weeklyBudget > 0 &&
+            projected > weeklyBudget
+          ) {
+            return (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[12px] leading-relaxed text-amber-900">
+                  {INSTACART_OVER_BUDGET_MESSAGE}
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <p className="text-[10px] text-muted-foreground/80 leading-relaxed text-center px-2">
           Help The Hive may earn a commission on qualifying purchases made through Instacart.
           Final prices, availability, and substitutions are confirmed at Instacart checkout.
