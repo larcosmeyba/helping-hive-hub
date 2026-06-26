@@ -17,6 +17,17 @@ import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { openPendingWindow, redirectPendingWindow } from "@/lib/popupRedirect";
+import { getAppUrl } from "@/lib/appUrl";
+import { trackEvent } from "@/lib/analytics";
+import { phCapture } from "@/lib/posthog";
+
+function parseQty(q: string): { num: number; unit: string } {
+  if (!q) return { num: 1, unit: "each" };
+  const m = q.match(/([\d.]+)\s*(.*)/);
+  return { num: m ? parseFloat(m[1]) || 1 : 1, unit: m && m[2] ? m[2].trim() : "each" };
+}
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -93,8 +104,7 @@ export default function GroceryListPage() {
   // Per-item DB pricing (must be declared before any early return).
   const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
-
-  // (Legacy ?from=instacart return-flow removed — no external checkout handoff.)
+  const [instacartLoading, setInstacartLoading] = useState(false);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
