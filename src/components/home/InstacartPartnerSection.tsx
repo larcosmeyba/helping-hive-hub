@@ -1,16 +1,19 @@
-import { ShoppingBag } from "lucide-react";
+import instacartLogo from "@/assets/instacart/logo-cashew.png.asset.json";
 
 export function InstacartPartnerSection() {
   return (
     <section aria-labelledby="instacart-partner-heading" className="py-16 bg-white">
       <div className="container max-w-5xl mx-auto px-4">
-        <div className="rounded-2xl border border-border bg-[hsl(43_100%_96%)] p-8 md:p-12 text-center shadow-sm">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#003D29] mb-5">
-            <ShoppingBag className="w-7 h-7 text-[#FAF1E5]" aria-hidden="true" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        <div className="rounded-2xl border border-border bg-[#003D29] p-8 md:p-12 text-center shadow-sm">
+          <img
+            src={instacartLogo.url}
+            alt="Instacart"
+            className="h-10 md:h-12 w-auto mx-auto mb-6"
+          />
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#FAF1E5]/70 mb-3">
             Integrated with the Instacart Developer Platform
           </p>
+
           <h2 id="instacart-partner-heading" className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Shop smarter with the Instacart<sup>®</sup> app
           </h2>
