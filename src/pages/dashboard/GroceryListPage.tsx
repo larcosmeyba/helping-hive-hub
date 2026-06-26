@@ -277,18 +277,17 @@ export default function GroceryListPage() {
     ? `$${dbBasket.low} – $${dbBasket.high}`
     : formatBasketRange(basketRange);
 
-  // Send the user's grocery list (unchecked = still need to buy) + any extras
-  // to Instacart via the `instacart-create-list` edge function. Items already
-  // checked off are considered "purchased" and skipped.
+  // Send the items the user has SELECTED (checked) to Instacart, plus any
+  // extras they added manually. Unchecked items are intentionally skipped.
   const handleShopWithInstacart = async () => {
     const toSend = [
       ...groceryItems
-        .filter((i) => !checked.has(i.name))
+        .filter((i) => selected.has(i.name))
         .map((i) => ({ name: i.name, quantity: i.quantity ?? "" })),
       ...extraItems.map((i) => ({ name: i.name, quantity: "" })),
     ];
     if (toSend.length === 0) {
-      toast({ title: "Nothing to send", description: "All items are checked off." });
+      toast({ title: "Nothing selected", description: "Check the items you want to send to Instacart." });
       return;
     }
     // Safari/iOS: open the destination window SYNCHRONOUSLY inside the click
