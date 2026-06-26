@@ -409,12 +409,12 @@ export default function GroceryListPage() {
       {/* Bold instructional banner guiding users into the Instacart flow */}
       <div className="rounded-2xl border-2 border-primary/20 bg-primary/[0.06] p-5 md:p-6">
         <p className="text-center font-bold text-foreground text-sm md:text-base leading-relaxed">
-          Select the items you want to shop for, then mark them purchased after you buy.
+          Check the items you want to send to Instacart, then tap Shop with Instacart.
         </p>
         <p className="text-center text-muted-foreground text-[11px] md:text-xs mt-2">
-          {checkedCount > 0
-            ? `${checkedCount} item${checkedCount === 1 ? "" : "s"} selected`
-            : `All ${groceryItems.length + extraItems.length} items will be sent to Instacart`}
+          {selectedCount > 0
+            ? `${selectedCount} item${selectedCount === 1 ? "" : "s"} will be sent to Instacart`
+            : `No items selected — check the boxes next to items you want to shop`}
         </p>
       </div>
 
