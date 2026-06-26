@@ -159,6 +159,29 @@ const RESPONSE_SCHEMA = {
         reason: { type: "string", description: "Brief reason for choice." },
       },
     },
+    snack_slot: {
+      type: "object",
+      description: "A simple grab-and-go snack slot. NEVER a multi-step recipe.",
+      properties: {
+        library_recipe_id: { type: "string", description: "UUID of a snack from the candidate pool. Prefer this." },
+        new_snack: {
+          type: "object",
+          description: "Only when no candidate fits. Simple ready-to-eat item, no cooking.",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            ingredients: { type: "array", items: { type: "string" }, maxItems: 4 },
+            estimated_cost_per_serving: { type: "number" },
+            calories_estimate: { type: "integer" },
+            protein_estimate: { type: "number" },
+            carbs_estimate: { type: "number" },
+            fat_estimate: { type: "number" },
+          },
+          required: ["name", "ingredients"],
+        },
+        reason: { type: "string" },
+      },
+    },
   },
 } as const;
 
