@@ -15,6 +15,7 @@ import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { fetchLocalPricing, type LocalPriceLine, LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
+import { GROCERY_PRICING_DISCLAIMER } from "@/lib/disclaimers";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
