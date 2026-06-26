@@ -223,7 +223,7 @@ export default function GroceryListPage() {
   // GroceryItemImage component falls back to its flat icon tile.
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
-  const checkedCount = checked.size;
+  const selectedCount = selected.size;
   // Phase 1 fallback: category-average range (used until DB prices load).
   const basketRange = estimateBasketRange(groceryItems);
   const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
