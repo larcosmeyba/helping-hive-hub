@@ -1064,13 +1064,30 @@ Deno.serve(async (req) => {
       ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
     ];
 
-    function findSafeCandidate(mealType: "breakfast" | "lunch" | "dinner" | "snack", usedIds: Set<string>): any | null {
-      const pool =
-        mealType === "breakfast" ? breakfastCandidates :
-        mealType === "lunch" ? lunchCandidates :
-        mealType === "dinner" ? dinnerCandidates :
-        snackCandidates;
-      for (const c of pool) {
+    // Slot keys vs. underlying meal_type category. The plan exposes six daily
+    // slots (breakfast, morning_snack, lunch, afternoon_snack, dinner,
+    // after_dinner_snack); all three snack slots draw from the snack pool and
+    // are categorized as "snack" for the recipes table.
+    type SlotKey = "breakfast" | "morning_snack" | "lunch" | "afternoon_snack" | "dinner" | "after_dinner_snack";
+    type MealCategory = "breakfast" | "lunch" | "dinner" | "snack";
+    const SLOT_KEYS: SlotKey[] = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "after_dinner_snack"];
+    const SNACK_SLOT_KEYS: SlotKey[] = ["morning_snack", "afternoon_snack", "after_dinner_snack"];
+    const slotToCategory = (s: string): MealCategory =>
+      (SNACK_SLOT_KEYS as string[]).includes(s) ? "snack" : (s as MealCategory);
+    const SLOT_ORDER: Record<string, number> = {
+      breakfast: 0, morning_snack: 1, lunch: 2, afternoon_snack: 3, dinner: 4, after_dinner_snack: 5,
+    };
+
+    function poolFor(slotKey: string): any[] {
+      const cat = slotToCategory(slotKey);
+      return cat === "breakfast" ? breakfastCandidates
+        : cat === "lunch" ? lunchCandidates
+        : cat === "dinner" ? dinnerCandidates
+        : snackCandidates;
+    }
+
+    function findSafeCandidate(slotKey: string, usedIds: Set<string>): any | null {
+      for (const c of poolFor(slotKey)) {
         if (usedIds.has(c.id)) continue;
         if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
         return c;
