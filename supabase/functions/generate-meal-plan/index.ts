@@ -112,8 +112,11 @@ const RESPONSE_SCHEMA = {
         properties: {
           day_name: { type: "string" },
           breakfast: { $ref: "#/$defs/slot" },
+          morning_snack: { $ref: "#/$defs/snack_slot" },
           lunch: { $ref: "#/$defs/slot" },
+          afternoon_snack: { $ref: "#/$defs/snack_slot" },
           dinner: { $ref: "#/$defs/slot" },
+          after_dinner_snack: { $ref: "#/$defs/snack_slot" },
         },
       },
     },
