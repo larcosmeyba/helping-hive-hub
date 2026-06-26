@@ -103,8 +103,10 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const { status: locationStatus } = useLocation();
 
-  // Per-item DB pricing (must be declared before any early return).
-  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  // ZIP-based local pricing (single source of truth — no fallback).
+  const [itemPrices, setItemPrices] = useState<Record<string, LocalPriceLine>>({});
+  const [pricingAvailable, setPricingAvailable] = useState<boolean | null>(null);
+  const [pricingSubtotal, setPricingSubtotal] = useState<number>(0);
   const [pricesLoading, setPricesLoading] = useState(false);
   const [instacartLoading, setInstacartLoading] = useState(false);
 
