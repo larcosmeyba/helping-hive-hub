@@ -835,6 +835,10 @@ Deno.serve(async (req) => {
       candidates_breakfast: breakfastCandidates.map(compactCandidate),
       candidates_lunch: lunchCandidates.map(compactCandidate),
       candidates_dinner: dinnerCandidates.map(compactCandidate),
+      // Snack pools — Phase: a single snack library powers all three snack slots.
+      candidates_morning_snack: snackCandidates.map(compactCandidate),
+      candidates_afternoon_snack: snackCandidates.map(compactCandidate),
+      candidates_after_dinner_snack: snackCandidates.map(compactCandidate),
       // Help The Hive budget reference (planning estimates — NOT exact store prices)
       budget_reference: {
         notice: "Prices are PLANNING ESTIMATES, not exact store prices. Prioritize low-cost, high-protein, family-friendly, shelf-stable, widely available foods.",
