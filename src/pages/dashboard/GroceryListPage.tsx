@@ -167,11 +167,22 @@ export default function GroceryListPage() {
   };
 
   const toggle = (name: string) => {
-    const next = new Set(checked);
+    const next = new Set(selected);
     if (next.has(name)) next.delete(name);
     else next.add(name);
-    setChecked(next);
+    setSelected(next);
   };
+
+  // Default-select all items the first time the grocery list loads. Users can
+  // uncheck anything they don't want sent to Instacart.
+  useEffect(() => {
+    if (selectedInitialized) return;
+    if (!groceryItems.length) return;
+    setSelected(new Set(groceryItems.map((i) => i.name)));
+    setSelectedInitialized(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groceryItems.length, selectedInitialized]);
+
 
   // Order sections by grocery store aisle logic
   const SECTION_ORDER = [
