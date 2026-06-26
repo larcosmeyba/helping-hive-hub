@@ -1,8 +1,8 @@
 # Help The Hive
 
-> Free meal planning for every family. Help The Hive helps households budget smarter, spend less on groceries, and take the stress out of weeknight meals. We plan your week, build your grocery list, and help you shop in under 5 minutes — and we proudly support SNAP/EBT families through our Instacart partnership.
+> Free meal planning for every family. Help The Hive helps households budget smarter, spend less on groceries, and take the stress out of weeknight meals. We plan your week, build your grocery list, and help you shop in under 5 minutes — and we proudly support SNAP/EBT families. Help The Hive is integrated with the Instacart Developer Platform for grocery fulfillment.
 
-Help The Hive turns your weekly grocery budget and the store you already shop at into a 6-day batch-cooking meal plan with an organized shopping list. Users can send the list directly to Instacart, which accepts SNAP/EBT at participating retailers. The platform is 100% free for everyone — no subscriptions, no premium tiers — funded by Instacart affiliate revenue, sponsored brands, and grants.
+Help The Hive turns your weekly grocery budget and the store you already shop at into a 6-day batch-cooking meal plan with an organized shopping list. Users can send the list to the Instacart® service for delivery in as fast as one hour or pickup (service fees apply; SNAP/EBT accepted at participating retailers). The platform is 100% free for everyone — no subscriptions, no premium tiers — funded by affiliate revenue from qualifying Instacart® orders, sponsored brands, and grants. INSTACART® is a trademark of Maplebear Inc. d/b/a Instacart.
 
 ## Pages
 
