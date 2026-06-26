@@ -877,7 +877,7 @@ Deno.serve(async (req) => {
         const ai = await callOpenAI({
           model: "gpt-5.4-mini",
           system: SYSTEM_PROMPT,
-          user: `Select recipes from candidates_breakfast / candidates_lunch / candidates_dinner to fill ${daysCount} days. Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
+          user: `Fill ${daysCount} days with the 6 daily slots (breakfast, morning_snack, lunch, afternoon_snack, dinner, after_dinner_snack). Pick from candidates_breakfast / candidates_lunch / candidates_dinner for cooked meals, and candidates_morning_snack / candidates_afternoon_snack / candidates_after_dinner_snack for snacks. Snacks must stay simple grab-and-go (no cooking). Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
           tools: [{
             type: "function",
             function: {
