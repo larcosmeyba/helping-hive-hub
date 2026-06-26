@@ -466,7 +466,7 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item, idx) => {
-              const isChecked = checked.has(item.name);
+              const isChecked = selected.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
                 <label
