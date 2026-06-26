@@ -2600,15 +2600,17 @@ function buildMinimumPortionStaple(
   mealType: "breakfast" | "lunch" | "dinner",
   allergies: string[],
   dietaryPrefs: string[],
+  dislikedFoods: string[] = [],
 ): any {
   const d = (dietaryPrefs || []).map((x) => (x || "").toLowerCase());
   const isVegan = d.includes("vegan");
   const isVeg = isVegan || d.includes("vegetarian");
 
-  // Allergy/diet safety terms — same filter used for library recipes.
+  // Allergy/diet/dislike safety terms — same filter used for library recipes.
   const safetyTerms = [
     ...expandAllergies(allergies || []),
     ...forbiddenForDiets(dietaryPrefs || []),
+    ...((dislikedFoods || []).map((x) => String(x || "").toLowerCase().trim()).filter(Boolean)),
   ];
 
   type Cand = {
@@ -2618,31 +2620,34 @@ function buildMinimumPortionStaple(
     veg?: boolean; vegan?: boolean;
   };
 
+  // Breakfast staples — covers vegan, vegetarian, GF, dairy-free, nut-free combos.
+  // Standard oats are NOT gluten-free; the safety filter (DIET_FORBIDDEN.gluten-free)
+  // will skip oat entries for GF users.
   const breakfast: Cand[] = [
-    { title: "Oatmeal with milk",       ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"],            cal: 280, p: 11, c: 42, f: 7, fb: 4, veg: true },
-    { title: "Oatmeal with water",      ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"],           cal: 200, p: 6,  c: 38, f: 3, fb: 4, veg: true, vegan: true },
-    { title: "Scrambled eggs and toast",ings: ["2 eggs", "1 slice bread", "1 tsp oil", "salt", "pepper"],      cal: 300, p: 16, c: 16, f: 18,         veg: true },
     { title: "Banana with sunflower seed butter", ings: ["1 banana", "1 tbsp sunflower seed butter"],          cal: 200, p: 5,  c: 30, f: 9,  fb: 3, veg: true, vegan: true },
-    { title: "Banana with peanut butter",ings: ["1 banana", "1 tbsp peanut butter"],                            cal: 200, p: 5,  c: 30, f: 9,  fb: 3, veg: true, vegan: true },
     { title: "Rice with banana",        ings: ["1 cup cooked rice", "1 banana", "1 tsp sugar"],                cal: 320, p: 5,  c: 72, f: 1,         veg: true, vegan: true },
+    { title: "Oatmeal with water",      ings: ["1/2 cup rolled oats", "1 cup water", "1 tsp sugar"],           cal: 200, p: 6,  c: 38, f: 3, fb: 4, veg: true, vegan: true },
+    { title: "Oatmeal with milk",       ings: ["1/2 cup rolled oats", "1 cup milk", "1 tsp sugar"],            cal: 280, p: 11, c: 42, f: 7, fb: 4, veg: true },
+    { title: "Scrambled eggs and toast",ings: ["2 eggs", "1 slice bread", "1 tsp oil", "salt", "pepper"],      cal: 300, p: 16, c: 16, f: 18,         veg: true },
+    { title: "Banana with peanut butter",ings: ["1 banana", "1 tbsp peanut butter"],                            cal: 200, p: 5,  c: 30, f: 9,  fb: 3, veg: true, vegan: true },
   ];
 
   const lunch: Cand[] = [
-    { title: "Peanut butter sandwich",  ings: ["2 slices bread", "2 tbsp peanut butter"],                       cal: 380, p: 14, c: 38, f: 18, fb: 3, veg: true, vegan: true },
-    { title: "Sunflower seed butter sandwich", ings: ["2 slices bread", "2 tbsp sunflower seed butter"],        cal: 360, p: 11, c: 36, f: 20, fb: 3, veg: true, vegan: true },
-    { title: "Tuna and rice bowl",      ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"],        cal: 380, p: 22, c: 46, f: 9 },
     { title: "Beans and rice",          ings: ["1 cup cooked rice", "1/2 cup canned black beans", "salt", "1 tsp oil"], cal: 340, p: 12, c: 60, f: 5, fb: 8, veg: true, vegan: true },
     { title: "Chickpeas and rice",      ings: ["1 cup cooked rice", "1/2 cup canned chickpeas", "1 tsp olive oil", "salt"], cal: 360, p: 11, c: 60, f: 7, fb: 6, veg: true, vegan: true },
     { title: "Potato with olive oil",   ings: ["1 large potato, baked", "1 tbsp olive oil", "salt"],            cal: 320, p: 5,  c: 50, f: 14, fb: 5, veg: true, vegan: true },
+    { title: "Peanut butter sandwich",  ings: ["2 slices bread", "2 tbsp peanut butter"],                       cal: 380, p: 14, c: 38, f: 18, fb: 3, veg: true, vegan: true },
+    { title: "Sunflower seed butter sandwich", ings: ["2 slices bread", "2 tbsp sunflower seed butter"],        cal: 360, p: 11, c: 36, f: 20, fb: 3, veg: true, vegan: true },
+    { title: "Tuna and rice bowl",      ings: ["1 can tuna, drained", "1 cup cooked rice", "1 tsp oil"],        cal: 380, p: 22, c: 46, f: 9 },
   ];
 
   const dinner: Cand[] = [
-    { title: "Chicken and pasta",       ings: ["3 oz cooked chicken", "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28, c: 42, f: 16 },
-    { title: "Chicken and rice",        ings: ["3 oz cooked chicken", "1 cup cooked rice", "1 tbsp olive oil"],  cal: 440, p: 28, c: 46, f: 12 },
-    { title: "Pasta with cheese",       ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"],cal: 420, p: 16, c: 44, f: 18, veg: true },
     { title: "Lentils and rice",        ings: ["1/2 cup cooked lentils", "1 cup cooked rice", "1 tsp oil", "salt"], cal: 380, p: 16, c: 64, f: 5, fb: 9, veg: true, vegan: true },
     { title: "Beans and rice (dinner)", ings: ["1 cup cooked rice", "3/4 cup canned black beans", "1 tsp olive oil", "salt"], cal: 420, p: 14, c: 70, f: 6, fb: 10, veg: true, vegan: true },
     { title: "Potato with beans",       ings: ["1 large potato, baked", "1/2 cup canned black beans", "1 tsp olive oil", "salt"], cal: 380, p: 11, c: 68, f: 6, fb: 12, veg: true, vegan: true },
+    { title: "Chicken and rice",        ings: ["3 oz cooked chicken", "1 cup cooked rice", "1 tbsp olive oil"],  cal: 440, p: 28, c: 46, f: 12 },
+    { title: "Chicken and pasta",       ings: ["3 oz cooked chicken", "1 cup cooked pasta", "1 tbsp olive oil"], cal: 460, p: 28, c: 42, f: 16 },
+    { title: "Pasta with cheese",       ings: ["1 cup cooked pasta", "1/4 cup grated cheese", "1 tsp olive oil"],cal: 420, p: 16, c: 44, f: 18, veg: true },
   ];
 
   const pool = mealType === "breakfast" ? breakfast : mealType === "lunch" ? lunch : dinner;
@@ -2663,7 +2668,7 @@ function buildMinimumPortionStaple(
     break;
   }
 
-  // Absolute last resort: plain rice (no common allergens / fully vegan).
+  // Absolute last resort: plain rice (no common allergens / fully vegan / GF).
   if (!pick) {
     pick = { title: "Rice with olive oil", ings: ["1 cup cooked rice", "1 tsp olive oil", "salt"], cal: 240, p: 4, c: 45, f: 5, veg: true, vegan: true };
   }
@@ -2686,6 +2691,97 @@ function buildMinimumPortionStaple(
     cook_time_minutes: 10,
     image_url: null,
     tags: ["minimum_portion", "staple"],
+    source: "minimum_portion_fallback",
+    nutrition_source: "ai_estimated",
+  };
+}
+
+// ============================================================
+// buildMinimumPortionSnack — last-resort safe grab-and-go snack so snack
+// slots are NEVER silently dropped. No cooking, 1–3 ingredients, respects
+// allergies + dietary prefs + disliked foods.
+// ============================================================
+function buildMinimumPortionSnack(
+  allergies: string[],
+  dietaryPrefs: string[],
+  dislikedFoods: string[] = [],
+): any {
+  const d = (dietaryPrefs || []).map((x) => (x || "").toLowerCase());
+  const isVegan = d.includes("vegan");
+  const isVeg = isVegan || d.includes("vegetarian");
+
+  const safetyTerms = [
+    ...expandAllergies(allergies || []),
+    ...forbiddenForDiets(dietaryPrefs || []),
+    ...((dislikedFoods || []).map((x) => String(x || "").toLowerCase().trim()).filter(Boolean)),
+  ];
+
+  type Snack = {
+    title: string;
+    ings: string[];
+    cal: number; p: number; c: number; f: number; fb?: number;
+    veg?: boolean; vegan?: boolean;
+  };
+
+  // Ordered from most nutritious to most universally safe. Plain fruit anchors
+  // the bottom so every diet/allergy combo has at least one survivor.
+  const pool: Snack[] = [
+    { title: "Apple slices", ings: ["1 apple, sliced"], cal: 95, p: 0, c: 25, f: 0, fb: 4, veg: true, vegan: true },
+    { title: "Banana", ings: ["1 banana"], cal: 105, p: 1, c: 27, f: 0, fb: 3, veg: true, vegan: true },
+    { title: "Orange", ings: ["1 orange"], cal: 70, p: 1, c: 18, f: 0, fb: 3, veg: true, vegan: true },
+    { title: "Baby carrots", ings: ["1 cup baby carrots"], cal: 50, p: 1, c: 12, f: 0, fb: 3, veg: true, vegan: true },
+    { title: "Cucumber slices", ings: ["1 cucumber, sliced", "pinch of salt"], cal: 30, p: 1, c: 7, f: 0, fb: 2, veg: true, vegan: true },
+    { title: "Grapes", ings: ["1 cup grapes"], cal: 100, p: 1, c: 27, f: 0, fb: 1, veg: true, vegan: true },
+    { title: "Raisins", ings: ["1/4 cup raisins"], cal: 110, p: 1, c: 29, f: 0, fb: 1, veg: true, vegan: true },
+    { title: "Hummus and carrots", ings: ["1/4 cup hummus", "1 cup baby carrots"], cal: 180, p: 5, c: 22, f: 8, fb: 5, veg: true, vegan: true },
+    { title: "Greek yogurt with berries", ings: ["3/4 cup plain Greek yogurt", "1/2 cup berries"], cal: 170, p: 17, c: 18, f: 3, fb: 2, veg: true },
+    { title: "Cottage cheese with fruit", ings: ["1/2 cup cottage cheese", "1/2 cup fruit"], cal: 150, p: 14, c: 14, f: 3, veg: true },
+    { title: "Hard-boiled egg", ings: ["1 hard-boiled egg", "pinch of salt"], cal: 78, p: 6, c: 1, f: 5, veg: true },
+    { title: "String cheese", ings: ["1 string cheese stick"], cal: 80, p: 7, c: 1, f: 6, veg: true },
+    { title: "Apple with peanut butter", ings: ["1 apple, sliced", "1 tbsp peanut butter"], cal: 195, p: 4, c: 27, f: 8, fb: 5, veg: true, vegan: true },
+    { title: "Apple with sunflower seed butter", ings: ["1 apple, sliced", "1 tbsp sunflower seed butter"], cal: 190, p: 3, c: 27, f: 8, fb: 5, veg: true, vegan: true },
+  ];
+
+  const dietOk = (s: Snack) => {
+    if (isVegan && !s.vegan) return false;
+    if (isVeg && !s.veg) return false;
+    return true;
+  };
+
+  let pick: Snack | null = null;
+  for (const s of pool) {
+    if (!dietOk(s)) continue;
+    const pseudo = { title: s.title, ingredients: s.ings };
+    if (safetyTerms.length && recipeContainsAny(pseudo, safetyTerms)) continue;
+    pick = s;
+    break;
+  }
+
+  // Absolute last-resort universal snack — water + a pinch of salt is the only
+  // thing that survives every conceivable restriction. Apple is safer in
+  // practice and survives vegan/GF/nut-free/dairy-free out of the box.
+  if (!pick) {
+    pick = { title: "Apple slices", ings: ["1 apple, sliced"], cal: 95, p: 0, c: 25, f: 0, fb: 4, veg: true, vegan: true };
+  }
+
+  return {
+    id: null,
+    title: `${pick.title} (snack)`,
+    description: "Simple grab-and-go snack — no cooking required.",
+    meal_type: "snack",
+    ingredients: pick.ings,
+    instructions: [], // snacks never have cooking steps
+    calories: pick.cal,
+    protein_g: pick.p,
+    carbs_g: pick.c,
+    fat_g: pick.f,
+    fiber_g: pick.fb ?? 0,
+    cost_per_serving: 0.75,
+    serving_size: 1,
+    prep_time_minutes: 1,
+    cook_time_minutes: 0,
+    image_url: null,
+    tags: ["snack", "no-cook", "minimum_portion"],
     source: "minimum_portion_fallback",
     nutrition_source: "ai_estimated",
   };
