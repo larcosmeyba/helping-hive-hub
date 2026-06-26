@@ -18,7 +18,7 @@ export function CTASection() {
             Start Saving On Groceries Today
           </h2>
           <p className="text-honey-cream/60 text-lg mb-10 leading-relaxed">
-            Build meal plans, manage your pantry, and shop smarter at Kroger.
+            Build meal plans, manage your pantry, and shop smarter with Instacart.
           </p>
           <div className="flex flex-col items-center justify-center gap-3">
             <DownloadAppButtons source="cta-section" />
