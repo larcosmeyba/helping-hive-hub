@@ -9,16 +9,16 @@ import { useEffect } from "react";
 const sections = [
   {
     icon: ShoppingCart,
-    eyebrow: "For Fulfillment Partners",
+    eyebrow: "Grocery fulfillment",
     heading: "Help families shop their planned groceries instantly",
-    body: "Help The Hive is partnered with Instacart to turn meal plans into shoppable carts. Users see a neutral grocery estimate powered by our internal pricing engine, then hand off to Instacart for checkout, delivery, and pickup.",
+    body: "Help The Hive is integrated with the Instacart Developer Platform to turn meal plans into shoppable carts. Users see a neutral grocery estimate powered by our internal pricing engine, then hand off to the Instacart® service for checkout, delivery, and pickup.",
     bullets: [
       "One-tap cart creation from weekly meal plans",
-      "Affiliate and retail media integration",
       "Budget-conscious, high-intent shoppers",
-      "Seamless landing-page experience with linkback",
+      "Seamless Instacart® landing-page handoff",
+      "Delivery in as fast as one hour (service fees apply)",
     ],
-    cta: { label: "Contact our partnerships team", email: "marcos@helpthehive.com" },
+    cta: { label: "Contact our team", email: "marcos@helpthehive.com" },
   },
   {
     icon: Store,
