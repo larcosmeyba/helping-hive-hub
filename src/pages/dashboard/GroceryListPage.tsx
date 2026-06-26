@@ -388,7 +388,7 @@ export default function GroceryListPage() {
             <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
           </h1>
           <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-            {groceryItems.length} items • {checkedCount} checked
+            {groceryItems.length} items • {selectedCount} selected for Instacart
             {mealPlan.regionLabel && (
               <span className="flex items-center gap-0.5 text-primary font-medium">
                 <MapPin className="w-2 h-2 md:w-3 md:h-3" /> {mealPlan.regionLabel}
