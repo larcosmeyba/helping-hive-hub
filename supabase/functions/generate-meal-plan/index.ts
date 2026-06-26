@@ -1214,6 +1214,46 @@ Deno.serve(async (req) => {
       resolvedDays.push({ day_name: DAY_NAMES[resolvedDays.length] || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
     }
 
+    // ===== Plan shape validation =====
+    // Enforce the 6-slot/day contract before saving. Log violations loudly so
+    // they show up in edge function logs; downstream safety enforcement
+    // (allergies, dietary prefs, budget) still runs in dedicated passes.
+    {
+      const issues: string[] = [];
+      if (resolvedDays.length !== daysCount) {
+        issues.push(`expected ${daysCount} days, got ${resolvedDays.length}`);
+      }
+      const seenRecipeIds = new Set<string>();
+      for (const d of resolvedDays) {
+        const slotSet = new Set(d.meals.map((m: any) => m.meal_type));
+        for (const k of SLOT_KEYS) {
+          if (!slotSet.has(k)) issues.push(`${d.day_name}: missing slot ${k}`);
+        }
+        if (d.meals.length !== SLOT_KEYS.length) {
+          issues.push(`${d.day_name}: expected ${SLOT_KEYS.length} slots, got ${d.meals.length}`);
+        }
+        for (const m of d.meals) {
+          const isSnack = (SNACK_SLOT_KEYS as string[]).includes(m.meal_type);
+          // No-cook check for snacks: warn if AI sneaks in cook time.
+          if (isSnack && Number(m.recipe?.cook_time_minutes) > 0) {
+            issues.push(`${d.day_name}/${m.meal_type}: snack should be no-cook (cook_time=${m.recipe.cook_time_minutes})`);
+          }
+          // No repeated full meals (snacks may repeat).
+          if (!isSnack && m.recipe?.id) {
+            if (seenRecipeIds.has(m.recipe.id)) {
+              issues.push(`${d.day_name}/${m.meal_type}: duplicate cooked recipe ${m.recipe.id}`);
+            }
+            seenRecipeIds.add(m.recipe.id);
+          }
+        }
+      }
+      if (issues.length) {
+        console.warn("[generate-meal-plan] plan validation issues", issues);
+      }
+    }
+
+
+
     // ===== Budget enforcement (hard cap) =====
     // The estimated grocery total must NEVER exceed the user's weekly budget.
     // Swap the most expensive selected meals with the cheapest unused candidate
