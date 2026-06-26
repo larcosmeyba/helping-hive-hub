@@ -1199,10 +1199,12 @@ Deno.serve(async (req) => {
           const pool = poolFor(slotKey);
           fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
         }
-        if (!fill && !(SNACK_SLOT_KEYS as string[]).includes(slotKey)) {
-          fill = buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs);
+        if (!fill) {
+          fill = (SNACK_SLOT_KEYS as string[]).includes(slotKey)
+            ? buildMinimumPortionSnack(allergies, dietaryPrefs, dislikedFoodsResolver)
+            : buildMinimumPortionStaple(slotToCategory(slotKey) as any, allergies, dietaryPrefs, dislikedFoodsResolver);
         }
-        if (!fill) continue; // snack slot with no safe pool item — skip rather than fabricate
+        if (!fill) continue;
         if (fill.id) usedIds.add(fill.id);
         dayMeals.push({
           meal_type: slotKey,
