@@ -416,6 +416,23 @@ export default function GroceryListPage() {
             ? `${selectedCount} item${selectedCount === 1 ? "" : "s"} will be sent to Instacart`
             : `No items selected — check the boxes next to items you want to shop`}
         </p>
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <button
+            type="button"
+            onClick={() => setSelected(new Set(groceryItems.map((i) => i.name)))}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Select all
+          </button>
+          <span className="text-muted-foreground/40">·</span>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-xs font-semibold text-muted-foreground hover:underline"
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
       {/* Shop-at-Kroger CTA removed — Kroger pricing is shown inline for in-store reference. */}
