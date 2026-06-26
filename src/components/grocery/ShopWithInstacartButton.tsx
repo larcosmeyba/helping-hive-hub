@@ -54,25 +54,10 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
         style={{ ...base, ...style }}
         {...rest}
       >
-        {loading ? (
-          <Loader2 className="animate-spin" size={18} />
-        ) : (
-          // Instacart full-color carrot mark (orange + green). Inline SVG so we don't ship a
-          // raster asset; shape matches Instacart's official carrot logo.
-          <svg width={22} height={22} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
-            {/* Carrot body — orange */}
-            <path
-              d="M12 2c.7 0 1.4.3 1.9.8.5.5.8 1.2.8 1.9 0 .4-.1.8-.2 1.1 1.5.4 2.7 1.6 3.1 3.1.3-.1.7-.2 1.1-.2.7 0 1.4.3 1.9.8.5.5.8 1.2.8 1.9 0 .7-.3 1.4-.8 1.9l-9.1 9.1c-.6.6-1.4 1-2.3 1.1L4 22.7c-.4 0-.7-.3-.7-.7l.2-5.2c.1-.9.4-1.7 1.1-2.3l9.1-9.1c.5-.5 1.2-.8 1.9-.8.4 0 .8.1 1.1.2-.4-1.5-1.6-2.7-3.1-3.1.1-.3.2-.7.2-1.1 0-.7-.3-1.4-.8-1.9C13.4 2.3 12.7 2 12 2z"
-              fill="#FF7009"
-            />
-            {/* Carrot leaf — green */}
-            <path
-              d="M12 2c-.3 0-.6.1-.8.2.2-.1.5-.2.8-.2zM10.5 3.5c-.2.2-.3.5-.3.8 0-.3.1-.6.3-.8z"
-              fill="#0AAD0A"
-            />
-          </svg>
-        )}
-        <span>{loading ? "Opening Instacart…" : label}</span>
+        {loading ? <Loader2 className="animate-spin" size={18} /> : null}
+        <span>
+          {loading ? "Opening Instacart…" : label} with Instacart<sup style={{ fontSize: 9 }}>®</sup>
+        </span>
       </button>
     );
   },

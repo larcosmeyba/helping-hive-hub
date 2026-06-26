@@ -9,21 +9,29 @@ export function InstacartPartnerSection() {
             <ShoppingBag className="w-7 h-7 text-[#FAF1E5]" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-            Official Partner
+            Integrated with the Instacart Developer Platform
           </p>
           <h2 id="instacart-partner-heading" className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-            Shop Smarter with Instacart
+            Shop smarter with the Instacart<sup>®</sup> app
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Help The Hive partners with Instacart to make grocery shopping simple
-            and stress-free. Once your personalized grocery list is created, you
-            can send it directly to Instacart for pickup or delivery. By shopping
-            only for the items on your list, you’ll avoid impulse purchases, stay
-            within your grocery budget, and make healthy eating easier than ever.
+            Help The Hive is integrating with the Instacart Developer Platform to make
+            grocery shopping simple and stress-free. Once your personalized grocery list
+            is created, you can send it to the Instacart<sup>®</sup> service for pickup
+            or delivery in as fast as one hour.* By shopping only for the items on your
+            list, you'll avoid impulse purchases, stay within your grocery budget, and
+            make healthy eating easier than ever.
           </p>
           <p className="mt-6 text-xs text-muted-foreground">
-            Help The Hive may earn a commission from qualifying Instacart orders.
-            This supports keeping the app 100% free for every family.
+            *Service fees apply. Delivery in as fast as one hour subject to availability.
+            Help The Hive may earn a commission from qualifying orders placed via the
+            Instacart<sup>®</sup> service. This supports keeping the app 100% free for
+            every family.
+          </p>
+          <p className="mt-3 text-[11px] text-muted-foreground/80 max-w-2xl mx-auto">
+            INSTACART<sup>®</sup> is a trademark of Maplebear Inc. d/b/a Instacart.
+            Instacart may not be available in all ZIP or postal codes. See Instacart
+            Terms of Service for more details.
           </p>
         </div>
       </div>
