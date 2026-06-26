@@ -12,12 +12,14 @@ export function InstacartPartnerSection() {
             Official Partner
           </p>
           <h2 id="instacart-partner-heading" className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-            Proudly partnered with Instacart
+            Shop Smarter with Instacart
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Turn your weekly meal plan into a ready-to-checkout cart in one tap.
-            Help The Hive sends your full grocery list straight to Instacart for
-            same-day delivery or pickup from the stores you already shop at.
+            Help The Hive partners with Instacart to make grocery shopping simple
+            and stress-free. Once your personalized grocery list is created, you
+            can send it directly to Instacart for pickup or delivery. By shopping
+            only for the items on your list, you’ll avoid impulse purchases, stay
+            within your grocery budget, and make healthy eating easier than ever.
           </p>
           <p className="mt-6 text-xs text-muted-foreground">
             Help The Hive may earn a commission from qualifying Instacart orders.
