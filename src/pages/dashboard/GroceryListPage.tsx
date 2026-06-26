@@ -17,6 +17,17 @@ import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
 import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
+import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { openPendingWindow, redirectPendingWindow } from "@/lib/popupRedirect";
+import { getAppUrl } from "@/lib/appUrl";
+import { trackEvent } from "@/lib/analytics";
+import { phCapture } from "@/lib/posthog";
+
+function parseQty(q: string): { num: number; unit: string } {
+  if (!q) return { num: 1, unit: "each" };
+  const m = q.match(/([\d.]+)\s*(.*)/);
+  return { num: m ? parseFloat(m[1]) || 1 : 1, unit: m && m[2] ? m[2].trim() : "each" };
+}
 
 const STORE_BRAND_BY_RETAILER: Record<string, string> = {
   target: "Good & Gather",
@@ -93,8 +104,7 @@ export default function GroceryListPage() {
   // Per-item DB pricing (must be declared before any early return).
   const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
-
-  // (Legacy ?from=instacart return-flow removed — no external checkout handoff.)
+  const [instacartLoading, setInstacartLoading] = useState(false);
 
   if (!mealPlan || !mealPlan.groceryList?.length) {
     return (
@@ -253,6 +263,62 @@ export default function GroceryListPage() {
   const totalRangeLabel = dbBasket
     ? `$${dbBasket.low} – $${dbBasket.high}`
     : formatBasketRange(basketRange);
+
+  // Send the user's grocery list (unchecked = still need to buy) + any extras
+  // to Instacart via the `instacart-create-list` edge function. Items already
+  // checked off are considered "purchased" and skipped.
+  const handleShopWithInstacart = async () => {
+    const toSend = [
+      ...groceryItems
+        .filter((i) => !checked.has(i.name))
+        .map((i) => ({ name: i.name, quantity: i.quantity ?? "" })),
+      ...extraItems.map((i) => ({ name: i.name, quantity: "" })),
+    ];
+    if (toSend.length === 0) {
+      toast({ title: "Nothing to send", description: "All items are checked off." });
+      return;
+    }
+    // Safari/iOS: open the destination window SYNCHRONOUSLY inside the click
+    // handler before any await, otherwise the popup is blocked.
+    const pending = openPendingWindow();
+    setInstacartLoading(true);
+    try {
+      const line_items = toSend.map((i) => {
+        const parsed = parseQty(i.quantity);
+        const item: { name: string; quantity?: number; unit?: string } = { name: i.name };
+        if (parsed.num > 0) item.quantity = parsed.num;
+        if (parsed.unit) item.unit = parsed.unit;
+        return item;
+      });
+      const linkback = `${getAppUrl()}/dashboard/grocery-list?from=instacart`;
+      const { data, error } = await supabase.functions.invoke("instacart-create-list", {
+        body: {
+          title: "Help The Hive Grocery List",
+          link_type: "shopping_list",
+          line_items,
+          landing_page_configuration: { partner_linkback_url: linkback },
+          expires_in: 30,
+        },
+      });
+      if (error) throw new Error(error.message || "Edge function returned an error");
+      const errPayload = (data as any)?.error;
+      if (errPayload) throw new Error(typeof errPayload === "string" ? errPayload : JSON.stringify(errPayload));
+      const url: string | undefined = (data as any)?.products_link_url;
+      if (!url) throw new Error("Instacart did not return a products_link_url");
+      phCapture("shop_with_instacart_clicked", { item_count: line_items.length, source: "grocery_list_page" });
+      void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
+      redirectPendingWindow(pending, url);
+    } catch (e: any) {
+      if (pending && !pending.closed) pending.close();
+      toast({
+        title: "Couldn't open Instacart",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstacartLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 md:space-y-6 px-1 md:px-0">
@@ -542,7 +608,19 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Bottom Shop-at-Kroger CTA removed — list is for in-store reference only. */}
+      {/* Shop with Instacart — sends the live grocery list (unchecked items + extras) */}
+      <div className="bg-card rounded-2xl border border-border shadow-card p-5 space-y-3">
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          fullWidth
+          onClick={handleShopWithInstacart}
+        />
+        <p className="text-[10px] text-muted-foreground/80 leading-relaxed text-center px-2">
+          Help The Hive may earn a commission on qualifying purchases made through Instacart.
+          Final prices, availability, and substitutions are confirmed at Instacart checkout.
+        </p>
+      </div>
+
 
       {/* Change home store — escape hatch (not a comparison view) */}
       <div className="text-center py-3">
