@@ -57,8 +57,7 @@ export default function MealPlanSetupPage() {
   );
   const [kids, setKids] = useState<number>(0);
   const [, setZip] = useState<string>((profile?.zip_code as string) ?? "");
-  const [krogerLocationId, setKrogerLocationId] = useState<string | null>((profile?.kroger_location_id as string | null) ?? null);
-  const [krogerStoreName, setKrogerStoreName] = useState<string>((profile?.kroger_store_name as string) ?? "");
+  // Kroger is a hidden pricing backend resolved from ZIP server-side — no UI state needed.
   const [diet, setDiet] = useState<string[]>(
     ((profile?.dietary_preferences as string[]) ?? []),
   );
