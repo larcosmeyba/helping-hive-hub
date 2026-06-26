@@ -84,11 +84,13 @@ export default function GroceryListPage() {
   const { toast } = useToast();
   const { role: adminRole } = useAdminRole();
   const homeStore = profile?.home_store ?? "";
-  const [checked, setChecked] = useState<Set<string>>(new Set());
+  // `selected` = items the user wants to SEND to Instacart. Defaults to all
+  // items selected once the grocery list loads, so the Instacart cart matches
+  // the visible list by default. Users uncheck anything they want to skip.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedInitialized, setSelectedInitialized] = useState(false);
   const [selectedStore, setSelectedStore] = useState(homeStore);
   const [showPricingInfo, setShowPricingInfo] = useState(false);
-  
-  
 
   // Sync selected store to home store when profile loads
   useEffect(() => {
@@ -165,11 +167,22 @@ export default function GroceryListPage() {
   };
 
   const toggle = (name: string) => {
-    const next = new Set(checked);
+    const next = new Set(selected);
     if (next.has(name)) next.delete(name);
     else next.add(name);
-    setChecked(next);
+    setSelected(next);
   };
+
+  // Default-select all items the first time the grocery list loads. Users can
+  // uncheck anything they don't want sent to Instacart.
+  useEffect(() => {
+    if (selectedInitialized) return;
+    if (!groceryItems.length) return;
+    setSelected(new Set(groceryItems.map((i) => i.name)));
+    setSelectedInitialized(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groceryItems.length, selectedInitialized]);
+
 
   // Order sections by grocery store aisle logic
   const SECTION_ORDER = [
@@ -210,7 +223,7 @@ export default function GroceryListPage() {
   // GroceryItemImage component falls back to its flat icon tile.
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
-  const checkedCount = checked.size;
+  const selectedCount = selected.size;
   // Phase 1 fallback: category-average range (used until DB prices load).
   const basketRange = estimateBasketRange(groceryItems);
   const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
@@ -264,18 +277,17 @@ export default function GroceryListPage() {
     ? `$${dbBasket.low} – $${dbBasket.high}`
     : formatBasketRange(basketRange);
 
-  // Send the user's grocery list (unchecked = still need to buy) + any extras
-  // to Instacart via the `instacart-create-list` edge function. Items already
-  // checked off are considered "purchased" and skipped.
+  // Send the items the user has SELECTED (checked) to Instacart, plus any
+  // extras they added manually. Unchecked items are intentionally skipped.
   const handleShopWithInstacart = async () => {
     const toSend = [
       ...groceryItems
-        .filter((i) => !checked.has(i.name))
+        .filter((i) => selected.has(i.name))
         .map((i) => ({ name: i.name, quantity: i.quantity ?? "" })),
       ...extraItems.map((i) => ({ name: i.name, quantity: "" })),
     ];
     if (toSend.length === 0) {
-      toast({ title: "Nothing to send", description: "All items are checked off." });
+      toast({ title: "Nothing selected", description: "Check the items you want to send to Instacart." });
       return;
     }
     // Safari/iOS: open the destination window SYNCHRONOUSLY inside the click
@@ -376,7 +388,7 @@ export default function GroceryListPage() {
             <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-primary" /> Grocery List
           </h1>
           <p className="text-[8px] md:text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-            {groceryItems.length} items • {checkedCount} checked
+            {groceryItems.length} items • {selectedCount} selected for Instacart
             {mealPlan.regionLabel && (
               <span className="flex items-center gap-0.5 text-primary font-medium">
                 <MapPin className="w-2 h-2 md:w-3 md:h-3" /> {mealPlan.regionLabel}
@@ -397,13 +409,30 @@ export default function GroceryListPage() {
       {/* Bold instructional banner guiding users into the Instacart flow */}
       <div className="rounded-2xl border-2 border-primary/20 bg-primary/[0.06] p-5 md:p-6">
         <p className="text-center font-bold text-foreground text-sm md:text-base leading-relaxed">
-          Select the items you want to shop for, then mark them purchased after you buy.
+          Check the items you want to send to Instacart, then tap Shop with Instacart.
         </p>
         <p className="text-center text-muted-foreground text-[11px] md:text-xs mt-2">
-          {checkedCount > 0
-            ? `${checkedCount} item${checkedCount === 1 ? "" : "s"} selected`
-            : `All ${groceryItems.length + extraItems.length} items will be sent to Instacart`}
+          {selectedCount > 0
+            ? `${selectedCount} item${selectedCount === 1 ? "" : "s"} will be sent to Instacart`
+            : `No items selected — check the boxes next to items you want to shop`}
         </p>
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <button
+            type="button"
+            onClick={() => setSelected(new Set(groceryItems.map((i) => i.name)))}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Select all
+          </button>
+          <span className="text-muted-foreground/40">·</span>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-xs font-semibold text-muted-foreground hover:underline"
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
       {/* Shop-at-Kroger CTA removed — Kroger pricing is shown inline for in-store reference. */}
@@ -454,7 +483,7 @@ export default function GroceryListPage() {
           </div>
           <div className="divide-y divide-border">
             {groceryItems.filter((i) => (i.section || "Other") === section).map((item, idx) => {
-              const isChecked = checked.has(item.name);
+              const isChecked = selected.has(item.name);
               const displayProduct = getStoreSpecificProduct(item, activeStore);
               return (
                 <label
@@ -501,7 +530,7 @@ export default function GroceryListPage() {
                     })()}
                     {isChecked && (
                       <p className="text-[11px] font-bold text-primary mt-1">
-                        added
+                        ✓ will send to Instacart
                       </p>
                     )}
                   </div>
