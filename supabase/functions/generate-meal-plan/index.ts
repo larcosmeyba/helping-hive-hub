@@ -29,7 +29,8 @@ type GenerationErrorCode =
   | "budget_unfit"
   | "kid_friendly_unfit"
   | "serving_size_invalid"
-  | "grocery_list_invalid";
+  | "grocery_list_invalid"
+  | "plan_validation_failed";
 
 // =========================================================
 // Phase A (algo_v2) — deterministic budget engine constants.
