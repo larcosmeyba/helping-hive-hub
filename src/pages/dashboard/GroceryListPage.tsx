@@ -608,7 +608,19 @@ export default function GroceryListPage() {
         </div>
       </div>
 
-      {/* Bottom Shop-at-Kroger CTA removed — list is for in-store reference only. */}
+      {/* Shop with Instacart — sends the live grocery list (unchecked items + extras) */}
+      <div className="bg-card rounded-2xl border border-border shadow-card p-5 space-y-3">
+        <ShopWithInstacartButton
+          loading={instacartLoading}
+          fullWidth
+          onClick={handleShopWithInstacart}
+        />
+        <p className="text-[10px] text-muted-foreground/80 leading-relaxed text-center px-2">
+          Help The Hive may earn a commission on qualifying purchases made through Instacart.
+          Final prices, availability, and substitutions are confirmed at Instacart checkout.
+        </p>
+      </div>
+
 
       {/* Change home store — escape hatch (not a comparison view) */}
       <div className="text-center py-3">
