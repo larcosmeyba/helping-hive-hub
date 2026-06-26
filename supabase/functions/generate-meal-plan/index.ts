@@ -67,17 +67,27 @@ OTHER RULES:
 - Only create a new_meal/new_snack when NO candidate fits the user's dietary/allergy needs. New meals must include meal_name, description, short ingredients list, instructions, cost_per_serving estimate, prep/cook minutes — and must follow every allergy and dietary rule above.
 - Prioritize candidates that use ingredients the user already has (pantry/fridge), especially expiring_today or use_soon items.
 - NEVER recommend expired ingredients.
-- Stay within the weekly grocery budget.
+- Stay within the weekly grocery budget — but NEVER at the expense of nutrition. Cheap, processed, sugary plans are NOT acceptable even when they fit the budget.
+
+BALANCED NUTRITION RULES (binding — co-equal with budget):
+- Every main meal (breakfast, lunch, dinner) MUST, whenever appropriate, include: (1) a quality protein source, (2) a healthy carbohydrate or whole grain, (3) fruits and/or vegetables, (4) some healthy fat, and (5) meaningful fiber.
+- Across the 7-day week, the plan MUST provide: variety of protein sources (do not repeat the same protein more than ~3 dinners); a variety of fruits and vegetables spanning different colors (green, red/orange, purple/blue, white); a mix of whole grains and complex carbohydrates; reasonable sodium and added-sugar levels; meals that are filling and satisfying for the household.
+- Snacks should complement the day's nutrition — provide protein, healthy fats, fiber, fruit, or vegetables whenever possible. Good snack patterns: Greek yogurt + berries; apple + peanut butter (only if no nut allergy); cottage cheese + fruit; string cheese + whole-grain crackers; hummus + veggies; hard-boiled eggs; edamame.
+- DO NOT lean on chips, candy, sugary cereal, soda, packaged pastries, or other ultra-processed/refined-carb items just because they fit the budget. Budget and nutrition must be optimized TOGETHER.
+
+PRICING CONTEXT (informational only):
+- "local_pricing_context" (when present) lists ZIP-based estimated unit prices for common ingredients. Use it as a soft signal when choosing between similar candidates — prefer the cheaper one if both are equally nutritious. Treat these as ESTIMATES; the backend, not you, makes the final budget decision and may ask you to swap meals for cheaper options if the resulting grocery list exceeds budget.
+- DO NOT invent or report final prices. Cost fields you emit are planning estimates only.
 
 SNACK RULES (binding — applies to morning_snack, afternoon_snack, after_dinner_snack):
 - Snacks are NOT recipes. They are simple grab-and-go items requiring NO cooking and NO real preparation.
-- Examples: Greek yogurt, string cheese, apple with peanut butter (only if no nut allergy), banana, cottage cheese, protein bar, crackers and cheese, fruit cup, trail mix (only if no nut allergy), veggies with hummus, hard-boiled egg.
+- Examples: Greek yogurt, string cheese, apple with peanut butter (only if no nut allergy), banana, cottage cheese, protein bar, crackers and cheese, fruit cup, trail mix (only if no nut allergy), veggies with hummus, hard-boiled egg, edamame.
 - DO NOT generate multi-step snack recipes. DO NOT require cooking snacks. The 6–12 step cooking-instruction rule does NOT apply to snacks.
 - For a new_snack, return ONLY: name, short description, ingredients (1–4 items), calories/macros estimate, cost estimate. NO instructions array required.
 
 FAMILY & CHILD RULES (binding):
 - "household.adults_count", "household.children_ages_5_to_12", "household.babies_under_5" are present in the context. Servings must be sized for adults_count + children_5_to_12 (toddlers eat from the same pot at reduced portions).
-- If children_5_to_12 > 0, AT LEAST 3 of the 21 meals across the week MUST be classic kid-friendly: chicken tacos, pasta dishes, breakfast burritos, rice bowls, sheet pan meals, mac & cheese, quesadillas, meatballs. Note this in the meal "reason".
+- If children_5_to_12 > 0, AT LEAST 3 of the 21 main meals across the week MUST be classic kid-friendly (and still nutritionally balanced): chicken tacos, pasta with veggies, breakfast burritos, rice bowls, sheet pan meals, baked mac & cheese with hidden veg, quesadillas, turkey meatballs. Note this in the meal "reason".
 - If babies_under_5 > 0, the new_meal you create may NOT rely on hard-to-chew or choking-hazard whole foods (whole nuts, popcorn, whole grapes, large meat chunks).
 
 COOKING SKILL RULES (binding):
@@ -97,8 +107,8 @@ RECIPE OUTPUT RULES (binding):
 - Include prep_time_minutes and cook_time_minutes for every new_meal.
 - Always include calories_estimate, protein_estimate (g), carbs_estimate (g), and fat_estimate (g) per serving for every new_meal based on the recipe's ingredients and portion size. Be realistic, not round numbers.
 
-- Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there. Treat all listed prices as ESTIMATES, not exact store prices.
-- When creating a new_meal, build it from budget_staples + budget_food_items and keep cost_per_serving near the cheap_meal_ideas range.
+- Use "budget_reference" as planning guidance: tier_weekly_plan shows a proven $X/week sample plan for this household, cheap_meal_ideas lists low-cost vetted meals, budget_staples lists high-protein-per-dollar pantry foods, and budget_food_items lists cheap ingredients. Prefer ingredients/meals that appear there when they're also nutritionally sound. Treat all listed prices as ESTIMATES, not exact store prices.
+- When creating a new_meal, build it from budget_staples + budget_food_items where possible AND ensure it still satisfies the BALANCED NUTRITION RULES above.
 - Output ONLY the structured tool call.`;
 
 const RESPONSE_SCHEMA = {
