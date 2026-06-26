@@ -1,14 +1,15 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import carrotAsset from "@/assets/instacart/carrot.png.asset.json";
 
 /**
  * "Shop with Instacart" CTA — built to match Instacart Developer Platform
- * brand guidelines (approved wording + carrot mark, minimum 46px tall,
- * dark green #003D29 background). Do NOT restyle without re-review.
+ * brand guidelines (approved wording + official carrot mark, minimum 46px
+ * tall, dark green #003D29 background). Do NOT restyle without re-review.
  *
- * The CTA is purely a handoff — pricing is the Kroger estimate shown above;
- * final price is confirmed inside the Instacart landing page at checkout.
+ * The CTA is purely a handoff — pricing is the internal estimate shown above;
+ * final price is confirmed inside the Instacart® app/landing page at checkout.
  */
 interface Props
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -49,12 +50,21 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
         ref={ref}
         type="button"
         disabled={disabled || loading}
-        aria-label={label}
+        aria-label={`${label} with Instacart`}
         className={cn("instacart-cta", className)}
         style={{ ...base, ...style }}
         {...rest}
       >
-        {loading ? <Loader2 className="animate-spin" size={18} /> : null}
+        {loading ? (
+          <Loader2 className="animate-spin" size={18} />
+        ) : (
+          <img
+            src={carrotAsset.url}
+            alt=""
+            aria-hidden="true"
+            style={{ height: 22, width: "auto", display: "block" }}
+          />
+        )}
         <span>
           {loading ? "Opening Instacart…" : label} with Instacart<sup style={{ fontSize: 9 }}>®</sup>
         </span>
@@ -63,3 +73,4 @@ export const ShopWithInstacartButton = React.forwardRef<HTMLButtonElement, Props
   },
 );
 ShopWithInstacartButton.displayName = "ShopWithInstacartButton";
+
