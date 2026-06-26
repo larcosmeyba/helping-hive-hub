@@ -494,10 +494,19 @@ export default function GroceryReviewPage() {
         </Section>
       )}
 
-      <div className="mt-4 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center gap-1">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
           {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
+        {pricingAvailable === false ? (
+          <p className="text-[12px] text-[#6b6b6b] text-center px-4">
+            {LOCAL_PRICING_UNAVAILABLE_MESSAGE}
+          </p>
+        ) : pricingAvailable && pricingSubtotal > 0 ? (
+          <p className="text-[12px] text-[#1a1a1a] font-semibold">
+            Estimated local total: ~${pricingSubtotal.toFixed(2)}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4">
@@ -507,9 +516,22 @@ export default function GroceryReviewPage() {
           onClick={handleShopWithInstacart}
           label="Shop ingredients"
         />
+        {(() => {
+          const weeklyBudget = Number((profile as any)?.weekly_budget ?? 0);
+          if (pricingAvailable && weeklyBudget > 0 && pricingSubtotal > weeklyBudget) {
+            return (
+              <div className="mt-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[12px] leading-relaxed text-amber-900">
+                  {INSTACART_OVER_BUDGET_MESSAGE}
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <p className="mt-2 text-[11px] text-[#8a8a8a] text-center px-2 leading-relaxed">
-          We may earn a commission when you shop via Instacart. Estimate only —
-          final price confirmed at checkout.
+          We may earn a commission when you shop via Instacart. Final price
+          confirmed at Instacart checkout.
         </p>
         <PricingDisclaimer variant="inline" className="mt-2 text-center" />
       </div>
