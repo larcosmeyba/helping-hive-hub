@@ -1973,7 +1973,21 @@ Deno.serve(async (req) => {
       ? Math.round(Number(krogerSummary.subtotal) * 100) / 100
       : null;
     const inStoreHeadline = finalInStoreTotals.delivered_total;
-    const headlineTotal = krogerHeadline ?? inStoreHeadline;
+    // Meals-based sanity floor: sum each meal's cost_per_serving × servingsMultiplier
+    // across the full 7-day × 6-slot plan. This protects the headline total from
+    // collapsing when the grocery basket dedupes ingredients across many fallback
+    // meals (e.g., 21 rice/beans meals → 3 unique grocery rows). servingsMultiplier
+    // is already cohort-weighted; we do NOT multiply by household_size a second time.
+    const FALLBACK_PER_SERVING = 3.5;
+    const mealsBasedTotal = resolvedDays.reduce((s: number, d: any) =>
+      s + (Array.isArray(d.meals) ? d.meals : []).reduce((ms: number, m: any) => {
+        const cps = Number(m?.recipe?.cost_per_serving);
+        return ms + ((Number.isFinite(cps) && cps > 0 ? cps : FALLBACK_PER_SERVING) * servingsMultiplier);
+      }, 0), 0);
+    const baseHeadline = krogerHeadline ?? inStoreHeadline;
+    // Take the larger of the basket-derived headline and the meals-based floor —
+    // never under-report the cost of feeding the household for the week.
+    const headlineTotal = Math.round(Math.max(baseHeadline, mealsBasedTotal) * 100) / 100;
 
     const overBudgetAfterAdjust = headlineTotal > weeklyBudget;
     let budgetWarningText: string | null = null;
