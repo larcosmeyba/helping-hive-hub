@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
+import { LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { phCapture } from "@/lib/posthog";
 import { getAppUrl } from "@/lib/appUrl";
@@ -292,17 +293,19 @@ export default function ShopGroceriesPage() {
   }, [kroger.ready, kroger.locationId, needToBuy.length]);
 
   // ---- Totals + audit ----------------------------------------------------------
-  // Use the matcher's authoritative line_total (package_price × packages).
-  // Items in "needs_review" are NEVER summed — they need user review first.
-  // Fall back to estimated_price * parsedQty only when no live match exists.
+  // ZIP-based local pricing only — single source of truth. No fallback to
+  // estimated_price (the old grocery_price_reference value). Items without a
+  // live Kroger match are excluded from the total; the UI shows
+  // LOCAL_PRICING_UNAVAILABLE_MESSAGE when nothing matched.
   const total = useMemo(
     () => Math.round(needToBuy.reduce((s, i) => {
       if (i.match_status === "needs_review" || i.match_status === "no_match") return s;
       if (typeof i.line_total === "number") return s + i.line_total;
-      return s + (i.estimated_price ?? 0) * i.parsedQty;
+      return s;
     }, 0) * 100) / 100,
     [needToBuy],
   );
+  const pricingAvailable = needToBuy.some((i) => typeof i.line_total === "number");
   const target = Math.round(weeklyBudget * TARGET_BUDGET_RATIO * 100) / 100;
   const over = weeklyBudget > 0 && total > weeklyBudget;
   const remaining = Math.round((weeklyBudget - total) * 100) / 100;
@@ -653,12 +656,20 @@ export default function ShopGroceriesPage() {
       <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-card p-3 shadow-md space-y-2">
         <div className="rounded-xl bg-muted/40 px-3 py-2 text-center">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Estimated total
+            Estimated local total
           </p>
-          <p className="text-xl font-bold tabular-nums">${total.toFixed(2)}</p>
-          <p className="text-[11px] text-muted-foreground leading-snug">
-            Estimate only — final price confirmed at checkout.
-          </p>
+          {pricingAvailable ? (
+            <>
+              <p className="text-xl font-bold tabular-nums">${total.toFixed(2)}</p>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Estimate only — final price confirmed in Instacart.
+              </p>
+            </>
+          ) : (
+            <p className="text-[13px] font-medium text-foreground leading-snug py-1">
+              {LOCAL_PRICING_UNAVAILABLE_MESSAGE}
+            </p>
+          )}
         </div>
 
         <ShopWithInstacartButton
@@ -666,6 +677,13 @@ export default function ShopGroceriesPage() {
           disabled={instacartLoading || needToBuy.length === 0}
           onClick={handleShopWithInstacart}
         />
+        {pricingAvailable && over && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
+            <p className="text-[12px] leading-relaxed text-amber-900">
+              {INSTACART_OVER_BUDGET_MESSAGE}
+            </p>
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground text-center leading-snug px-2">
           Help The Hive may earn a commission when you shop with Instacart.
         </p>

@@ -5,7 +5,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getServiceClient } from "../_shared/kroger.ts";
-import { priceBasketWithKroger, RELEVANCE_THRESHOLD } from "../_shared/krogerPricing.ts";
+import { priceBasketWithKroger, RELEVANCE_THRESHOLD, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 import { captureEdgeError } from "../_shared/sentry.ts";
 
 Deno.serve(async (req) => {
@@ -32,16 +32,37 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const items: Array<{ id?: string; name: string; quantity?: number | string }> = body.items ?? [];
-    const locationId: string | undefined = body.locationId;
+    let locationId: string | undefined = body.locationId;
     const skipCache: boolean = body.skipCache === true || body.simplify === true;
-    if (!items.length || !locationId) {
+    if (!items.length) {
       return new Response(
-        JSON.stringify({ error: "items[] and locationId required" }),
+        JSON.stringify({ error: "items[] required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const supabase = getServiceClient();
+
+    // ZIP-based auto-resolution: no user-side store picker required.
+    if (!locationId) {
+      const resolved = await getUserKrogerLocation(supabase, userId);
+      locationId = resolved.locationId ?? undefined;
+    }
+
+    // Local pricing temporarily unavailable — return pricing_available=false so
+    // the UI can show the "Final grocery pricing will be confirmed in Instacart."
+    // message instead of any fallback estimate.
+    if (!locationId) {
+      return new Response(
+        JSON.stringify({
+          pricing_available: false,
+          matches: [],
+          totals: { matched: 0, failed: items.length, needs_review: 0, estimatedTotal: 0 },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const basket = await priceBasketWithKroger(
       supabase, userId, locationId,
       items.map((i) => ({ id: i.id ?? null, name: i.name, quantity: i.quantity ?? 1 })),
@@ -66,6 +87,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        pricing_available: true,
         matches,
         totals: {
           matched: basket.matched_count,

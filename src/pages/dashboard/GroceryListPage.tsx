@@ -14,7 +14,8 @@ import { PermissionDeniedBanner } from "@/components/dashboard/PermissionDeniedB
 import { GroceryItemImage } from "@/components/dashboard/GroceryItemImage";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { computeGroceryRange, formatRange } from "@/lib/groceryConfidence";
-import { estimateBasketRange, formatBasketRange, PRICING_DISCLAIMER, calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { fetchLocalPricing, type LocalPriceLine, LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
+import { GROCERY_PRICING_DISCLAIMER } from "@/lib/disclaimers";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { sanitizeForGrocery, toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
@@ -103,8 +104,10 @@ export default function GroceryListPage() {
   const [newItemPrice, setNewItemPrice] = useState("");
   const { status: locationStatus } = useLocation();
 
-  // Per-item DB pricing (must be declared before any early return).
-  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  // ZIP-based local pricing (single source of truth — no fallback).
+  const [itemPrices, setItemPrices] = useState<Record<string, LocalPriceLine>>({});
+  const [pricingAvailable, setPricingAvailable] = useState<boolean | null>(null);
+  const [pricingSubtotal, setPricingSubtotal] = useState<number>(0);
   const [pricesLoading, setPricesLoading] = useState(false);
   const [instacartLoading, setInstacartLoading] = useState(false);
 
@@ -224,58 +227,39 @@ export default function GroceryListPage() {
   const getItemImage = (_item: typeof groceryItems[0]): string | null => null;
 
   const selectedCount = selected.size;
-  // Phase 1 fallback: category-average range (used until DB prices load).
-  const basketRange = estimateBasketRange(groceryItems);
   const extrasTotal = extraItems.reduce((s, i) => s + i.price, 0);
 
-  // Phase 2: per-item DB pricing from grocery_price_reference, adjusted by
-  // store + state multipliers. Loaded once per (items × store × state).
-  const stateCode = (profile?.state as string | undefined) ?? undefined;
-  const storeCodeForPricing = activeStore || undefined;
-
+  // ZIP-based local pricing. Single source of truth — no category-average or
+  // grocery_price_reference fallback. If unavailable, the UI shows
+  // "Final grocery pricing will be confirmed in Instacart."
   useEffect(() => {
     let cancelled = false;
     if (!groceryItems.length) return;
     setPricesLoading(true);
     (async () => {
-      const entries = await Promise.all(
-        groceryItems.map(async (item) => {
-          try {
-            const p = await calculateEstimatedPrice(item.name, {
-              storeCode: storeCodeForPricing,
-              stateCode,
-            });
-            return [item.name, p] as const;
-          } catch {
-            return [item.name, null] as const;
-          }
-        }),
+      const result = await fetchLocalPricing(
+        groceryItems.map((i) => ({ name: i.name, quantity: i.quantity ?? "" })),
       );
       if (cancelled) return;
-      const map: Record<string, EstimatedPrice | null> = {};
-      for (const [name, p] of entries) map[name] = p;
-      setItemPrices(map);
+      setItemPrices(result.prices);
+      setPricingAvailable(result.available);
+      setPricingSubtotal(result.subtotal);
       setPricesLoading(false);
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groceryItems.length, storeCodeForPricing, stateCode]);
+  }, [groceryItems.map((i) => i.name).join("|")]);
 
-  // DB-backed basket totals (sum of per-item estimates). Falls back to the
-  // category-average range when no items resolved yet.
-  const pricedItems = groceryItems.map((i) => itemPrices[i.name]).filter(Boolean) as EstimatedPrice[];
-  const dbBasket = pricedItems.length
-    ? {
-        estimate: Math.round(pricedItems.reduce((s, p) => s + p.estimate, 0)),
-        low: Math.round(pricedItems.reduce((s, p) => s + p.low, 0)),
-        high: Math.round(pricedItems.reduce((s, p) => s + p.high, 0)),
-      }
-    : null;
-  const totalRangeLabel = dbBasket
-    ? `$${dbBasket.low} – $${dbBasket.high}`
-    : formatBasketRange(basketRange);
+  const totalRangeLabel =
+    pricingAvailable === false
+      ? LOCAL_PRICING_UNAVAILABLE_MESSAGE
+      : pricingAvailable && pricingSubtotal > 0
+      ? `~$${pricingSubtotal.toFixed(2)}`
+      : pricesLoading
+      ? "Loading…"
+      : LOCAL_PRICING_UNAVAILABLE_MESSAGE;
 
   // Send the items the user has SELECTED (checked) to Instacart, plus any
   // extras they added manually. Unchecked items are intentionally skipped.
@@ -510,20 +494,16 @@ export default function GroceryListPage() {
                           </p>
                         );
                       }
-                      if (!p) {
+                      if (!p || !p.matched || p.price == null) {
                         return (
                           <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
-                            Price varies by store
+                            Final price confirmed in Instacart
                           </p>
                         );
                       }
-                      const range =
-                        p.low === p.high
-                          ? `$${p.estimate.toFixed(2)}`
-                          : `$${p.low.toFixed(2)} – $${p.high.toFixed(2)}`;
                       return (
                         <p className="text-[11px] font-semibold text-primary mt-0.5">
-                          {range}
+                          ~${p.price.toFixed(2)}
                           <span className="text-muted-foreground font-normal ml-1">est.</span>
                         </p>
                       );
@@ -618,16 +598,26 @@ export default function GroceryListPage() {
           )}
           <div className="border-t border-border pt-3 flex justify-between items-baseline">
             <div>
-              <span className="font-semibold text-foreground text-base">Estimated Weekly Grocery Cost</span>
-              <p className="text-[10px] text-muted-foreground italic mt-0.5">range, not exact</p>
+              <span className="font-semibold text-foreground text-base">Estimated Local Grocery Total</span>
+              <p className="text-[10px] text-muted-foreground italic mt-0.5">
+                {pricingAvailable === false ? "Local pricing unavailable" : "Final price confirmed at Instacart checkout"}
+              </p>
             </div>
-            <span className="font-bold text-2xl text-primary">
-              {totalRangeLabel}
+            <span className="font-bold text-2xl text-primary text-right">
+              {pricingAvailable === false ? (
+                <span className="text-sm text-muted-foreground font-medium">
+                  {LOCAL_PRICING_UNAVAILABLE_MESSAGE}
+                </span>
+              ) : (
+                totalRangeLabel
+              )}
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
-            {PRICING_DISCLAIMER}
-          </p>
+          {pricingAvailable !== false && (
+            <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
+              {GROCERY_PRICING_DISCLAIMER}
+            </p>
+          )}
           {mealPlan.costOfLivingMultiplier && mealPlan.costOfLivingMultiplier !== 1 && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-primary" />
@@ -645,6 +635,24 @@ export default function GroceryListPage() {
           label="Shop ingredients"
           onClick={handleShopWithInstacart}
         />
+        {(() => {
+          const weeklyBudget = Number(profile?.weekly_budget ?? 0);
+          const projected = pricingSubtotal + extrasTotal;
+          if (
+            pricingAvailable &&
+            weeklyBudget > 0 &&
+            projected > weeklyBudget
+          ) {
+            return (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[12px] leading-relaxed text-amber-900">
+                  {INSTACART_OVER_BUDGET_MESSAGE}
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <p className="text-[10px] text-muted-foreground/80 leading-relaxed text-center px-2">
           Help The Hive may earn a commission on qualifying purchases made through Instacart.
           Final prices, availability, and substitutions are confirmed at Instacart checkout.

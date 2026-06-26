@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
 import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
-import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { fetchLocalPricing, type LocalPriceLine, LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { getAppUrl } from "@/lib/appUrl";
@@ -351,57 +351,40 @@ export default function GroceryReviewPage() {
     return s + getPrice(it) * ratio;
   }, 0);
 
-  // Per-item DB pricing from grocery_price_reference (normalized fuzzy match).
-  // Matches "Garlic Bulb" → garlic, "Medium Banana" → banana, etc.
-  const [itemPrices, setItemPrices] = useState<Record<string, EstimatedPrice | null>>({});
+  // ZIP-based local pricing — single source of truth (no DB fallback).
+  const [itemPrices, setItemPrices] = useState<Record<string, LocalPriceLine>>({});
+  const [pricingAvailable, setPricingAvailable] = useState<boolean | null>(null);
+  const [pricingSubtotal, setPricingSubtotal] = useState<number>(0);
   const [pricesLoading, setPricesLoading] = useState(false);
   const buyableNamesKey = useMemo(
     () => [...toBuy, ...manualItems].map((i) => i.name).join("|"),
     [toBuy, manualItems],
   );
-  const stateCode = (profile as any)?.state || undefined;
-  const storeCodeForPricing = store || undefined;
 
   useEffect(() => {
     const items = [...toBuy, ...manualItems];
     if (!items.length) return;
-    if (!krogerReady) {
-      setItemPrices({});
-      setPricesLoading(false);
-      return;
-    }
     let cancelled = false;
     setPricesLoading(true);
     (async () => {
-      const entries = await Promise.all(
-        items.map(async (it) => {
-          try {
-            const p = await calculateEstimatedPrice(it.name, {
-              storeCode: storeCodeForPricing,
-              stateCode,
-            });
-            return [it.name, p] as const;
-          } catch {
-            return [it.name, null] as const;
-          }
-        }),
+      const result = await fetchLocalPricing(
+        items.map((i) => ({ name: i.name, quantity: i.quantity })),
       );
       if (cancelled) return;
-      const map: Record<string, EstimatedPrice | null> = {};
-      for (const [name, p] of entries) map[name] = p;
-      setItemPrices(map);
+      setItemPrices(result.prices);
+      setPricingAvailable(result.available);
+      setPricingSubtotal(result.subtotal);
       setPricesLoading(false);
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buyableNamesKey, storeCodeForPricing, stateCode, krogerReady]);
+  }, [buyableNamesKey]);
 
-  const formatItemPrice = (p: EstimatedPrice | null | undefined): string | null => {
-    if (!p) return null;
-    if (p.low === p.high) return `$${p.estimate.toFixed(2)}`;
-    return `$${p.low.toFixed(2)} – $${p.high.toFixed(2)}`;
+  const formatItemPrice = (p: LocalPriceLine | null | undefined): string | null => {
+    if (!p || !p.matched || p.price == null) return null;
+    return `~$${p.price.toFixed(2)}`;
   };
 
   if (!allItems.length) {
@@ -511,10 +494,19 @@ export default function GroceryReviewPage() {
         </Section>
       )}
 
-      <div className="mt-4 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center gap-1">
         <p className="text-[13px] text-[#6b6b6b] font-medium">
           {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
         </p>
+        {pricingAvailable === false ? (
+          <p className="text-[12px] text-[#6b6b6b] text-center px-4">
+            {LOCAL_PRICING_UNAVAILABLE_MESSAGE}
+          </p>
+        ) : pricingAvailable && pricingSubtotal > 0 ? (
+          <p className="text-[12px] text-[#1a1a1a] font-semibold">
+            Estimated local total: ~${pricingSubtotal.toFixed(2)}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4">
@@ -524,9 +516,22 @@ export default function GroceryReviewPage() {
           onClick={handleShopWithInstacart}
           label="Shop ingredients"
         />
+        {(() => {
+          const weeklyBudget = Number((profile as any)?.weekly_budget ?? 0);
+          if (pricingAvailable && weeklyBudget > 0 && pricingSubtotal > weeklyBudget) {
+            return (
+              <div className="mt-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[12px] leading-relaxed text-amber-900">
+                  {INSTACART_OVER_BUDGET_MESSAGE}
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <p className="mt-2 text-[11px] text-[#8a8a8a] text-center px-2 leading-relaxed">
-          We may earn a commission when you shop via Instacart. Estimate only —
-          final price confirmed at checkout.
+          We may earn a commission when you shop via Instacart. Final price
+          confirmed at Instacart checkout.
         </p>
         <PricingDisclaimer variant="inline" className="mt-2 text-center" />
       </div>
