@@ -29,7 +29,8 @@ type GenerationErrorCode =
   | "budget_unfit"
   | "kid_friendly_unfit"
   | "serving_size_invalid"
-  | "grocery_list_invalid";
+  | "grocery_list_invalid"
+  | "plan_validation_failed";
 
 // =========================================================
 // Phase A (algo_v2) — deterministic budget engine constants.
@@ -2037,8 +2038,180 @@ Deno.serve(async (req) => {
     (normalized as any).krogerStoreName = kroger.storeName;
     (normalized as any).pricingAccuracyReduced = pricingMode === "estimated";
 
+    // ============================================================
+    // HARD VALIDATION GATE — last line of defense before persistence.
+    //
+    // Enforces (and best-effort repairs):
+    //   1. Exactly `daysCount` days.
+    //   2. Each day has all 6 slots (breakfast, morning_snack, lunch,
+    //      afternoon_snack, dinner, after_dinner_snack).
+    //   3. Snack slots are simple grab-and-go items (cook_time_minutes === 0,
+    //      no multi-step instructions).
+    //   4. No allergy violations (expanded allergen terms).
+    //   5. No dietary restriction violations.
+    //   6. No disliked foods.
+    //   7. No repeated full meals (non-snack recipe IDs unique).
+    //   8. Budget check — projected cost <= weeklyBudget.
+    //
+    // Repair strategy: for each offending slot, swap with the first safe,
+    // unused candidate from the corresponding pool. Up to 3 passes. If any
+    // hard rule (1, 2, 4, 5, 6, 8) still fails after repair, refuse to save
+    // and return a structured error so the client can re-trigger generation.
+    // ============================================================
+    {
+      const validatorAllergies: string[] = Array.isArray((profile as any)?.allergies)
+        ? (profile as any).allergies
+        : (Array.isArray(allergies) ? allergies : []);
+      const validatorDiets: string[] = Array.isArray((profile as any)?.dietary_preferences)
+        ? (profile as any).dietary_preferences
+        : (Array.isArray(dietaryPrefs) ? dietaryPrefs : []);
+      const validatorDisliked: string[] = ((profile as any)?.disliked_foods ?? [])
+        .map((s: any) => String(s ?? "").toLowerCase().trim())
+        .filter(Boolean);
+      const allergyTermsV = expandAllergies(validatorAllergies);
+      const dietForbiddenV = forbiddenForDiets(validatorDiets);
 
+      const slotKeysV: SlotKey[] = [
+        "breakfast", "morning_snack", "lunch",
+        "afternoon_snack", "dinner", "after_dinner_snack",
+      ];
+      const snackSlotKeysV = new Set<string>([
+        "morning_snack", "afternoon_snack", "after_dinner_snack",
+      ]);
 
+      const isSnackSimple = (r: any): boolean => {
+        const cook = Number(r?.cook_time_minutes ?? 0);
+        const prep = Number(r?.prep_time_minutes ?? 0);
+        const steps = Array.isArray(r?.instructions) ? r.instructions.length : 0;
+        return cook === 0 && prep <= 5 && steps <= 1;
+      };
+
+      const violationsFor = (slotKey: string, recipe: any, seenIds: Set<string>): string[] => {
+        const v: string[] = [];
+        if (!recipe) { v.push("missing_recipe"); return v; }
+        if (allergyTermsV.length && recipeContainsAny(recipe, allergyTermsV)) v.push("allergy");
+        if (dietForbiddenV.length && recipeContainsAny(recipe, dietForbiddenV)) v.push("diet");
+        if (validatorDisliked.length && recipeContainsAny(recipe, validatorDisliked)) v.push("disliked");
+        const isSnack = snackSlotKeysV.has(slotKey);
+        if (isSnack && !isSnackSimple(recipe)) v.push("snack_not_simple");
+        if (!isSnack && recipe.id && seenIds.has(recipe.id)) v.push("duplicate_recipe");
+        return v;
+      };
+
+      const findSafeCandidate = (
+        slotKey: string,
+        used: Set<string>,
+        seenIds: Set<string>,
+      ): any | null => {
+        const pool = candidatesByType[slotKey] || candidatesByType[snackSlotKeysV.has(slotKey) ? "snack" : slotKey] || [];
+        for (const c of pool) {
+          if (!c || used.has(c.id)) continue;
+          const vs = violationsFor(slotKey, c, seenIds);
+          if (vs.length === 0) return c;
+        }
+        return null;
+      };
+
+      const collectIssues = () => {
+        const issues: Array<{ kind: string; detail: string; di?: number; mi?: number; slot?: string }> = [];
+        if (resolvedDays.length !== daysCount) {
+          issues.push({ kind: "day_count", detail: `expected ${daysCount} days, got ${resolvedDays.length}` });
+        }
+        const seenIds = new Set<string>();
+        for (let di = 0; di < resolvedDays.length; di++) {
+          const day = resolvedDays[di];
+          const slotSet = new Set(day.meals.map((m: any) => m.meal_type));
+          for (const s of slotKeysV) {
+            if (!slotSet.has(s)) issues.push({ kind: "missing_slot", detail: `${day.day_name}: missing ${s}`, di, slot: s });
+          }
+          for (let mi = 0; mi < day.meals.length; mi++) {
+            const m = day.meals[mi];
+            const vs = violationsFor(m.meal_type, m.recipe, seenIds);
+            for (const v of vs) {
+              issues.push({ kind: v, detail: `${day.day_name}/${m.meal_type}: ${v}`, di, mi, slot: m.meal_type });
+            }
+            if (!snackSlotKeysV.has(m.meal_type) && m.recipe?.id) seenIds.add(m.recipe.id);
+          }
+        }
+        return issues;
+      };
+
+      // Repair passes
+      const REPAIR_PASSES = 3;
+      for (let pass = 0; pass < REPAIR_PASSES; pass++) {
+        const issues = collectIssues();
+        if (issues.length === 0) break;
+        const usedIds = new Set<string>();
+        const seenIds = new Set<string>();
+        for (const d of resolvedDays) {
+          for (const m of d.meals) {
+            if (m.recipe?.id) usedIds.add(m.recipe.id);
+            if (!snackSlotKeysV.has(m.meal_type) && m.recipe?.id) seenIds.add(m.recipe.id);
+          }
+        }
+        let didRepair = false;
+        for (const iss of issues) {
+          if (iss.di == null || iss.slot == null) continue;
+          const day = resolvedDays[iss.di];
+          if (!day) continue;
+          // Find or create the slot index
+          let mi = iss.mi ?? day.meals.findIndex((m: any) => m.meal_type === iss.slot);
+          const replacement = findSafeCandidate(iss.slot, usedIds, seenIds);
+          if (!replacement) continue;
+          const newMeal = {
+            meal_type: iss.slot,
+            day_name: day.day_name,
+            recipe: replacement,
+            source: "validator_repair",
+          };
+          if (mi >= 0) day.meals[mi] = newMeal as any;
+          else day.meals.push(newMeal as any);
+          if (replacement.id) {
+            usedIds.add(replacement.id);
+            if (!snackSlotKeysV.has(iss.slot)) seenIds.add(replacement.id);
+          }
+          didRepair = true;
+        }
+        // Re-sort day meals into canonical slot order
+        const slotOrder = new Map(slotKeysV.map((s, i) => [s, i]));
+        for (const d of resolvedDays) {
+          d.meals.sort((a: any, b: any) =>
+            (slotOrder.get(a.meal_type) ?? 99) - (slotOrder.get(b.meal_type) ?? 99));
+        }
+        if (!didRepair) break;
+      }
+
+      // Final hard-gate check
+      const remaining = collectIssues();
+      // duplicate_recipe and snack_not_simple are downgraded to warnings if repair couldn't fix them
+      // (they're integrity issues but not safety issues). Allergy/diet/dislike/missing slots are hard blocks.
+      const hardKinds = new Set(["day_count", "missing_slot", "missing_recipe", "allergy", "diet", "disliked"]);
+      const hardFailures = remaining.filter((i) => hardKinds.has(i.kind));
+      const softFailures = remaining.filter((i) => !hardKinds.has(i.kind));
+      if (softFailures.length) {
+        console.warn("[generate-meal-plan] validator soft issues remain", softFailures.map((i) => i.detail));
+      }
+      // Budget hard-gate (re-check against weekly budget using the in-store total computed above).
+      const finalInStoreNow = (finalInStoreTotals as any)?.delivered_total ?? 0;
+      const overBudget = finalInStoreNow > weeklyBudget;
+
+      if (hardFailures.length || overBudget) {
+        const reasons = [
+          ...hardFailures.map((i) => i.detail),
+          ...(overBudget ? [`over_budget: $${finalInStoreNow.toFixed(2)} > $${weeklyBudget}`] : []),
+        ];
+        console.error("[generate-meal-plan] HARD VALIDATION FAILED — refusing to save", reasons);
+        const friendly = overBudget
+          ? "We couldn't build a meal plan within your budget. Try increasing your budget or adding pantry items."
+          : "We couldn't build a meal plan that meets your safety and dietary requirements. Please try again.";
+        const code = overBudget ? "budget_unfit" : "plan_validation_failed";
+        await failJob(code, friendly, { reasons });
+        return new Response(
+          JSON.stringify(structuredError(code, friendly, { job_id: jobId, reasons })),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
 
 
     const { data: planRow, error: planErr } = await admin.from("meal_plans").insert({
