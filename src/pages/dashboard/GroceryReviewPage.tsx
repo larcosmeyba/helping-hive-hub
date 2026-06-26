@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { GroceryItem } from "@/types/mealPlan";
 import { toDisplayProduct, dedupeKey } from "@/lib/grocerySanitizer";
-import { calculateEstimatedPrice, type EstimatedPrice } from "@/lib/pricingService";
+import { fetchLocalPricing, type LocalPriceLine, LOCAL_PRICING_UNAVAILABLE_MESSAGE, INSTACART_OVER_BUDGET_MESSAGE } from "@/lib/localPricing";
 import { ShopWithInstacartButton } from "@/components/grocery/ShopWithInstacartButton";
 import { PricingDisclaimer } from "@/components/PricingDisclaimer";
 import { getAppUrl } from "@/lib/appUrl";
