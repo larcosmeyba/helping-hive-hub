@@ -1070,6 +1070,9 @@ Deno.serve(async (req) => {
 
     const allergyTerms = expandAllergies(allergies);
     const dietForbidden = forbiddenForDiets(dietaryPrefs);
+    const dislikedFoodsResolver: string[] = (((profile as any).disliked_foods ?? []) as any[])
+      .map((s) => String(s || "").toLowerCase().trim())
+      .filter(Boolean);
     const hasToddler = Number((mealPlanContext as any).household?.babies_under_5 ?? 0) > 0;
     const hasChildren512 = Number((mealPlanContext as any).household?.children_5_to_12 ?? 0) > 0;
     // Toddler safety: applied to BOTH AI new_meal entries AND library candidates
@@ -1077,6 +1080,7 @@ Deno.serve(async (req) => {
     const safetyTerms = [
       ...allergyTerms,
       ...dietForbidden,
+      ...dislikedFoodsResolver,
       ...(hasToddler ? TODDLER_CHOKING_HAZARDS : []),
     ];
 
