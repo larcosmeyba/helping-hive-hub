@@ -70,7 +70,7 @@ export default function FamilyAssistanceResultsPage() {
   const filtered = useMemo(() => {
     if (!data?.resources) return [];
     const includesPrescriptions = (intake?.selected_categories ?? []).includes("healthcare_prescriptions");
-    const showCostPlus = includesPrescriptions && filter === "healthcare_prescriptions";
+    const showCostPlus = includesPrescriptions && (filter === "all" || filter === "healthcare_prescriptions");
     let base: CommunityResource[] = [];
     if (filter === "all") base = data.resources;
     else if (filter === "urgent") base = data.resources.filter((r) => r.emergency_available);
@@ -257,16 +257,24 @@ function ResourceCard({
             <Phone className="w-3.5 h-3.5" /> Call
           </a>
         )}
-        {resource.website && (
-          <a
-            href={resource.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 border border-[#EAEAEA] text-[#1a1a1a] text-[12px] font-semibold py-2 rounded-lg flex items-center justify-center gap-1"
-          >
-            <Globe className="w-3.5 h-3.5" /> Website
-          </a>
-        )}
+        {(() => {
+          const url =
+            resource.website && resource.website.trim().length > 0
+              ? resource.website
+              : `https://www.google.com/search?q=${encodeURIComponent(
+                  `${resource.name}${resource.city ? " " + resource.city : ""}${resource.state ? " " + resource.state : ""}`,
+                )}`;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 border border-[#EAEAEA] text-[#1a1a1a] text-[12px] font-semibold py-2 rounded-lg flex items-center justify-center gap-1"
+            >
+              <Globe className="w-3.5 h-3.5" /> Website
+            </a>
+          );
+        })()}
         {resource.address && (
           <a
             href={`https://maps.google.com/?q=${encodeURIComponent(resource.address)}`}
