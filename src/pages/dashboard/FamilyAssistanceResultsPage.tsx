@@ -75,6 +75,24 @@ export default function FamilyAssistanceResultsPage() {
     if (filter === "all") base = data.resources;
     else if (filter === "urgent") base = data.resources.filter((r) => r.emergency_available);
     else if (filter === "saved") base = data.resources.filter((r) => savedIds.has(r.id));
+    else if (filter === "healthcare_prescriptions") {
+      base = data.resources.filter((r) => {
+        const c = (r.category ?? "").toLowerCase();
+        const s = (r.subcategory ?? "").toLowerCase();
+        const d = (r.description ?? "").toLowerCase();
+        return (
+          c === "healthcare_prescriptions" ||
+          c.includes("health") ||
+          c.includes("prescription") ||
+          c.includes("pharmac") ||
+          c.includes("medic") ||
+          s.includes("prescription") ||
+          s.includes("pharmac") ||
+          d.includes("prescription") ||
+          d.includes("pharmac")
+        );
+      });
+    }
     else base = data.resources.filter((r) => r.category === filter);
     if (showCostPlus) return [...base, COST_PLUS_RESOURCE];
     return base;
