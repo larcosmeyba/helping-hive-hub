@@ -136,33 +136,6 @@ export default function FamilyAssistanceResultsPage() {
         </div>
       </div>
 
-      {showCostPlus && (
-        <a
-          href="https://costplusdrugs.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 block rounded-2xl bg-white border-2 border-[#1F5A3D] p-3 active:scale-[0.99] transition-transform"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#E4F4E4] flex items-center justify-center shrink-0">
-              <Pill className="w-5 h-5 text-[#1F5A3D]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="font-extrabold text-[14px] text-[#1a1a1a]">Cost Plus Drugs</p>
-                <ExternalLink className="w-3.5 h-3.5 text-[#1F5A3D]" />
-              </div>
-              <p className="text-[12px] text-[#4a4a4a] mt-0.5 leading-snug">
-                Affordable generic prescriptions shipped to your door. Transparent pricing — usually far less than pharmacy retail. Insurance not required.
-              </p>
-              <span className="inline-block mt-1.5 text-[11px] font-bold text-[#1F5A3D]">
-                Visit costplusdrugs.com →
-              </span>
-            </div>
-          </div>
-        </a>
-      )}
-
       <div className="mt-3 space-y-2">
 
         {loading ? (
@@ -175,15 +148,43 @@ export default function FamilyAssistanceResultsPage() {
             </p>
           </div>
         ) : (
-          filtered.map((r) => (
-            <ResourceCard
-              key={r.id}
-              resource={r}
-              saved={savedIds.has(r.id)}
-              onToggleSave={() => toggleSave(r)}
-              onOpen={() => navigate(`/dashboard/family-assistance/resource/${r.id}`)}
-            />
-          ))
+          <>
+            {showCostPlus && (
+              <a
+                href="https://costplusdrugs.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-2xl bg-white border-2 border-[#1F5A3D] p-3 active:scale-[0.99] transition-transform"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#E4F4E4] flex items-center justify-center shrink-0">
+                    <Pill className="w-5 h-5 text-[#1F5A3D]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-extrabold text-[14px] text-[#1a1a1a]">Cost Plus Drugs</p>
+                      <ExternalLink className="w-3.5 h-3.5 text-[#1F5A3D]" />
+                    </div>
+                    <p className="text-[12px] text-[#4a4a4a] mt-0.5 leading-snug">
+                      Affordable generic prescriptions shipped to your door. Transparent pricing — usually far less than pharmacy retail. Insurance not required.
+                    </p>
+                    <span className="inline-block mt-1.5 text-[11px] font-bold text-[#1F5A3D]">
+                      Visit costplusdrugs.com →
+                    </span>
+                  </div>
+                </div>
+              </a>
+            )}
+            {filtered.map((r) => (
+              <ResourceCard
+                key={r.id}
+                resource={r}
+                saved={savedIds.has(r.id)}
+                onToggleSave={() => toggleSave(r)}
+                onOpen={() => navigate(`/dashboard/family-assistance/resource/${r.id}`)}
+              />
+            ))}
+          </>
         )}
       </div>
 
