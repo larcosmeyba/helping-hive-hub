@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, Globe, MapPin, Bookmark, BookmarkCheck, AlertTriangle, Sparkles, Clock } from "lucide-react";
+import { ArrowLeft, Phone, Globe, MapPin, Bookmark, BookmarkCheck, AlertTriangle, Sparkles, Clock, Pill, ExternalLink } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
   findFamilyResources,
