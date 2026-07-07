@@ -70,7 +70,7 @@ export default function FamilyAssistanceResultsPage() {
   const includesMentalHealth = (intake?.selected_categories ?? []).includes("mental_health");
   const includesPrescriptions = (intake?.selected_categories ?? []).includes("healthcare_prescriptions");
   const showCrisis = intake?.urgency_level === "urgent" || includesMentalHealth;
-  const showCostPlus = includesPrescriptions && (filter === "all" || filter === "healthcare_prescriptions");
+  const showCostPlus = includesPrescriptions && filter === "healthcare_prescriptions";
 
   return (
     <div className="max-w-md mx-auto px-4 pb-32 pt-3">
