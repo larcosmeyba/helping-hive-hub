@@ -149,7 +149,7 @@ export default function FamilyAssistanceResultsPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <p className="font-extrabold text-[14px] text-[#1a1a1a]">Mark Cuban's Cost Plus Drugs</p>
+                <p className="font-extrabold text-[14px] text-[#1a1a1a]">Cost Plus Drugs</p>
                 <ExternalLink className="w-3.5 h-3.5 text-[#1F5A3D]" />
               </div>
               <p className="text-[12px] text-[#4a4a4a] mt-0.5 leading-snug">
