@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, Globe, MapPin, Bookmark, BookmarkCheck, AlertTriangle, Sparkles, Clock, Pill, ExternalLink } from "lucide-react";
+import { ArrowLeft, Phone, Globe, MapPin, Bookmark, BookmarkCheck, AlertTriangle, Sparkles, Clock } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
   findFamilyResources,
@@ -9,6 +9,30 @@ import {
   type CommunityResource,
   type FindFamilyResourcesResponse,
 } from "@/lib/familyResources";
+
+const COST_PLUS_RESOURCE: CommunityResource = {
+  id: "cost-plus-drugs",
+  name: "Cost Plus Drugs",
+  category: "healthcare_prescriptions",
+  subcategory: null,
+  description: "Affordable generic prescriptions shipped to your door. Transparent pricing — usually far less than pharmacy retail. Insurance not required.",
+  address: null,
+  city: null,
+  state: null,
+  zip_code: null,
+  county: null,
+  latitude: null,
+  longitude: null,
+  phone: null,
+  website: "https://costplusdrugs.com",
+  email: null,
+  hours: null,
+  eligibility_notes: null,
+  what_to_bring: null,
+  emergency_available: false,
+  source: null,
+  last_verified_at: null,
+};
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: "all", label: "All" },
@@ -45,11 +69,16 @@ export default function FamilyAssistanceResultsPage() {
 
   const filtered = useMemo(() => {
     if (!data?.resources) return [];
-    if (filter === "all") return data.resources;
-    if (filter === "urgent") return data.resources.filter((r) => r.emergency_available);
-    if (filter === "saved") return data.resources.filter((r) => savedIds.has(r.id));
-    return data.resources.filter((r) => r.category === filter);
-  }, [data, filter, savedIds]);
+    const includesPrescriptions = (intake?.selected_categories ?? []).includes("healthcare_prescriptions");
+    const showCostPlus = includesPrescriptions && filter === "healthcare_prescriptions";
+    let base: CommunityResource[] = [];
+    if (filter === "all") base = data.resources;
+    else if (filter === "urgent") base = data.resources.filter((r) => r.emergency_available);
+    else if (filter === "saved") base = data.resources.filter((r) => savedIds.has(r.id));
+    else base = data.resources.filter((r) => r.category === filter);
+    if (showCostPlus) return [...base, COST_PLUS_RESOURCE];
+    return base;
+  }, [data, filter, savedIds, intake]);
 
   const toggleSave = async (r: CommunityResource) => {
     const isSaved = savedIds.has(r.id);
@@ -70,7 +99,6 @@ export default function FamilyAssistanceResultsPage() {
   const includesMentalHealth = (intake?.selected_categories ?? []).includes("mental_health");
   const includesPrescriptions = (intake?.selected_categories ?? []).includes("healthcare_prescriptions");
   const showCrisis = intake?.urgency_level === "urgent" || includesMentalHealth;
-  const showCostPlus = includesPrescriptions && filter === "healthcare_prescriptions";
 
   return (
     <div className="max-w-md mx-auto px-4 pb-32 pt-3">
@@ -149,39 +177,25 @@ export default function FamilyAssistanceResultsPage() {
           </div>
         ) : (
           <>
-            {showCostPlus && (
-              <a
-                href="https://costplusdrugs.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-2xl bg-white border-2 border-[#1F5A3D] p-3 active:scale-[0.99] transition-transform"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E4F4E4] flex items-center justify-center shrink-0">
-                    <Pill className="w-5 h-5 text-[#1F5A3D]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-extrabold text-[14px] text-[#1a1a1a]">Cost Plus Drugs</p>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#1F5A3D]" />
-                    </div>
-                    <p className="text-[12px] text-[#4a4a4a] mt-0.5 leading-snug">
-                      Affordable generic prescriptions shipped to your door. Transparent pricing — usually far less than pharmacy retail. Insurance not required.
-                    </p>
-                    <span className="inline-block mt-1.5 text-[11px] font-bold text-[#1F5A3D]">
-                      Visit costplusdrugs.com →
-                    </span>
-                  </div>
-                </div>
-              </a>
-            )}
             {filtered.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
                 saved={savedIds.has(r.id)}
-                onToggleSave={() => toggleSave(r)}
-                onOpen={() => navigate(`/dashboard/family-assistance/resource/${r.id}`)}
+                onToggleSave={() => {
+                  if (r.id === "cost-plus-drugs") {
+                    toast.info("Cost Plus Drugs is always available online.");
+                    return;
+                  }
+                  toggleSave(r);
+                }}
+                onOpen={() => {
+                  if (r.id === "cost-plus-drugs" && r.website) {
+                    window.open(r.website, "_blank", "noopener,noreferrer");
+                  } else {
+                    navigate(`/dashboard/family-assistance/resource/${r.id}`);
+                  }
+                }}
               />
             ))}
           </>
