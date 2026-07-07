@@ -70,7 +70,7 @@ export default function FamilyAssistanceResultsPage() {
   const filtered = useMemo(() => {
     if (!data?.resources) return [];
     const includesPrescriptions = (intake?.selected_categories ?? []).includes("healthcare_prescriptions");
-    const showCostPlus = includesPrescriptions && filter === "healthcare_prescriptions";
+    const showCostPlus = includesPrescriptions && (filter === "all" || filter === "healthcare_prescriptions");
     let base: CommunityResource[] = [];
     if (filter === "all") base = data.resources;
     else if (filter === "urgent") base = data.resources.filter((r) => r.emergency_available);
