@@ -28,6 +28,7 @@ interface AuthContextType {
   profile: ProfileLite | null;
   refreshProfile: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -162,6 +163,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${getAppUrl()}/auth/confirm` },
+    });
+    if (error) throw error;
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -196,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, refreshProfile, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, refreshProfile, signUp, resendVerificationEmail, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

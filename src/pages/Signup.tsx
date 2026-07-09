@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
 import { SEOHead } from "@/components/SEOHead";
-import { MailCheck } from "lucide-react";
+import { MailCheck, RefreshCw } from "lucide-react";
 
 export default function Signup() {
   const [sent, setSent] = useState(false);
@@ -15,8 +15,22 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const [resending, setResending] = useState(false);
+  const { signUp, resendVerificationEmail } = useAuth();
   const { toast } = useToast();
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await resendVerificationEmail(email);
+      toast({ title: "Verification email resent", description: "Check your inbox (and spam) for the new link." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not resend the email. Please try again.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +95,26 @@ export default function Signup() {
               <p className="text-xs text-muted-foreground">
                 Don't see it? Check spam, or wait a minute and try again.
               </p>
-              <Button asChild variant="outline" className="w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleResend}
+                disabled={resending}
+              >
+                {resending ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Resending...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Resend verification email
+                  </>
+                )}
+              </Button>
+              <Button asChild variant="ghost" className="w-full">
                 <Link to="/login">Go to Sign In</Link>
               </Button>
             </div>
