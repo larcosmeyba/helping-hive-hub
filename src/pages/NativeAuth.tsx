@@ -8,15 +8,29 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
 
 export default function NativeAuth() {
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, resendVerificationEmail } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [signupSent, setSignupSent] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await resendVerificationEmail(email);
+      toast({ title: "Verification email resent", description: "Check your inbox (and spam) for the new link." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not resend the email. Please try again.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
 
   // If already logged in, redirect to dashboard
   if (authLoading) {
