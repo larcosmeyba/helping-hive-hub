@@ -67,6 +67,27 @@ export default function NativeAuth() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-card border border-border p-6">
+          {signupSent ? (
+            <div className="text-center space-y-4 py-2">
+              <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8"/><path d="m22 7-10 5L2 7"/><path d="m16 19 2 2 4-4"/></svg>
+              </div>
+              <h2 className="font-display text-lg font-semibold text-foreground">Check your email</h2>
+              <p className="text-sm text-muted-foreground">
+                We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+                Tap it to activate your account, then sign in.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => { setSignupSent(false); setMode("login"); setPassword(""); }}
+              >
+                Back to Sign In
+              </Button>
+            </div>
+          ) : (
+          <>
           {/* Tab toggle */}
           <div className="flex rounded-xl bg-muted p-1 mb-6">
             <button
