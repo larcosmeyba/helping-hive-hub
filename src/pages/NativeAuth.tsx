@@ -175,6 +175,8 @@ export default function NativeAuth() {
               </div>
             )}
           </form>
+          </>
+          )}
         </div>
       </div>
     </div>
