@@ -95,6 +95,15 @@ export default function NativeAuth() {
                 type="button"
                 variant="outline"
                 className="w-full"
+                onClick={handleResend}
+                disabled={resending}
+              >
+                {resending ? "Resending..." : "Resend verification email"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
                 onClick={() => { setSignupSent(false); setMode("login"); setPassword(""); }}
               >
                 Back to Sign In
