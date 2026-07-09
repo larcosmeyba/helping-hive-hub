@@ -17,7 +17,6 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +27,8 @@ export default function Signup() {
     setLoading(true);
     try {
       await signUp(email, password, displayName);
-      toast({ title: "Account created!", description: "Please check your email to verify your account." });
-      navigate("/questionnaire");
+      toast({ title: "Account created!", description: "Check your inbox to verify your email." });
+      setSent(true);
     } catch (err) {
       // Map known errors to safe strings; never surface raw provider messages
       // (avoids leaking account-exists hints, weak-password specifics, etc.).
