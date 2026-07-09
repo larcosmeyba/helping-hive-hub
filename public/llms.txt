@@ -25,4 +25,3 @@ Help The Hive turns your weekly grocery budget and the store you already shop at
 
 - [Privacy Policy](/privacy): How we handle user data.
 - [Unsubscribe](/unsubscribe): Manage email preferences.
-                This is an edit.
