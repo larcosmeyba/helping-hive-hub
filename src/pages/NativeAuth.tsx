@@ -43,7 +43,8 @@ export default function NativeAuth() {
         // settles can cause ProtectedRoute to bounce back to /auth.
       } else {
         await signUp(email, password, displayName);
-        toast({ title: "Account created!", description: "Please check your email to verify your account." });
+        toast({ title: "Account created!", description: "Check your inbox to verify your email." });
+        setSignupSent(true);
       }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
