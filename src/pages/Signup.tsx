@@ -68,23 +68,42 @@ export default function Signup() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-card border border-border p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required placeholder="Marcos Leyba" />
+          {sent ? (
+            <div className="text-center space-y-4">
+              <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <MailCheck className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="font-display text-xl font-semibold text-foreground">Check your email</h2>
+              <p className="text-sm text-muted-foreground">
+                We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+                Click it to activate your account, then sign in.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Don't see it? Check spam, or wait a minute and try again.
+              </p>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/login">Go to Sign In</Link>
+              </Button>
             </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="At least 10 characters" minLength={10} />
-            </div>
-            <Button type="submit" className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90" disabled={loading}>
-              {loading ? "Creating Account..." : "Get Started"}
-            </Button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required placeholder="Marcos Leyba" />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="At least 10 characters" minLength={10} />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-honey text-primary-foreground hover:opacity-90" disabled={loading}>
+                {loading ? "Creating Account..." : "Get Started"}
+              </Button>
+            </form>
+          )}
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
