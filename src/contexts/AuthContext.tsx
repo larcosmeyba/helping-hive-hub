@@ -28,6 +28,7 @@ interface AuthContextType {
   profile: ProfileLite | null;
   refreshProfile: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
