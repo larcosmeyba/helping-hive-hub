@@ -15,8 +15,22 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const [resending, setResending] = useState(false);
+  const { signUp, resendVerificationEmail } = useAuth();
   const { toast } = useToast();
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await resendVerificationEmail(email);
+      toast({ title: "Verification email resent", description: "Check your inbox (and spam) for the new link." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not resend the email. Please try again.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
