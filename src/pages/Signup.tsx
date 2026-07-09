@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-transparent.png";
 import { SEOHead } from "@/components/SEOHead";
-import { MailCheck } from "lucide-react";
+import { MailCheck, RefreshCw } from "lucide-react";
 
 export default function Signup() {
   const [sent, setSent] = useState(false);
