@@ -10,6 +10,7 @@ import logo from "@/assets/logo-transparent.png";
 export default function NativeAuth() {
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [signupSent, setSignupSent] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
