@@ -95,7 +95,26 @@ export default function Signup() {
               <p className="text-xs text-muted-foreground">
                 Don't see it? Check spam, or wait a minute and try again.
               </p>
-              <Button asChild variant="outline" className="w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleResend}
+                disabled={resending}
+              >
+                {resending ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Resending...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Resend verification email
+                  </>
+                )}
+              </Button>
+              <Button asChild variant="ghost" className="w-full">
                 <Link to="/login">Go to Sign In</Link>
               </Button>
             </div>
