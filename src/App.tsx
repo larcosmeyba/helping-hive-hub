@@ -10,6 +10,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 import { isNativeApp } from "@/hooks/useIsNativeApp";
 import { phCapture } from "@/lib/posthog";
+import { supabaseEnv } from "@/integrations/supabase/client";
 
 function PostHogPageview() {
   const location = useLocation();
@@ -116,8 +117,37 @@ const RouteFallback = () => (
   </div>
 );
 
+function MissingSupabaseConfig() {
+  return (
+    <main id="main-content" className="min-h-dvh bg-background flex items-center justify-center px-6">
+      <div className="max-w-lg w-full rounded-lg border border-border bg-card p-6 shadow-card">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Configuration required
+        </p>
+        <h1 className="mt-2 text-2xl font-bold text-foreground">
+          Supabase environment variables are missing
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Add these variables to the preview or deployment environment, then rebuild:
+        </p>
+        <ul className="mt-4 space-y-2 text-sm font-mono text-foreground">
+          {supabaseEnv.missing.map((name) => (
+            <li key={name} className="rounded-md bg-muted px-3 py-2">
+              {name}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </main>
+  );
+}
+
 const App = () => {
   const native = isNativeApp();
+
+  if (!supabaseEnv.isConfigured) {
+    return <MissingSupabaseConfig />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

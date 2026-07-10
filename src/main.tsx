@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseEnv } from "@/integrations/supabase/client";
 import { installGlobalErrorHandlers } from "@/lib/errorLogger";
 import { initPostHog } from "@/lib/posthog";
 import { initSentry } from "@/lib/sentry";
@@ -23,7 +23,7 @@ initSentry();
 
 // When the native app returns to foreground, refresh the auth session
 CapacitorApp.addListener("appStateChange", async ({ isActive }) => {
-  if (isActive) {
+  if (isActive && supabaseEnv.isConfigured) {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
       await supabase.auth.refreshSession();
@@ -38,6 +38,7 @@ CapacitorApp.addListener("appStateChange", async ({ isActive }) => {
 //      → Kroger OAuth bouncing back from the system browser.
 CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
   try {
+    if (!supabaseEnv.isConfigured) return;
     if (!url.startsWith("com.helpthehive://")) return;
     const parsed = new URL(url);
     const path = parsed.host + parsed.pathname; // e.g. "auth/confirm" or "oauth/kroger/return"
