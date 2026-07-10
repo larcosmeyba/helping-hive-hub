@@ -14,9 +14,10 @@ import { Capacitor } from "@capacitor/core";
 import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import { useZipValidation } from "@/hooks/useZipValidation";
+import { ONBOARDING_TOTAL_STEPS, normalizeQuestionnaireStep } from "@/lib/questionnaireProgress";
 
 // 1 welcome + 9 onboarding sections (home-store step removed — we use the closest Kroger to the user)
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
 // Maps dietary-toggle keys to allergy labels stored on profiles.allergies
 const DIETARY_TO_ALLERGY: Record<string, string> = {
@@ -95,7 +96,7 @@ type BoolMap = Record<string, boolean>;
 
 export default function Questionnaire() {
   const localSeed = loadLocalProgress();
-  const [step, setStep] = useState<number>((localSeed.step as number) || 1);
+  const [step, setStep] = useState<number>(normalizeQuestionnaireStep(localSeed.step));
   const [hydrated, setHydrated] = useState(false);
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -167,7 +168,7 @@ export default function Questionnaire() {
         }
         const dbProgress = (data?.questionnaire_progress ?? null) as Record<string, unknown> | null;
         if (dbProgress && typeof dbProgress === "object") {
-          if (typeof dbProgress.step === "number") setStep(dbProgress.step);
+          setStep(normalizeQuestionnaireStep(dbProgress.step));
           if (typeof dbProgress.householdSize === "number") setHouseholdSize(dbProgress.householdSize);
           if (typeof dbProgress.childrenUnder5 === "number") setChildrenUnder5(dbProgress.childrenUnder5);
           if (typeof dbProgress.children5to12 === "number") setChildren5to12(dbProgress.children5to12);
@@ -374,7 +375,7 @@ export default function Questionnaire() {
   );
 
   return (
-    <div className="min-h-dvh bg-background">
+    <main id="main-content" className="min-h-dvh bg-background">
 
       {/* STEP 1 — Welcome */}
       {step === 1 && (
@@ -624,7 +625,6 @@ export default function Questionnaire() {
         </QuestionnaireStep>
       )}
 
-
-    </div>
+    </main>
   );
 }
