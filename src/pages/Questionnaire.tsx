@@ -273,8 +273,11 @@ export default function Questionnaire() {
         const pantryRows = pantryStarter.map((item) => ({
           user_id: user.id,
           item_name: item,
+          normalized_item_name: item.toLowerCase().trim(),
           quantity: "Some",
-          category: "Staples",
+          category: "pantry_staples",
+          location: "pantry",
+          manually_added: true,
         }));
         await supabase.from("pantry_items").insert(pantryRows);
       }
