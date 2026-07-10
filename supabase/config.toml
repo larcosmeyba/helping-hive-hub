@@ -1,5 +1,17 @@
 project_id = "ndbqbhghjsjkpgcvkvtq"
 
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = [
+  "http://localhost:8080/auth/confirm",
+  "http://127.0.0.1:8080/auth/confirm",
+  "http://localhost:8080/reset-password",
+  "http://127.0.0.1:8080/reset-password",
+]
+
+[auth.email]
+enable_confirmations = true
+
 [functions.generate-meal-plan]
 verify_jwt = false
 
@@ -38,4 +50,3 @@ verify_jwt = true
 
 [functions.instacart-create-list]
 verify_jwt = true
-

@@ -19,6 +19,7 @@ export async function logClientError(error: unknown, context: ErrorContext = {})
     const stack = error instanceof Error ? error.stack : undefined;
 
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
     const details = {
       message: message.slice(0, 1000),
@@ -31,12 +32,13 @@ export async function logClientError(error: unknown, context: ErrorContext = {})
       ...context.extra,
     } as unknown as Json;
 
-    await supabase.from("activity_logs").insert([{
-      user_id: user?.id ?? null,
+    const { error: logError } = await supabase.from("activity_logs").insert([{
+      user_id: user.id,
       action: "client_error",
       entity_type: "error",
       details,
     }]);
+    if (logError && import.meta.env.DEV) console.warn("[errorLogger] activity_logs insert failed:", logError);
   } catch {
     // Silent — logger must never throw.
   }
