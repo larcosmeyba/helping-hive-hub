@@ -65,7 +65,7 @@ function createContentSecurityPolicy(mode: string) {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "./",
+  base: "/",
   server: {
     host: "::",
     port: 8080,
