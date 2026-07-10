@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     {
       name: "help-the-hive-csp",
-      transformIndexHtml(html) {
+      transformIndexHtml(html: string) {
         if (!html.includes(CSP_PLACEHOLDER)) {
           throw new Error(`Missing ${CSP_PLACEHOLDER} in index.html`);
         }
