@@ -36,7 +36,7 @@ export function PrivacyDataControls() {
     const prev = field === "data_usage_opt_in" ? dataOptIn : analyticsOptIn;
     if (field === "data_usage_opt_in") setDataOptIn(value);
     else setAnalyticsOptIn(value);
-    const { error } = await supabase.from("profiles").update({ [field]: value }).eq("user_id", user.id);
+    const { error } = await supabase.from("profiles").update({ [field]: value } as any).eq("user_id", user.id);
     if (error) {
       if (field === "data_usage_opt_in") setDataOptIn(prev);
       else setAnalyticsOptIn(prev);

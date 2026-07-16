@@ -127,7 +127,7 @@ export default function MealPlanSetupPage() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update(patch)
+        .update(patch as any)
         .eq("user_id", user.id);
       if (error) throw error;
       await refreshProfile?.();
