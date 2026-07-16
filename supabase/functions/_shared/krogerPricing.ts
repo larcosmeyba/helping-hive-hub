@@ -16,7 +16,7 @@
 //      cumin" → 1 jar, "2 cups flour" → 1 bag.
 //   5. Cache: real `confidence` is read back; any cached match below the
 //      relevance threshold is excluded from the subtotal.
-import { krogerGet } from "./kroger.ts";
+import { KrogerApiError, krogerGet } from "./kroger.ts";
 
 interface KrogerProduct {
   productId: string;
@@ -266,6 +266,23 @@ export interface PriceItemInput {
   quantity?: number | string | null;  // recipe-side amount string OR package count number
 }
 
+function safeLogJson(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function zipDiagnostics(zip: unknown): { configured: boolean; length: number; prefix: string | null } {
+  const s = String(zip ?? "").trim();
+  return {
+    configured: !!s,
+    length: s.length,
+    prefix: s ? s.slice(0, 3) : null,
+  };
+}
+
 /**
  * Price a basket. `items[i].quantity` may be a raw recipe amount ("2 cups")
  * or a number (treated as a hint; final packages are still computed by
@@ -451,10 +468,18 @@ export async function getUserKrogerLocation(
         storeName = first.name;
       }
     } catch (e) {
-      console.warn("[krogerPricing] ZIP location lookup failed", (e as Error).message);
+      console.warn("[krogerPricing] ZIP location lookup failed", safeLogJson({
+        event: "kroger_zip_location_lookup_failed",
+        userRef: userId.slice(0, 8),
+        hasSavedLocation: !!profile?.kroger_location_id,
+        zip: zipDiagnostics(profile.zip_code),
+        errorName: (e as Error).name,
+        errorMessage: (e as Error).message,
+        krogerStatus: e instanceof KrogerApiError ? e.status ?? null : null,
+        krogerOperation: e instanceof KrogerApiError ? e.operation : null,
+      }));
     }
   }
 
   return { locationId, storeName, connected: true };
 }
-
