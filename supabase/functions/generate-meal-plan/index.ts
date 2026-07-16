@@ -911,53 +911,342 @@ Deno.serve(async (req) => {
     let lastAttemptError: { code: GenerationErrorCode; message: string; details?: Record<string, unknown> } | null = null;
     let optimizerDebug: any = null;
 
-    async function attempt(attemptNum: number): Promise<any | null> {
-      await advance("generating", "OpenAI request started", "Building your weekly meal plan", { attempt: attemptNum });
+    type OpenAIBatch = { batchNumber: number; dayNames: string[] };
+    type BatchAttemptResult = {
+      batch: OpenAIBatch;
+      parsed: any | null;
+      attempts: number;
+      returnedDayCount: number;
+      error?: string;
+      fallbackReason?: string;
+    };
+
+    const OPENAI_SLOT_KEYS = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "after_dinner_snack"] as const;
+    const COOKED_SLOT_KEYS = ["breakfast", "lunch", "dinner"] as const;
+    const OPENAI_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].slice(0, daysCount);
+    const openAIBatches: OpenAIBatch[] = [
+      { batchNumber: 1, dayNames: OPENAI_DAY_NAMES.slice(0, 2) },
+      { batchNumber: 2, dayNames: OPENAI_DAY_NAMES.slice(2, 4) },
+      { batchNumber: 3, dayNames: OPENAI_DAY_NAMES.slice(4) },
+    ].filter((b) => b.dayNames.length > 0);
+
+    function dayNameKey(value: unknown): string {
+      return String(value ?? "").trim().toLowerCase();
+    }
+
+    function validateBatchPayload(payload: any, batch: OpenAIBatch): { parsed: any | null; error?: string; returnedDayCount: number } {
+      if (!payload?.days || !Array.isArray(payload.days) || payload.days.length < 1) {
+        return { parsed: null, error: "missing_days_array", returnedDayCount: 0 };
+      }
+
+      const requestedKeys = new Set(batch.dayNames.map(dayNameKey));
+      const seen = new Set<string>();
+      const byKey = new Map<string, any>();
+      const extraDays: string[] = [];
+      const duplicateDays: string[] = [];
+
+      for (const day of payload.days) {
+        const rawName = day?.day_name;
+        const key = dayNameKey(rawName);
+        if (!requestedKeys.has(key)) {
+          extraDays.push(String(rawName || "(blank)"));
+          continue;
+        }
+        if (seen.has(key)) {
+          duplicateDays.push(String(rawName || "(blank)"));
+          continue;
+        }
+        seen.add(key);
+        byKey.set(key, day);
+      }
+
+      const missingDays = batch.dayNames.filter((d) => !seen.has(dayNameKey(d)));
+      if (extraDays.length || duplicateDays.length || missingDays.length) {
+        return {
+          parsed: null,
+          error: JSON.stringify({
+            reason: "batch_day_mismatch",
+            extra_days: extraDays,
+            duplicate_days: duplicateDays,
+            missing_days: missingDays,
+          }),
+          returnedDayCount: payload.days.length,
+        };
+      }
+
+      const days = batch.dayNames.map((dayName) => ({
+        ...byKey.get(dayNameKey(dayName)),
+        day_name: dayName,
+      }));
+
+      return {
+        parsed: {
+          days,
+          why_this_plan: payload.why_this_plan ?? null,
+        },
+        returnedDayCount: payload.days.length,
+      };
+    }
+
+    function countMissingSlots(days: any[]): number {
+      let count = 0;
+      for (const day of days) {
+        for (const slotKey of OPENAI_SLOT_KEYS) {
+          if (!day?.[slotKey]) count++;
+        }
+      }
+      return count;
+    }
+
+    function countDuplicateCookedRecipeIds(days: any[]): number {
+      const seen = new Set<string>();
+      let duplicates = 0;
+      for (const day of days) {
+        for (const slotKey of COOKED_SLOT_KEYS) {
+          const id = day?.[slotKey]?.library_recipe_id;
+          if (!id) continue;
+          if (seen.has(id)) duplicates++;
+          else seen.add(id);
+        }
+      }
+      return duplicates;
+    }
+
+    async function attemptBatch(batch: OpenAIBatch, attemptNum: number): Promise<BatchAttemptResult> {
+      const started = Date.now();
+      await advance("generating", "OpenAI request started", `Building your meal plan (${batch.dayNames.join(", ")})`, {
+        mode: "batched",
+        batch: batch.batchNumber,
+        days: batch.dayNames,
+        attempt: attemptNum,
+      });
       try {
+        const batchBudgetTarget = Math.round((weeklyBudget * (batch.dayNames.length / Math.max(1, daysCount))) * 100) / 100;
+        const batchContext = {
+          ...mealPlanContext,
+          days_count: batch.dayNames.length,
+          preferred_meal_count: batch.dayNames.length * 3,
+          target_days: batch.dayNames,
+          target_day_count: batch.dayNames.length,
+          full_week_days: OPENAI_DAY_NAMES,
+          full_week_day_count: daysCount,
+          full_week_preferred_meal_count: mealCount,
+          approximate_batch_budget_target: batchBudgetTarget,
+          batch_note: "Generate only the requested target_days. The weekly budget is for the entire 7-day plan; this batch target is an approximate share.",
+        };
         const ai = await callOpenAI({
           model: "gpt-5.4-mini",
           system: SYSTEM_PROMPT,
-          user: `Fill ${daysCount} days with the 6 daily slots (breakfast, morning_snack, lunch, afternoon_snack, dinner, after_dinner_snack). Pick from candidates_breakfast / candidates_lunch / candidates_dinner for cooked meals, and candidates_morning_snack / candidates_afternoon_snack / candidates_after_dinner_snack for snacks. Snacks must stay simple grab-and-go (no cooking). Return library_recipe_id when possible. Context:\n\n${JSON.stringify(mealPlanContext)}`,
+          user: `Fill ONLY these ${batch.dayNames.length} day(s): ${batch.dayNames.join(", ")}.
+
+Return exactly one day object for each requested day, in the requested order, and do not include any other days.
+Each requested day must include all 6 daily slots: breakfast, morning_snack, lunch, afternoon_snack, dinner, after_dinner_snack.
+Pick from candidates_breakfast / candidates_lunch / candidates_dinner for cooked meals, and candidates_morning_snack / candidates_afternoon_snack / candidates_after_dinner_snack for snacks.
+Snacks must stay simple grab-and-go (no cooking). Return library_recipe_id when possible.
+Approximate budget target for this batch: $${batchBudgetTarget.toFixed(2)} of the full weekly budget.
+Context:
+
+${JSON.stringify(batchContext)}`,
           tools: [{
             type: "function",
             function: {
               name: "return_meal_plan",
-              description: "Return the day-by-day meal plan referencing library recipes.",
+              description: "Return the requested day-by-day meal plan batch referencing library recipes.",
               parameters: RESPONSE_SCHEMA,
             },
           }],
           tool_choice: { type: "function", function: { name: "return_meal_plan" } },
           max_tokens: 5000,
           timeout_ms: openAITimeoutMs(35_000),
-          log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
+          log: { admin, user_id: userId, request_type: `meal_plan_generation_batch_${batch.batchNumber}_attempt_${attemptNum}` },
         });
 
         const finishReason = ai.raw?.choices?.[0]?.finish_reason;
-        console.log(`[generate-meal-plan] attempt ${attemptNum} finish_reason=`, finishReason);
+        const elapsedMs = Date.now() - started;
+        const rawReturnedDayCount = Array.isArray((ai.tool_arguments as any)?.days) ? (ai.tool_arguments as any).days.length : 0;
+        console.log("[generate-meal-plan] OpenAI batch attempt completed", JSON.stringify({
+          event: "meal_plan_openai_batch_attempt_completed",
+          batch: batch.batchNumber,
+          day_names: batch.dayNames,
+          attempt: attemptNum,
+          finish_reason: finishReason,
+          elapsed_ms: elapsedMs,
+          latency_ms: ai.latency_ms,
+          returned_day_count: rawReturnedDayCount,
+        }));
 
         if (finishReason === "length") {
-          lastAttemptError = { code: "invalid_ai_json", message: "Meal planner response was cut off.", details: { attempt: attemptNum } };
-          return null;
+          const error = "response_cut_off";
+          lastAttemptError = {
+            code: "invalid_ai_json",
+            message: "Meal planner response was cut off.",
+            details: { mode: "batched", batch: batch.batchNumber, days: batch.dayNames, attempt: attemptNum },
+          };
+          console.warn("[generate-meal-plan] OpenAI batch invalid", JSON.stringify({
+            event: "meal_plan_openai_batch_invalid",
+            batch: batch.batchNumber,
+            day_names: batch.dayNames,
+            attempt: attemptNum,
+            finish_reason: finishReason,
+            elapsed_ms: elapsedMs,
+            returned_day_count: 0,
+            reason: error,
+          }));
+          return { batch, parsed: null, attempts: attemptNum, returnedDayCount: 0, error };
         }
 
-        const p = ai.tool_arguments as any;
-        if (!p?.days || !Array.isArray(p.days) || p.days.length < 1) {
-          lastAttemptError = { code: "invalid_ai_json", message: "Meal planner returned invalid data.", details: { attempt: attemptNum } };
-          return null;
+        const validation = validateBatchPayload(ai.tool_arguments as any, batch);
+        if (!validation.parsed) {
+          const error = validation.error || "invalid_batch_payload";
+          lastAttemptError = {
+            code: "invalid_ai_json",
+            message: "Meal planner returned invalid batch data.",
+            details: { mode: "batched", batch: batch.batchNumber, days: batch.dayNames, attempt: attemptNum, error },
+          };
+          console.warn("[generate-meal-plan] OpenAI batch invalid", JSON.stringify({
+            event: "meal_plan_openai_batch_invalid",
+            batch: batch.batchNumber,
+            day_names: batch.dayNames,
+            attempt: attemptNum,
+            finish_reason: finishReason,
+            elapsed_ms: elapsedMs,
+            returned_day_count: validation.returnedDayCount,
+            reason: error,
+          }));
+          return { batch, parsed: null, attempts: attemptNum, returnedDayCount: validation.returnedDayCount, error };
         }
 
-        await advance("generating", "OpenAI response received", "Building your weekly meal plan", { attempt: attemptNum });
-        return p;
+        await advance("generating", "OpenAI response received", `Building your meal plan (${batch.dayNames.join(", ")})`, {
+          mode: "batched",
+          batch: batch.batchNumber,
+          days: batch.dayNames,
+          attempt: attemptNum,
+          returned_day_count: validation.returnedDayCount,
+          elapsed_ms: elapsedMs,
+        });
+
+        return {
+          batch,
+          parsed: validation.parsed,
+          attempts: attemptNum,
+          returnedDayCount: validation.returnedDayCount,
+        };
       } catch (e: any) {
-        console.error(`[generate-meal-plan] attempt ${attemptNum} threw`, e?.status, e?.message);
+        const elapsedMs = Date.now() - started;
+        console.error(`[generate-meal-plan] batch ${batch.batchNumber} attempt ${attemptNum} threw`, e?.status, e?.message);
         if (e?.status === 429 || e?.status === 402) throw e;
+        const error = e?.code === "openai_timeout" ? "openai_timeout" : (e?.message || "AI response invalid.");
         lastAttemptError = {
           code: e?.code === "openai_timeout" ? "openai_timeout" : "invalid_ai_json",
           message: e?.code === "openai_timeout" ? "The meal planner timed out." : (e?.message || "AI response invalid."),
-          details: { attempt: attemptNum },
+          details: { mode: "batched", batch: batch.batchNumber, days: batch.dayNames, attempt: attemptNum },
+        };
+        console.warn("[generate-meal-plan] OpenAI batch failed", JSON.stringify({
+          event: "meal_plan_openai_batch_failed",
+          batch: batch.batchNumber,
+          day_names: batch.dayNames,
+          attempt: attemptNum,
+          elapsed_ms: elapsedMs,
+          reason: error,
+        }));
+        return { batch, parsed: null, attempts: attemptNum, returnedDayCount: 0, error };
+      }
+    }
+
+    async function runBatchWithRetry(batch: OpenAIBatch): Promise<BatchAttemptResult> {
+      if (!hasTimeFor(40_000)) {
+        const fallbackReason = "soft_deadline_before_batch";
+        softDeadlineLog("skip_openai_batch", { batch: batch.batchNumber, days: batch.dayNames, reason: fallbackReason });
+        return { batch, parsed: null, attempts: 0, returnedDayCount: 0, fallbackReason };
+      }
+
+      const first = await attemptBatch(batch, 1);
+      if (first.parsed) return first;
+
+      if (!hasTimeFor(40_000)) {
+        const fallbackReason = "soft_deadline_before_retry";
+        softDeadlineLog("skip_openai_batch_retry", { batch: batch.batchNumber, days: batch.dayNames, reason: fallbackReason, error: first.error });
+        return { ...first, fallbackReason };
+      }
+
+      const second = await attemptBatch(batch, 2);
+      if (second.parsed) return second;
+
+      return { ...second, fallbackReason: second.error || first.error || "batch_failed_after_retry" };
+    }
+
+    async function generateBatchedOpenAIPlan(): Promise<any | null> {
+      await advance("generating", "OpenAI request started", "Building your weekly meal plan in batches", {
+        mode: "batched",
+        batches: openAIBatches.map((b) => ({ batch: b.batchNumber, days: b.dayNames })),
+      });
+
+      const results = await Promise.all(openAIBatches.map((batch) => runBatchWithRetry(batch)));
+      const successfulResults = results.filter((r) => r.parsed?.days?.length);
+      if (!successfulResults.length) {
+        lastAttemptError = lastAttemptError ?? {
+          code: "invalid_ai_json",
+          message: "Meal planner returned no valid batch data.",
+          details: { mode: "batched", batches: results.map((r) => ({ batch: r.batch.batchNumber, error: r.error, fallback_reason: r.fallbackReason })) },
         };
         return null;
       }
+
+      const daysByKey = new Map<string, any>();
+      let returnedDayCount = 0;
+      for (const result of successfulResults) {
+        returnedDayCount += result.returnedDayCount;
+        for (const day of result.parsed.days) {
+          daysByKey.set(dayNameKey(day.day_name), day);
+        }
+      }
+
+      const missingDays: string[] = [];
+      const mergedDays = OPENAI_DAY_NAMES.map((dayName) => {
+        const day = daysByKey.get(dayNameKey(dayName));
+        if (day) return { ...day, day_name: dayName };
+        missingDays.push(dayName);
+        return { day_name: dayName };
+      });
+      const missingSlotCount = countMissingSlots(mergedDays);
+      const duplicateCookedRecipeCount = countDuplicateCookedRecipeIds(mergedDays);
+      const failedBatches = results
+        .filter((r) => !r.parsed)
+        .map((r) => ({
+          batch: r.batch.batchNumber,
+          days: r.batch.dayNames,
+          attempts: r.attempts,
+          reason: r.fallbackReason || r.error || "unknown",
+        }));
+
+      console.log("[generate-meal-plan] OpenAI batch merge", JSON.stringify({
+        event: "meal_plan_openai_batch_merge",
+        total_returned_days: returnedDayCount,
+        merged_day_count: mergedDays.length,
+        missing_days: missingDays,
+        missing_slot_count: missingSlotCount,
+        duplicate_cooked_recipe_count: duplicateCookedRecipeCount,
+        failed_batches: failedBatches,
+      }));
+
+      await advance("generating", "OpenAI response received", "Building your weekly meal plan", {
+        mode: "batched",
+        total_returned_days: returnedDayCount,
+        merged_day_count: mergedDays.length,
+        missing_days: missingDays,
+        missing_slot_count: missingSlotCount,
+        duplicate_cooked_recipe_count: duplicateCookedRecipeCount,
+        failed_batches: failedBatches,
+      });
+
+      const why = successfulResults.find((r) => r.parsed?.why_this_plan)?.parsed?.why_this_plan ?? {};
+      return {
+        days: mergedDays,
+        why_this_plan: {
+          ...why,
+          summary: why?.summary ?? "Built with batched OpenAI meal planning.",
+        },
+      };
     }
 
     // Load-test stub: bypass the AI call entirely when the request opts in AND
@@ -1068,12 +1357,7 @@ Deno.serve(async (req) => {
       await advance("generating", "OpenAI response received", "Building your weekly meal plan (loadtest stub)", { stub: true });
       parsed = buildServerFallback(daysCount, breakfastCandidates, lunchCandidates, dinnerCandidates);
     } else {
-      parsed = await attempt(1);
-      if (!parsed && hasTimeFor(45_000)) {
-        parsed = await attempt(2);
-      } else if (!parsed) {
-        softDeadlineLog("skip_second_openai_attempt");
-      }
+      parsed = await generateBatchedOpenAIPlan();
     }
 
     if (!parsed) {
