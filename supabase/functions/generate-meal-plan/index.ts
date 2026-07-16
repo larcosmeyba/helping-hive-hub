@@ -4,7 +4,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { enforceRateLimit } from "../_shared/rateLimit.ts";
+import { enforceRateLimit, envFlagEnabled } from "../_shared/rateLimit.ts";
 import { loadChannelConfig, computeChannelTotals, PACKAGE_WASTE_MULTIPLIER, normalizeStoreCode } from "../_shared/cartCosting.ts";
 import { priceBasketWithKroger, getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 import { computeHouseholdServings, scaleIngredientQuantity } from "../_shared/householdScaling.ts";
@@ -407,6 +407,7 @@ Deno.serve(async (req) => {
     // to keep cost predictable and prevent accidental loops.
     // fail-closed: if the limiter RPC itself errors, reject with 429 rather
     // than let the most expensive endpoint flood the DB during pressure.
+    const mealPlanRegenerationLimitEnabled = envFlagEnabled("MEAL_PLAN_REGENERATION_LIMIT_ENABLED", true);
     const rl = await enforceRateLimit({
       admin,
       userId,
@@ -414,6 +415,8 @@ Deno.serve(async (req) => {
       maxPerHour: 3,
       corsHeaders,
       failClosed: true,
+      enabled: mealPlanRegenerationLimitEnabled,
+      disabledReason: "MEAL_PLAN_REGENERATION_LIMIT_ENABLED=false",
     });
     if (rl) return rl;
 
@@ -2808,5 +2811,4 @@ function buildMinimumPortionSnack(
     nutrition_source: "ai_estimated",
   };
 }
-
 

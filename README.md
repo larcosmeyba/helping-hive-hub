@@ -96,6 +96,18 @@ npx cap run android -l --host 127.0.0.1 --port 8080 --forwardPorts 8080:8080
 ## Edge functions
 Live in `supabase/functions/*`. Deployed automatically by Lovable Cloud.
 
+### Meal-plan regeneration limit
+
+Meal-plan generation is limited by default to protect OpenAI/Kroger spend.
+For local or production testing, temporarily disable only the meal-plan
+generation limit with this server-side Edge Function env var:
+
+```bash
+MEAL_PLAN_REGENERATION_LIMIT_ENABLED=false
+```
+
+Unset it or set it back to `true` to restore the limit.
+
 ## Compliance notes
 - Instacart Connect: single home-store view only — no cross-retailer price
   comparison anywhere in the UI.

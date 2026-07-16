@@ -26,7 +26,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildCorsHeaders, handlePreflight } from "../_shared/cors.ts";
-import { enforceRateLimit } from "../_shared/rateLimit.ts";
+import { enforceRateLimit, envFlagEnabled } from "../_shared/rateLimit.ts";
 import { buildMealPlanContext } from "../_shared/mealPlanContext.ts";
 import { buildHiveAiContext } from "../_shared/hiveAiContext.ts";
 import { buildFamilyAssistanceContext } from "../_shared/familyAssistanceContext.ts";
@@ -106,6 +106,9 @@ Deno.serve(async (req) => {
     // fail-closed ONLY for the heaviest action (full meal-plan generation via
     // this router). All other actions stay fail-open so transient DB hiccups
     // don't block chat/swap/analysis.
+    const mealPlanRegenerationLimitEnabled = request_type === "meal_plan_generation"
+      ? envFlagEnabled("MEAL_PLAN_REGENERATION_LIMIT_ENABLED", true)
+      : true;
     const rl = await enforceRateLimit({
       admin,
       userId: user.id,
@@ -113,6 +116,10 @@ Deno.serve(async (req) => {
       maxPerHour: RATE_LIMITS[request_type] ?? 30,
       corsHeaders: cors,
       failClosed: request_type === "meal_plan_generation",
+      enabled: mealPlanRegenerationLimitEnabled,
+      disabledReason: request_type === "meal_plan_generation"
+        ? "MEAL_PLAN_REGENERATION_LIMIT_ENABLED=false"
+        : undefined,
     });
     if (rl) return rl;
 

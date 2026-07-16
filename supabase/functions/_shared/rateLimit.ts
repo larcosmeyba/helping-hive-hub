@@ -12,6 +12,12 @@ export interface RateLimitOptions {
   maxPerHour: number;
   corsHeaders?: Record<string, string>;
   /**
+   * Set false to bypass this specific limiter. Defaults to true.
+   * Intended for temporary testing flags where the caller decides scope.
+   */
+  enabled?: boolean;
+  disabledReason?: string;
+  /**
    * When true, an infra error talking to `increment_rate_limit` is treated as
    * "limit exceeded" and we return a 429. Use this on expensive endpoints
    * (full meal-plan generation) where letting traffic through during DB
@@ -24,6 +30,18 @@ export interface RateLimitOptions {
 // math doesn't apply here (the limiter itself failed), so we ask clients to
 // retry in ~45s instead of "seconds-to-next-hour" or 0.
 const INFRA_ERROR_RETRY_AFTER_SECONDS = 45;
+
+export function envFlagEnabled(name: string, defaultValue = true): boolean {
+  const raw = Deno.env.get(name);
+  if (raw === undefined || raw === null || raw.trim() === "") return defaultValue;
+
+  const value = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "on", "enabled"].includes(value)) return true;
+  if (["0", "false", "no", "off", "disabled"].includes(value)) return false;
+
+  console.warn(`[rate-limit] invalid boolean env ${name}=${raw}; using default ${defaultValue}`);
+  return defaultValue;
+}
 
 function buildRateLimitedResponse(
   endpoint: string,
@@ -82,7 +100,21 @@ function buildRateLimitedResponse(
 export async function enforceRateLimit(
   opts: RateLimitOptions,
 ): Promise<Response | null> {
-  const { admin, userId, endpoint, maxPerHour, corsHeaders = {}, failClosed = false } = opts;
+  const {
+    admin,
+    userId,
+    endpoint,
+    maxPerHour,
+    corsHeaders = {},
+    failClosed = false,
+    enabled = true,
+    disabledReason,
+  } = opts;
+  if (!enabled) {
+    console.warn(`[rate-limit] bypassed for ${endpoint}${disabledReason ? ` (${disabledReason})` : ""}`);
+    return null;
+  }
+
   try {
     const { data, error } = await admin.rpc("increment_rate_limit", {
       _user_id: userId,
