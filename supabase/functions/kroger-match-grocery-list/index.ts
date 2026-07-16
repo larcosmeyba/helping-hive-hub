@@ -34,6 +34,8 @@ Deno.serve(async (req) => {
     const items: Array<{ id?: string; name: string; quantity?: number | string }> = body.items ?? [];
     let locationId: string | undefined = body.locationId;
     const skipCache: boolean = body.skipCache === true || body.simplify === true;
+    const deadlineMs = Math.max(5_000, Math.min(Number(body.deadlineMs ?? 25_000) || 25_000, 45_000));
+    const concurrency = Math.max(1, Math.min(Number(body.concurrency ?? 4) || 4, 8));
     if (!items.length) {
       return new Response(
         JSON.stringify({ error: "items[] required" }),
@@ -66,7 +68,12 @@ Deno.serve(async (req) => {
     const basket = await priceBasketWithKroger(
       supabase, userId, locationId,
       items.map((i) => ({ id: i.id ?? null, name: i.name, quantity: i.quantity ?? 1 })),
-      { skipCache },
+      {
+        skipCache,
+        deadlineAt: Date.now() + deadlineMs,
+        concurrency,
+        allowPartial: true,
+      },
     );
 
     // Shape into the legacy {matches, totals} response the UI consumes.
@@ -82,7 +89,7 @@ Deno.serve(async (req) => {
       packages: l.quantity,
       confidence: l.match_confidence,
       availability: l.availability ?? null,
-      from_cache: false,
+      from_cache: l.from_cache === true,
     }));
 
     return new Response(
@@ -93,9 +100,25 @@ Deno.serve(async (req) => {
           matched: basket.matched_count,
           failed: basket.unmatched_count,
           needs_review: basket.needs_review_count,
-          cacheHits: 0,
+          cacheHits: basket.cache_hit_count ?? 0,
           estimatedTotal: basket.subtotal,
           relevance_threshold: RELEVANCE_THRESHOLD,
+          liveRequests: basket.live_request_count ?? 0,
+          itemsPriced: basket.items_priced ?? basket.lines.length,
+          itemsSkipped: basket.items_skipped ?? 0,
+          elapsedMs: basket.elapsed_ms ?? null,
+          partial: basket.partial === true,
+        },
+        diagnostics: {
+          items_total: items.length,
+          cache_hits: basket.cache_hit_count ?? 0,
+          live_requests: basket.live_request_count ?? 0,
+          items_priced: basket.items_priced ?? basket.lines.length,
+          items_skipped: basket.items_skipped ?? 0,
+          elapsed_ms: basket.elapsed_ms ?? null,
+          partial: basket.partial === true,
+          deadline_ms: deadlineMs,
+          concurrency,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

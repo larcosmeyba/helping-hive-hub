@@ -1,6 +1,6 @@
-// Shared Kroger pricing helper used by BOTH the meal-plan budget gate
-// (generate-meal-plan) and the user-facing grocery matcher
-// (kroger-match-grocery-list). One matcher = one number across the app.
+// Shared Kroger pricing helper used by user-facing grocery matchers.
+// Meal-plan generation saves with estimated pricing first; Kroger live pricing
+// runs separately so product-search latency cannot block plan creation.
 //
 // Hard rules enforced here:
 //   1. Search term is CLEANED (prep words + units stripped) before hitting
@@ -38,7 +38,7 @@ export interface PricedLine {
   package_price: number;       // price per package
   line_total: number;          // package_price * quantity (packages)
   matched: boolean;
-  status?: "matched" | "needs_review" | "no_match";
+  status?: "matched" | "needs_review" | "no_match" | "skipped";
   matched_name?: string | null;
   brand?: string | null;
   image_url?: string | null;
@@ -47,6 +47,7 @@ export interface PricedLine {
   regular_price?: number | null;
   availability?: string | null;
   match_confidence?: number;
+  from_cache?: boolean;
 }
 
 export interface PricedBasket {
@@ -57,6 +58,12 @@ export interface PricedBasket {
   needs_review_count: number;
   avg_match_confidence: number;
   low_confidence_count: number;
+  cache_hit_count?: number;
+  live_request_count?: number;
+  items_priced?: number;
+  items_skipped?: number;
+  elapsed_ms?: number;
+  partial?: boolean;
 }
 
 // --- Term cleaning ----------------------------------------------------------
@@ -299,6 +306,14 @@ export interface PriceItemInput {
   quantity?: number | string | null;  // recipe-side amount string OR package count number
 }
 
+interface PriceBasketOptions {
+  skipCache?: boolean;
+  persist?: boolean;
+  deadlineAt?: number;
+  concurrency?: number;
+  allowPartial?: boolean;
+}
+
 function safeLogJson(value: unknown): string {
   try {
     return JSON.stringify(value);
@@ -306,6 +321,18 @@ function safeLogJson(value: unknown): string {
     return String(value);
   }
 }
+
+function envNumber(name: string, fallback: number): number {
+  const raw = Number(Deno.env.get(name));
+  return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+}
+
+const KROGER_PRICING_DEFAULT_DEADLINE_MS = envNumber("KROGER_PRICING_DEADLINE_MS", 25_000);
+const KROGER_PRICING_CONCURRENCY = Math.max(
+  1,
+  Math.min(8, envNumber("KROGER_PRICING_CONCURRENCY", 4)),
+);
+const KROGER_PRICING_DEADLINE_RESERVE_MS = envNumber("KROGER_PRICING_DEADLINE_RESERVE_MS", 1_500);
 
 function zipDiagnostics(zip: unknown): { configured: boolean; length: number; prefix: string | null } {
   const s = String(zip ?? "").trim();
@@ -326,9 +353,13 @@ export async function priceBasketWithKroger(
   userId: string,
   locationId: string,
   items: PriceItemInput[],
-  opts: { skipCache?: boolean; persist?: boolean; deadlineAt?: number } = {},
+  opts: PriceBasketOptions = {},
 ): Promise<PricedBasket> {
+  const started = Date.now();
   const persist = opts.persist !== false;
+  const allowPartial = opts.allowPartial !== false;
+  const deadlineAt = opts.deadlineAt ?? started + KROGER_PRICING_DEFAULT_DEADLINE_MS;
+  const concurrency = Math.max(1, Math.min(8, Math.floor(opts.concurrency ?? KROGER_PRICING_CONCURRENCY)));
   const lines: PricedLine[] = [];
   const insertRows: Array<Record<string, unknown>> = [];
   let subtotal = 0;
@@ -337,25 +368,75 @@ export async function priceBasketWithKroger(
   let needs_review_count = 0;
   let confSum = 0;
   let lowConf = 0;
+  let cacheHitCount = 0;
+  let liveRequestCount = 0;
+  let skippedCount = 0;
+  let partial = false;
   const cacheCutoff = new Date(Date.now() - 24 * 3600_000).toISOString();
 
-  for (const item of items) {
-    if (opts.deadlineAt && Date.now() + 10_000 >= opts.deadlineAt) {
-      throw new Error("Kroger pricing soft deadline exceeded");
-    }
+  type PreparedItem = PriceItemInput & { index: number; original: string; cleaned: string };
+  type MatchOutcome =
+    | { kind: "matched"; product: KrogerProduct; confidence: number; fromCache?: false }
+    | { kind: "cached"; cached: any; confidence: number; fromCache: true }
+    | { kind: "needs_review" }
+    | { kind: "no_match" }
+    | { kind: "skipped"; reason: string };
 
-    const original = String(item.name || "").trim();
-    if (!original) continue;
-    const cleaned = cleanSearchTerm(original);
+  const prepared = items
+    .map((item, index): PreparedItem | null => {
+      const original = String(item.name || "").trim();
+      if (!original) return null;
+      return {
+        ...item,
+        index,
+        original,
+        cleaned: cleanSearchTerm(original),
+      };
+    })
+    .filter((item): item is PreparedItem => item !== null);
 
-    // 1) Cache lookup (24h). Skip cached results below the relevance gate.
-    if (!opts.skipCache) {
+  const itemGroups = new Map<string, PreparedItem[]>();
+  for (const item of prepared) {
+    const key = item.cleaned || item.original.toLowerCase();
+    const group = itemGroups.get(key);
+    if (group) group.push(item);
+    else itemGroups.set(key, [item]);
+  }
+
+  const outcomes = new Map<string, MatchOutcome>();
+  const liveTerms: string[] = [];
+
+  function remainingMs() {
+    return deadlineAt - Date.now();
+  }
+
+  function nearDeadline() {
+    return remainingMs() <= KROGER_PRICING_DEADLINE_RESERVE_MS;
+  }
+
+  function softDeadlineError(processed: number) {
+    const err = new Error(`Kroger pricing soft deadline exceeded after ${processed}/${prepared.length} items`) as Error & {
+      code?: string;
+      itemIndex?: number;
+      itemCount?: number;
+      remainingMs?: number;
+    };
+    err.code = "kroger_pricing_soft_deadline";
+    err.itemIndex = processed;
+    err.itemCount = prepared.length;
+    err.remainingMs = remainingMs();
+    return err;
+  }
+
+  async function lookupCached(original: string, cleaned: string) {
+    const terms = Array.from(new Set([cleaned, original].map((v) => String(v || "").trim()).filter(Boolean)));
+    for (const term of terms) {
       const { data: cached } = await admin
         .from("kroger_product_matches")
         .select("product_id, upc, matched_name, brand, size, image_url, unit_price, confidence")
         .eq("location_id", locationId)
         .eq("status", "matched")
-        .ilike("ingredient_name", original)
+        .ilike("ingredient_name", term)
         .gte("matched_at", cacheCutoff)
         .order("matched_at", { ascending: false })
         .limit(1)
@@ -363,86 +444,146 @@ export async function priceBasketWithKroger(
 
       if (cached?.product_id) {
         const conf = Number(cached.confidence ?? 0);
-        if (conf >= RELEVANCE_THRESHOLD) {
-          const pay = Number(cached.unit_price ?? 0);
-          // We don't have full product items[] on a cache hit; fall back to
-          // 1 package (cached matches are inherently a hint not a recompute).
-          const packs = 1;
-          const lineTotal = pay * packs;
-          subtotal += lineTotal;
-          matched_count += 1;
-          confSum += conf;
-          if (conf < 0.6) lowConf += 1;
-          lines.push({
-            name: original, quantity: packs, unit_price: pay, package_price: pay,
-            line_total: lineTotal, matched: true, status: "matched",
-            matched_name: cached.matched_name, brand: cached.brand,
-            image_url: cached.image_url, size: cached.size,
-            promo_price: null, regular_price: pay, availability: null,
-            match_confidence: conf,
-          });
-          continue;
-        }
-        // cached but below threshold → treat as needs_review (don't sum)
+        if (conf >= RELEVANCE_THRESHOLD) return { cached, confidence: conf };
+      }
+    }
+    return null;
+  }
+
+  for (const [key, group] of itemGroups) {
+    if (nearDeadline()) {
+      partial = true;
+      if (!allowPartial) throw softDeadlineError(lines.length);
+      outcomes.set(key, { kind: "skipped", reason: "deadline_before_cache_lookup" });
+      continue;
+    }
+
+    if (!opts.skipCache) {
+      const representative = group[0];
+      const cached = await lookupCached(representative.original, representative.cleaned);
+      if (cached) {
+        cacheHitCount += group.length;
+        outcomes.set(key, { kind: "cached", cached: cached.cached, confidence: cached.confidence, fromCache: true });
+        continue;
       }
     }
 
-    // 2) Live search on the cleaned term. Do not retry raw ingredient text:
-    // Kroger rejects noisy terms with more than 8 words.
-    const terms = cleaned ? [cleaned] : [];
-    let results: KrogerProduct[] = [];
-    for (const term of terms) {
-      results = await searchKroger(term, locationId);
-      if (results.length) break;
+    liveTerms.push(key);
+  }
+
+  let nextTermIndex = 0;
+  async function liveWorker() {
+    while (nextTermIndex < liveTerms.length) {
+      if (nearDeadline()) {
+        partial = true;
+        return;
+      }
+      const term = liveTerms[nextTermIndex++];
+      liveRequestCount++;
+      const results = await searchKroger(term, locationId);
+      const best = pickRelevantCheapest(term, results);
+      outcomes.set(
+        term,
+        best
+          ? { kind: "matched", product: best.product, confidence: best.confidence }
+          : { kind: results.length ? "needs_review" : "no_match" },
+      );
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, liveTerms.length) }, () => liveWorker()));
+
+  for (const term of liveTerms) {
+    if (!outcomes.has(term)) {
+      partial = true;
+      outcomes.set(term, { kind: "skipped", reason: "deadline_before_live_search" });
+    }
+  }
+
+  for (const item of prepared) {
+    const key = item.cleaned || item.original.toLowerCase();
+    const outcome = outcomes.get(key) ?? { kind: "skipped", reason: "no_outcome" };
+
+    if (outcome.kind === "cached") {
+      const cached = outcome.cached;
+      const pay = Number(cached.unit_price ?? 0);
+      // We don't have full product items[] on a cache hit; fall back to
+      // 1 package (cached matches are inherently a hint not a recompute).
+      const packs = 1;
+      const lineTotal = pay * packs;
+      subtotal += lineTotal;
+      matched_count += 1;
+      confSum += outcome.confidence;
+      if (outcome.confidence < 0.6) lowConf += 1;
+      lines.push({
+        name: item.original, quantity: packs, unit_price: pay, package_price: pay,
+        line_total: lineTotal, matched: true, status: "matched",
+        matched_name: cached.matched_name, brand: cached.brand,
+        image_url: cached.image_url, size: cached.size,
+        promo_price: null, regular_price: pay, availability: null,
+        match_confidence: outcome.confidence, from_cache: true,
+      });
+      continue;
     }
 
-    const best = pickRelevantCheapest(original, results);
-    if (!best) {
-      // Either zero results or none clear the relevance gate.
-      const reason = results.length ? "needs_review" : "no_match";
-      if (reason === "needs_review") needs_review_count += 1; else unmatched_count += 1;
+    if (outcome.kind === "matched") {
+      const { product, confidence } = outcome;
+      const { promo, regular, pay } = priceOf(product);
+      const unitPrice = computeUnitPrice(product);
+      const packs = packagesNeeded(item.quantity ?? null, product);
+      const lineTotal = pay * packs;
+      subtotal += lineTotal;
+      matched_count += 1;
+      confSum += confidence;
+      if (confidence < 0.6) lowConf += 1;
+      const img = pickImage(product);
+      const availability = (product.items?.[0]?.inventory?.stockLevel ?? null) as string | null;
       lines.push({
-        name: original, quantity: 1, unit_price: 0, package_price: 0, line_total: 0,
-        matched: false, status: reason,
+        name: item.original, quantity: packs,
+        unit_price: unitPrice, package_price: pay, line_total: lineTotal,
+        matched: true, status: "matched",
+        matched_name: product.description, brand: product.brand ?? null, image_url: img,
+        size: product.items?.[0]?.size ?? null,
+        promo_price: promo, regular_price: regular,
+        availability, match_confidence: confidence, from_cache: false,
       });
       if (persist) {
         insertRows.push({
           user_id: userId, grocery_list_item_id: item.id ?? null,
-          ingredient_name: original, location_id: locationId,
-          status: reason, from_cache: false,
+          ingredient_name: item.cleaned, location_id: locationId,
+          product_id: product.productId, upc: product.upc ?? null,
+          matched_name: product.description, brand: product.brand ?? null,
+          size: product.items?.[0]?.size ?? null, image_url: img,
+          unit_price: pay, confidence, status: "matched", from_cache: false,
         });
       }
       continue;
     }
 
-    const { product, confidence } = best;
-    const { promo, regular, pay } = priceOf(product);
-    const unitPrice = computeUnitPrice(product);
-    const packs = packagesNeeded(item.quantity ?? null, product);
-    const lineTotal = pay * packs;
-    subtotal += lineTotal;
-    matched_count += 1;
-    confSum += confidence;
-    if (confidence < 0.6) lowConf += 1;
-    const img = pickImage(product);
-    const availability = (product.items?.[0]?.inventory?.stockLevel ?? null) as string | null;
+    if (outcome.kind === "needs_review") {
+      needs_review_count += 1;
+    } else if (outcome.kind === "skipped") {
+      partial = true;
+      skippedCount += 1;
+      unmatched_count += 1;
+    } else {
+      unmatched_count += 1;
+    }
+
+    const status = outcome.kind === "needs_review"
+      ? "needs_review"
+      : outcome.kind === "skipped"
+        ? "skipped"
+        : "no_match";
     lines.push({
-      name: original, quantity: packs,
-      unit_price: unitPrice, package_price: pay, line_total: lineTotal,
-      matched: true, status: "matched",
-      matched_name: product.description, brand: product.brand ?? null, image_url: img,
-      size: product.items?.[0]?.size ?? null,
-      promo_price: promo, regular_price: regular,
-      availability, match_confidence: confidence,
+      name: item.original, quantity: 1, unit_price: 0, package_price: 0, line_total: 0,
+      matched: false, status,
     });
     if (persist) {
       insertRows.push({
         user_id: userId, grocery_list_item_id: item.id ?? null,
-        ingredient_name: original, location_id: locationId,
-        product_id: product.productId, upc: product.upc ?? null,
-        matched_name: product.description, brand: product.brand ?? null,
-        size: product.items?.[0]?.size ?? null, image_url: img,
-        unit_price: pay, confidence, status: "matched", from_cache: false,
+        ingredient_name: item.cleaned, location_id: locationId,
+        status, from_cache: false,
       });
     }
   }
@@ -455,6 +596,21 @@ export async function priceBasketWithKroger(
     }
   }
 
+  const elapsed = Date.now() - started;
+  const itemsPriced = Math.max(0, lines.length - skippedCount);
+  console.log("[krogerPricing] basket priced", safeLogJson({
+    event: "kroger_pricing_basket_priced",
+    items_total: prepared.length,
+    cache_hits: cacheHitCount,
+    live_requests: liveRequestCount,
+    items_priced: itemsPriced,
+    items_skipped: skippedCount,
+    elapsed_ms: elapsed,
+    partial,
+    concurrency,
+    deadline_ms: deadlineAt - started,
+  }));
+
   return {
     lines,
     subtotal: Math.round(subtotal * 100) / 100,
@@ -463,6 +619,12 @@ export async function priceBasketWithKroger(
     needs_review_count,
     avg_match_confidence: matched_count ? Math.round((confSum / matched_count) * 100) / 100 : 0,
     low_confidence_count: lowConf,
+    cache_hit_count: cacheHitCount,
+    live_request_count: liveRequestCount,
+    items_priced: itemsPriced,
+    items_skipped: skippedCount,
+    elapsed_ms: elapsed,
+    partial,
   };
 }
 
