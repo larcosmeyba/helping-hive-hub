@@ -1421,10 +1421,37 @@ ${JSON.stringify(batchContext)}`,
         : snackCandidates;
     }
 
+    function isSimpleSnackRecipe(recipe: any): boolean {
+      const cookMinutes = Number(recipe?.cook_time_minutes ?? 0);
+      const prepMinutes = Number(recipe?.prep_time_minutes ?? 0);
+      const instructionCount = Array.isArray(recipe?.instructions) ? recipe.instructions.length : 0;
+      return cookMinutes === 0 && prepMinutes <= 5 && instructionCount <= 1;
+    }
+
+    function candidateFitsSlot(slotKey: string, cand: any, usedIds: Set<string>): { ok: boolean; reason?: string } {
+      const expectedMealType = slotToCategory(slotKey);
+      const actualMealType = String(cand?.meal_type ?? "").toLowerCase();
+      if (actualMealType && actualMealType !== expectedMealType) {
+        return { ok: false, reason: "meal_type_mismatch" };
+      }
+
+      const isSnackSlot = (SNACK_SLOT_KEYS as string[]).includes(slotKey);
+      if (isSnackSlot && !isSimpleSnackRecipe(cand)) {
+        return { ok: false, reason: "snack_not_simple" };
+      }
+
+      if (!isSnackSlot && cand?.id && usedIds.has(cand.id)) {
+        return { ok: false, reason: "duplicate_cooked_recipe" };
+      }
+
+      return { ok: true };
+    }
+
     function findSafeCandidate(slotKey: string, usedIds: Set<string>): any | null {
       for (const c of poolFor(slotKey)) {
         if (usedIds.has(c.id)) continue;
         if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) continue;
+        if (!candidateFitsSlot(slotKey, c, usedIds).ok) continue;
         return c;
       }
       return null;
@@ -1445,10 +1472,20 @@ ${JSON.stringify(batchContext)}`,
 
         if (slot.library_recipe_id && candidatesById.has(slot.library_recipe_id)) {
           const cand = candidatesById.get(slot.library_recipe_id);
-          if (safetyTerms.length && recipeContainsAny(cand, safetyTerms)) {
-            console.warn("[generate-meal-plan] AI chose unsafe library recipe — replacing", cand.title);
+          const slotFit = candidateFitsSlot(slotKey, cand, usedIds);
+          if ((safetyTerms.length && recipeContainsAny(cand, safetyTerms)) || !slotFit.ok) {
+            console.warn("[generate-meal-plan] AI chose invalid library recipe - replacing", JSON.stringify({
+              recipeId: cand.id,
+              title: cand.title,
+              slotKey,
+              reason: slotFit.ok ? "safety_terms" : slotFit.reason,
+            }));
             recipe = findSafeCandidate(slotKey, usedIds);
-            reason = "Swapped to honor your dietary preferences and allergies.";
+            reason = slotFit.reason === "duplicate_cooked_recipe"
+              ? "Swapped to add more variety to your week."
+              : slotFit.reason === "snack_not_simple"
+                ? "Swapped to keep snacks simple and no-cook."
+                : "Swapped to honor your dietary preferences and allergies.";
           } else {
             recipe = cand;
           }
@@ -1512,7 +1549,10 @@ ${JSON.stringify(batchContext)}`,
         let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
           const pool = poolFor(slotKey);
-          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+          fill = pool.find((c: any) => {
+            if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) return false;
+            return candidateFitsSlot(slotKey, c, usedIds).ok;
+          }) ?? null;
         }
         if (!fill) {
           fill = (SNACK_SLOT_KEYS as string[]).includes(slotKey)
@@ -1539,7 +1579,10 @@ ${JSON.stringify(batchContext)}`,
         let fill: any = findSafeCandidate(slotKey, usedIds);
         if (!fill) {
           const pool = poolFor(slotKey);
-          fill = pool.find((c: any) => !safetyTerms.length || !recipeContainsAny(c, safetyTerms)) ?? null;
+          fill = pool.find((c: any) => {
+            if (safetyTerms.length && recipeContainsAny(c, safetyTerms)) return false;
+            return candidateFitsSlot(slotKey, c, usedIds).ok;
+          }) ?? null;
         }
         if (!fill) {
           fill = (SNACK_SLOT_KEYS as string[]).includes(slotKey)
