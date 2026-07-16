@@ -933,7 +933,37 @@ Deno.serve(async (req) => {
       return String(value ?? "").trim().toLowerCase();
     }
 
-    function validateBatchPayload(payload: any, batch: OpenAIBatch): { parsed: any | null; error?: string; returnedDayCount: number } {
+    function batchResponseSchema(batch: OpenAIBatch): any {
+      return {
+        ...RESPONSE_SCHEMA,
+        properties: {
+          ...RESPONSE_SCHEMA.properties,
+          days: {
+            ...RESPONSE_SCHEMA.properties.days,
+            minItems: batch.dayNames.length,
+            maxItems: batch.dayNames.length,
+            items: {
+              ...RESPONSE_SCHEMA.properties.days.items,
+              properties: {
+                ...RESPONSE_SCHEMA.properties.days.items.properties,
+                day_name: { type: "string", enum: batch.dayNames },
+              },
+            },
+          },
+        },
+      };
+    }
+
+    function hasAnyOpenAISlot(day: any): boolean {
+      return OPENAI_SLOT_KEYS.some((slotKey) => Boolean(day?.[slotKey]));
+    }
+
+    function validateBatchPayload(payload: any, batch: OpenAIBatch): {
+      parsed: any | null;
+      error?: string;
+      returnedDayCount: number;
+      normalization?: Record<string, unknown>;
+    } {
       if (!payload?.days || !Array.isArray(payload.days) || payload.days.length < 1) {
         return { parsed: null, error: "missing_days_array", returnedDayCount: 0 };
       }
@@ -943,10 +973,16 @@ Deno.serve(async (req) => {
       const byKey = new Map<string, any>();
       const extraDays: string[] = [];
       const duplicateDays: string[] = [];
+      const unnamedDays: any[] = [];
 
       for (const day of payload.days) {
         const rawName = day?.day_name;
         const key = dayNameKey(rawName);
+        if (!key) {
+          if (hasAnyOpenAISlot(day)) unnamedDays.push(day);
+          else extraDays.push("(blank)");
+          continue;
+        }
         if (!requestedKeys.has(key)) {
           extraDays.push(String(rawName || "(blank)"));
           continue;
@@ -960,14 +996,46 @@ Deno.serve(async (req) => {
       }
 
       const missingDays = batch.dayNames.filter((d) => !seen.has(dayNameKey(d)));
+      const inferredDays: string[] = [];
+      for (const missingDay of missingDays) {
+        const inferred = unnamedDays.shift();
+        if (!inferred) break;
+        const key = dayNameKey(missingDay);
+        byKey.set(key, { ...inferred, day_name: missingDay });
+        seen.add(key);
+        inferredDays.push(missingDay);
+      }
+
+      const remainingMissingDays = batch.dayNames.filter((d) => !seen.has(dayNameKey(d)));
+      const hardExtraDays = extraDays.filter((d) => d !== "(blank)");
       if (extraDays.length || duplicateDays.length || missingDays.length) {
+        if (!hardExtraDays.length && !duplicateDays.length && !remainingMissingDays.length) {
+          const days = batch.dayNames.map((dayName) => ({
+            ...byKey.get(dayNameKey(dayName)),
+            day_name: dayName,
+          }));
+
+          return {
+            parsed: {
+              days,
+              why_this_plan: payload.why_this_plan ?? null,
+            },
+            returnedDayCount: payload.days.length,
+            normalization: {
+              inferred_day_names: inferredDays,
+              ignored_blank_extra_days: extraDays.length + unnamedDays.length,
+            },
+          };
+        }
+
         return {
           parsed: null,
           error: JSON.stringify({
             reason: "batch_day_mismatch",
-            extra_days: extraDays,
+            extra_days: [...extraDays, ...unnamedDays.map(() => "(blank)")],
             duplicate_days: duplicateDays,
-            missing_days: missingDays,
+            missing_days: remainingMissingDays,
+            inferred_day_names: inferredDays,
           }),
           returnedDayCount: payload.days.length,
         };
@@ -984,6 +1052,9 @@ Deno.serve(async (req) => {
           why_this_plan: payload.why_this_plan ?? null,
         },
         returnedDayCount: payload.days.length,
+        normalization: unnamedDays.length
+          ? { ignored_blank_extra_days: unnamedDays.length }
+          : undefined,
       };
     }
 
@@ -1051,7 +1122,7 @@ ${JSON.stringify(batchContext)}`,
             function: {
               name: "return_meal_plan",
               description: "Return the requested day-by-day meal plan batch referencing library recipes.",
-              parameters: RESPONSE_SCHEMA,
+              parameters: batchResponseSchema(batch),
             },
           }],
           tool_choice: { type: "function", function: { name: "return_meal_plan" } },
@@ -1113,6 +1184,19 @@ ${JSON.stringify(batchContext)}`,
             reason: error,
           }));
           return { batch, parsed: null, attempts: attemptNum, returnedDayCount: validation.returnedDayCount, error };
+        }
+
+        if (validation.normalization) {
+          console.warn("[generate-meal-plan] OpenAI batch normalized", JSON.stringify({
+            event: "meal_plan_openai_batch_normalized",
+            batch: batch.batchNumber,
+            day_names: batch.dayNames,
+            attempt: attemptNum,
+            finish_reason: finishReason,
+            elapsed_ms: elapsedMs,
+            returned_day_count: validation.returnedDayCount,
+            ...validation.normalization,
+          }));
         }
 
         await advance("generating", "OpenAI response received", `Building your meal plan (${batch.dayNames.join(", ")})`, {
