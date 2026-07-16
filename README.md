@@ -6,7 +6,7 @@ Beta meal-planning + grocery-list app for SNAP/military/teacher families. Built 
 - React 18 + Vite + TypeScript + Tailwind
 - Lovable Cloud (Supabase: Postgres, Auth, Edge Functions, Storage)
 - Gemini 2.5 Flash Lite for meal-plan generation
-- Capacitor 5 (iOS + Android)
+- Capacitor 8 (iOS + Android)
 - Instacart Connect for grocery checkout (no cross-retailer price comparison)
 
 ## Web development
@@ -15,16 +15,68 @@ bun install
 bun run dev
 ```
 
-## Native (iOS / Android) build steps
+## Native simulator startup (iOS / Android)
 
-The `ios/` and `android/` folders are committed but Capacitor regenerates most
-plugin wiring on `npx cap sync`. After pulling the repo on a Mac:
+iOS requires macOS with Xcode and an installed iOS simulator. Android requires
+Android Studio with an AVD/emulator.
+
+From a clean checkout:
 
 ```bash
-bun install
-bun run build
-npx cap sync ios       # or: npx cap sync android
-npx cap run ios        # opens Xcode / simulator
+npm install
+npm run build
+```
+
+`npx cap run` runs Capacitor sync before building and deploying the native app.
+
+### iOS simulator
+
+```bash
+npx cap run ios --list
+npx cap run ios
+```
+
+To choose a specific simulator, use a target name from `--list`:
+
+```bash
+npx cap run ios --target-name "iPhone 16"
+```
+
+### Android emulator
+
+This checkout may not include an `android/` directory yet. If it is missing,
+create it once:
+
+```bash
+npx cap add android
+```
+
+Then run the Android emulator:
+
+```bash
+npx cap run android --list
+npx cap run android
+```
+
+To choose a specific emulator, use a target name from `--list`:
+
+```bash
+npx cap run android --target-name "Pixel_8_API_35"
+```
+
+### Live reload in a simulator
+
+In one terminal:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+In another terminal:
+
+```bash
+npx cap run ios -l --host 127.0.0.1 --port 8080
+npx cap run android -l --host 127.0.0.1 --port 8080 --forwardPorts 8080:8080
 ```
 
 ### Manual iOS checks (Xcode)
