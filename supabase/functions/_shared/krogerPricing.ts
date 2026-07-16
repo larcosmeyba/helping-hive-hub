@@ -326,7 +326,7 @@ export async function priceBasketWithKroger(
   userId: string,
   locationId: string,
   items: PriceItemInput[],
-  opts: { skipCache?: boolean; persist?: boolean } = {},
+  opts: { skipCache?: boolean; persist?: boolean; deadlineAt?: number } = {},
 ): Promise<PricedBasket> {
   const persist = opts.persist !== false;
   const lines: PricedLine[] = [];
@@ -340,6 +340,10 @@ export async function priceBasketWithKroger(
   const cacheCutoff = new Date(Date.now() - 24 * 3600_000).toISOString();
 
   for (const item of items) {
+    if (opts.deadlineAt && Date.now() + 10_000 >= opts.deadlineAt) {
+      throw new Error("Kroger pricing soft deadline exceeded");
+    }
+
     const original = String(item.name || "").trim();
     if (!original) continue;
     const cleaned = cleanSearchTerm(original);

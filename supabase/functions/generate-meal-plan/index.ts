@@ -382,6 +382,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const requestStartedAt = Date.now();
+    const rawSoftTimeoutMs = Number(Deno.env.get("MEAL_PLAN_GENERATION_SOFT_TIMEOUT_MS") ?? "115000");
+    const softTimeoutMs = Number.isFinite(rawSoftTimeoutMs) && rawSoftTimeoutMs >= 30_000
+      ? rawSoftTimeoutMs
+      : 115_000;
+    const elapsedMs = () => Date.now() - requestStartedAt;
+    const remainingSoftMs = () => softTimeoutMs - elapsedMs();
+    const hasTimeFor = (minMs: number) => remainingSoftMs() > minMs;
+    const softDeadlineLog = (phase: string, extra: Record<string, unknown> = {}) => {
+      console.warn("[generate-meal-plan] soft deadline guard", JSON.stringify({
+        phase,
+        elapsed_ms: elapsedMs(),
+        remaining_ms: remainingSoftMs(),
+        soft_timeout_ms: softTimeoutMs,
+        ...extra,
+      }));
+    };
+    const openAITimeoutMs = (desiredMs: number, reserveMs = 15_000) =>
+      Math.max(5_000, Math.min(desiredMs, Math.max(5_000, remainingSoftMs() - reserveMs)));
+    const krogerDeadlineAt = () => requestStartedAt + softTimeoutMs - 20_000;
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -907,7 +928,7 @@ Deno.serve(async (req) => {
           }],
           tool_choice: { type: "function", function: { name: "return_meal_plan" } },
           max_tokens: 5000,
-          timeout_ms: 45000,
+          timeout_ms: openAITimeoutMs(35_000),
           log: { admin, user_id: userId, request_type: `meal_plan_generation_attempt_${attemptNum}` },
         });
 
@@ -1017,6 +1038,10 @@ Deno.serve(async (req) => {
       // pipeline (allergy resolver, budget gate) still runs.
       if (optimizerDebug.unfilled_slots?.length) {
         for (const us of optimizerDebug.unfilled_slots) {
+          if (!hasTimeFor(25_000)) {
+            softDeadlineLog("skip_algo_v2_ai_fill", { unfilled_slot: us });
+            continue;
+          }
           const day = parsed.days.find((d: any) => d.day_name === us.day_name) ?? { day_name: us.day_name };
           if (!parsed.days.includes(day)) parsed.days.push(day);
           try {
@@ -1027,7 +1052,7 @@ Deno.serve(async (req) => {
               tools: [{ type: "function", function: { name: "return_meal", description: "Single recipe", parameters: { type: "object", properties: { meal_name: { type: "string" }, ingredients: { type: "array", items: { type: "string" } }, instructions: { type: "array", items: { type: "string" } }, estimated_cost_per_serving: { type: "number" } }, required: ["meal_name", "ingredients", "instructions"] } } }],
               tool_choice: { type: "function", function: { name: "return_meal" } },
               max_tokens: 800,
-              timeout_ms: 30000,
+              timeout_ms: openAITimeoutMs(15_000),
               log: { admin, user_id: userId, request_type: "meal_plan_algo_v2_fill" },
             });
             const nm = ai.tool_arguments as any;
@@ -1044,7 +1069,11 @@ Deno.serve(async (req) => {
       parsed = buildServerFallback(daysCount, breakfastCandidates, lunchCandidates, dinnerCandidates);
     } else {
       parsed = await attempt(1);
-      if (!parsed) parsed = await attempt(2);
+      if (!parsed && hasTimeFor(45_000)) {
+        parsed = await attempt(2);
+      } else if (!parsed) {
+        softDeadlineLog("skip_second_openai_attempt");
+      }
     }
 
     if (!parsed) {
@@ -1593,7 +1622,7 @@ Deno.serve(async (req) => {
     const usedRecipeIds2 = new Set<string>();
     for (const d of resolvedDays) for (const m of d.meals) if (m.recipe?.id) usedRecipeIds2.add(m.recipe.id);
 
-    for (let attempt = 0; attempt < MAX_REPAIR_ATTEMPTS; attempt++) {
+    for (let attempt = 0; attempt < MAX_REPAIR_ATTEMPTS && hasTimeFor(35_000); attempt++) {
       if (basket.high <= weeklyBudget) break;
 
       // Pre-compute DB cost for every placed meal + every unused candidate.
@@ -1657,7 +1686,7 @@ Deno.serve(async (req) => {
     let deliveredNow = deliveredTotals.delivered_total;
     const MAX_DELIVERED_REPAIR = 5;
     let deliveredRepairAttempts = 0;
-    while (deliveredNow > weeklyBudget && deliveredRepairAttempts < MAX_DELIVERED_REPAIR) {
+    while (deliveredNow > weeklyBudget && deliveredRepairAttempts < MAX_DELIVERED_REPAIR && hasTimeFor(30_000)) {
       deliveredRepairAttempts++;
       const placedCosts: Array<{ di: number; mi: number; meal: any; cost: number }> = [];
       for (let di = 0; di < resolvedDays.length; di++) {
@@ -1727,6 +1756,17 @@ Deno.serve(async (req) => {
       lines: any[];
     } | null = null;
 
+    if (pricingMode === "kroger" && kroger.locationId && !hasTimeFor(45_000)) {
+      softDeadlineLog("skip_kroger_pricing", { pricing_mode: pricingMode, location_id: kroger.locationId });
+      pricingMode = "estimated";
+      await advance(
+        "saving",
+        "kroger pricing fallback",
+        "Kroger pricing skipped to finish this plan in time.",
+        { reason: "soft_deadline", elapsed_ms: elapsedMs() },
+      );
+    }
+
     if (pricingMode === "kroger" && kroger.locationId) {
       // Kroger pricing is best-effort: any failure (timeout, Kroger API
       // outage, rate limit) MUST NOT fail the whole generation. We fall back
@@ -1745,9 +1785,10 @@ Deno.serve(async (req) => {
             name: b.ingredient_name,
             quantity: b.quantity ?? 1,
           })),
+          { deadlineAt: krogerDeadlineAt() },
         );
 
-        for (let attempt = 0; attempt < MAX_KROGER_REPAIR; attempt++) {
+        for (let attempt = 0; attempt < MAX_KROGER_REPAIR && hasTimeFor(35_000); attempt++) {
           if (krogerPriced.subtotal <= weeklyBudget) break;
           await advance(
             "saving", "kroger budget repair",
@@ -1780,6 +1821,10 @@ Deno.serve(async (req) => {
           // Only inspect the 3 most expensive slots per attempt to keep the
           // total live-pricing call count bounded.
           for (const slot of slotCosts.slice(0, 3)) {
+            if (!hasTimeFor(25_000)) {
+              softDeadlineLog("stop_kroger_repair_slot_scan", { attempt: attempt + 1 });
+              break;
+            }
             const pool = candidatesByType[slot.meal.meal_type] || [];
             const ranked: Array<{ cand: any; dbCost: number }> = [];
             for (const cand of pool) {
@@ -1800,7 +1845,7 @@ Deno.serve(async (req) => {
                 candItems.push({ name: parsed.item || raw, quantity: 1 });
               }
               const candKroger = candItems.length
-                ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems)
+                ? await priceBasketWithKroger(admin, userId, kroger.locationId, candItems, { deadlineAt: krogerDeadlineAt() })
                 : { subtotal: 0 } as any;
               if (candKroger.subtotal < slot.cost * 0.95) {
                 chosen = cand;
@@ -1830,6 +1875,7 @@ Deno.serve(async (req) => {
               name: b.ingredient_name,
               quantity: b.quantity ?? 1,
             })),
+            { deadlineAt: krogerDeadlineAt() },
           );
         }
 
@@ -2811,4 +2857,3 @@ function buildMinimumPortionSnack(
     nutrition_source: "ai_estimated",
   };
 }
-

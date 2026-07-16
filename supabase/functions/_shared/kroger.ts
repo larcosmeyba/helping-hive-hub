@@ -189,6 +189,15 @@ function scrubParams(
   return out;
 }
 
+function envNumber(name: string, defaultValue: number): number {
+  const raw = Deno.env.get(name);
+  if (!raw) return defaultValue;
+  const value = Number(raw);
+  if (Number.isFinite(value) && value > 0) return value;
+  console.warn(`[kroger] invalid numeric env ${name}=${raw}; using default ${defaultValue}`);
+  return defaultValue;
+}
+
 // ---------------------------------------------------------------------------
 // Client-credentials token (server-to-server, cached in DB)
 // ---------------------------------------------------------------------------
@@ -302,12 +311,37 @@ export async function krogerGet<T = unknown>(
       url.searchParams.set(k, String(v));
     }
   }
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${access}`,
-      Accept: "application/json",
-    },
-  });
+  const timeoutMs = envNumber("KROGER_REQUEST_TIMEOUT_MS", 8_000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort("kroger_request_timeout"), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${access}`,
+        Accept: "application/json",
+      },
+    });
+  } catch (e) {
+    const diagnostics = {
+      event: "kroger_rest_request_error",
+      environment: getKrogerEnv(),
+      baseUrl: getKrogerBaseUrl(),
+      path,
+      params: scrubParams(params),
+      timeoutMs,
+      errorName: (e as Error).name,
+      errorMessage: (e as Error).message,
+    };
+    console.warn("[kroger] REST request error", safeJson(diagnostics));
+    throw new KrogerApiError(`Kroger ${path} request failed: ${(e as Error).message}`, {
+      operation: path,
+      diagnostics,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) {
     const text = await res.text();
     const diagnostics = {
