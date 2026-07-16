@@ -111,7 +111,7 @@ export default function AdminManagement() {
 
   const savePermissions = async () => {
     if (!editingAdmin) return;
-    await supabase.from("admin_permissions").update(permForm).eq("user_id", editingAdmin.user_id);
+    await supabase.from("admin_permissions").update(permForm as any).eq("user_id", editingAdmin.user_id);
     await supabase.from("activity_logs").insert({
       user_id: user?.id, action: "updated_permissions", entity_type: "admin",
       entity_id: editingAdmin.user_id,
