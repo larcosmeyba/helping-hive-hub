@@ -65,26 +65,59 @@ const STOP_WORDS = new Set([
   "fresh","organic","natural","raw","cooked","uncooked","drained","rinsed",
   "extra-virgin","extra","virgin","pure","premium",
   "low-sodium","low","sodium","reduced","fat","fat-free","nonfat","non-fat",
+  "dairy-free","dairy","free",
   "lean","lite","light","unsweetened","sweetened",
   "boneless","skinless","bone-in","skin-on",
   "chopped","sliced","diced","shredded","minced","crushed","ground","grated",
   "whole","halved","quartered","peeled","unpeeled","cubed","julienned",
   "large","small","medium","mini","jumbo","baby",
   "ripe","frozen","canned","dried","fried","roasted","toasted","seeded","pitted",
+  "scant","heaping","packed","level","about","approx","approximately","optional",
+  "divided","plus","more","less","room","temperature",
   "of","the","a","an","and","or","to","for","with","into",
 ]);
 
-const UNIT_REGEX = /\b\d+(\.\d+)?\s?(oz|ounce|ounces|lb|lbs|pound|pounds|g|gram|grams|kg|ml|l|liter|liters|gal|gallon|gallons|qt|quart|quarts|pt|pint|pints|cup|cups|tbsp|tsp|tablespoon|teaspoon|count|ct|pack|pkg|can|cans|jar|jars|box|boxes|bag|bags|bottle|bottles)s?\b/gi;
-const LEADING_QTY = /^\s*[\d./\s-]+/;
+const MAX_KROGER_SEARCH_TERMS = 8;
+const QUANTITY_PATTERN = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)`;
+const UNIT_WORDS = String.raw`(?:oz|ounces?|lb|lbs|pounds?|g|grams?|kg|ml|l|liters?|gal|gallons?|qt|quarts?|pt|pints?|cups?|tbsp|tsp|tablespoons?|teaspoons?|count|ct|packs?|pkgs?|cans?|jars?|box(?:es)?|bags?|bottles?|cloves?|pinch(?:es)?|dash(?:es)?)`;
+const UNIT_REGEX = new RegExp(String.raw`\b${QUANTITY_PATTERN}\s*-?\s*${UNIT_WORDS}\b`, "gi");
+const STANDALONE_QTY = new RegExp(String.raw`\b${QUANTITY_PATTERN}\b`, "g");
+const LEADING_QTY = new RegExp(String.raw`^\s*(?:${QUANTITY_PATTERN}|[-./\s])+`);
+
+function normalizeFractions(value: string): string {
+  return value
+    .replace(/\u00bc/g, " 1/4 ")
+    .replace(/\u00bd/g, " 1/2 ")
+    .replace(/\u00be/g, " 3/4 ")
+    .replace(/\u2150/g, " 1/7 ")
+    .replace(/\u2151/g, " 1/9 ")
+    .replace(/\u2152/g, " 1/10 ")
+    .replace(/\u2153/g, " 1/3 ")
+    .replace(/\u2154/g, " 2/3 ")
+    .replace(/\u2155/g, " 1/5 ")
+    .replace(/\u2156/g, " 2/5 ")
+    .replace(/\u2157/g, " 3/5 ")
+    .replace(/\u2158/g, " 4/5 ")
+    .replace(/\u2159/g, " 1/6 ")
+    .replace(/\u215a/g, " 5/6 ")
+    .replace(/\u215b/g, " 1/8 ")
+    .replace(/\u215c/g, " 3/8 ")
+    .replace(/\u215d/g, " 5/8 ")
+    .replace(/\u215e/g, " 7/8 ");
+}
 
 /** Strip prep words + units so the search term is the grocery noun. */
 function cleanSearchTerm(name: string): string {
-  let s = String(name || "").toLowerCase();
-  s = s.replace(LEADING_QTY, " ");
+  let s = normalizeFractions(String(name || "").toLowerCase());
   s = s.replace(UNIT_REGEX, " ");
-  s = s.replace(/[,()/]/g, " ");
+  s = s.replace(LEADING_QTY, " ");
+  s = s.replace(STANDALONE_QTY, " ");
+  s = s.replace(/[,()/;-]/g, " ");
   s = s.replace(/\s+/g, " ").trim();
-  const tokens = s.split(" ").filter((t) => t && !STOP_WORDS.has(t));
+  const tokens = s
+    .split(" ")
+    .filter((t) => t && !STOP_WORDS.has(t))
+    .slice(0, MAX_KROGER_SEARCH_TERMS);
   const cleaned = tokens.join(" ").trim();
   return cleaned || s || name;
 }
@@ -350,8 +383,9 @@ export async function priceBasketWithKroger(
       }
     }
 
-    // 2) Live search on the cleaned term first; full term as fallback.
-    const terms = cleaned !== original.toLowerCase() ? [cleaned, original] : [original];
+    // 2) Live search on the cleaned term. Do not retry raw ingredient text:
+    // Kroger rejects noisy terms with more than 8 words.
+    const terms = cleaned ? [cleaned] : [];
     let results: KrogerProduct[] = [];
     for (const term of terms) {
       results = await searchKroger(term, locationId);
