@@ -1,3 +1,5 @@
+import { Capacitor } from "@capacitor/core";
+
 /**
  * Safari/iOS popup-blocker workaround: open a blank window SYNCHRONOUSLY in
  * the user-gesture handler, then redirect it once the async URL is ready.
@@ -6,7 +8,7 @@
  *   const w = openPendingWindow();
  *   try {
  *     const url = await fetchUrl();
- *     redirectPendingWindow(w, url);
+ *     await redirectPendingWindow(w, url);
  *   } catch (e) {
  *     w?.close();
  *     throw e;
@@ -15,6 +17,7 @@
 export type PendingWindow = Window | null;
 
 export function openPendingWindow(): PendingWindow {
+  if (isLikelyNativeRuntime()) return null;
   try {
     // Do NOT pass `noopener` here. Browsers intentionally return `null` for
     // noopener windows, which means the async Instacart URL cannot be assigned
@@ -35,7 +38,12 @@ export function openPendingWindow(): PendingWindow {
   }
 }
 
-export function redirectPendingWindow(w: PendingWindow, url: string): void {
+export async function redirectPendingWindow(w: PendingWindow, url: string): Promise<void> {
+  if (isLikelyNativeRuntime()) {
+    await openNativeBrowser(url);
+    return;
+  }
+
   if (w && !w.closed) {
     try {
       w.location.replace(url);
@@ -53,4 +61,22 @@ export function redirectPendingWindow(w: PendingWindow, url: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
+}
+
+function isLikelyNativeRuntime(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+async function openNativeBrowser(url: string): Promise<void> {
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url });
+  } catch (err) {
+    console.warn("[popupRedirect] native browser open failed", err);
+    throw new Error("Could not open the Instacart link on this device.");
+  }
 }

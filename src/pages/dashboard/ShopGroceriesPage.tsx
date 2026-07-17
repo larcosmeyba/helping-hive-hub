@@ -161,7 +161,7 @@ export default function ShopGroceriesPage() {
         estimated_total: total,
       });
 
-      redirectPendingWindow(pending, url);
+      await redirectPendingWindow(pending, url);
     } catch (e: any) {
       if (pending && !pending.closed) pending.close();
       toast({
@@ -769,4 +769,3 @@ function Row({ item, onRemove, onToggleHave, onSubstitute }: {
     </li>
   );
 }
-

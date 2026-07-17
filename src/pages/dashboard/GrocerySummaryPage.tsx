@@ -121,7 +121,7 @@ export default function GrocerySummaryPage() {
       if (!url) throw new Error("Instacart did not return a products_link_url");
       phCapture("shop_with_instacart_clicked", { item_count: line_items.length });
       void trackEvent("shop_with_instacart_clicked", { item_count: line_items.length });
-      redirectPendingWindow(pending, url);
+      await redirectPendingWindow(pending, url);
     } catch (e: any) {
       if (pending && !pending.closed) pending.close();
       toast({
