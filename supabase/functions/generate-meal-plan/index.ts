@@ -10,6 +10,7 @@ import { getUserKrogerLocation } from "../_shared/krogerPricing.ts";
 import { computeHouseholdServings, scaleIngredientQuantity } from "../_shared/householdScaling.ts";
 
 import { captureEdgeError } from "../_shared/sentry.ts";
+import { computeOwnedAdjustedMealFloor } from "../_shared/mealPlanBudgetFloor.ts";
 interface Overrides {
   budget?: number;
   store?: string;
@@ -1374,6 +1375,7 @@ ${JSON.stringify(batchContext)}`,
           snack: snackCandidates as any,
         },
         pantryItems: pantryOnly as any,
+        fridgeItems: fridgeItems as any,
         freezerItems: freezerItems as any,
         expiringSoon: expiringSoon as any,
         profile: {
@@ -2305,17 +2307,19 @@ ${JSON.stringify(batchContext)}`,
       ? Math.round(Number(krogerSummary.subtotal) * 100) / 100
       : null;
     const inStoreHeadline = finalInStoreTotals.delivered_total;
-    // Meals-based sanity floor: sum each meal's cost_per_serving × servingsMultiplier
-    // across the full 7-day × 6-slot plan. This protects the headline total from
-    // collapsing when the grocery basket dedupes ingredients across many fallback
-    // meals (e.g., 21 rice/beans meals → 3 unique grocery rows). servingsMultiplier
-    // is already cohort-weighted; we do NOT multiply by household_size a second time.
-    const FALLBACK_PER_SERVING = 3.5;
+    // Meals-based sanity floor: use each meal's cost_per_serving × servingsMultiplier,
+    // but discount owned pantry/fridge/freezer ingredients and staples so the
+    // floor does not double-charge users for food they already have. This still
+    // protects the headline total from collapsing when the basket dedupes repeated
+    // fallback ingredients across many meals.
     const mealsBasedTotal = resolvedDays.reduce((s: number, d: any) =>
-      s + (Array.isArray(d.meals) ? d.meals : []).reduce((ms: number, m: any) => {
-        const cps = Number(m?.recipe?.cost_per_serving);
-        return ms + ((Number.isFinite(cps) && cps > 0 ? cps : FALLBACK_PER_SERVING) * servingsMultiplier);
-      }, 0), 0);
+      s + (Array.isArray(d.meals) ? d.meals : []).reduce((ms: number, m: any) =>
+        ms + computeOwnedAdjustedMealFloor(m, {
+          servingsMultiplier,
+          ownedNormalized: pantryNormalized,
+          stapleKeywords: STAPLE_KEYWORDS,
+          snackSlotKeys: SNACK_SLOT_KEYS as string[],
+        }), 0), 0);
     const baseHeadline = krogerHeadline ?? inStoreHeadline;
     // Take the larger of the basket-derived headline and the meals-based floor —
     // never under-report the cost of feeding the household for the week.

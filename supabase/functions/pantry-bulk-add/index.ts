@@ -23,9 +23,10 @@ const DEFAULT_DAYS: Record<string, number> = {
   dairy: 14, "dairy & eggs": 14,
   protein: 4, "meat & protein": 4, meat: 4,
   frozen: 90,
-  bakery: 5, "grains & bread": 7,
-  pantry: 180, "canned & pantry": 365,
+  bakery: 5, "grains & bread": 7, grains: 180,
+  pantry: 180, "canned & pantry": 365, pantry_staples: 365,
   snacks: 60, beverages: 60,
+  household: 365, other: 14,
 };
 
 function inferLocation(category?: string | null): "pantry" | "fridge" | "freezer" {

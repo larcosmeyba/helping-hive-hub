@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, DollarSign, Users, Leaf, Package,
   ChefHat, Snowflake, AlertCircle, Plus, Check,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMealPlan } from "@/contexts/MealPlanContext";
@@ -463,12 +464,13 @@ function InventorySheet({
   open: boolean; onOpenChange: (o: boolean) => void;
   title: string; addLocation: "pantry" | "fridge";
   items: any[]; selected: Set<string>; setSelected: (s: Set<string>) => void;
-  onItemAdded: () => void; onSave: () => void;
+  onItemAdded: () => void | Promise<void>; onSave: () => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [addingStarter, setAddingStarter] = useState(false);
 
   const toggle = (id: string) => {
     const next = new Set(selected);
@@ -499,6 +501,36 @@ function InventorySheet({
     }
   };
 
+  const addStarterItems = async () => {
+    if (!user) return;
+    setAddingStarter(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seed-starter-pantry", {
+        method: "POST",
+      });
+      if (error) throw error;
+      const result = data as { ok?: boolean; added?: number; skipped?: number; disabled?: boolean; error?: string };
+      if (result?.disabled) {
+        toast({ title: "Starter items unavailable", description: "Starter pantry items are not enabled right now." });
+        return;
+      }
+      if (result?.ok === false) {
+        toast({ title: "Could not add starter items", description: result.error ?? "Please try again.", variant: "destructive" });
+        return;
+      }
+      await onItemAdded();
+      const added = result?.added ?? 0;
+      toast({
+        title: added > 0 ? "Starter items added" : "Starter items already added",
+        description: added > 0 ? `${added} pantry, fridge, and freezer items were added.` : "Your starter items are already in your inventory.",
+      });
+    } catch (e: any) {
+      toast({ title: "Could not add starter items", description: e?.message, variant: "destructive" });
+    } finally {
+      setAddingStarter(false);
+    }
+  };
+
   const allSelected = useMemo(
     () => items.length > 0 && items.every((i) => selected.has(i.id)),
     [items, selected],
@@ -519,9 +551,19 @@ function InventorySheet({
             <Plus className="w-4 h-4" />
           </Button>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={addStarterItems}
+          disabled={addingStarter}
+          className="w-full rounded-2xl border-[#CDE6CE] text-[#1F5A3D]"
+        >
+          <Sparkles className="w-4 h-4 mr-1.5" />
+          {addingStarter ? "Adding starter items..." : "Add starter items"}
+        </Button>
 
         {items.length === 0 ? (
-          <p className="text-[13px] text-[#6b6b6b] text-center py-6">No items yet. Add one above.</p>
+          <p className="text-[13px] text-[#6b6b6b] text-center py-6">No items yet. Add one above or use starter items.</p>
         ) : (
           <>
             <button

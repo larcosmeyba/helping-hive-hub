@@ -326,6 +326,34 @@ export default function PantryPage() {
     },
   });
 
+  const seedStarterPantry = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("seed-starter-pantry", {
+        method: "POST",
+      });
+      if (error) throw error;
+      return data as { ok?: boolean; added?: number; skipped?: number; disabled?: boolean; error?: string };
+    },
+    onSuccess: (data) => {
+      if (data?.disabled) {
+        toast({ title: "Starter items unavailable", description: "Starter pantry items are not enabled right now." });
+        return;
+      }
+      if (data?.ok === false) {
+        toast({ title: "Could not add starter items", description: data.error ?? "Please try again.", variant: "destructive" });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["pantry_items_v2"] });
+      void trackEvent("starter_pantry_seeded", { added: data?.added ?? 0, skipped: data?.skipped ?? 0 });
+      const added = data?.added ?? 0;
+      toast({
+        title: added > 0 ? "Starter items added" : "Starter items already added",
+        description: added > 0 ? `${added} pantry, fridge, and freezer items were added.` : "Your starter items are already in your inventory.",
+      });
+    },
+    onError: (e: any) => toast({ title: "Could not add starter items", description: e.message, variant: "destructive" }),
+  });
+
   const sendToGrocery = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.functions.invoke("add-low-stock-to-grocery-list", {
@@ -549,7 +577,19 @@ export default function PantryPage() {
           <h2 className="font-display font-semibold text-foreground text-[15px] flex items-center gap-2">
             <Package className="w-4 h-4 text-[#2F7A36]" /> Pantry Items
           </h2>
-          <span className="text-xs text-muted-foreground">{filtered.length} of {items.length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{filtered.length} of {items.length}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => seedStarterPantry.mutate()}
+              disabled={seedStarterPantry.isPending}
+              className="h-8 rounded-full text-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1" />
+              Starter
+            </Button>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -561,6 +601,16 @@ export default function PantryPage() {
             <p className="text-xs text-muted-foreground">
               {items.length === 0 ? "Add your first item to start tracking your pantry." : "Try a different filter or chip."}
             </p>
+            {items.length === 0 && (
+              <Button
+                onClick={() => seedStarterPantry.mutate()}
+                disabled={seedStarterPantry.isPending}
+                className="mt-4 bg-[#1F5A3D] hover:bg-[#184832] text-white rounded-xl"
+              >
+                <Sparkles className="w-4 h-4 mr-1.5" />
+                {seedStarterPantry.isPending ? "Adding..." : "Add starter items"}
+              </Button>
+            )}
           </div>
         ) : (
           <div className="bg-card border border-border rounded-2xl divide-y divide-border overflow-hidden">

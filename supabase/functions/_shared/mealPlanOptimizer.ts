@@ -89,6 +89,9 @@ export interface OptimizerInputs {
     dinner: OptimizerCandidate[];
   };
   pantryItems: OptimizerPantryItem[];
+  // Fridge items behave like pantry for $0-owned matching; passed separately
+  // so callers can still report/display them by location.
+  fridgeItems?: OptimizerPantryItem[];
   // Freezer items behave like pantry for $0-owned matching; passed
   // separately so reporting can distinguish, but treated as owned.
   freezerItems?: OptimizerPantryItem[];
@@ -317,11 +320,13 @@ function scoreCandidate(r: OptimizerCandidate, ctx: ScoreCtx): { score: number; 
 
 export function runOptimizer(inputs: OptimizerInputs): OptimizerResult {
   const { candidates, pantryItems, expiringSoon, profile, recentRecipeIds, slots } = inputs;
+  const fridgeItems = inputs.fridgeItems ?? [];
   const freezerItems = inputs.freezerItems ?? [];
 
-  // Owned-set for $0 matching combines pantry + freezer; expiring stays its own bucket.
+  // Owned-set for $0 matching combines pantry + fridge + freezer; expiring stays its own bucket.
   const ownedNames: string[] = [
     ...pantryItems.map((p) => norm(p.normalized_name ?? p.item_name)),
+    ...fridgeItems.map((p) => norm(p.normalized_name ?? p.item_name)),
     ...freezerItems.map((p) => norm(p.normalized_name ?? p.item_name)),
   ].filter(Boolean);
   const pantrySet = new Set(ownedNames);

@@ -89,6 +89,26 @@ describe("mealPlanOptimizer", () => {
     expect(res.debug.expiring_items_used).toBeGreaterThan(0);
   });
 
+  it("treats fridge items as owned when scoring candidates", () => {
+    const candidates = {
+      breakfast: [
+        mkRecipe("plain", "breakfast", { ingredients: ["bread"], cost_per_serving: 2 }),
+        mkRecipe("uses-fridge", "breakfast", { ingredients: ["spinach", "eggs"], cost_per_serving: 2.5 }),
+      ],
+      lunch: [mkRecipe("l1", "lunch")],
+      dinner: [mkRecipe("d1", "dinner")],
+    };
+    const res = runOptimizer(baseInputs({
+      candidates,
+      pantryItems: [],
+      fridgeItems: [{ normalized_name: "spinach" }, { normalized_name: "eggs" }],
+      expiringSoon: [],
+      slots: [{ day_name: "Monday", meal_type: "breakfast" }],
+    }));
+    expect(res.selections[0].recipe_id).toBe("uses-fridge");
+    expect(res.debug.pantry_items_used).toBeGreaterThan(0);
+  });
+
   it("budget-repair brings subtotal under weekly_budget when feasible", () => {
     // Lots of cheap alternatives, but rank initially favors expensive (via expiring) — then repair swaps down.
     const candidates = {
