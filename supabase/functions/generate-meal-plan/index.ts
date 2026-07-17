@@ -1542,6 +1542,16 @@ ${JSON.stringify(batchContext)}`,
     }
 
     const usedIds = new Set<string>();
+    const resolverReplacementEvents: Array<{
+      dayName: string;
+      slotKey: string;
+      reason: string;
+      recipeId?: string;
+      title?: string;
+      replacementId?: string;
+      replacementTitle?: string;
+    }> = [];
+
     for (const day of parsed.days.slice(0, daysCount)) {
       const dayMeals: any[] = [];
       for (const slotKey of SLOT_KEYS) {
@@ -1558,16 +1568,20 @@ ${JSON.stringify(batchContext)}`,
           const cand = candidatesById.get(slot.library_recipe_id);
           const slotFit = candidateFitsSlot(slotKey, cand, usedIds);
           if ((safetyTerms.length && recipeContainsAny(cand, safetyTerms)) || !slotFit.ok) {
-            console.warn("[generate-meal-plan] AI chose invalid library recipe - replacing", JSON.stringify({
+            const invalidReason = slotFit.ok ? "safety_terms" : slotFit.reason || "slot_fit_failed";
+            recipe = findSafeCandidate(slotKey, usedIds);
+            resolverReplacementEvents.push({
+              dayName: String(day.day_name || `Day ${resolvedDays.length + 1}`),
+              slotKey,
+              reason: invalidReason,
               recipeId: cand.id,
               title: cand.title,
-              slotKey,
-              reason: slotFit.ok ? "safety_terms" : slotFit.reason,
-            }));
-            recipe = findSafeCandidate(slotKey, usedIds);
-            reason = slotFit.reason === "duplicate_cooked_recipe"
+              replacementId: recipe?.id,
+              replacementTitle: recipe?.title,
+            });
+            reason = invalidReason === "duplicate_cooked_recipe"
               ? "Swapped to add more variety to your week."
-              : slotFit.reason === "snack_not_simple"
+              : invalidReason === "snack_not_simple"
                 ? "Swapped to keep snacks simple and no-cook."
                 : "Swapped to honor your dietary preferences and allergies.";
           } else {
@@ -1653,6 +1667,25 @@ ${JSON.stringify(batchContext)}`,
       }
       dayMeals.sort((a, b) => (SLOT_ORDER[a.meal_type] ?? 9) - (SLOT_ORDER[b.meal_type] ?? 9));
       resolvedDays.push({ day_name: day.day_name || `Day ${resolvedDays.length + 1}`, meals: dayMeals });
+    }
+
+    if (resolverReplacementEvents.length) {
+      const byReason = resolverReplacementEvents.reduce<Record<string, number>>((acc, event) => {
+        acc[event.reason] = (acc[event.reason] ?? 0) + 1;
+        return acc;
+      }, {});
+      const payload = {
+        event: "meal_plan_resolver_replacements",
+        total: resolverReplacementEvents.length,
+        by_reason: byReason,
+        samples: resolverReplacementEvents.slice(0, 8),
+      };
+      const hasSafetyReplacement = Boolean(byReason.safety_terms || byReason.meal_type_mismatch || byReason.snack_not_simple);
+      if (hasSafetyReplacement) {
+        console.warn("[generate-meal-plan] resolver replacements", JSON.stringify(payload));
+      } else {
+        console.log("[generate-meal-plan] resolver replacements", JSON.stringify(payload));
+      }
     }
 
     // Top up missing days so we always emit a full week with all 6 slots.
