@@ -110,8 +110,8 @@ jobs:
         run: |
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
           # Hardcoded to keep TestFlight train monotonic (last good was 1.13 (32)).
-          MARKETING_VERSION="1.16"
-          BUILD_NUMBER=38
+          MARKETING_VERSION="1.17"
+          BUILD_NUMBER=39
           /usr/bin/python3 - "$PBXPROJ" "$APPLE_TEAM_ID" "$PROFILE_NAME" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PY'
           import re, sys
           path, team, profile, marketing_version, build_number = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
