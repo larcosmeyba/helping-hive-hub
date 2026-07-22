@@ -98,9 +98,18 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -158,14 +167,28 @@
   /* Native app: ensure the root body also respects safe areas */
   .native-app {
     padding-top: env(safe-area-inset-top, 0px);
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+  .native-app #root {
+    overflow-x: hidden;
   }
 }
 
 /* Mobile-first smooth scrolling */
 @media (max-width: 767px) {
-  html, body {
+  html, body, #root {
     overflow-x: hidden;
     width: 100%;
+    max-width: 100%;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
+  }
+
+  input,
+  select,
+  textarea,
+  [role="combobox"] {
+    font-size: 16px !important;
   }
 }

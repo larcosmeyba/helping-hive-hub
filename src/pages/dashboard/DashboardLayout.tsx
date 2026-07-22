@@ -42,10 +42,10 @@ export default function DashboardLayout() {
     <LocationProvider>
     <MealPlanProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full overflow-x-hidden">
+        <div className="min-h-screen flex w-full max-w-full overflow-x-hidden">
           {!isMobile && <DashboardSidebar />}
 
-          <div className="flex-1 flex flex-col w-full min-w-0">
+          <div className="flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden">
             {isOffline && (
               <div className="bg-destructive text-destructive-foreground text-xs text-center py-2 px-4">
                 You're offline — some features may not work until you reconnect.
@@ -77,7 +77,7 @@ export default function DashboardLayout() {
             <main
               id="dashboard-main"
               className={cn(
-                "flex-1 bg-background overflow-y-auto",
+                "flex-1 min-w-0 max-w-full bg-background overflow-y-auto overflow-x-hidden",
                 isMobile ? "px-4 pt-5 pb-28" : "p-6"
               )}
               style={isMobile ? { WebkitOverflowScrolling: "touch" } : undefined}
